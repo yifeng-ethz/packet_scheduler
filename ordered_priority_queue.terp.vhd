@@ -177,8 +177,8 @@ entity ${output_name} is
         -- IP advance
         LANE_FIFO_DEPTH         : natural := 1024; -- size of each lane FIFO in unit of its data width. Affects the max delay skew between each lane supported and maximum waiting time for the <b>page allocator</b>
         LANE_FIFO_WIDTH         : natural := 40; -- data width of each lane FIFO in unit of bits, must be larger than total(39) = data(32)+datak(4)+eop(1)+sop(1)+err(1)
-        TICKET_FIFO_DEPTH       : natural := 64; -- size of each ticket FIFO in unit of its data width, set accordingly to the expected latency / max delay it allows
-        HANDLE_FIFO_DEPTH       : natural := 64; -- size of each handle FIFO in unit of its data width, set accordingly to the expected latency / max delay it allows, drop means blk mover too slow
+        TICKET_FIFO_DEPTH       : natural := 256; -- size of each ticket FIFO in unit of its data width, set accordingly to the expected latency / max delay it allows. If too many empty subframes, the credit can be consumed quickly. Should be larger than N_SHD to absorb the burst per frame.
+        HANDLE_FIFO_DEPTH       : natural := 64; -- size of each handle FIFO in unit of its data width, set accordingly to the expected latency / max delay it allows. Drop means blk mover too slow
         PAGE_RAM_DEPTH          : natural := 65536; -- size of the page RAM in unit of its WR data width, need to be larger than the full header packet, which is usually 8k max for each FEB flow
         PAGE_RAM_RD_WIDTH       : natural := 36; -- RD data width of the page RAM in unit of bits, write width = LANE_FIFO_WIDTH, read width can be larger to interface with PCIe DMA
         -- packet format (packet = subheader packet; w/o sop/eop; frame = header packet, w/ sop/eop)
@@ -245,8 +245,9 @@ architecture rtl of ${output_name} is
     -- global settings 
     constant MAX_PKT_LENGTH         : natural := HIT_SIZE * N_HIT; -- default is 255, max length of packet to be allocated and in the lane FIFO as a whole, this does not include subheader as it will be in the ticket FIFO
     constant MAX_PKT_LENGTH_BITS    : natural := integer(ceil(log2(real(MAX_PKT_LENGTH)))); -- default is 8 bits
-    constant FIFO_RDW_DELAY         : natural := 2; -- need to delay read for 2 cycles after write (2 for RDW="old data", 1 for RDW="new data")
-    
+    constant FIFO_RAW_DELAY         : natural := 2; -- Read-After-Write. note: need to delay read for 2 cycles after write (2 for RDW="old data", 1 for RDW="new data", YW: check this?)
+    constant FIFO_RD_DELAY          : natural := 1; -- once the rptr is changed, typical q is delay by 1 cycle
+
     -- ───────────────────────────────────────────────────────────────────────────────────────
     --                  TICKET_FIFO 
     -- ───────────────────────────────────────────────────────────────────────────────────────
@@ -273,6 +274,12 @@ architecture rtl of ${output_name} is
     -- ───────────────────────────────────────────────────────────────────────────────────────
     constant PAGE_RAM_DATA_WIDTH    : natural := 40; -- TBD
     constant PAGE_RAM_ADDR_WIDTH    : natural := integer(ceil(log2(real(PAGE_RAM_DEPTH)))); -- 65536 words, 16 bits address. should be > LANE_FIFO_DEPTH*N_LANE. 
+
+    -- ───────────────────────────────────────────────────────────────────────────────────────
+    --                  ARB
+    -- ─────────────────────────────────────────────────────────────────────────────────────── 
+    constant QUANTUM_PER_SUBFRAME   : unsigned(9 downto 0) := to_unsigned(256,10);
+    constant QUANTUM_MAX            : unsigned(9 downto 0) := to_unsigned(2**10-1,10);
 
     -- ───────────────────────────────────────────────────────────────────────────────────────
     --                  DATA STRUCT FORMAT 
@@ -487,10 +494,10 @@ architecture rtl of ${output_name} is
     constant MAX_SHR_CNT_BITS               : natural := integer(ceil(log2(real(N_SHD)))) + CHANNEL_WIDTH; -- default is 8 + 2 bits (for 4 lanes) 
     constant MAX_HIT_CNT_BITS               : natural := integer(ceil(log2(real(N_SHD)))) + integer(ceil(log2(real(N_HIT)))); -- default is 8 + 8 bits 
     -- state signals
-    type page_allocator_state_t is (IDLE, FETCH_TICKET, WRITE_HEADER, WRITE_TRAILER, ALLOC_PAGE, WRITE_PAGE, RESET);
+    type page_allocator_state_t is (IDLE, FETCH_TICKET, WRITE_HEAD, WRITE_TAIL, ALLOC_PAGE, WRITE_PAGE, RESET);
     signal page_allocator_state             : page_allocator_state_t;
     subtype alloc_page_flow_t is integer range 0 to N_LANE-1;
-    subtype write_header_flow_t is integer range 0 to 5;
+    subtype write_meta_flow_t is integer range 0 to 5;
 
     -- registers
     type ticket_credit_update_t is array (0 to N_LANE-1) of unsigned(TICKET_FIFO_ADDR_WIDTH-1 downto 0);
@@ -514,6 +521,7 @@ architecture rtl of ${output_name} is
         page_waddr                          : std_logic_vector(PAGE_RAM_ADDR_WIDTH-1 downto 0);
         -- frame
         frame_start_addr                    : unsigned(PAGE_RAM_ADDR_WIDTH-1 downto 0);
+        frame_start_addr_last               : unsigned(PAGE_RAM_ADDR_WIDTH-1 downto 0);
         frame_cnt                           : unsigned(35 downto 0); -- if no loss, equal to ts[47:12]
         frame_shr_cnt                       : unsigned(MAX_SHR_CNT_BITS-1 downto 0); -- max = N_SHR * N_LANE
         frame_hit_cnt                       : unsigned(MAX_HIT_CNT_BITS-1 downto 0); -- max = N_SHR * N_HIT
@@ -526,7 +534,7 @@ architecture rtl of ${output_name} is
         page_start_addr                     : unsigned(PAGE_RAM_ADDR_WIDTH-1 downto 0);
         page_length                         : unsigned(MAX_PKT_LENGTH_BITS+CHANNEL_WIDTH-1 downto 0); -- hint: max = N_LANE * max block length
         alloc_page_flow                     : alloc_page_flow_t; -- flow need to iterate all lanes
-        write_header_flow                   : write_header_flow_t; -- flow to write header and trailer
+        write_meta_flow                     : write_meta_flow_t; -- flow to write header and trailer
         write_trailer                       : std_logic;
         reset_done                          : std_logic;
     end record;
@@ -539,17 +547,18 @@ architecture rtl of ${output_name} is
         ticket_rptr                 => (others => (others => '0')),
         page_length                 => (others => '0'),
         alloc_page_flow             => 0,
-        write_header_flow           => 0,
+        write_meta_flow             => 0,
         handle_we                   => (others => '0'),
         handle_wflag                => (others => '0'),
         handle_wptr                 => (others => (others => '0')),
-        page_we                 => '0',
-        page_wdata              => (others => '0'),
-        page_waddr              => (others => '0'),
+        page_we                     => '0',
+        page_wdata                  => (others => '0'),
+        page_waddr                  => (others => '0'),
         ticket_credit_update        => (others => (others => '0')),
         ticket_credit_update_valid  => (others => '0'),
         page_start_addr             => (others => '0'),
         frame_start_addr            => (others => '0'),
+        frame_start_addr_last       => (others => '0'),
         frame_cnt                   => (others => '0'),
         frame_shr_cnt               => (others => '0'),
         frame_hit_cnt               => (others => '0'),
@@ -560,7 +569,7 @@ architecture rtl of ${output_name} is
 
     signal page_allocator           : page_allocator_reg_t;
 
-    type page_allocator_is_pending_ticket_d_t is array (1 to FIFO_RDW_DELAY) of std_logic_vector(N_LANE-1 downto 0);
+    type page_allocator_is_pending_ticket_d_t is array (1 to FIFO_RAW_DELAY) of std_logic_vector(N_LANE-1 downto 0);
     signal page_allocator_is_pending_ticket_d   : page_allocator_is_pending_ticket_d_t;
 
     -- combinational wires
@@ -585,9 +594,18 @@ architecture rtl of ${output_name} is
     -- block mover
     -- ────────────────────────────────────────────────
     -- state signals
-    type block_mover_state_t is (IDLE, PREP, WRITE_BLK, WRITE_BLK_FINISHING, ABORT_WRITE_BLK, RESET);
+    type block_mover_state_t is (IDLE, PREP, WRITE_BLK, ABORT_WRITE_BLK, RESET);
     type block_movers_state_t is array (0 to N_LANE-1) of block_mover_state_t;
     signal block_mover_state             : block_movers_state_t;
+
+    -- types 
+    type handle_fifo_is_pending_handle_d_t is array (1 to FIFO_RAW_DELAY) of std_logic_vector(N_LANE-1 downto 0);
+    signal handle_fifo_is_pending_handle_d      : handle_fifo_is_pending_handle_d_t;
+
+    type block_mover_handle_rptr_d_t is array (1 to FIFO_RD_DELAY) of unsigned(HANDLE_FIFO_ADDR_WIDTH-1 downto 0);
+    constant BLOCK_MOVER_HANDLE_RPTR_D_RESET    : block_mover_handle_rptr_d_t := (
+        others => (others => '0')
+    );
 
     -- registers
     type block_mover_t is record 
@@ -595,7 +613,7 @@ architecture rtl of ${output_name} is
         handle                              : handle_t;
         flag                                : std_logic; -- flag = {skip_blk}
         handle_rptr                         : unsigned(HANDLE_FIFO_ADDR_WIDTH-1 downto 0);
-        --lane_rptr                           : unsigned(LANE_FIFO_ADDR_WIDTH-1 downto 0);
+        handle_rptr_d                       : block_mover_handle_rptr_d_t;
         page_wptr                           : unsigned(PAGE_RAM_ADDR_WIDTH-1 downto 0);
         page_wreq                           : std_logic;
         lane_credit_update                  : unsigned(LANE_FIFO_ADDR_WIDTH-1 downto 0);
@@ -604,26 +622,25 @@ architecture rtl of ${output_name} is
     end record;
 
     constant BLOCK_MOVER_REG_RESET      : block_mover_t := (
-        word_wr_cnt             => (others => '0'),
-        handle                  => HANDLE_REG_RESET,
-        flag                    => '0',
-        handle_rptr             => (others => '0'),
-        --lane_rptr               => (others => '0'),
-        page_wptr               => (others => '0'),
-        page_wreq               => '0',
-        lane_credit_update      => (others => '0'),
+        word_wr_cnt                 => (others => '0'),
+        handle                      => HANDLE_REG_RESET,
+        flag                        => '0',
+        handle_rptr                 => (others => '0'),
+        handle_rptr_d               => BLOCK_MOVER_HANDLE_RPTR_D_RESET,
+        page_wptr                   => (others => '0'),
+        page_wreq                   => '0',
+        lane_credit_update          => (others => '0'),
         lane_credit_update_valid    => '0',
-        reset_done              => '0'
+        reset_done                  => '0'
     );
 
     type block_movers_t is array (0 to N_LANE-1) of block_mover_t;
     signal block_mover              : block_movers_t;
 
-    type handle_fifo_is_pending_handle_d_t is array (1 to FIFO_RDW_DELAY) of std_logic_vector(N_LANE-1 downto 0);
-    signal handle_fifo_is_pending_handle_d      : handle_fifo_is_pending_handle_d_t;
-
     -- combinational wires
     signal handle_fifo_is_pending_handle        : std_logic_vector(N_LANE-1 downto 0);
+    signal handle_fifo_is_pending_handle_valid  : std_logic_vector(N_LANE-1 downto 0);
+    signal handle_fifo_is_q_valid               : std_logic_vector(N_LANE-1 downto 0);
     type handle_fifo_if_rd_t is record
         handle              : handle_t;
         flag                : std_logic;
@@ -643,22 +660,28 @@ architecture rtl of ${output_name} is
     type arbiter_state_t is (IDLE, LOCKING, LOCKED, RESET);
     signal arbiter_state                : arbiter_state_t;
 
+    -- types
+    type b2p_arb_quantum_t is array (0 to N_LANE-1) of unsigned(9 downto 0);
+
     -- registers
     type b2p_arb_t is record
+        sel_mask                        : std_logic_vector(N_LANE-1 downto 0);
         priority                        : std_logic_vector(N_LANE-1 downto 0);
+        quantum                         : b2p_arb_quantum_t;
     end record;
 
     constant B2P_ARB_REG_RESET          : b2p_arb_t := (
-        priority                => (0 => '1', others => '0') -- note: need to put initial priority to first lane
+        sel_mask                => (others => '0'),
+        priority                => (0 => '1', others => '0'), -- note: need to put initial priority to first lane
+        quantum                 => (others => QUANTUM_PER_SUBFRAME)
     );
 
     signal b2p_arb              : b2p_arb_t;
 
     -- combinational wires
-    signal b2p_arb_req                  : std_logic_vector(N_LANE-1 downto 0);
-    signal b2p_arb_gnt                  : std_logic_vector(N_LANE-1 downto 0);
-    signal b2p_arb_gnt_int              : std_logic_vector(N_LANE-1 downto 0);
-    signal b2p_arb_unlock               : std_logic;
+    signal b2p_arb_req                          : std_logic_vector(N_LANE-1 downto 0);
+    signal b2p_arb_gnt                          : std_logic_vector(N_LANE-1 downto 0);
+    signal b2p_arb_quantum_update_if_updating   : b2p_arb_quantum_t;
     
 
 begin
@@ -816,15 +839,15 @@ begin
                                 -- ticket = {ts, start addr, length}
                                 -- errorDescriptor = {hit_err shd_err hdr_err}
                                 ingress_parser(i).running_ts(11 downto 4)   <= unsigned(ingress_parser_if_subheader_shd_ts(i)); -- update subheader timestamp
-                                ingress_parser(i).shd_len                   <= unsigned(ingress_parser_if_subheader_hit_cnt(i)); -- shd_hcnt (8-bit) from 0 to 255 hits + 1 (SHD_SIZE)
-                                if (ingress_parser_if_subheader_hit_cnt(i) + 1 > ingress_parser(i).lane_credit) then -- pkg size > free words
+                                ingress_parser(i).shd_len                   <= ingress_parser_if_subheader_hit_cnt(i); -- shd_hcnt (8-bit) from 0 to 255 hits + 1 (SHD_SIZE)
+                                if (ingress_parser_if_subheader_hit_cnt(i) >= ingress_parser(i).lane_credit) then -- pkg size >= free words
                                     -- error : incoming packet too large for lane FIFO (lane FIFO low credit)
                                     ingress_parser_state(i)         <= MASK_PKT;
                                 elsif (ingress_parser(i).ticket_credit = 0) then 
                                     -- error : ticket FIFO low credit
                                     ingress_parser_state(i)         <= MASK_PKT;
                                 else
-                                    if (unsigned(ingress_parser_if_subheader_hit_cnt(i)) /= 0) then 
+                                    if (ingress_parser_if_subheader_hit_cnt(i) /= 0) then 
                                         -- ok : but wait until subheader in lane FIFO, then write ticket FIFO
                                         ingress_parser_state(i)         <= WR_HITS;
                                     else
@@ -834,16 +857,13 @@ begin
                                         ingress_parser(i).ticket_wdata  <= ingress_parser_if_write_ticket_data(i); -- see proc_assemble_write_ticket_fifo
                                         ingress_parser(i).alert_sop     <= '0'; -- deassert alert of sop to page allocator once is written in a ticket once
                                         ingress_parser(i).alert_eop     <= '0'; -- deassert alert of eop to page allocator once is written in a ticket once
+                                        -- ticket credit
                                         if page_allocator.ticket_credit_update_valid(i) then -- update ticket credit, substract 1 ticket 
                                             ingress_parser(i).ticket_credit <= ingress_parser(i).ticket_credit + page_allocator.ticket_credit_update(i) - 1; 
                                         else
                                             ingress_parser(i).ticket_credit <= ingress_parser(i).ticket_credit - 1;
                                         end if;
-                                        if block_mover(i).lane_credit_update_valid then -- update lane credit, substract the length to be written, allowing concurrent updating
-                                            ingress_parser(i).lane_credit   <= ingress_parser(i).lane_credit - ingress_parser_if_subheader_hit_cnt(i) + block_mover(i).lane_credit_update; 
-                                        else 
-                                            ingress_parser(i).lane_credit   <= ingress_parser(i).lane_credit - ingress_parser_if_subheader_hit_cnt(i);
-                                        end if;
+                                        -- no need to update lane credit as the length is zero
                                     end if;
                                 end if;
                             elsif (asi_ingress_startofpacket(i)(0) and ingress_parser_is_preamble(i) and not ingress_parser_hdr_err(i)) then -- [preamble]
@@ -933,39 +953,39 @@ begin
                                 -- ticket = {ts, start addr, length}
                                 -- errorDescriptor = {hit_err shd_err hdr_err}
                                 ingress_parser(i).running_ts(11 downto 4)   <= unsigned(ingress_parser_if_subheader_shd_ts(i)); -- update subheader timestamp
-                                ingress_parser(i).shd_len                   <= unsigned(ingress_parser_if_subheader_hit_cnt(i)); -- shd_hcnt (8-bit) from 0 to 255 hits + 1 (SHD_SIZE)
-                                if (ingress_parser_if_subheader_hit_cnt(i) + 1 > ingress_parser(i).lane_credit) then -- pkg size > free words
-                                    -- error : incoming packet too large for lane FIFO (lane FIFO low credit)
+                                ingress_parser(i).shd_len                   <= ingress_parser_if_subheader_hit_cnt(i); -- shd_hcnt (8-bit) from 0 to 255 hits + 1 (SHD_SIZE)
+                                if (ingress_parser_if_subheader_hit_cnt(i) >= ingress_parser(i).lane_credit) then -- pkg size >= free words
+                                    -- error : continue to mask if packet larger than lane credit
                                     ingress_parser_state(i)         <= MASK_PKT;
                                 elsif (ingress_parser(i).ticket_credit = 0) then 
                                     -- error : ticket FIFO low credit
                                     ingress_parser_state(i)         <= MASK_PKT;
                                 else
-                                    if (unsigned(ingress_parser_if_subheader_hit_cnt(i)) /= 0) then 
+                                    if (ingress_parser_if_subheader_hit_cnt(i) /= 0) then 
                                         -- ok : but wait until subheader in lane FIFO, then write ticket FIFO
                                         ingress_parser_state(i)         <= WR_HITS;
                                     else
-                                        -- ok : write ticket to ticket FIFO now
+                                        -- ok : write ticket to ticket FIFO with empty ticket
                                         ingress_parser(i).ticket_we     <= '1';
                                         ingress_parser(i).ticket_wptr   <= ingress_parser(i).ticket_wptr + 1; -- increment write pointer as we will write to ticet FIFO
                                         ingress_parser(i).ticket_wdata  <= ingress_parser_if_write_ticket_data(i); -- see proc_assemble_write_ticket_fifo
                                         ingress_parser(i).alert_sop     <= '0'; -- deassert alert of sop to page allocator once is written in a ticket once
                                         ingress_parser(i).alert_eop     <= '0'; -- deassert alert of eop to page allocator once is written in a ticket once
+                                        -- ticekt credit
                                         if page_allocator.ticket_credit_update_valid(i) then -- update ticket credit, substract 1 ticket 
                                             ingress_parser(i).ticket_credit <= ingress_parser(i).ticket_credit + page_allocator.ticket_credit_update(i) - 1; 
                                         else
                                             ingress_parser(i).ticket_credit <= ingress_parser(i).ticket_credit - 1;
                                         end if;
-                                        if block_mover(i).lane_credit_update_valid then -- update lane credit, substract the length to be written, allowing cocurrent updating
-                                            ingress_parser(i).lane_credit   <= ingress_parser(i).lane_credit - ingress_parser_if_subheader_hit_cnt(i) + block_mover(i).lane_credit_update; 
-                                        else 
-                                            ingress_parser(i).lane_credit   <= ingress_parser(i).lane_credit - ingress_parser_if_subheader_hit_cnt(i);
+                                        -- lane credit
+                                        if block_mover(i).lane_credit_update_valid then -- update lane credit if called on rx side, we write lane nothing here
+                                            ingress_parser(i).lane_credit   <= ingress_parser(i).lane_credit + block_mover(i).lane_credit_update; 
                                         end if;
                                     end if;
                                 end if;
                             end if;
                         end if;
-
+                        
                     when WR_HITS => -- [hit(s)] 
                         -- ingress data -> lane FIFO (write hits to lane FIFO)
                         if (asi_ingress_valid(i)(0) and not ingress_parser_hit_err(i)) then -- hit w/o error
@@ -985,15 +1005,17 @@ begin
                                 ingress_parser(i).ticket_we     <= '1';
                                 ingress_parser(i).ticket_wptr   <= ingress_parser(i).ticket_wptr + 1; -- increment write pointer as we will write to ticet FIFO
                                 ingress_parser(i).ticket_wdata  <= ingress_parser_if_write_ticket_data(i); -- see proc_assemble_write_ticket_fifo
+                                -- ticket credit
                                 if page_allocator.ticket_credit_update_valid(i) then -- update ticket credit, substract 1 ticket 
                                     ingress_parser(i).ticket_credit <= ingress_parser(i).ticket_credit + page_allocator.ticket_credit_update(i) - 1; 
                                 else
                                     ingress_parser(i).ticket_credit <= ingress_parser(i).ticket_credit - 1;
                                 end if;
+                                -- lane credit
                                 if block_mover(i).lane_credit_update_valid then -- update lane credit, substract the length to be written, allowing cocurrent updating
-                                    ingress_parser(i).lane_credit   <= ingress_parser(i).lane_credit - ingress_parser_if_subheader_hit_cnt(i) + block_mover(i).lane_credit_update; 
+                                    ingress_parser(i).lane_credit   <= ingress_parser(i).lane_credit - ingress_parser(i).shd_len + block_mover(i).lane_credit_update; 
                                 else 
-                                    ingress_parser(i).lane_credit   <= ingress_parser(i).lane_credit - ingress_parser_if_subheader_hit_cnt(i);
+                                    ingress_parser(i).lane_credit   <= ingress_parser(i).lane_credit - ingress_parser(i).shd_len;
                                 end if;
                                 -- update the start addr
                                 ingress_parser(i).lane_start_addr   <= ingress_parser(i).lane_wptr + 1; -- note: wptr is like a wrcnt (larger than waddr by 1). wptr-1 = waddr, record waddr
@@ -1015,7 +1037,7 @@ begin
                 end case;
 
                 -- delay chain 
-                for j in 1 to FIFO_RDW_DELAY loop
+                for j in 1 to FIFO_RAW_DELAY loop
                     if j = 1 then 
                         page_allocator_is_pending_ticket_d(j)(i)       <= page_allocator_is_pending_ticket(i);
                     else 
@@ -1069,7 +1091,7 @@ begin
         -- [header]
         page_allocator_if_write_page_hdr_data(35 downto 32)     <= "0000"; -- default
         page_allocator_if_write_page_hdr_data(31 downto 0)      <= (others => '0'); -- default
-        case page_allocator.write_header_flow is -- [0:2] in WRITE_HEADER, [3:4] in WRITE_TRAILER
+        case page_allocator.write_meta_flow is -- [0:2] in WRITE_HEAD (this frame), [3:4] in WRITE_TAIL (last frame)
             when 0 => 
                 page_allocator_if_write_page_hdr_data(35 downto 32)     <= "0001";
                 page_allocator_if_write_page_hdr_data(31 downto 26)     <= ingress_parser(0).dt_type; -- should be static. TODO: refine to mask
@@ -1173,7 +1195,7 @@ begin
                 case page_allocator_state is 
                     when IDLE => 
                         -- standby state, wait for ticket FIFO to have pending tickets
-                        if (and_reduce(page_allocator_is_pending_ticket_d(FIFO_RDW_DELAY)) = '1' and and_reduce(page_allocator_is_pending_ticket) = '1') then -- all lanes have packet, check both tail and head of the delay chain
+                        if (and_reduce(page_allocator_is_pending_ticket_d(FIFO_RAW_DELAY)) = '1' and and_reduce(page_allocator_is_pending_ticket) = '1') then -- all lanes have packet, check both tail and head of the delay chain
                             page_allocator_state            <= FETCH_TICKET; -- fetch HOL ticket from ticket FIFO  
                         end if;
 
@@ -1213,49 +1235,50 @@ begin
                         -- exit condition 1 : if any lane has sop (marks new frame packet, need to write 5 words of header), first write header (optional: write last trailer), then allocate page
                         for i in 0 to N_LANE-1 loop
                             if (page_allocator_if_read_ticket_ticket(i).alert_sop = '1' and page_allocator.frame_ts /= page_allocator_if_read_ticket_ticket(i).ticket_ts) then -- comb derived from page_allocator_if_read_ticket_ticket(all). only generate once
-                                page_allocator.page_we                      <= '1'; -- write in the first cycle of WRITE_HEADER
-                                page_allocator.page_waddr                   <= std_logic_vector(page_allocator.page_start_addr); -- set the top address of this frame in page RAM
-                                page_allocator.frame_start_addr             <= page_allocator.page_start_addr; -- remember the top address of this frame in page RAM
+                                page_allocator.page_we                      <= '1'; -- write in the first cycle of WRITE_HEAD
+                                page_allocator.page_waddr                   <= std_logic_vector(page_allocator.page_start_addr + to_unsigned(TRL_SIZE,page_allocator.page_start_addr'length)); -- set the top address of this frame in page RAM
+                                page_allocator.frame_start_addr             <= page_allocator.page_start_addr + to_unsigned(TRL_SIZE,page_allocator.page_start_addr'length); -- remember the top address of this frame in page RAM
+                                page_allocator.frame_start_addr_last        <= page_allocator.frame_start_addr; -- latch last frame starting address, need this to write debug info the last frame
                                 page_allocator.frame_ts                     <= page_allocator_if_read_ticket_ticket(i).ticket_ts; -- remember the running ts of this frame
                                 page_allocator.write_trailer                <= page_allocator_if_read_ticket_ticket(i).alert_eop;
-                                page_allocator_state                        <= WRITE_HEADER;
-                                page_allocator.write_header_flow            <= 0;       
+                                page_allocator_state                        <= WRITE_HEAD;
+                                page_allocator.write_meta_flow              <= 0;       
                             end if;
                         end loop;
                     
-                    when WRITE_HEADER =>
-                        -- write the first 3 out of 5 words of header, flow = [0:2]
-                        if page_allocator.write_header_flow < 2 then 
+                    when WRITE_HEAD =>
+                        -- write the first 3 out of 5 words of header for current frame, flow = [0:2]
+                        if page_allocator.write_meta_flow < 2 then 
                             page_allocator.page_we                  <= '1'; -- write next word
-                            page_allocator.page_waddr               <= std_logic_vector(page_allocator.frame_start_addr + page_allocator.write_header_flow + 1); -- set the next addr
+                            page_allocator.page_waddr               <= std_logic_vector(page_allocator.frame_start_addr + page_allocator.write_meta_flow + 1); -- set the next addr
                         else
                             if page_allocator.write_trailer then -- [exit 1] write the trailer of last frame. derived from ticket.alert_eop
                                 page_allocator.page_we                  <= '1'; -- write next word
-                                page_allocator.page_waddr               <= std_logic_vector(page_allocator.frame_start_addr + page_allocator.write_header_flow + 1); -- will be writing word 3
-                                page_allocator_state                    <= WRITE_TRAILER;
+                                page_allocator.page_waddr               <= std_logic_vector(page_allocator.frame_start_addr_last + page_allocator.write_meta_flow + 1); -- will be writing word 3
+                                page_allocator_state                    <= WRITE_TAIL;
                             else -- [exit 0] allocate page for all lanes with tickets obtained, because this is the first frame of this run, no trailer needs to write
                                 page_allocator.page_we                  <= '0'; -- stop write
-                                page_allocator.page_start_addr          <= page_allocator.page_start_addr + HDR_SIZE; -- incr the page start addr by HDR_SIZE (5), because we wrote header
+                                page_allocator.page_start_addr          <= page_allocator.page_start_addr + to_unsigned(HDR_SIZE,page_allocator.page_start_addr'length); -- incr the page start addr by HDR_SIZE (5), because we wrote header
                                 page_allocator.frame_cnt                <= page_allocator.frame_cnt + 1; -- incr the frame counter
                                 page_allocator_state                    <= ALLOC_PAGE;
                             end if;
                         end if;
                         -- incr flow 
-                        page_allocator.write_header_flow        <= page_allocator.write_header_flow + 1;
+                        page_allocator.write_meta_flow          <= page_allocator.write_meta_flow + 1;
 
-                    when WRITE_TRAILER =>
-                        -- write the last 2 out of 5 words of header and 1 word of trailer, flow = [3:5], then reset to 0
-                        if page_allocator.write_header_flow < 4 then 
-                            page_allocator.write_header_flow        <= page_allocator.write_header_flow + 1; -- incr flow
+                    when WRITE_TAIL =>
+                        -- write the last 2 out of 5 words of header and 1 word of trailer for last frame, flow = [3:5], then reset to 0
+                        if page_allocator.write_meta_flow < 4 then 
+                            page_allocator.write_meta_flow          <= page_allocator.write_meta_flow + 1; -- incr flow
                             page_allocator.page_we                  <= '1'; -- write next word
-                            page_allocator.page_waddr               <= std_logic_vector(page_allocator.frame_start_addr + page_allocator.write_header_flow + 1); -- set the next addr
-                        elsif page_allocator.write_header_flow < 5 then
-                            page_allocator.write_header_flow        <= page_allocator.write_header_flow + 1; -- incr flow
+                            page_allocator.page_waddr               <= std_logic_vector(page_allocator.frame_start_addr_last + page_allocator.write_meta_flow + 1); -- set the next addr
+                        elsif page_allocator.write_meta_flow < 5 then
+                            page_allocator.write_meta_flow          <= page_allocator.write_meta_flow + 1; -- incr flow
                             page_allocator.page_we                  <= '1'; -- write next word
-                            page_allocator.page_waddr               <= std_logic_vector(page_allocator.page_start_addr - 1 - HDR_SIZE); -- note: we used the latest ticket of frame N to derive the frame N-1 trailer address
+                            page_allocator.page_waddr               <= std_logic_vector(page_allocator.frame_start_addr - 1); -- note: we used the latest ticket of frame N to derive the frame N-1 trailer address
                         else
                             -- [reset]
-                            page_allocator.write_header_flow        <= 0;
+                            page_allocator.write_meta_flow          <= 0;
                             page_allocator.write_trailer            <= '0';
                             page_allocator.page_start_addr          <= page_allocator.page_start_addr + HDR_SIZE; -- incr the page start addr by HDR_SIZE (5), because we wrote header
                             page_allocator_state                    <= ALLOC_PAGE;
@@ -1316,7 +1339,7 @@ begin
                     when WRITE_PAGE =>
                         -- update current running timestamp
                         page_allocator.running_ts(47 downto 4)          <= page_allocator.running_ts(47 downto 4) + 1; -- for each round, we increase the tracking ts by one subheader time unit
-                        page_allocator.page_start_addr                  <= unsigned(page_allocator.page_waddr) + page_allocator.page_length + 1; -- update to next page length, note: only 1 cycle
+                        page_allocator.page_start_addr                  <= unsigned(page_allocator.page_waddr) + page_allocator.page_length + to_unsigned(SHD_SIZE,page_allocator.page_start_addr'length); -- update to next page length, note: only 1 cycle, 1 word spacing for trailer
                         page_allocator_state                            <= IDLE;
                         -- write happens here...
                         
@@ -1372,6 +1395,20 @@ begin
                 handle_fifo_is_pending_handle(i)        <= '0';
             end if;
 
+            -- if pending handle valid, ready to read by incr rd_ptr (delayed pending_handle by FIFO_RAW_DELAY cycles)
+            if (handle_fifo_is_pending_handle_d(FIFO_RAW_DELAY)(i) = '1' and handle_fifo_is_pending_handle(i) = '1') then 
+                handle_fifo_is_pending_handle_valid(i)  <= '1';
+            else 
+                handle_fifo_is_pending_handle_valid(i)  <= '0';
+            end if;
+
+            -- if handle valid (in case rptr has changed, q will be delayed)
+            if (block_mover(i).handle_rptr_d(FIFO_RD_DELAY) = block_mover(i).handle_rptr) then 
+                handle_fifo_is_q_valid(i)  <= '1';
+            else 
+                handle_fifo_is_q_valid(i)  <= '0';
+            end if;
+
             -- derive the pointer of read lane 
             if b2p_arb_gnt(i) then 
                 block_mover_if_move_lane_rptr(i)        <= to_unsigned(to_integer(block_mover(i).handle.src) + to_integer(block_mover(i).word_wr_cnt) + 1,LANE_FIFO_ADDR_WIDTH);
@@ -1411,7 +1448,7 @@ begin
                         -- reset 
                         block_mover(i).word_wr_cnt          <= (others => '0');
                         -- pop HOL handle, decide to start or not
-                        if (handle_fifo_is_pending_handle_d(FIFO_RDW_DELAY)(i) = '1' and handle_fifo_is_pending_handle(i) = '1') then -- head (rdptr incr'd, maybe no new handle) and tail (wrptr incr'd, no data yet) of the pipe are valid
+                        if (handle_fifo_is_pending_handle_valid(i) = '1' and handle_fifo_is_q_valid(i) = '1') then -- discrepancy of wptr and rptr, sense the change of both pointers and delay the valid
                             block_mover(i).handle               <= handle_fifo_if_rd(i).handle;
                             block_mover(i).flag                 <= handle_fifo_if_rd(i).flag;
                             if (handle_fifo_if_rd(i).flag = '0') then -- flag = {skip_blk}
@@ -1445,24 +1482,6 @@ begin
                             end if;
                         end if;
 
-                        -- [exception] hit too late
-                        -- if (unsigned(block_mover(i).hit_ts) - gts_counter.running_ts > unsigned(csr.expected_latency)) then 
-                        --     block_mover(i).page_wreq      <= '0';
-                        --     block_mover_state(i)            <= ABORT_WRITE_BLK;
-                        -- end if;
-
-                    when WRITE_BLK_FINISHING => 
-                        -- sending the last word
-                        if (b2p_arb_gnt(i) = '1') then -- [exit] last word accepted
-                            block_mover(i).lane_credit_update       <= to_unsigned(to_integer(block_mover(i).handle.blk_len),block_mover(i).lane_credit_update'length); -- return the credit to sink side (ingress_parser), as if whole blk is cleared
-                            block_mover(i).lane_credit_update_valid <= '1';
-                            block_mover_state(i)                    <= IDLE;
-                            block_mover(i).word_wr_cnt              <= (others => '0'); -- reset write word counter
-                            block_mover(i).handle_rptr              <= block_mover(i).handle_rptr + 1;
-                        else -- spinning, last word not yet accepted
-                            block_mover(i).page_wreq          <= '1'; -- only assert here iff
-                        end if;
-
                     when ABORT_WRITE_BLK =>
                         -- abort the write block, due to late hits
                         block_mover(i).handle_rptr              <= block_mover(i).handle_rptr + 1;
@@ -1488,13 +1507,21 @@ begin
                 end case;
 
                 -- delay chain
-                for j in 1 to FIFO_RDW_DELAY loop
+                for j in 1 to FIFO_RAW_DELAY loop
                     if j = 1 then 
                         handle_fifo_is_pending_handle_d(j)(i)        <= handle_fifo_is_pending_handle(i);
                     else 
                         handle_fifo_is_pending_handle_d(j)(i)        <= handle_fifo_is_pending_handle_d(j-1)(i);
                     end if;
                 end loop; 
+
+                for j in 1 to FIFO_RD_DELAY loop
+                    if j = 1 then 
+                        block_mover(i).handle_rptr_d(j)          <= block_mover(i).handle_rptr;
+                    else 
+                        block_mover(i).handle_rptr_d(j)          <= block_mover(i).handle_rptr_d(j-1);
+                    end if;
+                end loop;
 
                 -- sync reset
                 if i_rst then 
@@ -1523,13 +1550,26 @@ begin
     proc_b2p_arbiter : process (i_clk)
     begin
         if rising_edge (i_clk) then 
-            case arbiter_state is 
+            for i in 0 to N_LANE-1 loop
+                -- update quantum : same amount of hits per subframe
+                if (b2p_arb_gnt(i) = '1' and b2p_arb_req(i) = '1') then -- consuming
+                    b2p_arb.quantum(i)      <= b2p_arb.quantum(i) - 1;
+                end if;
+
+                if (page_allocator_state = FETCH_TICKET and page_allocator_is_tk_future(i) = '0') then -- do not update if lane missing subframe, quantum is for each available subframe
+                    b2p_arb.quantum(i)      <= b2p_arb.quantum(i) + b2p_arb_quantum_update_if_updating(i); -- + min(256,distance_to_full)
+                    if (b2p_arb_gnt(i) = '1' and b2p_arb_req(i) = '1') then -- concurrent consuming
+                        b2p_arb.quantum(i)      <= b2p_arb.quantum(i) - 1 + b2p_arb_quantum_update_if_updating(i); -- we might deficit 1 when updating and consuming, check comb to see how we handle the case
+                    end if;
+                end if;
+            end loop;
+
+            case arbiter_state is -- note : only shift priority when release, so next cycle decision can be new
                 when IDLE => 
                     -- any request to write to page ram from block mover
                     if or_reduce(b2p_arb_req) then 
                         if or_reduce(b2p_arb_gnt) then -- grant in the same cycle
-                            b2p_arb_gnt_int             <= b2p_arb_gnt;
-                            b2p_arb.priority            <= b2p_arb_gnt(N_LANE-2 downto 0) & b2p_arb_gnt(N_LANE-1);-- latch the new priority, shift to left by 1 lane
+                            b2p_arb.sel_mask            <= b2p_arb_gnt;
                             arbiter_state               <= LOCKED;
                         else
                             arbiter_state               <= LOCKING;
@@ -1538,20 +1578,25 @@ begin
 
                 when LOCKING => 
                     if or_reduce(b2p_arb_gnt) then 
-                        b2p_arb_gnt_int             <= b2p_arb_gnt;
-                        b2p_arb.priority            <= b2p_arb_gnt(N_LANE-2 downto 0) & b2p_arb_gnt(N_LANE-1); -- latch the new priority, shift to left by 1 lane
+                        b2p_arb.sel_mask            <= b2p_arb_gnt;
                         arbiter_state               <= LOCKED;
                     end if;
 
                 when LOCKED => 
-                    -- request from granted lane is de-asserted, release the lock
                     for i in 0 to N_LANE-1 loop
-                        if (b2p_arb_gnt_int(i) = '1' and b2p_arb_req(i) = '0') then -- [RELEASE]
-                            arbiter_state           <= IDLE;
+                        -- request from granted lane is de-asserted, release the lock
+                        if (b2p_arb.sel_mask(i) = '1' and b2p_arb_req(i) = '0') then 
+                            arbiter_state               <= IDLE; -- [RELEASE - self]
+                            b2p_arb.priority            <= b2p_arb.sel_mask(N_LANE-2 downto 0) & b2p_arb.sel_mask(N_LANE-1); -- derive the new priority, shift current selection to left by 1 lane
+                        end if;
+                        -- "timeout"
+                        if (b2p_arb.quantum(i) = 1) then
+                            if (b2p_arb_gnt(i) = '1' and b2p_arb_req(i) = '1') then -- continue to consume, it is granted but quantum will be zero, release the lock
+                                arbiter_state               <= IDLE; -- [RELEASE - force]
+                            end if;
                         end if;
                     end loop;
-                    -- timeout
-                        -- ...
+                    -- ...
                 when RESET => 
                     b2p_arb                 <= B2P_ARB_REG_RESET;
                     arbiter_state           <= IDLE;
@@ -1602,7 +1647,9 @@ begin
             b2p_arb_gnt		    <= result2(N_LANE-1 downto 0);
         end if;
 
-        -- b2p_arb_gnt_int         <= b2p_arb_gnt; -- copy the signal to internal use
+        if (arbiter_state = LOCKED) then -- you cannot freely hand over lock during a locked state, you must go back to idle with the new priority to decide who to grant next
+            b2p_arb_gnt         <= b2p_arb.sel_mask;
+        end if;
 
         -- interrupt by page allocator
         if (page_allocator_state = WRITE_PAGE) then 
@@ -1625,16 +1672,6 @@ begin
             end if;
 		end loop;
 
-        -- signal if unlocked
-        -- b2p_arb_unlock      <= '0';
-        -- for i in 0 to N_LANE-1 loop
-        --     if (unsigned(code) = i and or_reduce(b2p_arb_gnt) = '1') then -- if granted this lane
-        --         if (b2p_arb_req(i) = '0' and page_allocator_state /= WRITE_PAGE) then -- request from selected lane is de-asserted and caused not by allocator
-        --             b2p_arb_unlock      <= '1';
-        --         end if;
-        --     end if;
-        -- end loop;
-
         -- conn.
         -- > page RAM
         -- default
@@ -1656,24 +1693,58 @@ begin
             page_ram_we                 <= page_allocator.page_we;
             page_ram_wr_addr            <= page_allocator.page_waddr;
             page_ram_wr_data            <= page_allocator_if_write_page_shr_data;
-        elsif (page_allocator_state = WRITE_HEADER or page_allocator_state = WRITE_TRAILER) then 
+        elsif (page_allocator_state = WRITE_HEAD or page_allocator_state = WRITE_TAIL) then 
             page_ram_we                 <= page_allocator.page_we;
             page_ram_wr_addr            <= page_allocator.page_waddr;
             page_ram_wr_data            <= page_allocator_if_write_page_hdr_data;
         end if;
+
+        -- update quantum function
+        for i in 0 to N_LANE-1 loop
+            if (QUANTUM_MAX - b2p_arb.quantum(i) >= QUANTUM_PER_SUBFRAME) then -- no overflow : safe to update
+                b2p_arb_quantum_update_if_updating(i)      <= QUANTUM_PER_SUBFRAME;
+            else -- overflow : set to max
+                if (b2p_arb_gnt(i) = '1' and b2p_arb_req(i) = '1') then -- if consuming at the same cycle : compensate for deficit 1
+                    b2p_arb_quantum_update_if_updating(i)      <= QUANTUM_MAX - b2p_arb.quantum(i) + 1;
+                else -- if not : update normally (set to max)
+                    b2p_arb_quantum_update_if_updating(i)      <= QUANTUM_MAX - b2p_arb.quantum(i);
+                end if;
+            end if;
+        end loop;
     end process;
 
 
     -- Optional : 
     -- If the downstream IP can track the read pointer, the page ram should be expose to external with conduit. The read side is at the external IP's discretion.
     -- In that case, the frame table and frame tracker are not needed. 
-    -- -- ────────────────────────────────────────────────────────────────────────────────────────────────
-    -- -- @name            FRAME_TABLE
-    -- -- @brief           record the write <=> {FIN TS CNT | READON} <=> read
-    -- -- ────────────────────────────────────────────────────────────────────────────────────────────────
-    -- proc_frame_table_pusher : process (i_clk)
+    -- ────────────────────────────────────────────────────────────────────────────────────────────────
+    -- @name            FRAME_TABLE
+    -- @brief           
+    -- ────────────────────────────────────────────────────────────────────────────────────────────────
+    -- proc_frame_table_mapper : process (i_clk)
+    -- -- Map the input address to writers, i.e., allocator and mover, so they feel continous memeory but there data actually written to page ram with triplet segmentation.
+    -- -- Always write into 2 segments, i.e., "active writing" and "shadow writing", the frame table presenter can void the shadow writing segment, while sacrifising its
+    -- -- segment of "active reading". 
+    -- -- Presenter will show the ouput interface with the frame with lowest global timestamp in this frame table.
+    -- -- The mapper shall use available region (segments of non-active reading) sequentially.
     -- begin
     --     if rising_edge (i_clk) then 
+    --         case frame_table_mapper_state is 
+    --             when IDLE => -- 
+    --                 if (page_allocator_state = WRITE_HEAD and page_allocator.write_meta_flow = 0) then -- latch the start address of this frame 
+    --                     frame_table_mapper.packet_head_addr         <= page_allocator.frame_start_addr;
+    --                 end if;
+
+    --             when ALLOC_FRAME => --
+    --                 if ()
+
+    --             when SEG_
+
+    --             when RESET =>
+
+    --             when others =>
+    --                 null;
+    --         end case;
             
 
 

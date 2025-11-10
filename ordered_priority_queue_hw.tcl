@@ -167,7 +167,7 @@ set_parameter_property LANE_FIFO_WIDTH LONG_DESCRIPTION $dscpt
 set_parameter_property LANE_FIFO_WIDTH DESCRIPTION $dscpt
 
 add_parameter TICKET_FIFO_DEPTH NATURAL 
-set_parameter_property TICKET_FIFO_DEPTH DEFAULT_VALUE 64
+set_parameter_property TICKET_FIFO_DEPTH DEFAULT_VALUE 256
 set_parameter_property TICKET_FIFO_DEPTH DISPLAY_NAME "Ticket FIFO Depth"
 set_parameter_property TICKET_FIFO_DEPTH UNITS None
 set_parameter_property TICKET_FIFO_DEPTH ALLOWED_RANGES 2:256
@@ -177,6 +177,7 @@ set dscpt \
 Enter the size of each ticket FIFO in unit of its data width. <br>
 Ticket FIFO is between <b>ingress parser</b> and <b>page allocator</b>.<br>
 Set accordingly to the expected latency and max delay skew it allows.<br>
+If too many empty subframes, the credit can be consumed quickly. Should be larger than N_SHD to absorb the burst per frame. <br>
 Using credit flow control. <br>
 </html>"
 set_parameter_property TICKET_FIFO_DEPTH LONG_DESCRIPTION $dscpt
