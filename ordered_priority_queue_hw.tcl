@@ -284,7 +284,47 @@ Select the debug level of the IP (affects generation).<br>
 set_parameter_property DEBUG_LV LONG_DESCRIPTION $dscpt
 set_parameter_property DEBUG_LV DESCRIPTION $dscpt
 
+add_parameter FRAME_SERIAL_SIZE NATURAL 
+set_parameter_property FRAME_SERIAL_SIZE DEFAULT_VALUE 16
+set_parameter_property FRAME_SERIAL_SIZE DISPLAY_NAME "Frame Serial Size"
+set_parameter_property FRAME_SERIAL_SIZE UNITS Bits
+set_parameter_property FRAME_SERIAL_SIZE ALLOWED_RANGES 1:32
+set_parameter_property FRAME_SERIAL_SIZE HDL_PARAMETER true
+set dscpt \
+"<html>
+Enter the size of frame serial number in unit of bits. <br>
+Refer to mu3e spec book for details. <br>
+</html>"
+set_parameter_property FRAME_SERIAL_SIZE LONG_DESCRIPTION $dscpt
+set_parameter_property FRAME_SERIAL_SIZE DESCRIPTION $dscpt
 
+add_parameter FRAME_SUBH_CNT_SIZE NATURAL 
+set_parameter_property FRAME_SUBH_CNT_SIZE DEFAULT_VALUE 16
+set_parameter_property FRAME_SUBH_CNT_SIZE DISPLAY_NAME "Frame Subheader Count Size"
+set_parameter_property FRAME_SUBH_CNT_SIZE UNITS Bits
+set_parameter_property FRAME_SUBH_CNT_SIZE ALLOWED_RANGES 1:32
+set_parameter_property FRAME_SUBH_CNT_SIZE HDL_PARAMETER true
+set dscpt \
+"<html>
+Enter the size of frame subheader count in unit of bits. <br>
+Refer to mu3e spec book for details. <br>
+</html>"
+set_parameter_property FRAME_SUBH_CNT_SIZE LONG_DESCRIPTION $dscpt
+set_parameter_property FRAME_SUBH_CNT_SIZE DESCRIPTION $dscpt
+
+add_parameter FRAME_HIT_CNT_SIZE NATURAL 
+set_parameter_property FRAME_HIT_CNT_SIZE DEFAULT_VALUE 16
+set_parameter_property FRAME_HIT_CNT_SIZE DISPLAY_NAME "Frame Hit Count Size"
+set_parameter_property FRAME_HIT_CNT_SIZE UNITS Bits
+set_parameter_property FRAME_HIT_CNT_SIZE ALLOWED_RANGES 1:32
+set_parameter_property FRAME_HIT_CNT_SIZE HDL_PARAMETER true
+set dscpt \
+"<html>
+Enter the size of frame hit count in unit of bits. <br>
+Refer to mu3e spec book for details. <br>
+</html>"
+set_parameter_property FRAME_HIT_CNT_SIZE LONG_DESCRIPTION $dscpt
+set_parameter_property FRAME_HIT_CNT_SIZE DESCRIPTION $dscpt
 
 ################################################ 
 # display items
@@ -318,6 +358,9 @@ add_display_item "" "Packet Format" GROUP ""
 # ---------------------------------------------------------------
 add_display_item  "Packet Format" N_SHD PARAMETER
 add_display_item  "Packet Format" N_HIT PARAMETER
+add_display_item  "Packet Format" FRAME_SERIAL_SIZE PARAMETER
+add_display_item  "Packet Format" FRAME_SUBH_CNT_SIZE PARAMETER
+add_display_item  "Packet Format" FRAME_HIT_CNT_SIZE PARAMETER
 
 # --------------------------------------------------------------- 
 add_display_item "" "Debug" GROUP ""
@@ -397,6 +440,7 @@ proc my_generate { output_name } {
     add_fileset_file "lane_fifo.vhd" Verilog PATH "./alt_ram/lane_fifo.v"
     add_fileset_file "ticket_fifo.vhd" Verilog PATH "./alt_ram/ticket_fifo.v"
     add_fileset_file "page_ram.vhd" Verilog PATH "./alt_ram/page_ram.v"
+    add_fileset_file "tile_fifo.vhd" Verilog PATH "./alt_ram/tile_fifo.v"
 }
 
 

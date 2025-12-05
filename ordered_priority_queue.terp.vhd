@@ -109,9 +109,9 @@
 --                                                                                                                                                                                          
 --                                                                                                     Egress Queue                                                                          
 --
+--                      https://asciiflow.com/#/share/eJztm0Fv2zYUgP8KoXNtb0mLZQF2SNEZDbBiqRtgB3sYVItzhCiyQclZiiBAEfTYgw9G5kOOOeaY05Bfk18ySZYtUSSlR4qSrSAPSiLJ5OP7Hh8p8lm5NFzzDBv7hjc8wdbUweQv0xvatvHKcMwvmASfXA6Mc0w8e%2BwOjP2dVwPjIvi7txeefQnv7O0GZz6%2B8IOLgYF0y9P8%2B9P8a43HTIPRg4GrQQstT%2FNrWLFbTRjVQujo11miFOidXKka%2BBq9w96Q2BN%2FTDglmoOBWsj3%2Bq9%2F2v%2FhT7ZEozA83yQ%2BMi2LoP7PIU4zMRzsjvyTJQFdoikYc6UJ4D51vkiUbj9wwWcgCPAMyn8UVA0I6LjM78e0qUAXXOdcrqW2vlwZHf883TzSHoEjHZkjLGwGFSLBYgOyRpB7Tt%2F8J3BF%2FKMwxoVHpwM0SU%2BU0NWiZRbAf3EtSLQgtVg5cJzx0AyXFGXADt0RwZ4XXYGmTw5Ybkc8CH4vFJCFl2sJkPXGUjaKSripoDTABdyH5T1zZ8GtDgrzI5N4mMSYt7B5pMOxnI9%2FbA9PsY%2B6h93f5fFpzQKRHMt0X8YXHV4bFfQn16asFALNeRGQDQgOZifZMoKHxqLYXqqVWlwgGhfiQRE1t2xT1DIz3chuWmcpRfW4IS0XOymla%2B%2Fc5bTBmV%2BPzGi0%2FoIu6QJQpNjDN485zZZZo0n2YLRhskzf7O%2F%2BSO34JIE4ylNSYsk5CERhUM7yaU%2F7u1tJu8QFz7QxER5P%2BvFeV4VI5No7oY0lNhAhoCyfVxXfe9O1HJx99JbbIKVmmRSECO3E9hEmpK8YjLV2Hc8AEdoVukA7b97Q5dAzQAOmZtarj0VKHwxc1AJ%2FAVsTOK9IclH%2FsxzemGBPds%2Bcs3e%2BqmRh6NYFUts4TBu9XOEpZGHoVgSiHUkmCRpmWri48TVYUdEBTLMkQbNc6dXktNhzxVGAJGMg3hyop9FqzK8%2BMOfsneyMCncBLO210a88ZVDeOuPhKcrL4NSB8pvpMqswBESZL8d%2FfhIjkWpwIPkGjccCEAzLEh%2FG52HmaumQwtRV3rCuwnFI9auucs6DOC51xfd1cLcSlwCF2WbQopICS1WuHG2VYf84xVMsWVc6tZWqudE%2BkxFe%2FzbIfJ4Aza%2F9HadqD%2BiK8ZkdC1hXw3YeG5AX89elntVwpA%2BZ9wJ1ulRb3MipekHIlNL3ZkgpU1aiGw6y4BfkU7sEY%2FRpYg5xSifYWZvFzqzfi7W2%2BaUBqVBWqoDpEvMMF9bjw2Tqbh4GVq8hPXNsfnYUe%2BaYhF8lky2CydYr8eifNaIH4ftIrtZ0SjCFCda6HQ%2FvNvdudOffbyt7HynD20gk24aknPK6y6hSNWwlNfReh5EweZX0YXwEVXrv0NFxT9WAlUghiecS7upKDjJTrEhdkUiCXWdv5bWtNTSDfrTw5%2BkIHXa6VeMys1qccz%2FovS1Fwybv4b3dQgSfmbZruyM0iV7M8qrBTyxizgQFaBAd01AL%2FW07TsvB59gRNlkkUrBSbyII%2B7DNSKYPLTKeTLAVvQszHE9dv1KsXIlb%2FaMXzY9txA1VMJB3Ym0JUGJdfPe2xUgm2Na9YpFthRAtyVbFWugfYvuYDqymQlDB1FQIKpiaBgFSVyQvEMJWEwjlL4UXGVVFTRZJtaA5st0AtET%2Fndc7%2BKBBFSt1AFSq6gVAqVWNqvQB1P%2BySm1H0VsxVTh0I1KT8b%2Bqv9%2BSIwPjyrj6H09bHRY%3D)
+--                      https://asciiflow.com/#/share/eJztnE1v0zAYx7%2BKlWM0xl6g7XbmwIHTLnCohMKajWhdU9LsjWkSmjhy6KEa%2FRCcECfEp%2BknwUmTNnFsx3b81jV%2FRaU0sfOz%2FTTO86%2Bze2fkXfrOsTOOgjAK4ruPX678K9%2FZcYbenR%2FBHfd959qPJkE46jvHBzt95xb%2Be3TYge%2Fukk%2B6R%2FBd7N%2FG8D99B5C0mP1YzL7l25R4nAH1%2ByPivsXs8eRN8qqRp1Z04Fnaw7%2FS17lGqlrRsIFtffy8cCHtB30oVK06rg64fMWQtU1x1WI%2FbFKhok06PHfx8vC9PwE3wXAIbiJvXB0%2B2hekcADp2No62KvKduyWVG4KvMp%2F9iZgFMZgEntR7A8oGHu48%2B%2Bjxx7UNeWQ1JRX1SKvsU3puJimELV5o0KvfqbgKzbHVYv9sEmFijbp8NzF2YevPoR0aPH0e%2BOQIQgbsiUq9Jz9uPls%2BCd9zfKUTcB%2BhJPxBoVF%2BaqS5Sn2Yxe0HbBm8%2FYG2Gby9gbAJvP2BrFsYl58Trh1QBrzdvYbIf7byGmphjYFFy9eGiY46Sdpa5KAj2HKOr6IX3TWw7SLqBxrm5Pq5Q3J0l1sQ2xJv%2BG0E0zAWRidwvGY%2BDGIw3RY9p%2FXiPBH%2BbxUQ5tkixcvDVMSW3tJyA2CyakXDVbGFcCNe5LvGpF4km0s8RbNpkw7BVy42HzXiDixS%2FmuEXECY%2FJdI9qOvNWEWlhVagJr0MFohm3AwWgGbMzBaBbL2meRhrhP%2F6SRMEkU98T3BuBdeHoBTrzRuS%2BZiqBGXkuSE%2F38vr5aPP3VFBtqnReKvYDdN2U8yzTH2lb3ZZnrD2GIB6NzECXxvkz1sZGW%2FXBXTLZfJkJ9gVVZybm%2BcMxl6riVhnTdVUP2Cw3puvUNaeC%2BIDyIH5auSPGuw2AAwms%2FuomC2CcwWDwiaRztgE93YDIeBnESX8lHXXH3hWIxYPfNGc8yz%2BG31YGhRkJ9uJQKKLRnVCErnCGV%2FJ6tYUqXh6vVnpGJrcWekQms0Z7ZmtRbu1pYVWphUyk1k1RiKzGTVAIrNJNUxrKCOa%2FFXSnzvmQ6S6oW%2FaJekqKN26IyZzWt6%2Bavi1ax7I3J%2FkIv%2FdJNpEOqZVE7xEtbA%2BSOBlWI3UExJgSiKBNqHsF3XbdSIPsob0DPxTbgkNSAnlvbALJphPGMNmUE0nipmkU9NWbRmoC%2FLlrFsjcmAwu9tbDCBhIUk3tkGTKjobp8Y0ESwtMxxnHF3CMLsPncIwuARdwj49g8amFVqYWVIqozYzM21pmxGZjizNiLjZ25W1xpSpwZxJaRbDBoW4zD6d1w3FHz5zCcS3GQMxb8E8Z2MwExOR2sx2E6keCIdJadWJM7Y5LnvPsFhKwQ2cVm9BwRkJXouCj8Ecm6yEv2qm4JUb2yjVKovwCfMZTg6ctnLO%2F5NEaqLshRExeE7TgcfcHzYGwvExCTO8F6HOa7Rx8QGr%2FWJ4vQce8yPwGFq0SLJLgYeoEzieIafrJIHNvQk0XiwEafLLL5prSiFlaVWlhVMgfbaLGLSWyhxS4mgRssdjEZywKz5ObhLnOIGw%2FeX0Zh%2Blc2JIu0mkXgQa%2F8wYE93E6xexpN61jENhZPSNoPnmJLUIAyG4a8r64bCAZLj7EbkL8ass7M2ZpHcBBIp5Y4fjn4%2Fp5bBGe1VhLinlsETytiAX%2FrRV9hagrCM%2BDfxpF%2F6cPuh31vfY8nQUKkqgcXWewBlJkn5H113UA7NftVVblHwu7lcdeoSqiT06s6ePjprK4%2BxZJyI6PfI5GErc8jkQSs2yPpOw%2FOw39ET5RX)
 --
---
---    
 --                      - note:
 --                          Ingress Queue: 
 --                              > [I/F]: AVST(x4) <- packetized_data
@@ -151,6 +151,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.math_real.log2;
 use ieee.math_real.ceil;
+--use ieee.math_real.max;
 use ieee.std_logic_misc.or_reduce;
 use ieee.std_logic_misc.and_reduce;
 -- altera-specific
@@ -179,15 +180,18 @@ entity ${output_name} is
         LANE_FIFO_WIDTH         : natural := 40; -- data width of each lane FIFO in unit of bits, must be larger than total(39) = data(32)+datak(4)+eop(1)+sop(1)+err(1)
         TICKET_FIFO_DEPTH       : natural := 256; -- size of each ticket FIFO in unit of its data width, set accordingly to the expected latency / max delay it allows. If too many empty subframes, the credit can be consumed quickly. Should be larger than N_SHD to absorb the burst per frame.
         HANDLE_FIFO_DEPTH       : natural := 64; -- size of each handle FIFO in unit of its data width, set accordingly to the expected latency / max delay it allows. Drop means blk mover too slow
-        PAGE_RAM_DEPTH          : natural := 65536; -- size of the page RAM in unit of its WR data width, need to be larger than the full header packet, which is usually 8k max for each FEB flow
+        PAGE_RAM_DEPTH          : natural := 65536; -- size of the page RAM in unit of its WR data width, need to be larger than the full header packet, which is usually 65k max for each FEB flow
         PAGE_RAM_RD_WIDTH       : natural := 36; -- RD data width of the page RAM in unit of bits, write width = LANE_FIFO_WIDTH, read width can be larger to interface with PCIe DMA
         -- packet format (packet = subheader packet; w/o sop/eop; frame = header packet, w/ sop/eop)
-        N_SHD                   : natural := 256; -- number of subheader, e.g., 256, more than 256 will be dropped
+        N_SHD                   : natural := 256; -- number of subheader, e.g., 256, more than 256 will be dropped. each subframe is 16 cycles
         N_HIT                   : natural := 255; -- number of hits per subheader, e.g., 255, more than 255 will be dropped
         HDR_SIZE                : natural := 5; -- size of header in words, e.g., 5 words
         SHD_SIZE                : natural := 1; -- size of subheader in words, e.g., 1 word
         HIT_SIZE                : natural := 1; -- size of hit in words, e.g., 1 word
         TRL_SIZE                : natural := 1; -- size of trailer in words, e.g., 1 word
+        FRAME_SERIAL_SIZE       : natural := 16; -- size of frame serial number in bits, e.g., 16 bits
+        FRAME_SUBH_CNT_SIZE     : natural := 16; -- size of frame subheader count in bits, e.g., 16 bits
+        FRAME_HIT_CNT_SIZE      : natural := 16; -- size of frame hit count in bits, e.g., 16 bits
         
         -- debug configuration
         DEBUG_LV               : natural := 1 -- debug level, e.g., 0 for no debug, 1 for basic debug
@@ -231,6 +235,18 @@ end entity ${output_name};
 
 architecture rtl of ${output_name} is 
     -- ───────────────────────────────────────────────────────────────────────────────────────
+    --                  FUNCTION 
+    -- ─────────────────────────────────────────────────────────────────────────────────────── 
+    function max(a, b : integer) return integer is
+    begin
+        if a > b then
+            return a;
+        else
+            return b;
+        end if;
+    end function;
+
+    -- ───────────────────────────────────────────────────────────────────────────────────────
     --                  COMMON 
     -- ───────────────────────────────────────────────────────────────────────────────────────
     -- universal 8b10b
@@ -245,13 +261,20 @@ architecture rtl of ${output_name} is
     -- global settings 
     constant MAX_PKT_LENGTH         : natural := HIT_SIZE * N_HIT; -- default is 255, max length of packet to be allocated and in the lane FIFO as a whole, this does not include subheader as it will be in the ticket FIFO
     constant MAX_PKT_LENGTH_BITS    : natural := integer(ceil(log2(real(MAX_PKT_LENGTH)))); -- default is 8 bits
+    constant MIN_PKT_LENGTH         : natural := HDR_SIZE + SHD_SIZE*N_SHD + TRL_SIZE; -- assumption: no hit but all subheaders
     constant FIFO_RAW_DELAY         : natural := 2; -- Read-After-Write. note: need to delay read for 2 cycles after write (2 for RDW="old data", 1 for RDW="new data", YW: check this?)
     constant FIFO_RD_DELAY          : natural := 1; -- once the rptr is changed, typical q is delay by 1 cycle
+    constant SUBFRAME_DURATION_CYCLES : natural := 16;
+    constant FRAME_DURATION_CYCLES  : natural := N_SHD * SUBFRAME_DURATION_CYCLES; -- ex: 16 us frame (n_shr=128)
+    constant EGRESS_DELAY           : natural := 2; -- 2 additional cycles of delay wait for address to set on the page ram complex and data to be valid, so address change |-> 3 cycles data valid
 
     -- ───────────────────────────────────────────────────────────────────────────────────────
     --                  TICKET_FIFO 
     -- ───────────────────────────────────────────────────────────────────────────────────────
-    constant TICKET_FIFO_DATA_WIDTH : natural := 48 + integer(ceil(log2(real(LANE_FIFO_DEPTH)))) + integer(ceil(log2(real(MAX_PKT_LENGTH)))) + 2; -- 48 for ts, 10 for start address, 8 for length of that block associated with this ticket, 2 for frame boundary alert
+    constant TICKET_FIFO_DATA_WIDTH : natural :=
+    max(48 + integer(ceil(log2(real(LANE_FIFO_DEPTH)))) + integer(ceil(log2(real(MAX_PKT_LENGTH)))) + 2,
+        FRAME_SERIAL_SIZE + FRAME_SUBH_CNT_SIZE + FRAME_HIT_CNT_SIZE + 2); -- 48 for ts, 10 for start address, 8 for length of that block associated with this ticket, 2 for frame boundary alert
+                                                                           -- OR serial(16) + subh cnt(16) + hit cnt(16) + 2 for frame sop ticket
     constant TICKET_FIFO_ADDR_WIDTH : natural := integer(ceil(log2(real(TICKET_FIFO_DEPTH)))); -- default is 6 bits
     constant TICKET_FIFO_MAX_CREDIT : natural := TICKET_FIFO_DEPTH-1; -- credit between page allocator (rx) and ingress parser (tx). must be <= TICKET_FIFO_DEPTH. the maximum number of outstanding ticket the ingress parser can issue. 
 
@@ -281,11 +304,21 @@ architecture rtl of ${output_name} is
     constant QUANTUM_PER_SUBFRAME   : unsigned(9 downto 0) := to_unsigned(256,10);
     constant QUANTUM_MAX            : unsigned(9 downto 0) := to_unsigned(2**10-1,10);
 
+    -- FEB pkt, with N_LANE flows, input will be parsed into frames L3 (network layer), near egress we call frame again as pkt as they are ready for L4 (transport layer)
+    -- ───────────────────────────────────────────────────────────────────────────────────────
+    --                  FRAME TABLE
+    -- ───────────────────────────────────────────────────────────────────────────────────────
+    constant N_TILE                     : natural := 5; -- total number of tiles, only one will be read segment
+    constant N_WR_SEG                   : natural := N_TILE - 1; -- other 4 are write segments
+    constant TILE_ID_WIDTH              : natural := integer(ceil(log2(real(N_TILE))));
+    constant MAX_NPKT_IN_ONE_PAGE       : real := real(PAGE_RAM_DEPTH) / real(MIN_PKT_LENGTH);
+    constant TILE_PKT_CNT_WIDTH         : natural := integer(ceil(log2(MAX_NPKT_IN_ONE_PAGE)));
+
     -- ───────────────────────────────────────────────────────────────────────────────────────
     --                  DATA STRUCT FORMAT 
     -- ───────────────────────────────────────────────────────────────────────────────────────
     -- handle = {src[9:0], dst[15:0], blk_len(length)[7:0]}
-        -- bitmap
+    -- bitmap
     constant HANDLE_LENGTH                  : natural := LANE_FIFO_ADDR_WIDTH + PAGE_RAM_ADDR_WIDTH + MAX_PKT_LENGTH_BITS; -- TODO: currently, missing one bit flag
     constant HANDLE_SRC_LO                  : natural := 0;
     constant HANDLE_SRC_HI                  : natural := LANE_FIFO_ADDR_WIDTH-1;
@@ -293,7 +326,7 @@ architecture rtl of ${output_name} is
     constant HANDLE_DST_HI                  : natural := LANE_FIFO_ADDR_WIDTH + PAGE_RAM_ADDR_WIDTH-1;
     constant HANDLE_LEN_LO                  : natural := LANE_FIFO_ADDR_WIDTH + PAGE_RAM_ADDR_WIDTH;
     constant HANDLE_LEN_HI                  : natural := LANE_FIFO_ADDR_WIDTH + PAGE_RAM_ADDR_WIDTH + MAX_PKT_LENGTH_BITS-1;
-        -- declare
+    -- declare
     type handle_t is record 
         src             : unsigned(LANE_FIFO_ADDR_WIDTH-1 downto 0);
         dst             : unsigned(PAGE_RAM_ADDR_WIDTH-1 downto 0);
@@ -306,8 +339,8 @@ architecture rtl of ${output_name} is
         blk_len         => (others => '0')
     );
     
-    -- ticket = {ts[47:0], start addr[9:0], length[9:0], alert_sop_eop[1:0]}
-        -- bitmap
+    -- shr ticket = {alert_sop_eop[1:0] ... ts[47:0], start addr[9:0], length[9:0]}
+    -- bitmap
     constant TICKET_LENGTH                  : natural := TICKET_FIFO_DATA_WIDTH;
     constant TICKET_TS_LO                   : natural := 0;
     constant TICKET_TS_HI                   : natural := 47;
@@ -315,8 +348,17 @@ architecture rtl of ${output_name} is
     constant TICKET_LANE_RD_OFST_HI         : natural := 48+LANE_FIFO_ADDR_WIDTH - 1;
     constant TICKET_BLOCK_LEN_LO            : natural := 48+LANE_FIFO_ADDR_WIDTH;
     constant TICKET_BLOCK_LEN_HI            : natural := 48+LANE_FIFO_ADDR_WIDTH + MAX_PKT_LENGTH_BITS-1;
-    constant TICKET_ALT_EOP_LOC             : natural := 48+LANE_FIFO_ADDR_WIDTH+MAX_PKT_LENGTH_BITS;
-    constant TICKET_ALT_SOP_LOC             : natural := 48+LANE_FIFO_ADDR_WIDTH+MAX_PKT_LENGTH_BITS + 1;
+    -- sop ticket = {alert_sop_eop[1:0] ... serial[15:0], n_subh[15:0], n_hit[15:0]}
+    -- bitmap
+    constant TICKET_SERIAL_LO               : natural := 0;
+    constant TICKET_SERIAL_HI               : natural := FRAME_SERIAL_SIZE-1;
+    constant TICKET_N_SUBH_LO               : natural := FRAME_SERIAL_SIZE;
+    constant TICKET_N_SUBH_HI               : natural := FRAME_SERIAL_SIZE + FRAME_SUBH_CNT_SIZE-1;
+    constant TICKET_N_HIT_LO                : natural := FRAME_SERIAL_SIZE + FRAME_SUBH_CNT_SIZE;
+    constant TICKET_N_HIT_HI                : natural := FRAME_SERIAL_SIZE + FRAME_SUBH_CNT_SIZE + FRAME_HIT_CNT_SIZE-1;
+    -- flags : fixed to the top bit
+    constant TICKET_ALT_EOP_LOC             : natural := TICKET_LENGTH - 2; -- indicate eop (not used for now)
+    constant TICKET_ALT_SOP_LOC             : natural := TICKET_LENGTH - 1; -- indicate sop (sop ticket for page allocator to pass info to ftable mapper)
     type ticket_t is record
         ticket_ts               : unsigned(47 downto 0);
         lane_fifo_rd_offset     : std_logic_vector(LANE_FIFO_ADDR_WIDTH-1 downto 0);
@@ -347,7 +389,6 @@ architecture rtl of ${output_name} is
     --type ingress_parser_${errType}_t is array (0 to N_LANE-1) of std_logic;
     --signal ingress_parser_${errType}            : ingress_parser_${errType}_t;
     @@ }
-    
     
 
     -- ────────────────────────────────────────────────
@@ -384,30 +425,77 @@ architecture rtl of ${output_name} is
     -- ────────────────────────────────────────────────
     -- page ram
     -- ────────────────────────────────────────────────
+    -- component
     component page_ram
     generic (
         DATA_WIDTH      : natural := PAGE_RAM_DATA_WIDTH;
         ADDR_WIDTH      : natural := PAGE_RAM_ADDR_WIDTH
     );
-	port (
-		data		    : in  std_logic_vector(PAGE_RAM_DATA_WIDTH-1 downto 0);
-		read_addr		: in  std_logic_vector(PAGE_RAM_ADDR_WIDTH-1 downto 0);
-		write_addr		: in  std_logic_vector(PAGE_RAM_ADDR_WIDTH-1 downto 0);
-		we		        : in  std_logic;
-		clk		        : in  std_logic;
-		q		        : out std_logic_vector(PAGE_RAM_DATA_WIDTH-1 downto 0)
-	);
-	end component;
-    signal page_ram_wr_data         : std_logic_vector(PAGE_RAM_DATA_WIDTH-1 downto 0);
-    signal page_ram_rd_data         : std_logic_vector(PAGE_RAM_DATA_WIDTH-1 downto 0);
+    port (
+        data            : in  std_logic_vector(PAGE_RAM_DATA_WIDTH-1 downto 0);
+        read_addr       : in  std_logic_vector(PAGE_RAM_ADDR_WIDTH-1 downto 0);
+        write_addr      : in  std_logic_vector(PAGE_RAM_ADDR_WIDTH-1 downto 0);
+        we              : in  std_logic;
+        clk             : in  std_logic;
+        q               : out std_logic_vector(PAGE_RAM_DATA_WIDTH-1 downto 0)
+    );
+    end component;
+    -- comb
+    signal page_ram_we_comb         : std_logic;
+    signal page_ram_wr_addr_comb    : std_logic_vector(PAGE_RAM_ADDR_WIDTH-1 downto 0);
+    signal page_ram_wr_data_comb    : std_logic_vector(PAGE_RAM_DATA_WIDTH-1 downto 0);
+    -- reg
+    signal page_ram_we              : std_logic;
     signal page_ram_wr_addr         : std_logic_vector(PAGE_RAM_ADDR_WIDTH-1 downto 0);
+    signal page_ram_wr_data         : std_logic_vector(PAGE_RAM_DATA_WIDTH-1 downto 0);
     signal page_ram_rd_addr         : std_logic_vector(PAGE_RAM_ADDR_WIDTH-1 downto 0);
-    signal page_ram_we              : std_logic; 
+    signal page_ram_rd_data         : std_logic_vector(PAGE_RAM_DATA_WIDTH-1 downto 0);
+
+    -- ────────────────────────────────────────────────
+    -- page tile
+    -- ────────────────────────────────────────────────
+    -- reg
+    type page_ram_data_t is array (0 to N_TILE-1) of std_logic_vector(PAGE_RAM_DATA_WIDTH-1 downto 0);
+    type page_ram_addr_t is array (0 to N_TILE-1) of std_logic_vector(PAGE_RAM_ADDR_WIDTH-1 downto 0);
+    signal page_tile_wr_data        : page_ram_data_t;
+    signal page_tile_rd_data        : page_ram_data_t;
+    signal page_tile_rd_data_reg    : page_ram_data_t;
+    signal page_tile_wr_addr        : page_ram_addr_t;
+    signal page_tile_rd_addr        : page_ram_addr_t;
+    signal page_tile_we             : std_logic_vector(N_TILE-1 downto 0); 
+
+    -- ────────────────────────────────────────────────
+    -- tile fifo
+    -- ────────────────────────────────────────────────
+    constant TILE_FIFO_ADDR_WIDTH   : natural := 9; -- default to 512, no overflow is expected
+    constant TILE_FIFO_DATA_WIDTH   : natural := 2*PAGE_RAM_ADDR_WIDTH; -- we store meta info = {length, start_address} into this tile fifo as data
+    constant TILE_FIFO_DEPTH        : natural := TILE_FIFO_ADDR_WIDTH**2;
+    component tile_fifo
+    generic (
+        DATA_WIDTH      : natural := TILE_FIFO_DATA_WIDTH;
+        ADDR_WIDTH      : natural := TILE_FIFO_ADDR_WIDTH
+    );
+    port (
+        data            : in  std_logic_vector(TILE_FIFO_DATA_WIDTH-1 downto 0);
+        read_addr       : in  std_logic_vector(TILE_FIFO_ADDR_WIDTH-1 downto 0);
+        write_addr      : in  std_logic_vector(TILE_FIFO_ADDR_WIDTH-1 downto 0);
+        we              : in  std_logic;
+        clk             : in  std_logic;
+        q               : out std_logic_vector(TILE_FIFO_DATA_WIDTH-1 downto 0)
+    );
+    end component;
+    type tile_fifos_data_t is array (0 to N_TILE-1) of std_logic_vector(TILE_FIFO_DATA_WIDTH-1 downto 0);
+    type tile_fifos_addr_t is array (0 to N_TILE-1) of std_logic_vector(TILE_FIFO_ADDR_WIDTH-1 downto 0);
+    signal tile_fifos_wr_data       : tile_fifos_data_t;
+    signal tile_fifos_rd_data       : tile_fifos_data_t;
+    signal tile_fifos_wr_addr       : tile_fifos_addr_t;
+    signal tile_fifos_rd_addr       : tile_fifos_addr_t;
+    signal tile_fifos_we            : std_logic_vector(N_TILE-1 downto 0); 
 
     -- ────────────────────────────────────────────────
     -- ingress parser
     -- ────────────────────────────────────────────────
-    -- state signals
+    -- state 
     subtype update_header_ts_flow_t is integer range 0 to 3;
     type update_header_tss_flow_t is array (0 to N_LANE-1) of update_header_ts_flow_t;
     signal update_header_ts_flow            : update_header_tss_flow_t;
@@ -415,7 +503,7 @@ architecture rtl of ${output_name} is
     type ingress_parsers_state_t is array (0 to N_LANE-1) of ingress_parser_state_t;
     signal ingress_parser_state             : ingress_parsers_state_t;
 
-    -- registers
+    -- register
     type ingress_parser_reg_t is record 
         -- lane
         lane_we                         : std_logic;
@@ -434,7 +522,7 @@ architecture rtl of ${output_name} is
         feb_id                          : std_logic_vector(15 downto 0); -- 16 bits, unique for feb under each subdetector. combined to get the flow id. 
         lane_start_addr                 : unsigned(LANE_FIFO_ADDR_WIDTH-1 downto 0); -- start address of the lane FIFO for this packet, used to detect if the packet is with declared length
         pkg_cnt                         : std_logic_vector(15 downto 0); -- 16 bits, running package index
-        running_shd_cnt                 : std_logic_vector(14 downto 0); -- 15 bits, running header index
+        running_shd_cnt                 : std_logic_vector(15 downto 0); -- 16 bits, running header index
         hit_cnt                         : unsigned(15 downto 0); -- 15 bits, number of hits under this header package
         send_ts                         : std_logic_vector(30 downto 0); -- 31 bits, timestamp of this package departing at the upstream port, used to calculate package header delay
         alert_sop                       : std_logic;
@@ -467,7 +555,7 @@ architecture rtl of ${output_name} is
     type ingress_parsers_reg_t is array (0 to N_LANE-1) of ingress_parser_reg_t;
     signal ingress_parser           : ingress_parsers_reg_t;
 
-    -- combinational wires
+    -- combinational wire
     signal ingress_parser_is_subheader      : std_logic_vector(N_LANE-1 downto 0); -- indicates if the ingress data is a subheader
     signal ingress_parser_is_preamble       : std_logic_vector(N_LANE-1 downto 0); -- indicates if the ingress data is a preamble
     signal ingress_parser_is_trailer        : std_logic_vector(N_LANE-1 downto 0); -- indicates if the ingress data is a trailer
@@ -490,16 +578,16 @@ architecture rtl of ${output_name} is
     -- ────────────────────────────────────────────────
     -- page allocator
     -- ────────────────────────────────────────────────
-    -- constants
+    -- constant
     constant MAX_SHR_CNT_BITS               : natural := integer(ceil(log2(real(N_SHD)))) + CHANNEL_WIDTH; -- default is 8 + 2 bits (for 4 lanes) 
     constant MAX_HIT_CNT_BITS               : natural := integer(ceil(log2(real(N_SHD)))) + integer(ceil(log2(real(N_HIT)))); -- default is 8 + 8 bits 
-    -- state signals
+    -- state
     type page_allocator_state_t is (IDLE, FETCH_TICKET, WRITE_HEAD, WRITE_TAIL, ALLOC_PAGE, WRITE_PAGE, RESET);
     signal page_allocator_state             : page_allocator_state_t;
     subtype alloc_page_flow_t is integer range 0 to N_LANE-1;
     subtype write_meta_flow_t is integer range 0 to 5;
 
-    -- registers
+    -- register
     type ticket_credit_update_t is array (0 to N_LANE-1) of unsigned(TICKET_FIFO_ADDR_WIDTH-1 downto 0);
     type handle_wflag_t is array (0 to N_LANE-1) of std_logic;
     type handle_wptr_t is array (0 to N_LANE-1) of unsigned(HANDLE_FIFO_ADDR_WIDTH-1 downto 0);
@@ -523,8 +611,12 @@ architecture rtl of ${output_name} is
         frame_start_addr                    : unsigned(PAGE_RAM_ADDR_WIDTH-1 downto 0);
         frame_start_addr_last               : unsigned(PAGE_RAM_ADDR_WIDTH-1 downto 0);
         frame_cnt                           : unsigned(35 downto 0); -- if no loss, equal to ts[47:12]
+        frame_serial                        : unsigned(FRAME_SERIAL_SIZE-1 downto 0);
+        frame_serial_this                   : unsigned(FRAME_SERIAL_SIZE-1 downto 0);
         frame_shr_cnt                       : unsigned(MAX_SHR_CNT_BITS-1 downto 0); -- max = N_SHR * N_LANE
+        frame_shr_cnt_this                  : unsigned(MAX_SHR_CNT_BITS-1 downto 0);
         frame_hit_cnt                       : unsigned(MAX_HIT_CNT_BITS-1 downto 0); -- max = N_SHR * N_HIT
+        frame_hit_cnt_this                  : unsigned(MAX_HIT_CNT_BITS-1 downto 0);
         frame_ts                            : unsigned(47 downto 0);
         -- internal
         running_ts                          : unsigned(47 downto 0);
@@ -540,29 +632,38 @@ architecture rtl of ${output_name} is
     end record;
 
     constant PAGE_ALLOCATOR_REG_RESET   : page_allocator_reg_t := (
+        -- ticket
+        ticket_rptr                 => (others => (others => '0')),
+        ticket_credit_update        => (others => (others => '0')),
+        ticket_credit_update_valid  => (others => '0'),
+        -- handle
+        handle_we                   => (others => '0'),
+        handle_wflag                => (others => '0'),
+        handle_wptr                 => (others => (others => '0')),
+        -- page
+        page_we                     => '0',
+        page_wdata                  => (others => '0'),
+        page_waddr                  => (others => '0'),
+        -- frame
+        frame_start_addr            => (others => '0'),
+        frame_start_addr_last       => (others => '0'),
+        frame_cnt                   => (others => '0'),
+        frame_serial                => (others => '0'),
+        frame_serial_this           => (others => '0'),
+        frame_shr_cnt               => (others => '0'),
+        frame_shr_cnt_this          => (others => '0'),
+        frame_hit_cnt               => (others => '0'),
+        frame_hit_cnt_this          => (others => '0'),
+        frame_ts                    => (others => '0'),
+        -- internal
         running_ts                  => (others => '0'),
         lane_masked                 => (others => '0'),
         lane_skipped                => (others => '0'),
         ticket                      => (others => TICKET_DEFAULT),
-        ticket_rptr                 => (others => (others => '0')),
+        page_start_addr             => (others => '0'),
         page_length                 => (others => '0'),
         alloc_page_flow             => 0,
         write_meta_flow             => 0,
-        handle_we                   => (others => '0'),
-        handle_wflag                => (others => '0'),
-        handle_wptr                 => (others => (others => '0')),
-        page_we                     => '0',
-        page_wdata                  => (others => '0'),
-        page_waddr                  => (others => '0'),
-        ticket_credit_update        => (others => (others => '0')),
-        ticket_credit_update_valid  => (others => '0'),
-        page_start_addr             => (others => '0'),
-        frame_start_addr            => (others => '0'),
-        frame_start_addr_last       => (others => '0'),
-        frame_cnt                   => (others => '0'),
-        frame_shr_cnt               => (others => '0'),
-        frame_hit_cnt               => (others => '0'),
-        frame_ts                    => (others => '0'),
         write_trailer               => '0',
         reset_done                  => '0'
     );
@@ -572,10 +673,17 @@ architecture rtl of ${output_name} is
     type page_allocator_is_pending_ticket_d_t is array (1 to FIFO_RAW_DELAY) of std_logic_vector(N_LANE-1 downto 0);
     signal page_allocator_is_pending_ticket_d   : page_allocator_is_pending_ticket_d_t;
 
-    -- combinational wires
+    -- combinational wire
     -- ticket
     type page_allocator_if_read_ticket_ticket_t is array (0 to N_LANE-1) of ticket_t;
     signal page_allocator_if_read_ticket_ticket : page_allocator_if_read_ticket_ticket_t;
+    type page_allocator_if_read_ticket_ticket_sop_t is record 
+        serial                                  : unsigned(FRAME_SERIAL_SIZE-1 downto 0);
+        n_subh                                  : unsigned(MAX_SHR_CNT_BITS-1 downto 0);
+        n_hit                                   : unsigned(MAX_HIT_CNT_BITS-1 downto 0);
+    end record;
+    signal page_allocator_if_read_ticket_ticket_sop     : page_allocator_if_read_ticket_ticket_sop_t;
+    signal page_allocator_is_tk_sop             : std_logic_vector(N_LANE-1 downto 0);
     signal page_allocator_is_tk_future          : std_logic_vector(N_LANE-1 downto 0);
     signal page_allocator_is_tk_past            : std_logic_vector(N_LANE-1 downto 0);
     type page_allocator_if_alloc_blk_start_t is array (0 to N_LANE-1) of std_logic_vector(PAGE_RAM_ADDR_WIDTH-1 downto 0);
@@ -656,14 +764,14 @@ architecture rtl of ${output_name} is
     -- ────────────────────────────────────────────────
     -- arbiter
     -- ────────────────────────────────────────────────
-    -- state signal
+    -- state
     type arbiter_state_t is (IDLE, LOCKING, LOCKED, RESET);
     signal arbiter_state                : arbiter_state_t;
 
-    -- types
+    -- type
     type b2p_arb_quantum_t is array (0 to N_LANE-1) of unsigned(9 downto 0);
 
-    -- registers
+    -- register
     type b2p_arb_t is record
         sel_mask                        : std_logic_vector(N_LANE-1 downto 0);
         priority                        : std_logic_vector(N_LANE-1 downto 0);
@@ -678,15 +786,213 @@ architecture rtl of ${output_name} is
 
     signal b2p_arb              : b2p_arb_t;
 
-    -- combinational wires
+    -- comb
     signal b2p_arb_req                          : std_logic_vector(N_LANE-1 downto 0);
     signal b2p_arb_gnt                          : std_logic_vector(N_LANE-1 downto 0);
     signal b2p_arb_quantum_update_if_updating   : b2p_arb_quantum_t;
-    
+
+    -- ───────────────────────────────────────────────────────────────────────────────────────
+    -- frame table mapper
+    -- ───────────────────────────────────────────────────────────────────────────────────────
+    -- state
+    type ftable_mapper_state_t is (IDLE, PREP_UPDATE, UPDATE_FRAME_TABLE, MODIFY_FRAME_TABLE, RESET);
+    signal ftable_mapper_state                  : ftable_mapper_state_t;
+
+    -- type
+    type wseg_t is record
+        tile_index                      : unsigned(TILE_ID_WIDTH-1 downto 0);
+    end record;
+    type wsegs_t is array (0 to N_WR_SEG-1) of wseg_t;
+    type update_ftable_tindex_t is array (0 to 1) of unsigned(TILE_ID_WIDTH-1 downto 0);
+    type update_ftable_meta_t is array (0 to 1) of std_logic_vector(2*PAGE_RAM_ADDR_WIDTH-1 downto 0);
+    type update_ftable_trltl_t is array (0 to 1) of unsigned(TILE_ID_WIDTH-1 downto 0);
+    type update_ftable_rspan_t is array (0 to 1) of unsigned(PAGE_RAM_ADDR_WIDTH-1 downto 0);
+
+    type ftable_mapper_t is record
+        new_frame_raw_addr              : unsigned(PAGE_RAM_ADDR_WIDTH-1 downto 0);
+        frame_shr_cnt                   : unsigned(MAX_SHR_CNT_BITS-1 downto 0);
+        frame_hit_cnt                   : unsigned(MAX_HIT_CNT_BITS-1 downto 0);
+        wseg                            : wsegs_t;
+        wseg_last                       : wseg_t;
+        leading_wseg                    : unsigned(TILE_ID_WIDTH-1 downto 0);
+        update_ftable_valid             : std_logic_vector(1 downto 0);
+        update_ftable_tindex            : update_ftable_tindex_t;
+        update_ftable_meta_valid        : std_logic_vector(1 downto 0);
+        update_ftable_meta              : update_ftable_meta_t;
+        update_ftable_trltl_valid       : std_logic_vector(1 downto 0);
+        update_ftable_trltl             : update_ftable_trltl_t;
+        update_ftable_rspan_valid       : std_logic_vector(1 downto 0);
+        update_ftable_rspan             : update_ftable_rspan_t;
+        update_ftable_hcmpl             : std_logic_vector(1 downto 0);
+        flush_ftable_valid              : std_logic_vector(1 downto 0);
+    end record;
+
+    -- reg
+    constant WSEG_REG_RESET             : wseg_t := (
+        tile_index                      => (others => '0')
+    );
+    constant FTABLE_MAPPER_REG_RESET    : ftable_mapper_t := (
+        new_frame_raw_addr              => (others => '0'),
+        frame_shr_cnt                   => (others => '0'),
+        frame_hit_cnt                   => (others => '0'),
+        wseg                            => (others => WSEG_REG_RESET),
+        wseg_last                       => WSEG_REG_RESET,
+        leading_wseg                    => (others => '0'),
+        update_ftable_valid             => (others => '0'),
+        update_ftable_tindex            => (others => (others => '0')),
+        update_ftable_meta_valid        => (others => '0'),
+        update_ftable_meta              => (others => (others => '0')),
+        update_ftable_trltl_valid       => (others => '0'),
+        update_ftable_trltl             => (others => (others => '0')),
+        update_ftable_rspan_valid       => (others => '0'),
+        update_ftable_rspan             => (others => (others => '0')),
+        update_ftable_hcmpl             => (others => '0'),
+        flush_ftable_valid              => (others => '0')
+    );
+    signal ftable_mapper                : ftable_mapper_t;
+    signal ftable_mapper_update_ftable_spill_reg    : std_logic;
+    signal ftable_mapper_expand_wr_seg_tile_index_reg   : unsigned(TILE_ID_WIDTH-1 downto 0);
+    signal ftable_mapper_update_ftable_fspan_reg    : unsigned(PAGE_RAM_ADDR_WIDTH-1 downto 0); 
+
+    -- comb 
+    signal ftable_mapper_update_ftable_fspan        : unsigned(PAGE_RAM_ADDR_WIDTH-1 downto 0); 
+    signal ftable_mapper_update_ftable_spill        : std_logic;
+    signal ftable_mapper_update_ftable_trail_span   : unsigned(PAGE_RAM_ADDR_WIDTH-1 downto 0);
+    signal ftable_mapper_leading_wr_seg_tile_index  : natural;
+    signal ftable_mapper_expand_wr_seg_tile_index   : unsigned(TILE_ID_WIDTH-1 downto 0);
+
+
+    -- ───────────────────────────────────────────────────────────────────────────────────────
+    -- frame table tracker
+    -- ───────────────────────────────────────────────────────────────────────────────────────
+    -- state
+    type ftable_tracker_state_t is (IDLE, RECORD_TILE, FLUSH_TILE, RESET);
+    signal ftable_tracker_state                 : ftable_tracker_state_t;
+
+    type tile_ptr_t is array (0 to N_TILE-1) of unsigned(TILE_FIFO_ADDR_WIDTH-1 downto 0);
+    type tile_pkt_wcnt_t is array (0 to N_TILE-1) of unsigned(TILE_PKT_CNT_WIDTH-1 downto 0);
+
+    -- type
+    type ftable_tracker_t is record
+        update_ftable_valid                     : std_logic_vector(1 downto 0);
+        update_ftable_tindex                    : update_ftable_tindex_t;
+        update_ftable_meta_valid                : std_logic_vector(1 downto 0);
+        update_ftable_meta                      : update_ftable_meta_t;
+        update_ftable_trltl_valid               : std_logic_vector(1 downto 0);
+        update_ftable_trltl                     : update_ftable_trltl_t;
+        update_ftable_rspan_valid               : std_logic_vector(1 downto 0);
+        update_ftable_rspan                     : update_ftable_rspan_t;
+        update_ftable_hcmpl                     : std_logic_vector(1 downto 0);
+        flush_ftable_valid                      : std_logic_vector(1 downto 0);
+        tile_cmpl                               : std_logic_vector(N_TILE-1 downto 0);
+        tile_we                                 : std_logic_vector(N_TILE-1 downto 0);
+        tile_wptr                               : tile_ptr_t;
+        tile_wdata                              : tile_fifos_data_t;
+        tile_pkt_wcnt                           : tile_pkt_wcnt_t;
+    end record;
+
+    signal ftable_tracker                       : ftable_tracker_t;
+    constant FTABLE_TRACKER_REG_RESET           : ftable_tracker_t := (
+        update_ftable_valid                     => (others => '0'),
+        update_ftable_tindex                    => (others => (others => '0')),
+        update_ftable_meta_valid                => (others => '0'),
+        update_ftable_meta                      => (others => (others => '0')),
+        update_ftable_trltl_valid               => (others => '0'),
+        update_ftable_trltl                     => (others => (others => '0')),
+        update_ftable_rspan_valid               => (others => '0'),
+        update_ftable_rspan                     => (others => (others => '0')),
+        update_ftable_hcmpl                     => (others => '0'),
+        flush_ftable_valid                      => (others => '0'),
+        tile_cmpl                               => (others => '0'),
+        tile_we                                 => (others => '0'),
+        tile_wptr                               => (others => (others => '0')),
+        tile_wdata                              => (others => (others => '0')),
+        tile_pkt_wcnt                           => (others => (others => '0'))
+    );
+
+    -- ───────────────────────────────────────────────────────────────────────────────────────  
+    -- tile regs 
+    -- ───────────────────────────────────────────────────────────────────────────────────────
+    -- type
+    type trail_tid_t is array (0 to N_TILE-1) of unsigned(TILE_ID_WIDTH downto 0); -- msb is valid
+    type remainder_span_t is array (0 to N_TILE-1) of unsigned(PAGE_RAM_ADDR_WIDTH downto 0); -- msb is valid
+
+    type tile_regs_t is record
+        trail_tid                   : trail_tid_t;
+        remainder_span              : remainder_span_t;
+        tile_cmpl                   : std_logic_vector(N_TILE-1 downto 0);
+    end record;
+
+    -- signal 
+    signal tile_regs                : tile_regs_t;
+    constant TILE_REGS_REG_RESET    : tile_regs_t := (
+        trail_tid                   => (others => (others => '0')),
+        remainder_span              => (others => (others => '0')),
+        tile_cmpl                   => (others => '0')
+    );
+
+    -- ───────────────────────────────────────────────────────────────────────────────────────
+    -- frame table presenter
+    -- ───────────────────────────────────────────────────────────────────────────────────────
+    -- state
+    type ftable_presenter_state_t is (IDLE, WAIT_FOR_COMPLETE, PRESENTING, RESTART, WARPING, RESET);
+    signal ftable_presenter_state                   : ftable_presenter_state_t;
+
+    -- type
+    type rseg_t is record
+        tile_index                      : unsigned(TILE_ID_WIDTH-1 downto 0);
+    end record;
+    constant RSET_REG_RESET             : rseg_t := (
+        tile_index                      => (others => '0')
+    );
+
+    type tile_rptr_t is array (0 to N_TILE-1) of unsigned(TILE_FIFO_ADDR_WIDTH-1 downto 0);
+    type page_ram_rptr_t is array (0 to N_TILE-1) of unsigned(PAGE_RAM_ADDR_WIDTH-1 downto 0);
+    type tile_pkt_rcnt_t is array (0 to N_TILE-1) of unsigned(TILE_PKT_CNT_WIDTH-1 downto 0);
+
+    type ftable_presenter_t is record
+        rseg                            : rseg_t;
+        tile_rptr                       : tile_rptr_t;
+        page_ram_rptr                   : page_ram_rptr_t;
+        output_data_valid               : std_logic_vector(EGRESS_DELAY downto 0);
+        output_data                     : std_logic_vector(PAGE_RAM_DATA_WIDTH-1 downto 0);
+        trailing_active                 : std_logic;
+        void_trail_tid                  : std_logic;
+        void_remainder_span             : std_logic;
+        trailing_tile_index             : unsigned(TILE_ID_WIDTH-1 downto 0);
+        tile_pkt_rcnt                   : tile_pkt_rcnt_t;
+    end record;
+
+    constant FTABLE_PRESENTER_REG_RESET : ftable_presenter_t := (
+        rseg                            => RSET_REG_RESET,
+        tile_rptr                       => (others => (others => '0')),
+        page_ram_rptr                   => (others => (others => '0')),
+        output_data_valid               => (others => '0'),
+        output_data                     => (others => '0'),
+        trailing_active                 => '0',
+        void_trail_tid                  => '0',
+        void_remainder_span             => '0',
+        trailing_tile_index             => (others => '0'),
+        tile_pkt_rcnt                   => (others => (others => '0'))
+    ); 
+
+    -- signal
+    signal ftable_presenter             : ftable_presenter_t;
+
+    -- comb
+    signal ftable_presenter_is_new_pkt_head         : std_logic;
+    signal ftable_presenter_is_new_pkt_complete     : std_logic;
+    signal ftable_presenter_trail_tile_id           : unsigned(TILE_ID_WIDTH-1 downto 0);
+    signal ftable_presenter_is_rd_tile_in_range     : std_logic;
+    signal ftable_presenter_output_is_trailer       : std_logic;
+    signal ftable_presenter_leading_header_addr     : unsigned(PAGE_RAM_ADDR_WIDTH-1 downto 0);
+    signal ftable_presenter_packet_length           : unsigned(PAGE_RAM_ADDR_WIDTH-1 downto 0);
+    signal ftable_presenter_is_pkt_spilling         : std_logic;
+
 
 begin
 
-    assert PAGE_RAM_ADDR_WIDTH = 16 report "PAGE RAM ADDR NON-DEFAULT (16 bits)" severity warning; 
+    assert PAGE_RAM_ADDR_WIDTH = 16 report "PAGE RAM ADDR NON-DEFAULT (16 bits)" severity warning;
 
     -- io mapping 
     i_clk           <= d_clk;
@@ -697,7 +1003,7 @@ begin
     -- ────────────────────────────────────────────────
     @@ for {set i 0} {$i < [llength $fifos_names]} {incr i} {
     @@ set name [lindex $fifos_names $i]
-    gen_${name} : for i in 0 to N_LANE-1 generate
+    gen_${name}s : for i in 0 to N_LANE-1 generate
         c_${name} : $name
         port map (
             data            => ${name}s_wr_data(i),       
@@ -711,17 +1017,38 @@ begin
     @@ }
 
     -- ────────────────────────────────────────────────
-    -- page ram
+    -- page rams = page tile complex
     -- ────────────────────────────────────────────────
-    c_page_ram : page_ram
-        port map (
-            data            => page_ram_wr_data,       
-            read_addr       => page_ram_rd_addr, 
-            write_addr      => page_ram_wr_addr,      
-            we              => page_ram_we,     
-            clk             => i_clk,    
-            q               => page_ram_rd_data    
-        );
+    gen_page_rams : for i in 0 to N_TILE-1 generate
+        c_page_ram : page_ram
+            port map (
+                data            => page_tile_wr_data(i),       
+                read_addr       => page_tile_rd_addr(i), 
+                write_addr      => page_tile_wr_addr(i),      
+                we              => page_tile_we(i),     
+                clk             => i_clk,    
+                q               => page_tile_rd_data(i)    
+            );
+    end generate;
+
+    -- ────────────────────────────────────────────────
+    -- tile fifos
+    -- ────────────────────────────────────────────────
+    gen_tile_fifos : for i in 0 to N_TILE-1 generate
+        c_tile_fifo : tile_fifo
+            generic map (
+                ADDR_WIDTH      => TILE_FIFO_ADDR_WIDTH,
+                DATA_WIDTH      => TILE_FIFO_DATA_WIDTH
+            )
+            port map (
+                data            => tile_fifos_wr_data(i),       
+                read_addr       => tile_fifos_rd_addr(i), 
+                write_addr      => tile_fifos_wr_addr(i),      
+                we              => tile_fifos_we(i),     
+                clk             => i_clk,    
+                q               => tile_fifos_rd_data(i)    
+            );
+    end generate;
 
     -- ────────────────────────────────────────────────────────────────────────────────────────────────
     -- @name            INGRESS PARSER
@@ -772,7 +1099,8 @@ begin
             ingress_parser_if_preamble_dt_type(i)         <= asi_ingress_data(i)(31 downto 26);
             ingress_parser_if_preamble_feb_id(i)          <= asi_ingress_data(i)(23 downto 8);
 
-            -- assemble write ticket FIFO ticket = {ts[47:0], start addr[9:0], length[9:0], alert_sop_eop[1:0]}
+            -- assemble write ticket FIFO wdata
+            -- shr ticket = {alert_sop_eop[1:0] ... ts[47:0], start addr[9:0], length[9:0]}
             if (ingress_parser_state(i) = IDLE) then -- IDLE : use comb ts and subh_cnt from ingress data
                 ingress_parser_if_write_ticket_data(i)(TICKET_TS_HI downto TICKET_TS_LO)                        <= std_logic_vector(ingress_parser(i).running_ts)(47 downto 12) & ingress_parser_if_subheader_shd_ts(i) & "0000"; -- ts[47:0]
                 ingress_parser_if_write_ticket_data(i)(TICKET_LANE_RD_OFST_HI downto TICKET_LANE_RD_OFST_LO)    <= std_logic_vector(ingress_parser(i).lane_start_addr); -- start address of the lane FIFO
@@ -781,6 +1109,13 @@ begin
                 ingress_parser_if_write_ticket_data(i)(TICKET_TS_HI downto TICKET_TS_LO)                        <= std_logic_vector(ingress_parser(i).running_ts)(47 downto 0); -- ts[47:0]
                 ingress_parser_if_write_ticket_data(i)(TICKET_LANE_RD_OFST_HI downto TICKET_LANE_RD_OFST_LO)    <= std_logic_vector(ingress_parser(i).lane_start_addr); -- start address of the lane FIFO
                 ingress_parser_if_write_ticket_data(i)(TICKET_BLOCK_LEN_HI downto TICKET_BLOCK_LEN_LO)          <= std_logic_vector(ingress_parser(i).shd_len); -- length of the subheader (8-bit)
+            end if;
+            
+            -- sop ticket = {alert_sop_eop[1:0] ... frame_serial[15:0], subheader_cnt[15:0], hits_count[15:0]}
+            if (ingress_parser_state(i) = UPDATE_HEADER_TS and update_header_ts_flow(i) = 3) then 
+                ingress_parser_if_write_ticket_data(i)(TICKET_SERIAL_HI downto TICKET_SERIAL_LO)                <= (ingress_parser(i).pkg_cnt);
+                ingress_parser_if_write_ticket_data(i)(TICKET_N_SUBH_HI downto TICKET_N_SUBH_LO)                <= (ingress_parser(i).running_shd_cnt);
+                ingress_parser_if_write_ticket_data(i)(TICKET_N_HIT_HI downto TICKET_N_HIT_LO)                  <= std_logic_vector(ingress_parser(i).hit_cnt);
             end if;
             ingress_parser_if_write_ticket_data(i)(TICKET_ALT_EOP_LOC)      <= ingress_parser(i).alert_eop;
             ingress_parser_if_write_ticket_data(i)(TICKET_ALT_SOP_LOC)      <= ingress_parser(i).alert_sop;
@@ -855,7 +1190,6 @@ begin
                                         ingress_parser(i).ticket_we     <= '1';
                                         ingress_parser(i).ticket_wptr   <= ingress_parser(i).ticket_wptr + 1; -- increment write pointer as we will write to ticet FIFO
                                         ingress_parser(i).ticket_wdata  <= ingress_parser_if_write_ticket_data(i); -- see proc_assemble_write_ticket_fifo
-                                        ingress_parser(i).alert_sop     <= '0'; -- deassert alert of sop to page allocator once is written in a ticket once
                                         ingress_parser(i).alert_eop     <= '0'; -- deassert alert of eop to page allocator once is written in a ticket once
                                         -- ticket credit
                                         if page_allocator.ticket_credit_update_valid(i) then -- update ticket credit, substract 1 ticket 
@@ -867,7 +1201,7 @@ begin
                                     end if;
                                 end if;
                             elsif (asi_ingress_startofpacket(i)(0) and ingress_parser_is_preamble(i) and not ingress_parser_hdr_err(i)) then -- [preamble]
-                                -- mark the sop (send speical ticket to page allocator to indicate the start of frame, so the page allocator increase page wptr by offset of count * HDR_SIZE)
+                                -- mark the sop (send special ticket to page allocator to indicate the start of frame, so the page allocator increase page wptr by offset of count * HDR_SIZE)
                                 ingress_parser(i).alert_sop     <= '1';
                                 -- update header ts (48-bit)
                                 ingress_parser(i).dt_type       <= ingress_parser_if_preamble_dt_type(i); -- 6 bits, dt_type : ...
@@ -875,7 +1209,7 @@ begin
                                 update_header_ts_flow(i)        <= 0;
                                 ingress_parser_state(i)         <= UPDATE_HEADER_TS; 
                             elsif ingress_parser_is_trailer(i) then -- [trailer]
-                                -- write speical ticket for page allocator, to signal end of frame, so the page allocator increase page wptr by offset of count * TRL_SIZE)
+                                -- write special ticket for page allocator, to signal end of frame, so the page allocator increase page wptr by offset of count * TRL_SIZE)
                                 ingress_parser(i).alert_eop     <= '1';
                             end if;
 
@@ -908,13 +1242,29 @@ begin
                                     ingress_parser(i).pkg_cnt                       <= asi_ingress_data(i)(15 downto 0);
                                     update_header_ts_flow(i)                        <= update_header_ts_flow(i) + 1; -- next state
                                 when 2 => -- [debug word 0]
-                                    ingress_parser(i).running_shd_cnt               <= asi_ingress_data(i)(30 downto 16);
+                                    ingress_parser(i).running_shd_cnt               <= asi_ingress_data(i)(31 downto 16);
                                     ingress_parser(i).hit_cnt                       <= unsigned(asi_ingress_data(i)(15 downto 0));
                                     update_header_ts_flow(i)                        <= update_header_ts_flow(i) + 1; -- next state
                                 when 3 => -- [debug word 1]
                                     ingress_parser(i).send_ts                       <= asi_ingress_data(i)(30 downto 0);
                                     update_header_ts_flow(i)                        <= 0; -- reset state, as return 0 (no error)
-                                    ingress_parser_state(i)                         <= IDLE; -- go back to IDLE
+                                    -- write header ticket 
+                                    if (ingress_parser(i).ticket_credit /= 0) then -- ok : enough credit
+                                        ingress_parser(i).alert_sop                     <= '0'; -- deassert alert of sop to page allocator once is written in a ticket once
+                                        ingress_parser(i).ticket_we                     <= '1';
+                                        -- ticket credit
+                                        if page_allocator.ticket_credit_update_valid(i) then -- update ticket credit, substract 1 ticket 
+                                            ingress_parser(i).ticket_credit <= ingress_parser(i).ticket_credit + page_allocator.ticket_credit_update(i) - 1; 
+                                        else
+                                            ingress_parser(i).ticket_credit <= ingress_parser(i).ticket_credit - 1;
+                                        end if;
+                                        ingress_parser(i).ticket_wptr                   <= ingress_parser(i).ticket_wptr + 1; -- increment write pointer as we will write to ticet FIFO
+                                        ingress_parser(i).ticket_wdata                  <= ingress_parser_if_write_ticket_data(i); -- see proc_assemble_write_ticket_fifo
+                                        ingress_parser_state(i)                         <= IDLE; -- go back to IDLE
+                                    else
+                                        ingress_parser_state(i)                         <= MASK_PKT_EXTENDED; -- need to mask full frame as we cannot write the sop ticket, the mapper cannot predict how much memory to allocate in the page ram
+                                    end if;
+                                    
                                 when others =>
                                     null;
                             end case;
@@ -1063,6 +1413,8 @@ begin
     -- @description     process the read ticket FIFO data, assemble the page RAM write data and ticket write data
     -- ────────────────────────────────────────────────────────────────────────────────────────────────
     proc_page_allocator_comb : process (all)
+        variable total_subh             : unsigned(15 downto 0);
+        variable total_hit              : unsigned(15 downto 0);
     begin
         -- assemble write handle to handle FIFO 
         for i in 0 to N_LANE-1 loop
@@ -1084,13 +1436,13 @@ begin
 
         -- assemble page RAM write data
         -- [subheader]
+        page_allocator_if_write_page_shr_data                   <= (others => '0'); -- default
         page_allocator_if_write_page_shr_data(35 downto 32)     <= "0001"; -- byte_is_k[3:0] = "0001" for subheader
         page_allocator_if_write_page_shr_data(31 downto 24)     <= std_logic_vector(page_allocator.running_ts(11 downto 4)); -- ts[11:4] of the subheader
         page_allocator_if_write_page_shr_data(23 downto 8)      <= std_logic_vector(to_unsigned(to_integer(unsigned(std_logic_vector(page_allocator.page_length))),23-8+1)); -- hit cnt of this subheader
         page_allocator_if_write_page_shr_data(7 downto 0)       <= K237; -- write subheader begin marker
         -- [header]
-        page_allocator_if_write_page_hdr_data(35 downto 32)     <= "0000"; -- default
-        page_allocator_if_write_page_hdr_data(31 downto 0)      <= (others => '0'); -- default
+        page_allocator_if_write_page_hdr_data                   <= (others => '0'); -- default
         case page_allocator.write_meta_flow is -- [0:2] in WRITE_HEAD (this frame), [3:4] in WRITE_TAIL (last frame)
             when 0 => 
                 page_allocator_if_write_page_hdr_data(35 downto 32)     <= "0001";
@@ -1099,15 +1451,15 @@ begin
                 page_allocator_if_write_page_hdr_data(7 downto 0)       <= K285;
             when 1 =>
                 page_allocator_if_write_page_hdr_data(35 downto 32)     <= "0000";
-                page_allocator_if_write_page_hdr_data(31 downto 0)      <= std_logic_vector(page_allocator.frame_ts(TICKET_TS_HI downto TICKET_TS_HI-31)); -- ts[47:16]
+                page_allocator_if_write_page_hdr_data(31 downto 0)      <= std_logic_vector(page_allocator.frame_ts(47 downto 16)); -- ts[47:16]
             when 2 => 
                 page_allocator_if_write_page_hdr_data(35 downto 32)     <= "0000";
-                page_allocator_if_write_page_hdr_data(31 downto 16)     <= std_logic_vector(page_allocator.frame_ts(TICKET_TS_HI-32 downto TICKET_TS_LO)); -- ts[15:0], check ts[11:0] should be zero
-                page_allocator_if_write_page_hdr_data(15 downto 0)      <= std_logic_vector(page_allocator.frame_cnt(15 downto 0));
+                page_allocator_if_write_page_hdr_data(31 downto 16)     <= std_logic_vector(page_allocator.frame_ts(15 downto 0)); -- ts[15:0], check ts[11:0] should be zero
+                page_allocator_if_write_page_hdr_data(15 downto 0)      <= std_logic_vector(page_allocator.frame_serial_this(15 downto 0));
             when 3 => 
                 page_allocator_if_write_page_hdr_data(35 downto 32)     <= "0000";
-                page_allocator_if_write_page_hdr_data(16+MAX_SHR_CNT_BITS-1 downto 16)     <= std_logic_vector(page_allocator.frame_shr_cnt); -- must be <= 15 bits, sum of all lanes, default = 256*N_LANE
-                page_allocator_if_write_page_hdr_data(15 downto 0)      <= std_logic_vector(page_allocator.frame_hit_cnt); -- 16 bits, sum of all lanes of decleared hits
+                page_allocator_if_write_page_hdr_data(16+MAX_SHR_CNT_BITS-1 downto 16)      <= std_logic_vector(page_allocator.frame_shr_cnt); -- must be <= 15 bits, sum of all lanes, default = 256*N_LANE
+                page_allocator_if_write_page_hdr_data(MAX_HIT_CNT_BITS-1 downto 0)          <= std_logic_vector(page_allocator.frame_hit_cnt); -- 16 bits, sum of all lanes of decleared hits
             when 4 =>
                 page_allocator_if_write_page_hdr_data(35 downto 32)     <= "0000";
                 page_allocator_if_write_page_hdr_data(30 downto 0)      <= std_logic_vector(ingress_parser(0).running_ts(30 downto 0)); -- TODO: change this to global timestamp counter (gts) once it is available
@@ -1124,21 +1476,28 @@ begin
         
 
         -- deassemble ticket read from ticket FIFO
+        total_subh          := (others => '0');
+        total_hit           := (others => '0');
         for i in 0 to N_LANE-1 loop
             page_allocator_if_read_ticket_ticket(i).ticket_ts                   <= unsigned(ticket_fifos_rd_data(i)(TICKET_TS_HI downto TICKET_TS_LO)); -- ts[47:0]
             page_allocator_if_read_ticket_ticket(i).lane_fifo_rd_offset         <= ticket_fifos_rd_data(i)(TICKET_LANE_RD_OFST_HI downto TICKET_LANE_RD_OFST_LO); -- start address of the lane RAM
             page_allocator_if_read_ticket_ticket(i).block_length                <= unsigned(ticket_fifos_rd_data(i)(TICKET_BLOCK_LEN_HI downto TICKET_BLOCK_LEN_LO)); -- length of the subheader (8-bit), excl subheader itself
             page_allocator_if_read_ticket_ticket(i).alert_eop                   <= ticket_fifos_rd_data(i)(TICKET_ALT_EOP_LOC); -- alert eop, incr page wptr and dst 1
             page_allocator_if_read_ticket_ticket(i).alert_sop                   <= ticket_fifos_rd_data(i)(TICKET_ALT_SOP_LOC); -- alert sop, incr page wptr and dst 5
+            total_subh      := total_subh + unsigned(ticket_fifos_rd_data(i)(TICKET_N_SUBH_HI downto TICKET_N_SUBH_LO));
+            total_hit       := total_hit + unsigned(ticket_fifos_rd_data(i)(TICKET_N_HIT_HI downto TICKET_N_HIT_LO));
         end loop;
+        page_allocator_if_read_ticket_ticket_sop.serial                     <= unsigned(ticket_fifos_rd_data(0)(TICKET_SERIAL_HI downto TICKET_SERIAL_LO)); -- serial number of the frame, TODO: check against mismatch
+        page_allocator_if_read_ticket_ticket_sop.n_subh                     <= total_subh(MAX_SHR_CNT_BITS-1 downto 0); -- number of subheaders in frames of all lanes
+        page_allocator_if_read_ticket_ticket_sop.n_hit                      <= total_hit(MAX_HIT_CNT_BITS-1 downto 0); -- number of hits in frames of all lanes
 
-        -- -- derive sop
-        -- page_allocator_is_tk_sop        <= '0';
-        -- for i in 0 to N_LANE-1 loop
-        --     if ticket_fifos_rd_data(i)(TICKET_ALT_SOP_LOC) then 
-        --         page_allocator_is_tk_sop        <= '1';
-        --     end if;
-        -- end loop;
+        -- derive sop
+        page_allocator_is_tk_sop        <= (others => '0');
+        for i in 0 to N_LANE-1 loop
+            if ticket_fifos_rd_data(i)(TICKET_ALT_SOP_LOC) then 
+                page_allocator_is_tk_sop(i)        <= '1';
+            end if;
+        end loop;
 
         -- -- derive eop
         -- page_allocator_is_tk_eop        <= '0';
@@ -1150,12 +1509,25 @@ begin
 
         -- derive timeliness of the showahead ticket
         for i in 0 to N_LANE-1 loop
-            if (unsigned(ticket_fifos_rd_data(i)(47 downto 0)) > page_allocator.running_ts) then 
+            if page_allocator_is_tk_sop(i) = '1' then -- sop ticket
+                if unsigned(ticket_fifos_rd_data(i)(TICKET_SERIAL_HI downto TICKET_SERIAL_LO)) >= page_allocator.frame_serial + 1 then -- check serial number, TODO: handle the frame serial overflow case
+                    page_allocator_is_tk_future(i)              <= '1'; -- "stall"
+                else 
+                    page_allocator_is_tk_future(i)              <= '0'; -- ok : expected
+                end if;
+            elsif (unsigned(ticket_fifos_rd_data(i)(47 downto 0)) > page_allocator.running_ts) then -- shr ticket
                 page_allocator_is_tk_future(i)              <= '1';
             else 
                 page_allocator_is_tk_future(i)              <= '0';
             end if;
-            if (unsigned(ticket_fifos_rd_data(i)(47 downto 0)) < page_allocator.running_ts) then 
+
+            if page_allocator_is_tk_sop(i) = '1' then -- sop ticket
+                if unsigned(ticket_fifos_rd_data(i)(TICKET_SERIAL_HI downto TICKET_SERIAL_LO)) < page_allocator.frame_serial then -- check serial number
+                    page_allocator_is_tk_past(i)                <= '1'; -- "drop"
+                else 
+                    page_allocator_is_tk_past(i)                <= '0'; -- ok : expected
+                end if;
+            elsif (unsigned(ticket_fifos_rd_data(i)(47 downto 0)) < page_allocator.running_ts) then -- shr ticket
                 page_allocator_is_tk_past(i)                <= '1';
             else 
                 page_allocator_is_tk_past(i)                <= '0';
@@ -1178,7 +1550,7 @@ begin
 
     gen_alloc_by_mode : if (MODE = "MERGING") generate -- mode = {MERGING MULTIPLEXING}
         proc_page_allocator : process (i_clk)
-        -- @description     allocate a page in the page RAM once all tickets are available. ipc to block mover to start the routine.
+        -- @description     allocate a page in the page RAM once all tickets are available. ipc to block mover to start the routine with handle.
         -- @note            can skip late ticket
         --                  return credit to write_ticket_fifo
         begin
@@ -1196,15 +1568,15 @@ begin
                     when IDLE => 
                         -- standby state, wait for ticket FIFO to have pending tickets
                         if (and_reduce(page_allocator_is_pending_ticket_d(FIFO_RAW_DELAY)) = '1' and and_reduce(page_allocator_is_pending_ticket) = '1') then -- all lanes have packet, check both tail and head of the delay chain
-                            page_allocator_state            <= FETCH_TICKET; -- fetch HOL ticket from ticket FIFO  
+                            page_allocator_state                    <= FETCH_TICKET; -- fetch HOL ticket from ticket FIFO  
                         end if;
 
                     when FETCH_TICKET =>
                         -- fetch a ticket from ticket FIFO and derive its timeliness. since we only write ticket if the lane has fully written to lane, it guarantees block mover can start right away
                         -- default
-                        page_allocator.lane_masked            <= (others => '0'); -- assume not to mask
-                        page_allocator.lane_skipped           <= (others => '0'); -- assume not to skip
-                        page_allocator.page_length            <= (others => '0'); -- reset page length, to be calculated in ALLOC_PAGE
+                        page_allocator.lane_masked              <= (others => '0'); -- assume not to mask
+                        page_allocator.lane_skipped             <= (others => '0'); -- assume not to skip
+                        page_allocator.page_length              <= (others => '0'); -- reset page length, to be calculated in ALLOC_PAGE
 
                         for i in 0 to N_LANE-1 loop -- do it in parallel
                             -- return 1 unit of credit to ingress parser (ack we read the ticket)
@@ -1212,19 +1584,27 @@ begin
                             page_allocator.ticket_credit_update_valid(i)    <= '1';
 
                             -- fetch (read) ticket from ticket FIFO
-                            -- ticket = {ts[47:0], start addr[9:0], length[9:0]}
-                            if page_allocator_is_tk_future(i) then
-                                -- [exception] maybe a skip, as we read ticket with timestamp in the future : do not read this ticket yet, reserve for next round 
-                                page_allocator.ticket_rptr(i)                 <= page_allocator.ticket_rptr(i); -- ignore ticket for this round
-                                page_allocator.lane_masked(i)                 <= '1'; -- mask this lane, do not allocate in the page and let the block mover to ignore it
-                                page_allocator.ticket_credit_update_valid(i)  <= '0'; -- note: do not return ticket, otherwise credit overflow
+                            -- sop ticket = {alert_sop_eop[1:0] ... serial[15:0], n_subh[15:0], n_hit[15:0]}
+                            if and_reduce(page_allocator_is_tk_sop) = '1' then -- all lanes have sop, otherwise proceed with lagging lanes
+                                -- [sop ticket] update sum(frame shr cnt) and sum(hit cnt) and serial number 
+                                page_allocator.frame_shr_cnt_this               <= page_allocator_if_read_ticket_ticket_sop.n_subh; -- summed
+                                page_allocator.frame_hit_cnt_this               <= page_allocator_if_read_ticket_ticket_sop.n_hit; -- summed
+                                page_allocator.frame_serial_this                <= page_allocator_if_read_ticket_ticket_sop.serial; -- unified, note: we cannot allow all lanes to skip one frame, it will stuck
+                                page_allocator.frame_serial                     <= page_allocator.frame_serial + 1; -- self-incr of tracking frame serial number
+                                page_allocator.ticket_rptr(i)                   <= page_allocator.ticket_rptr(i) + 1; -- read ack, incr ticket read pointer by 1   
+                            -- shr ticket = {alert_sop_eop[1:0] ... ts[47:0], start addr[9:0], length[9:0]}
+                            elsif page_allocator_is_tk_future(i) then
+                                -- [exception] maybe a skip, as we read ticket with timestamp in the future : "stall" do not read this ticket yet, reserve for next round 
+                                page_allocator.ticket_rptr(i)                   <= page_allocator.ticket_rptr(i); -- ignore ticket for this round
+                                page_allocator.lane_masked(i)                   <= '1'; -- mask this lane, do not allocate in the page and let the block mover to ignore it
+                                page_allocator.ticket_credit_update_valid(i)    <= '0'; -- note: do not return ticket, otherwise credit overflow
                             elsif page_allocator_is_tk_past(i) then
-                                -- [exception] maybe a glitch, as we read ticket with timestamp in the past : drop this ticket
-                                page_allocator.ticket_rptr(i)                 <= page_allocator.ticket_rptr(i) + 1; -- drop ack, incr ticket read pointer by 1
-                                page_allocator.lane_skipped(i)                <= '1'; -- skip this lane, do not allocate in the page and let the block mover to skip it
+                                -- [exception] maybe a glitch, as we read ticket with timestamp in the past : "drop" this ticket
+                                page_allocator.ticket_rptr(i)                   <= page_allocator.ticket_rptr(i) + 1; -- drop ack, incr ticket read pointer by 1
+                                page_allocator.lane_skipped(i)                  <= '1'; -- skip this lane, do not allocate in the page and let the block mover to skip it
                             else 
-                                page_allocator.ticket(i)                      <= page_allocator_if_read_ticket_ticket(i); -- latch the ticket from ticket FIFO
-                                page_allocator.ticket_rptr(i)                 <= page_allocator.ticket_rptr(i) + 1; -- read ack, incr ticket read pointer by 1   
+                                page_allocator.ticket(i)                        <= page_allocator_if_read_ticket_ticket(i); -- latch the ticket from ticket FIFO
+                                page_allocator.ticket_rptr(i)                   <= page_allocator.ticket_rptr(i) + 1; -- read ack, incr ticket read pointer by 1   
                             end if;
                         end loop;
 
@@ -1232,17 +1612,22 @@ begin
                         page_allocator_state                          <= ALLOC_PAGE; -- allocate a page in the page RAM
                         page_allocator.alloc_page_flow                <= 0; -- reset entry point, TODO: to speed up, find the leading 1 of unmask and unskip lane, and the next...
 
-                        -- exit condition 1 : if any lane has sop (marks new frame packet, need to write 5 words of header), first write header (optional: write last trailer), then allocate page
+                        -- exit condition 1 : if all lanes have sop (marks new frame packet, need to write 5 words of header), first write header (optional: write last trailer), then allocate page
                         for i in 0 to N_LANE-1 loop
-                            if (page_allocator_if_read_ticket_ticket(i).alert_sop = '1' and page_allocator.frame_ts /= page_allocator_if_read_ticket_ticket(i).ticket_ts) then -- comb derived from page_allocator_if_read_ticket_ticket(all). only generate once
-                                page_allocator.page_we                      <= '1'; -- write in the first cycle of WRITE_HEAD
-                                page_allocator.page_waddr                   <= std_logic_vector(page_allocator.page_start_addr + to_unsigned(TRL_SIZE,page_allocator.page_start_addr'length)); -- set the top address of this frame in page RAM
-                                page_allocator.frame_start_addr             <= page_allocator.page_start_addr + to_unsigned(TRL_SIZE,page_allocator.page_start_addr'length); -- remember the top address of this frame in page RAM
-                                page_allocator.frame_start_addr_last        <= page_allocator.frame_start_addr; -- latch last frame starting address, need this to write debug info the last frame
-                                page_allocator.frame_ts                     <= page_allocator_if_read_ticket_ticket(i).ticket_ts; -- remember the running ts of this frame
-                                page_allocator.write_trailer                <= page_allocator_if_read_ticket_ticket(i).alert_eop;
-                                page_allocator_state                        <= WRITE_HEAD;
-                                page_allocator.write_meta_flow              <= 0;       
+                            if (and_reduce(page_allocator_is_tk_sop) = '1') then -- only generate once per frame
+                                page_allocator.page_we                          <= '1'; -- write in the first cycle of WRITE_HEAD
+                                if (page_allocator_if_read_ticket_ticket(i).alert_eop) then -- second+ frame of this run will be addressed to give space for the trailer of last frame 
+                                    page_allocator.page_waddr                       <= std_logic_vector(page_allocator.page_start_addr + to_unsigned(TRL_SIZE,page_allocator.page_start_addr'length)); -- set the top address of this frame in page RAM
+                                    page_allocator.frame_start_addr                 <= page_allocator.page_start_addr + to_unsigned(TRL_SIZE,page_allocator.page_start_addr'length); -- remember the top address of this frame in page RAM
+                                else -- first frame of this run will be addressed at 0
+                                    page_allocator.page_waddr                       <= std_logic_vector(page_allocator.page_start_addr); -- first frame, not need to leave space for trailer
+                                    page_allocator.frame_start_addr                 <= page_allocator.page_start_addr;
+                                end if;
+                                page_allocator.frame_start_addr_last            <= page_allocator.frame_start_addr; -- latch last frame starting address, need this to write debug info the last frame
+                                page_allocator.frame_ts                         <= unsigned(page_allocator.frame_ts) + to_unsigned(FRAME_DURATION_CYCLES,page_allocator.frame_ts'length); -- incr frame ts after seen one aligned sop tickets
+                                page_allocator.write_trailer                    <= page_allocator_if_read_ticket_ticket(i).alert_eop; -- it will be there fore the frame serial > 1, frame 0 has no trailer
+                                page_allocator_state                            <= WRITE_HEAD;
+                                page_allocator.write_meta_flow                  <= 0;       
                             end if;
                         end loop;
                     
@@ -1258,9 +1643,9 @@ begin
                                 page_allocator_state                    <= WRITE_TAIL;
                             else -- [exit 0] allocate page for all lanes with tickets obtained, because this is the first frame of this run, no trailer needs to write
                                 page_allocator.page_we                  <= '0'; -- stop write
-                                page_allocator.page_start_addr          <= page_allocator.page_start_addr + to_unsigned(HDR_SIZE,page_allocator.page_start_addr'length); -- incr the page start addr by HDR_SIZE (5), because we wrote header
+                                page_allocator.page_start_addr          <= page_allocator.frame_start_addr + to_unsigned(HDR_SIZE,page_allocator.page_start_addr'length); -- incr the page start addr by HDR_SIZE (5) from this frame top, because we wrote header
                                 page_allocator.frame_cnt                <= page_allocator.frame_cnt + 1; -- incr the frame counter
-                                page_allocator_state                    <= ALLOC_PAGE;
+                                page_allocator_state                    <= IDLE; -- go back and get one shr ticket
                             end if;
                         end if;
                         -- incr flow 
@@ -1281,7 +1666,10 @@ begin
                             page_allocator.write_meta_flow          <= 0;
                             page_allocator.write_trailer            <= '0';
                             page_allocator.page_start_addr          <= page_allocator.page_start_addr + HDR_SIZE; -- incr the page start addr by HDR_SIZE (5), because we wrote header
-                            page_allocator_state                    <= ALLOC_PAGE;
+                            page_allocator_state                    <= IDLE; -- go back and get one shr ticket
+                            -- reset counters of last frame
+                            page_allocator.frame_shr_cnt            <= (others => '0');
+                            page_allocator.frame_hit_cnt            <= (others => '0');
                         end if;
                         
                     when ALLOC_PAGE => 
@@ -1291,48 +1679,43 @@ begin
 
                         -- flow : write to handle FIFO to start block mover
                         for i in 0 to N_LANE-1 loop -- do it in serial
-                            -- from the ticket keep track of subheader and hit counter in this frame
-                            if (page_allocator.lane_skipped(i) = '0' and page_allocator.lane_masked(i) = '0') then 
-                                page_allocator.frame_shr_cnt            <= page_allocator.frame_shr_cnt + 1; -- incr subheader count for this frame, iff the ticket was accepted (neither dropped nor halted)     
-                                page_allocator.frame_hit_cnt            <= page_allocator.frame_hit_cnt + page_allocator.ticket(i).block_length; -- incr hit count for this frame, iff the ticket was accepted (neither dropped nor halted)     
-                            end if;
-                    
-                            -- write handle = {dst, src, length} to block mover, in a sequence lane by lane (better timing), from ticket = {ts[47:0], start addr[9:0], length[9:0]}
+                            -- select this lane 
                             if (page_allocator.alloc_page_flow = i) then    
-                                if (page_allocator.ticket(i).block_length = 0) then 
-                                    -- do not write : no data in lane
+                                -- from the ticket keep track of subheader and hit counter in this frame
+                                if (page_allocator.lane_skipped(i) = '0' and page_allocator.lane_masked(i) = '0') then 
+                                    page_allocator.frame_shr_cnt            <= page_allocator.frame_shr_cnt + 1; -- incr subheader count for this frame, iff the ticket was accepted (neither dropped nor halted)     
+                                    page_allocator.frame_hit_cnt            <= page_allocator.frame_hit_cnt + page_allocator.ticket(i).block_length; -- incr hit count for this frame, iff the ticket was accepted (neither dropped nor halted)     
+                                end if;
+
+                                -- write handle = {dst, src, length} to block mover, in a sequence lane by lane (better timing), from ticket = {ts[47:0], start addr[9:0], length[9:0]}
+                                if (page_allocator.ticket(i).block_length = 0) then -- do not write : no data in lane
                                     page_allocator.handle_we(i)                 <= '0'; -- TODO: remove it
-                                elsif page_allocator.lane_skipped(i) then
-                                    -- past ticket : mover must skip this lane
+                                elsif page_allocator.lane_skipped(i) then -- past ticket : mover must skip this lane
                                     page_allocator.handle_we(i)                 <= '1'; -- write skip flag to block mover
                                     page_allocator.handle_wflag(i)              <= '1'; -- flag = {skip_blk}, drop this block and return credit through lane FIFO
                                     page_allocator.handle_wptr(i)               <= page_allocator.handle_wptr(i) + 1;
-                                elsif page_allocator.lane_masked(i) then 
-                                    -- future ticket : mover can continue with current task
+                                elsif page_allocator.lane_masked(i) then -- future ticket : mover can continue with current task
                                     page_allocator.handle_we(i)                 <= '0'; -- TODO: remove it
-                                else 
-                                    -- write ok
+                                else -- write ok
                                     page_allocator.handle_we(i)                 <= '1'; -- write to the handle FIFO
                                     page_allocator.handle_wptr(i)               <= page_allocator.handle_wptr(i) + 1;
+                                    -- calculate the page length (n_hits) as sum of block lengths
+                                    page_allocator.page_length                  <= page_allocator.page_length + page_allocator.ticket(i).block_length;
                                 end if;
-                            end if;
-
-                            -- calculate the page length as sum of block lengths
-                            if (page_allocator.alloc_page_flow = i) then 
-                                page_allocator.page_length              <= page_allocator.page_length + page_allocator.ticket(i).block_length;
-                            end if;
-
-                            -- end of ALLOC_PAGE state
-                            if (page_allocator.alloc_page_flow = N_LANE-1) then 
-                                -- prepare to write subheader to page RAM, write page data is in comb
-                                page_allocator.page_we                          <= '1';
-                                page_allocator.page_waddr                       <= std_logic_vector(page_allocator.page_start_addr); -- page boundary address = subheader line = first line of this page
                             end if;
                         end loop; 
                                 
-                        -- exit condition : if all lanes have been allocated a block in the page
+                        -- [exit] : if all lanes have been allocated a block in the page
                         if (page_allocator.alloc_page_flow = N_LANE-1) then 
-                            page_allocator_state                        <= WRITE_PAGE; -- write the page, i.e., subheader, to the page RAM
+                            if (and_reduce(page_allocator.lane_masked)) then -- no subheader from all lanes, we do not write this subheader of this frame
+                                page_allocator_state                        <= IDLE; -- all mask, all lane ahead, move ts forward, but do not write page ram
+                                page_allocator.running_ts(47 downto 4)      <= page_allocator.running_ts(47 downto 4) + 1; -- skip this subheader time tick
+                            else
+                                page_allocator_state                        <= WRITE_PAGE; -- write the page, i.e., subheader, to the page ram
+                                -- prepare to write subheader to page ram, write page data is in comb
+                                page_allocator.page_we                      <= '1';
+                                page_allocator.page_waddr                   <= std_logic_vector(page_allocator.page_start_addr); -- page boundary address = subheader line = first line of this page
+                            end if;
                             page_allocator.alloc_page_flow              <= 0; -- reset flow, return 0 as OK
                         end if;
 
@@ -1380,7 +1763,7 @@ begin
 
     -- ────────────────────────────────────────────────────────────────────────────────────────────────
     -- @name            BLOCK MOVER
-    -- @brief           move the subheader from lane FIFO into page RAM according to the handle 
+    -- @brief           given handle, DMA of data frame lane into page ram
     -- @input           
     -- @output          
     -- @description     can skip late hits and retrieve next handle
@@ -1474,10 +1857,11 @@ begin
                         if (block_mover(i).page_wreq = '1' and b2p_arb_gnt(i) = '1') then 
                             block_mover(i).word_wr_cnt          <= block_mover(i).word_wr_cnt + 1; -- advance word count
                             -- [exit] end of block reached now
-                            if (block_mover_if_move_lane_rptr(i) - 1 = block_mover(i).handle.src + block_mover(i).handle.blk_len) then -- 0 + 32 = 31 -> stop
+                            if (block_mover(i).word_wr_cnt + 1 = block_mover(i).handle.blk_len) then -- stop at the last word
                                 block_mover(i).lane_credit_update       <= to_unsigned(to_integer(block_mover(i).handle.blk_len),block_mover(i).lane_credit_update'length); -- return the credit to sink side (ingress_parser), as if whole blk is cleared
                                 block_mover(i).lane_credit_update_valid <= '1';
                                 block_mover(i).handle_rptr              <= block_mover(i).handle_rptr + 1;
+                                block_mover(i).page_wreq                <= '0'; -- stop write as the last word has been grant in this cycle already
                                 block_mover_state(i)                    <= IDLE;
                             end if;
                         end if;
@@ -1535,13 +1919,7 @@ begin
         end if;
 
     end process;
-
-    -- use Frame table {FIN TS CNT | READON} to track the number of packets in the frame buffer
-    -- write will write to the left column. read will write to the right column. once READON = '1' and next cycle FIN is still '1' (ack of lock). write may not overwrite or revoke this package. 
-    -- if read side is valid, show the next leading packet.
-    -- use RD Debug I/F to check the fill level.  
-
-            
+          
     
     -- ────────────────────────────────────────────────────────────────────────────────────────────────
     -- @name            B2P_ARBITER 
@@ -1605,6 +1983,13 @@ begin
                     null;
             end case;
 
+            -- conn.
+            -- > page RAM
+            -- latch the comb to reg
+            page_ram_we                 <= page_ram_we_comb;
+            page_ram_wr_addr            <= page_ram_wr_addr_comb;
+            page_ram_wr_data            <= page_ram_wr_data_comb;
+
             if (i_rst = '1') then 
                 arbiter_state            <= RESET;
             end if;
@@ -1617,9 +2002,14 @@ begin
         variable result1        : std_logic_vector(N_LANE*2-1 downto 0);
         variable result2        : std_logic_vector(N_LANE*2-1 downto 0);
         variable code           : std_logic_vector(CHANNEL_WIDTH-1 downto 0); -- find leading '1' position in binary
-        variable count          : unsigned(CHANNEL_WIDTH downto 0); -- TODO: fix this! (fixed) 0 to 127, for msb, it is overflow, which means all '1's. 
+        variable count          : unsigned(CHANNEL_WIDTH downto 0); 
         variable req            : std_logic; -- request from the current selected lane
     begin
+        -- default
+        code                    := (others => '0');
+        count                   := (others => '0');
+        req                     := '0';
+
         -- input of request
         for i in 0 to N_LANE-1 loop
             b2p_arb_req(i)     <= block_mover(i).page_wreq;
@@ -1675,28 +2065,28 @@ begin
         -- conn.
         -- > page RAM
         -- default
-        page_ram_we                 <= '0';
-        page_ram_wr_addr            <= (others => '0');
-        page_ram_wr_data            <= (others => '0');
+        page_ram_we_comb                 <= '0';
+        page_ram_wr_addr_comb            <= (others => '0');
+        page_ram_wr_data_comb            <= (others => '0');
         -- priority 1 : granted block mover if selected
         for i in 0 to N_LANE-1 loop
             if (unsigned(code) = i and or_reduce(b2p_arb_gnt) = '1') then -- if granted this lane
                 if block_mover(i).page_wreq then -- if request is been made
-                    page_ram_we             <= '1';
-                    page_ram_wr_addr        <= std_logic_vector(block_mover(i).page_wptr + block_mover(i).word_wr_cnt); 
-                    page_ram_wr_data        <= lane_fifos_rd_data(i);
+                    page_ram_we_comb             <= '1';
+                    page_ram_wr_addr_comb        <= std_logic_vector(block_mover(i).page_wptr + block_mover(i).word_wr_cnt); 
+                    page_ram_wr_data_comb        <= lane_fifos_rd_data(i);
                 end if;
             end if;
         end loop;
         -- priority 0 : page allocator
         if (page_allocator_state = WRITE_PAGE) then 
-            page_ram_we                 <= page_allocator.page_we;
-            page_ram_wr_addr            <= page_allocator.page_waddr;
-            page_ram_wr_data            <= page_allocator_if_write_page_shr_data;
+            page_ram_we_comb                 <= page_allocator.page_we;
+            page_ram_wr_addr_comb            <= page_allocator.page_waddr;
+            page_ram_wr_data_comb            <= page_allocator_if_write_page_shr_data;
         elsif (page_allocator_state = WRITE_HEAD or page_allocator_state = WRITE_TAIL) then 
-            page_ram_we                 <= page_allocator.page_we;
-            page_ram_wr_addr            <= page_allocator.page_waddr;
-            page_ram_wr_data            <= page_allocator_if_write_page_hdr_data;
+            page_ram_we_comb                 <= page_allocator.page_we;
+            page_ram_wr_addr_comb            <= page_allocator.page_waddr;
+            page_ram_wr_data_comb            <= page_allocator_if_write_page_hdr_data;
         end if;
 
         -- update quantum function
@@ -1713,64 +2103,740 @@ begin
         end loop;
     end process;
 
-
     -- Optional : 
     -- If the downstream IP can track the read pointer, the page ram should be expose to external with conduit. The read side is at the external IP's discretion.
     -- In that case, the frame table and frame tracker are not needed. 
     -- ────────────────────────────────────────────────────────────────────────────────────────────────
-    -- @name            FRAME_TABLE
-    -- @brief           
+    -- @name            FTABLE_MAPPER
+    -- @brief           map the allocator write access to (single) page ram to (multiple) page tile
     -- ────────────────────────────────────────────────────────────────────────────────────────────────
-    -- proc_frame_table_mapper : process (i_clk)
-    -- -- Map the input address to writers, i.e., allocator and mover, so they feel continous memeory but there data actually written to page ram with triplet segmentation.
-    -- -- Always write into 2 segments, i.e., "active writing" and "shadow writing", the frame table presenter can void the shadow writing segment, while sacrifising its
-    -- -- segment of "active reading". 
-    -- -- Presenter will show the ouput interface with the frame with lowest global timestamp in this frame table.
-    -- -- The mapper shall use available region (segments of non-active reading) sequentially.
-    -- begin
-    --     if rising_edge (i_clk) then 
-    --         case frame_table_mapper_state is 
-    --             when IDLE => -- 
-    --                 if (page_allocator_state = WRITE_HEAD and page_allocator.write_meta_flow = 0) then -- latch the start address of this frame 
-    --                     frame_table_mapper.packet_head_addr         <= page_allocator.frame_start_addr;
-    --                 end if;
+    proc_frame_table_mapper : process (i_clk)
+    -- Map the input address to writers, i.e., allocator and mover, so they feel continous memeory but there data actually written to page ram with segmentation.
+    -- Always write into N-1 segments, i.e., "active writing" and "shadow writing", the frame table presenter can void the shadow writing segment, while sacrifising its
+    -- segment of "active reading". 
+    -- Presenter will show the ouput interface with the frame with lowest global timestamp in this frame table.
+    -- The mapper shall use available region (segments of non-active reading) sequentially.
+    -- wr : segment alpha and beta. alpha is current writing, beta is to be write if wrap-around. alpha and beta are mapped to individual tile number 
 
-    --             when ALLOC_FRAME => --
-    --                 if ()
+    -- mapper - tracker - presenter
+    begin
+        if rising_edge (i_clk) then 
+            -- default 
+            ftable_mapper.update_ftable_valid               <= (others => '0');
+            ftable_mapper.update_ftable_meta_valid          <= (others => '0');
+            ftable_mapper.update_ftable_trltl_valid         <= (others => '0');
+            ftable_mapper.update_ftable_rspan_valid         <= (others => '0');
+            ftable_mapper.flush_ftable_valid                <= (others => '0');
+            ftable_mapper.update_ftable_hcmpl               <= (others => '0');
 
-    --             when SEG_
+            case ftable_mapper_state is 
+                when IDLE => -- start by detecting allocator is writing a new head or finishing the last tail
+                    if (page_allocator_state = WRITE_HEAD and page_allocator.write_meta_flow = 0) then -- latch the meta info of this frame 
+                        ftable_mapper.new_frame_raw_addr        <= page_allocator.frame_start_addr;
+                        ftable_mapper.frame_shr_cnt             <= page_allocator.frame_shr_cnt_this / to_unsigned(N_LANE,page_allocator.frame_shr_cnt_this'length); -- declared sum of all subheaders at the ingress, it may be different from the aggregated ones
+                        ftable_mapper.frame_hit_cnt             <= page_allocator.frame_hit_cnt_this;
+                        ftable_mapper_state                     <= PREP_UPDATE;
+                    elsif (page_allocator_state = WRITE_TAIL and page_allocator.write_meta_flow = 3) then -- write to the tile flag pipeline as the packet is ready and complete
+                        ftable_mapper_state                     <= MODIFY_FRAME_TABLE;
+                    end if;
 
-    --             when RESET =>
+                when PREP_UPDATE => -- intermediate state between IDLE and UPDATE_FRAME_TABLE
+                    if ftable_presenter_state /= WARPING then 
+                        ftable_mapper_state                     <= UPDATE_FRAME_TABLE;
+                    end if;
+                    ftable_mapper_update_ftable_spill_reg       <= ftable_mapper_update_ftable_spill; -- if current wr pkt will spill
+                    ftable_mapper.leading_wseg                  <= to_unsigned(ftable_mapper_leading_wr_seg_tile_index,TILE_ID_WIDTH); -- before re-structure the tiles, latch the current leading wr tile index
+                    ftable_mapper_expand_wr_seg_tile_index_reg  <= ftable_mapper_expand_wr_seg_tile_index; -- if spill, what tile will its remainder part go to
+                    ftable_mapper_update_ftable_fspan_reg       <= ftable_mapper_update_ftable_fspan; -- if spill, what is the span of its remainder in that tile it will go
 
-    --             when others =>
-    --                 null;
-    --         end case;
-            
+                when UPDATE_FRAME_TABLE => -- write to tracker given active write segment as we have seen a new header 
+                    if (ftable_presenter_state = WARPING) then -- contention of modifying the frame table, wait here for 1 cycle until rd is finished warping to new tile
+                        -- manage the write segments : shrink the wr seg 
+                        if (ftable_presenter.rseg.tile_index = ftable_mapper.wseg(0).tile_index) then -- wait then scroll, but keep the last seg unchanged, effectively shrink the wr seg
+                            for i in 0 to N_WR_SEG-2 loop
+                                ftable_mapper.wseg(i).tile_index            <= ftable_mapper.wseg(i+1).tile_index;
+                            end loop;
+                        end if;
+                    else 
+                        -- manage the write segments : expand or scroll
+                        if ftable_mapper_update_ftable_spill_reg then 
+                            -- a) write will cross segment, generating spillover packet
+                            -- re-arrange the wr regs to tile mapping
+                            if (ftable_mapper.leading_wseg < N_WR_SEG-1) then -- when still space in the wr head : expand wr seg
+                                for i in 0 to N_WR_SEG-1 loop
+                                    if (i > ftable_mapper.leading_wseg) then 
+                                        ftable_mapper.wseg(i).tile_index        <= ftable_mapper_expand_wr_seg_tile_index_reg; -- expand the tiles of wr seg, rewrite the tile index of upper wr seg to new index
+                                    end if;
+                                end loop;
+                            else -- when wr segs are fully expanded : scroll segs
+                                for i in 0 to N_WR_SEG-2 loop -- 0 to 2
+                                    ftable_mapper.wseg(i).tile_index            <= ftable_mapper.wseg(i+1).tile_index;
+                                end loop;
+                                ftable_mapper.wseg(N_WR_SEG-1).tile_index       <= ftable_mapper_expand_wr_seg_tile_index_reg; -- set the active tile to correct tile index
+                            end if;
 
+                            -- note: there are two heads of mapper -> tracker 
+                            -- write to tracker[tile_index] = {header_addr, *where_is_trail} 
+                            --         *tracker[tile_index] = {remainder_span} 
+                            -- * : only for spillover case
+                            ftable_mapper.update_ftable_valid           <= "11";
+                            ftable_mapper.update_ftable_tindex(0)       <= ftable_mapper.leading_wseg; -- write to current tile
+                            ftable_mapper.update_ftable_meta_valid(0)   <= '1';
+                            ftable_mapper.update_ftable_meta(0)         <= std_logic_vector(ftable_mapper_update_ftable_fspan_reg) & std_logic_vector(ftable_mapper.new_frame_raw_addr); -- content
+                            ftable_mapper.update_ftable_trltl_valid(0)  <= '1';
+                            ftable_mapper.update_ftable_trltl(0)        <= ftable_mapper_expand_wr_seg_tile_index_reg; -- where is trail
+                            
+                            ftable_mapper.update_ftable_tindex(1)       <= ftable_mapper_expand_wr_seg_tile_index_reg; -- write to next tile
+                            ftable_mapper.update_ftable_rspan_valid(1)  <= '1';
+                            ftable_mapper.update_ftable_rspan(1)        <= ftable_mapper_update_ftable_trail_span;
+                            ftable_mapper.flush_ftable_valid(1)         <= '1';
+                        else
+                            -- b) write frame will not cross segment, normal write
+                            -- write to tracker[tile_index] = {header_addr}
+                            ftable_mapper.update_ftable_valid           <= "01";
+                            ftable_mapper.update_ftable_tindex(0)       <= ftable_mapper.leading_wseg; -- write to current tile
+                            ftable_mapper.update_ftable_meta_valid(0)   <= '1';
+                            ftable_mapper.update_ftable_meta(0)         <= std_logic_vector(ftable_mapper_update_ftable_fspan_reg) & std_logic_vector(ftable_mapper.new_frame_raw_addr);
+                        end if;
+                        ftable_mapper.wseg_last.tile_index              <= ftable_mapper.leading_wseg; -- record last write to which tile
+                        ftable_mapper_state                             <= IDLE; -- write will be done in 1 cycle
+                    end if;
 
+                when MODIFY_FRAME_TABLE => -- modify to reflect that the last written packet is ready
+                    ftable_mapper_state                         <= IDLE; -- write will be done in 1 cycle
+                    -- write to tracker[tile_index] = {header_addr}
+                    ftable_mapper.update_ftable_valid           <= "01";
+                    ftable_mapper.update_ftable_tindex(0)       <= ftable_mapper.wseg_last.tile_index;
+                    ftable_mapper.update_ftable_hcmpl(0)        <= '1';
+                    
+                when RESET =>
+                    ftable_mapper                           <= FTABLE_MAPPER_REG_RESET;
+                    ftable_mapper_state                     <= IDLE;
 
+                when others =>
+                    null;
+            end case;
 
-    --     end if;
+            -- connections
+            -- > page ram wr
+            -- page_tile_wr_addr               <= (others => (others => '0'));
+            -- page_tile_wr_data               <= (others => (others => '0'));
+            page_tile_we                    <= (others => '0');
+            for i in 0 to N_TILE-1 loop
+                if (ftable_mapper.leading_wseg = i) then 
+                    page_tile_wr_addr(i)            <= page_ram_wr_addr;
+                    page_tile_wr_data(i)            <= page_ram_wr_data;
+                    page_tile_we(i)                 <= page_ram_we;
+                    if ftable_mapper_update_ftable_spill_reg then -- wr address near overflow : quite switch tile, the wr side will not notice
+                        if (unsigned(page_tile_wr_addr(i)) = to_unsigned(PAGE_RAM_DEPTH-1,PAGE_RAM_ADDR_WIDTH)) then -- warp to new tile
+                            ftable_mapper.leading_wseg          <= ftable_mapper_expand_wr_seg_tile_index_reg; -- latch the current leading tile index which will be the updated one
+                        end if;
+                    end if;
+                end if; 
+            end loop;  
 
+            if (i_rst = '1') then 
+                ftable_mapper_state             <= RESET;
+            end if;
 
-    -- end process;
+        end if;
+    end process;
 
+    proc_frame_table_mapper_comb : process (all)
+        variable expected_new_wr_tile_index          : natural range 0 to N_WR_SEG-1;
+    begin
+        -- derive the if spill flag
+        ftable_mapper_update_ftable_fspan <= resize(
+            ftable_mapper.frame_shr_cnt * to_unsigned(SHD_SIZE, ftable_mapper.frame_shr_cnt'length) 
+          + ftable_mapper.frame_hit_cnt * to_unsigned(HIT_SIZE, ftable_mapper.frame_hit_cnt'length),
+          ftable_mapper_update_ftable_fspan'length
+        ); -- write the max span of this frame
+        if (to_integer(ftable_mapper.new_frame_raw_addr) + to_integer(ftable_mapper_update_ftable_fspan) > PAGE_RAM_DEPTH) then -- if the packet will be spill
+            ftable_mapper_update_ftable_spill           <= '1';
+        else 
+            ftable_mapper_update_ftable_spill           <= '0';
+        end if;
+        -- if spill, what is the remainder unusable part in the expanding tile
+        ftable_mapper_update_ftable_trail_span      <= to_unsigned(to_integer(ftable_mapper.new_frame_raw_addr) + to_integer(ftable_mapper_update_ftable_fspan) - PAGE_RAM_DEPTH, ftable_mapper_update_ftable_trail_span'length);
 
+        -- calculate the tile index of leading wr seg
+        ftable_mapper_leading_wr_seg_tile_index         <= 0;
+        for i in N_WR_SEG-2 downto 0 loop
+            if (ftable_mapper.wseg(i+1).tile_index /= ftable_mapper.wseg(i).tile_index) then 
+                ftable_mapper_leading_wr_seg_tile_index     <= i+1;
+            end if;
+        end loop;
+        
+        -- calculate the tile index of expanding wr seg, taking into account of the read seg
+        expected_new_wr_tile_index          := 0;
+        for i in 0 to N_WR_SEG-2 loop
+            if (i = ftable_mapper.leading_wseg) then
+                expected_new_wr_tile_index          := (to_integer(ftable_mapper.wseg(i).tile_index) + 1) mod N_TILE;
+            end if;
+        end loop;
+        if (expected_new_wr_tile_index = ftable_presenter.rseg.tile_index) then 
+            ftable_mapper_expand_wr_seg_tile_index          <= to_unsigned((expected_new_wr_tile_index + 1) mod N_TILE,TILE_ID_WIDTH); -- if read lock, jump over one tile further
+        else 
+            ftable_mapper_expand_wr_seg_tile_index          <= to_unsigned(expected_new_wr_tile_index,TILE_ID_WIDTH);
+        end if;
 
+    end process;
 
     -- ────────────────────────────────────────────────────────────────────────────────────────────────
-    -- @name            FRAME_TRACKER
-    -- @brief           present frame to egress interface according the frame table
+    -- @name            FTABLE_TRACKER
+    -- @brief           track location of packets
     -- ────────────────────────────────────────────────────────────────────────────────────────────────
+    proc_frame_table_tracker : process (i_clk)
+    -- tracks each tile's header starting address, remainder span, trail tile id 
+    -- write can push in new starting address, which is stored in a FIFO made out of DP-RAM
+    -- write can modify the remainder span and trail tile id, which are stored in auxillary registers
+    -- read can flush the tile by deleted all starting addresses, remainder span and trail tile id
+    -- the valid of starting addresses is managed by read and write pointers 
+    -- the modify of the registers are managed by their valid bit
+    begin
+        if rising_edge (i_clk) then 
+            -- default
+            ftable_tracker.tile_we                          <= (others => '0');
 
+            -- 1) Command from mapper
+            case ftable_tracker_state is 
+                when IDLE =>
+                    if (or_reduce(ftable_mapper.update_ftable_valid) = '1') then -- update request valid (only valid for 1 cycle)
+                        -- latch the command signals from mapper
+                        ftable_tracker.update_ftable_valid          <= ftable_mapper.update_ftable_valid;
+                        ftable_tracker.update_ftable_tindex         <= ftable_mapper.update_ftable_tindex;
+                        ftable_tracker.update_ftable_meta_valid     <= ftable_mapper.update_ftable_meta_valid;
+                        ftable_tracker.update_ftable_meta           <= ftable_mapper.update_ftable_meta;
+                        ftable_tracker.update_ftable_trltl_valid    <= ftable_mapper.update_ftable_trltl_valid;
+                        ftable_tracker.update_ftable_trltl          <= ftable_mapper.update_ftable_trltl;
+                        ftable_tracker.update_ftable_rspan_valid    <= ftable_mapper.update_ftable_rspan_valid;
+                        ftable_tracker.update_ftable_rspan          <= ftable_mapper.update_ftable_rspan;
+                        ftable_tracker.update_ftable_hcmpl          <= ftable_mapper.update_ftable_hcmpl;
+                        ftable_tracker.flush_ftable_valid           <= ftable_mapper.flush_ftable_valid;
+                        ftable_tracker_state                        <= RECORD_TILE; -- priority 1 : record meta info into this tile
+                    end if;
 
-    page_ram_rd_addr        <= (others => '0'); -- TODO: connect this to external or frame tracker
-    aso_egress_data         <= page_ram_rd_data(35 downto 0);        
-   
+                    if (or_reduce(ftable_tracker.update_ftable_valid) = '1') then 
+                        ftable_tracker_state                        <= RECORD_TILE; -- priority 1 : record meta info into this tile (second entry)
+                    end if;
+                    
+                    if (or_reduce(ftable_mapper.flush_ftable_valid) = '1') then -- priority 0 : flush the tile
+                        ftable_tracker_state                        <= FLUSH_TILE;
+                    end if;
 
+                when RECORD_TILE => -- write the mapper meta data into the tile FIFO complex 
+                    for a in 0 to 1 loop
+                        for i in 0 to N_TILE-1 loop
+                            if (to_integer(ftable_tracker.update_ftable_tindex(a)) = i) then -- tile address resolution of this head
+                                if ftable_tracker.update_ftable_meta_valid(a) then -- pkt header address in page ram
+                                    ftable_tracker.tile_we(i)       <= '1';
+                                    ftable_tracker.tile_wptr(i)     <= ftable_tracker.tile_wptr(i) + 1;
+                                    ftable_tracker.tile_wdata(i)    <= ftable_tracker.update_ftable_meta(a);
+                                end if;
+                                if ftable_tracker.update_ftable_trltl_valid(a) then -- where to look for if the pkt has spilling to other tile
+                                    tile_regs.trail_tid(i)          <= '1' & ftable_tracker.update_ftable_trltl(a);
+                                end if;
+                                if ftable_tracker.update_ftable_rspan_valid(a) then -- span of remainder of spilling pkt from other tile
+                                    tile_regs.remainder_span(i)     <= '1' & ftable_tracker.update_ftable_rspan(a);
+                                end if;
+                                if ftable_tracker.update_ftable_hcmpl(a) then -- incr write pkt counter
+                                    ftable_tracker.tile_pkt_wcnt(i) <= ftable_tracker.tile_pkt_wcnt(i) + 1;
+                                end if;
+                            end if;
+                        end loop;
+                    end loop;
+                    -- after execution : deassert the command signals
+                    ftable_tracker.update_ftable_valid              <= (others => '0');
+                    ftable_tracker.update_ftable_meta_valid         <= (others => '0');
+                    ftable_tracker.update_ftable_trltl_valid        <= (others => '0');
+                    ftable_tracker.update_ftable_rspan_valid        <= (others => '0');
+                    ftable_tracker.update_ftable_hcmpl              <= (others => '0');
+                    ftable_tracker_state                            <= IDLE;
+
+                when FLUSH_TILE => -- write or read needs to clear this tile
+                    -- reset the tile write pointer to match the read pointer, effectively flush the tile fifo
+                    for a in 0 to 1 loop
+                        for i in 0 to N_TILE-1 loop
+                            if (to_integer(ftable_tracker.update_ftable_tindex(a)) = i) then -- tile address resolution of this head
+                                if (ftable_tracker.flush_ftable_valid(a) = '1') then 
+                                    tile_regs.trail_tid(i)              <= (others => '0');
+                                    tile_regs.remainder_span(i)         <= (others => '0');
+                                    ftable_tracker.tile_pkt_wcnt(i)     <= (others => '0');
+                                end if;
+                            end if;
+                        end loop;
+                    end loop;
+                    -- after execution : deassert the command signals
+                    ftable_tracker.flush_ftable_valid           <= (others => '0');
+                    ftable_tracker_state                        <= IDLE;
+
+                when RESET =>
+                    ftable_tracker_state                        <= IDLE;
+                    ftable_tracker                              <= FTABLE_TRACKER_REG_RESET;
+
+                when others => 
+                    null;
+            end case;
+
+            -- 2) Modify from presenter
+            -- delete remainder span of current rd tile as we have crossing packet
+            if (ftable_presenter.void_remainder_span = '1') then
+                for i in 0 to N_TILE-1 loop
+                    if (to_integer(ftable_presenter.rseg.tile_index) = i) then 
+                        tile_regs.remainder_span(i)(tile_regs.remainder_span(i)'high)       <= '0'; -- void the valid bit of this reg
+                    end if;
+                end loop;
+            end if;
+            -- delete trail tile id of current rd tile as no pkt is available
+            if (ftable_presenter.void_trail_tid = '1') then 
+                for i in 0 to N_TILE-1 loop
+                    if (to_integer(ftable_presenter.rseg.tile_index) = i) then 
+                        tile_regs.trail_tid(i)(tile_regs.trail_tid(i)'high)                 <= '0'; -- void the valid bit of this reg
+                    end if;
+                end loop;
+            end if;
+
+            if (i_rst = '1') then 
+                ftable_tracker_state                <= RESET;
+            end if;
+        end if;
+    end process;
+
+    proc_frame_table_tracker_comb : process (all)
+    begin
+        -- connections
+        -- tile fifos >
+        for i in 0 to N_TILE-1 loop
+            tile_fifos_wr_addr(i)                   <= std_logic_vector(ftable_tracker.tile_wptr(i) - 1); -- ex: wr ptr to 1, 2, 3, ...   wr addr to 0, 1, 2, ...
+            tile_fifos_we(i)                        <= ftable_tracker.tile_we(i);
+            tile_fifos_wr_data(i)                   <= ftable_tracker.tile_wdata(i);
+        end loop;
+    end process;
     
 
+    -- ────────────────────────────────────────────────────────────────────────────────────────────────
+    -- @name            FTABLE_PRESENTER
+    -- @brief           present available packet
+    -- ────────────────────────────────────────────────────────────────────────────────────────────────
+    proc_frame_table_presenter : process (i_clk)
+    -- present outside with valid signal, sticky until the full packet has been transmitted
+    -- trace to the next tile if the packet is spillover
+    -- once all packets in current tile are read, wrap to the tile containing to the tail of the write seg
+    -- 
+    begin
+        if rising_edge(i_clk) then 
+            -- default 
+            ftable_presenter.void_trail_tid             <= '0';
+            ftable_presenter.void_remainder_span        <= '0';  
+            ftable_presenter.output_data_valid          <= (others => '0');
+
+            case ftable_presenter_state is
+                when IDLE => 
+                    if ftable_presenter_is_new_pkt_head then -- start when read segment has valid packet
+                        ftable_presenter_state                  <= WAIT_FOR_COMPLETE;
+                    elsif (ftable_presenter.rseg.tile_index /= to_unsigned(ftable_mapper_leading_wr_seg_tile_index,TILE_ID_WIDTH)) then -- wr tile has moved away from rd tile 
+                        -- chase it 
+                        ftable_presenter_state                  <= WARPING;
+                        -- free up current rd tile fifo
+                        for i in 0 to N_TILE-1 loop
+                            if (to_integer(ftable_presenter.rseg.tile_index) = i) then -- select the current read tile
+                                ftable_presenter.tile_rptr(i)           <= ftable_presenter.tile_rptr(i) + 1; -- incr the specific tile fifo
+                            end if;
+                            -- delete current rd tile aux reg
+                            ftable_presenter.void_trail_tid         <= '1';
+                        end loop;
+                    end if;
+
+                when WAIT_FOR_COMPLETE => -- wait for packet to be completed
+                    if ftable_presenter_is_new_pkt_complete then 
+                        ftable_presenter_state                  <= PRESENTING;
+                        for i in 0 to N_TILE-1 loop
+                            if (to_integer(ftable_presenter.rseg.tile_index) = i) then
+                                -- set the read pointer to present the packet
+                                ftable_presenter.page_ram_rptr(i)       <= ftable_presenter_leading_header_addr; 
+                            end if;
+                        end loop;
+                    end if;    
+
+                when PRESENTING => -- continue to allow read to consume the packet 
+                    ftable_presenter.output_data_valid(0)           <= '1'; -- preparing data...
+                    -- pipeline egress data valid bit
+                    for i in 0 to EGRESS_DELAY-1 loop
+                        ftable_presenter.output_data_valid(i+1)     <= ftable_presenter.output_data_valid(i);
+                    end loop;
+
+                    for i in 0 to N_TILE-1 loop
+                        if (ftable_presenter.rseg.tile_index = to_unsigned(i,TILE_ID_WIDTH)) then
+                            if (aso_egress_ready = '1') then 
+                                ftable_presenter.page_ram_rptr(i)           <= ftable_presenter.page_ram_rptr(i) + 1; -- incr rd ptr   
+                                -- pipe through the data
+                                ftable_presenter.output_data                <= page_ram_rd_data;
+                                -- if spilling and addr is soon to overflow
+                                if (ftable_presenter_is_pkt_spilling = '1' and ftable_presenter.page_ram_rptr(i) = to_unsigned(PAGE_RAM_DEPTH-1,PAGE_RAM_ADDR_WIDTH)) then -- jump to new tile and set pointer
+                                    ftable_presenter.rseg.tile_index            <= tile_regs.trail_tid(i)(tile_regs.trail_tid(i)'length-2 downto 0);
+                                    ftable_presenter.page_ram_rptr(i)           <= (others => '0');
+                                end if;
+
+                                if ftable_presenter_output_is_trailer then -- [exit] : seen trailer, this packet has finished
+                                    ftable_presenter_state                                  <= IDLE;
+                                    ftable_presenter.output_data_valid                      <= (others => '0'); -- data stop now!
+                                    if (ftable_presenter.trailing_active = '1') then -- we have switched tile, deassert trail span of aux reg as read has finished
+                                        ftable_presenter.trailing_active            <= '0';    
+                                        ftable_presenter.void_remainder_span        <= '1';
+                                    end if;
+                                    ftable_presenter.tile_pkt_rcnt(i)           <= ftable_presenter.tile_pkt_rcnt(i) + 1; -- incr rd counter
+                                    ftable_presenter.tile_rptr(i)               <= ftable_presenter.tile_rptr(i) + 1; -- incr rd ptr
+                                elsif (to_integer(ftable_presenter.page_ram_rptr(i)) = PAGE_RAM_DEPTH-1) then -- warp to next tile
+                                    ftable_presenter.trailing_active            <= '1'; -- tracing the trail packet
+                                    ftable_presenter.trailing_tile_index        <= ftable_presenter_trail_tile_id; -- switch tile
+                                    ftable_presenter.page_ram_rptr(i)           <= (others => '0'); -- read from start
+                                end if;
+                            else -- corner case : ready deasserted during packet transmission 
+                                ftable_presenter_state                      <= RESTART;
+                                ftable_presenter.page_ram_rptr(i)           <= ftable_presenter.page_ram_rptr(i) - to_unsigned(EGRESS_DELAY+1,PAGE_RAM_ADDR_WIDTH); -- rptr scrollback
+                                ftable_presenter.output_data_valid          <= (0 => '1', others => '0'); -- reset the pipeline
+                            end if;
+                        end if;
+                    end loop;
+                    
+                when RESTART => -- restart the transmission due to interrupt of ready deassertion in the middle of packet sending
+                    for i in 0 to N_TILE-1 loop
+                        if (to_integer(ftable_presenter.rseg.tile_index) = i) then
+                            ftable_presenter.output_data_valid(0)       <= '1'; -- continuing preparing data...
+                            ftable_presenter.page_ram_rptr(i)           <= ftable_presenter.page_ram_rptr(i) + 1; -- incr rd ptr   
+                            -- pipeline egress data valid bit
+                            for j in 0 to EGRESS_DELAY-1 loop
+                                ftable_presenter.output_data_valid(j+1)     <= ftable_presenter.output_data_valid(j);
+                            end loop;
+                            -- check ready near valid
+                            if (ftable_presenter.output_data_valid(EGRESS_DELAY) = '1') then
+                                if (aso_egress_ready = '1') then 
+                                    ftable_presenter_state                  <= PRESENTING; -- [success] : receiver asserts ready to capture from the last breakpoint
+                                else 
+                                    ftable_presenter.page_ram_rptr(i)           <= ftable_presenter.page_ram_rptr(i) - to_unsigned(EGRESS_DELAY+1,PAGE_RAM_ADDR_WIDTH); -- rptr scrollback
+                                    ftable_presenter.output_data_valid          <= (0 => '1', others => '0'); -- reset the pipeline
+                                end if;
+                            end if;
+                        end if;
+                    end loop;
+                    
+                when WARPING => -- ask the wr 
+                    ftable_presenter.rseg.tile_index        <= ftable_mapper.wseg(0).tile_index; -- set new rd reg to the tile of tail of wr segs
+                    ftable_presenter_state                  <= IDLE;
+
+                when RESET =>
+                    ftable_presenter_state                  <= IDLE;
+                    ftable_presenter                        <= FTABLE_PRESENTER_REG_RESET;
+
+                when others =>
+                    null;
+            end case;
+
+            -- flushing tile fifo 
+            for a in 0 to 1 loop
+                for i in 0 to N_TILE-1 loop
+                    if (to_integer(ftable_tracker.update_ftable_tindex(a)) = i) then -- get which tile needs to be flushed, note: refactor this design!
+                        if (ftable_tracker.flush_ftable_valid(a) = '1') then 
+                            ftable_presenter.tile_rptr(i)           <= ftable_tracker.tile_wptr(i); -- set r to w ptr, effectively empty the fifo
+                            ftable_presenter.tile_pkt_rcnt(i)       <= (others => '0');
+                        end if;
+                    end if;
+                end loop;
+            end loop;
+
+            -- tile fifo > [rd:data] 
+            -- (pointer: where the data is in the page ram, length: for detecting spilling)
+            for i in 0 to N_TILE-1 loop
+                if (to_integer(ftable_presenter.rseg.tile_index) = i) then -- select the current read tile
+                    ftable_presenter_leading_header_addr            <= unsigned(tile_fifos_rd_data(i)(PAGE_RAM_ADDR_WIDTH-1 downto 0));
+                    ftable_presenter_packet_length                  <= unsigned(tile_fifos_rd_data(i)(2*PAGE_RAM_ADDR_WIDTH-1 downto PAGE_RAM_ADDR_WIDTH));
+                end if;
+            end loop;
+
+            -- page tile < [rd:addr] 
+            -- connect the read address to appropriate page ram of the complex given tile index
+            -- page_tile_rd_addr                   <= (others => (others => '0')); -- default
+            for i in 0 to N_TILE-1 loop
+                if (to_integer(ftable_presenter.rseg.tile_index) = i) then
+                    page_tile_rd_addr(i)                <= page_ram_rd_addr; -- pipeline for timing
+                end if;
+            end loop;
+
+            -- page tile > [rd:data]
+            -- connect page ram complex with given index internal register
+            -- for i in 0 to N_TILE-1 loop
+            --     if (to_integer(ftable_presenter.rseg.tile_index) = i) then
+            --         page_ram_rd_data                    <= page_tile_rd_data_reg(i);
+            --     end if;
+            -- end loop;
+            page_tile_rd_data_reg           <= page_tile_rd_data;
+
+            if (i_rst = '1') then 
+                ftable_presenter_state                  <= RESET;
+            end if;
+        end if;
+    end process;
+
+    proc_frame_table_presenter_comb : process (all)
+    begin
+        -- WR:
+        -- pointer increase after head is in (we need placeholder)
+        -- counter increase after tail is in
+
+        -- RD:
+        -- pointer and counter increase after the tail is out
+
+        -- default
+        ftable_presenter_is_new_pkt_head                <= '0';
+        ftable_presenter_is_new_pkt_complete            <= '0';
+        for i in 0 to N_TILE-1 loop
+            if (to_integer(ftable_presenter.rseg.tile_index) = i) then -- select the current read tile
+                if (ftable_tracker.tile_wptr(i) /= ftable_presenter.tile_rptr(i)) then -- there is a pkt in the tile
+                    ftable_presenter_is_new_pkt_head        <= '1';
+                end if;
+                if (ftable_tracker.tile_pkt_wcnt(i) /= ftable_presenter.tile_pkt_rcnt(i)) then 
+                    ftable_presenter_is_new_pkt_complete    <= '1'; -- this packet has been completed
+                end if;
+            end if;  
+        end loop;
+
+        -- derive if rd tile is in the wr tile range
+        ftable_presenter_is_rd_tile_in_range        <= '0';
+        for i in 0 to N_WR_SEG-1 loop
+            if (ftable_mapper.wseg(i).tile_index = ftable_presenter.rseg.tile_index) then 
+                ftable_presenter_is_rd_tile_in_range    <= '1';
+            end if;
+        end loop;
+
+        -- derive the next tile to jump to, pkt is spilling
+        ftable_presenter_is_pkt_spilling            <= '0';
+        if (ftable_presenter_packet_length > to_unsigned(PAGE_RAM_DEPTH,PAGE_RAM_ADDR_WIDTH+1) - ftable_presenter_leading_header_addr) then -- no space
+            ftable_presenter_is_pkt_spilling            <= '1';
+        end if;
+
+        -- derive output is trailer signal
+        ftable_presenter_output_is_trailer           <= '0';
+        if (ftable_presenter.output_data(35 downto 32) = "0001" and ftable_presenter.output_data(7 downto 0) = K284) then 
+            ftable_presenter_output_is_trailer           <= '1';
+        end if;
+
+        -- derive the what is the trail tile of current reading packet
+        ftable_presenter_trail_tile_id      <= (others => '0'); 
+        for i in 0 to N_TILE-1 loop
+            if (to_integer(ftable_presenter.rseg.tile_index) = i) then -- select the current read tile
+                ftable_presenter_trail_tile_id      <= tile_regs.trail_tid(i)(tile_regs.trail_tid(i)'length-2 downto 0); -- msb (valid) is trimmed
+            end if;
+        end loop;
+
+        -- connection
+        -- tile fifos < [rd:addr]
+        -- track current frame is at each address of this page ram
+        for i in 0 to N_TILE-1 loop
+            tile_fifos_rd_addr(i)              <= std_logic_vector(ftable_presenter.tile_rptr(i));
+        end loop;
+        -- page ram < [rd:addr]
+        -- connect read pointer to the page ram given tile index
+        page_ram_rd_addr                    <= (others => '0');
+        for i in 0 to N_TILE-1 loop
+            if (to_integer(ftable_presenter.rseg.tile_index) = i) then
+                page_ram_rd_addr                    <= std_logic_vector(ftable_presenter.page_ram_rptr(i));
+            end if;
+        end loop;
+        -- -- page tile > [rd:data]
+        -- connect page ram complex with given index to the avst I/F
+        page_ram_rd_data                    <= (others => '0'); -- default
+        for i in 0 to N_TILE-1 loop
+            if (to_integer(ftable_presenter.rseg.tile_index) = i) then
+                page_ram_rd_data                    <= page_tile_rd_data_reg(i);
+            end if;
+        end loop;
+        
+    end process;
+    
+    proc_avalon_streaming_egress_comb : process (all)
+    begin
+        -- default
+        aso_egress_startofpacket            <= '0';
+        aso_egress_endofpacket              <= '0';
+        aso_egress_error                    <= (others => '0');
+
+        aso_egress_valid                    <= ftable_presenter.output_data_valid(EGRESS_DELAY);
+        aso_egress_data                     <= ftable_presenter.output_data(aso_egress_data'high downto 0);
+        if (ftable_presenter.output_data(35 downto 32) = "0001" and ftable_presenter.output_data(7 downto 0) = K285) then
+            aso_egress_startofpacket            <= '1';
+        end if;
+        if (ftable_presenter.output_data(35 downto 32) = "0001" and ftable_presenter.output_data(7 downto 0) = K284) then
+            aso_egress_endofpacket            <= '1';
+        end if;
+    end process;
 
 end architecture rtl;
 
-
+-- https://asciiflow.com/#/share/eJztnE9v2zYYxr8Kod2ELEiaznZyG7DDCvRQZBi2g4FBtdlOiCO5sprEKwoMwY47%2BBCk%2FhA7DTsN%2BzT5JKP%2B2RJFUiRFilSsB0LrWBT1I%2Fla1PuY8icn8K6hc%2BEsIz%2BM%2FHj9y4eP8CN0jpyFt4YR2vFp6tzAaOWHwdS5eHE0de7Q%2F%2BdnI%2FRqnbwzOkevYngXoz%2BmDkj09PDn08Pvw%2FaMtg0oNJ0G%2BSDfA2tVhjMKTP8obISLt24Uq7Bo76Dyx5koR6K3v8qUFqDD%2F7C%2BfhsuVhd4Bd%2FOYv8GgjehH8QwKlfwKvCo%2B4h6482uYAx%2BDOao8E%2BXdfhKgcvv%2BOH5e0tqH6W8op7nPeHjf9R9P%2FNXk572gRLeW%2BHi1nzEeUUGprVw2Hq6bWuD3AuxYKuzEnHiMiU29n12Ke%2BQp1Fs4Oxq8BcWSBaIHcuW9fHzwkW0YrOsPu06rglYTwa4IVVLfLNNhZo25fDCh1eGD90F3%2FqLBbiNvCVh%2BFgfkFIBWtnGOvirynccVwQEIhGr84RU4BQv%2B6KpKWe0c72sH%2FINsSkjt94UNF%2F96q1AEMZgFXtRDOcNGMS29mFUdNz3bknVEt9sU6GmTTm88OH8w9ccQl3o6fHv3iEjED5kS1TqOftxi9nwn%2FTfPE%2FpA%2FZ95kllf%2FYBuHxVyfMU%2B7FLOgxYs3l7C2wzeXsLYJN5e4tYNjEvPifcJqAO83b%2BGyHx28hNpYYhBZc%2FvDJMaNJPkr0kA1%2BiRG95FX892g%2FTMaZqrPUn1Ssakqe7xIZYlH77K%2FAujGZoPFYwBnGYDsvp8xoR8SjfVmoYkmz5wyvDlMTWSRJyc38186J5xe6pDx3Kd41IPsk2lnjLZlOmnQIhXGK%2Ba0SC2JV814gEgQn5rhEdRt5qQgOsLrWBNehgtMM24GC0AzbmYLSL5c5nkZa4jKV0WiSLewm9OXgdzq7ApRe8h4qpKGrltSQ50Zc%2F9leLx387ig29zgvDXiDu23CeZVNgHar7kuX6CxTifvAeREm8Z6k%2BMdLyL%2B7KyfZuhS3RE1Cc60vHXK6RW2vI2N015LTUkLHb3JAW7gvGg%2Flh6ZIU7yb05yC8gdFt5MeQwmDxiKRxdATersFqufDjJL6St8by7gvDYiDu23KeZVvAH6oDw4yE5nCpHKDRntGFrHGG1PJ9dgdTujrcTu0Zldid2DMqgTu0Zw4m9e5cA6wuDbCptJpJOrG1mEk6gTWaSTpjWcOcN%2BDulHtfKp0lXYt%2BcS9J0yZsUZmzmvZ1i9fFqlj1xmV%2F4Zd%2B5SbSGdOyaBzizNYAT7vnuBnC7A6GMSERRblw8wi9Gru1A%2FK3igZMXGIDzmgNmLiNDaCbRgTPqC8jkMZL3Sya6DGL9gTidbEqVr1xGVj4rYUVNpCkuNwjy5A5DdXshQVJiEjHGMeVc48swBZzjywAlnGPjGOLaIDVpQFWiZjOjM3YRGfGZmCGM2MvNnHmHnCVKXFmMFtGscHQ2WIcQe9G4I5aPIcRXIqDnbHkn3C2mwuIy%2BngLUfoRIojMso6sSF3pvyinWTsYCtEjokZvUAE5EeMXBz%2BnGZdFEdO6m4JVZOqjVKqvwSfM1Tg2ctnLO%2F5NEbqLsh5GxeErxyJvuR5cLaXC4jLneAtR%2FjssQeExd%2Fpk0X4uI%2B5n4AiVdKJFLgY3QLnksU1%2FGSRPLahJ4vkgY0%2BWWTzTWlNA6wuDbC6ZA621WIXk9hSi11MArdY7GIyliVmyf7hZjnErYfuL6Mw%2FZUNxaKtZpF40Kt4cOCEtFPunqajdSxyG48npOwLT7klKECbDUPf19QNFINlwtkN2K%2BG7DNzvuZRHATaqRWOXwF%2BeuKWwXmtlYR44pbB04p4wL%2F3ot9QagrCdwDexRG8hqj7Ud9b3%2BNJkFCpmsFlFnsAbeYJfV9TN7BOzX9V1e6R8Ht5wjXqEu7kTOoOHnk6a6pPs5TcyHTvkSjC7s4jUQTctUcydT47n%2F8HSrA4ag%3D%3D)
+-- 
+-- Appendix A: 
+--     How Read During Write (RDW) creates bubble in typical memory system with malloc-style of linked-list?
+--
+--     Being the state-of-the-art solution for 1p1c high-performance queue, this structure generally allows read side to burst read for full length of the FIFO range
+--     if the write speed is comparable near zero during read time. So, it is capable for epoll style interface between hardware write and software read, where
+--     the interrupt or polling will invoke the software to read, whose read pattern is highly bursty (long stall and continue to read until empty).
+--     
+--     However, when read and write has similar speed and concurrent, the performance of the data structure is highly inefficient. To see why, we draw the illustration below. One should
+--     perticularly pay attention to the last two stages of the evolution. Due to read lock, the write will create memory bubbles. The bubble in return generates pitfalls for its overwrite
+--     behavior, i.e., pkt-9 was overwrote by pkt-10 even if the memory system has empty spaces.
+--
+--     The conclusion is that the write and read will be non-blocking, the price to pay is highly fragmented packets, which locks to much region for read and unnecessarily overwrite for write.
+--
+--     What appears to outside is that write thread still feels infinite space, but the read thread feels space less than the memory size. The read traffic will be glitchy.
+--     
+--
+--     Principle: 
+--         1) RD pointer if not active is always set to the header of the packet with smallest index in the memory
+--         2) RD pointer if active is always blocking WR pointer to access this region during read time                   -> this will create holes
+--         3) WR pointer will jump the read locked region and void any subsequent packet in full (no broken packet)
+--         4) No GC (garbage collection) for maximum system up-time
+--
+--     Assumption:
+--         1) During WR, the packet length is always known prior to write its first byte
+--         2) Packet length is variable but shorter than half of the whole memory                                         -> prevent deadlock
+--
+--     Result: 
+--         1) Fragmentation and space efficiency drop during read and write has strong time coincidence
+--
+--
+--      ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐         
+--      │                                                                                                                                                          │         
+--      │                                                                                                                  ┌───────┐                    ┌───────┐  │         
+--      │                                          │                         │                                             │.......│                    │#######│  │         
+--      │   Symbols:                Active Pointer │        Inactive Pointer │                             Packet Under WR │.......│    Packet Under RD │#######│  │         
+--      │                                          │                         │                                             │.......│                    │#######│  │         
+--      │                                          ▼                         X                                             └───────┘                    └───────┘  │         
+--      │                                                                                                                                                          │         
+--      └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘         
+                                                                                                                                                                          
+--                          ┌───┐                                                                                                                                            
+--                          │RD │                                                                                                                                            
+--                          └─┬─┘                                                                                                                                            
+--                            │                                                                                                                                              
+--                            │                                                                                                                                              
+--                           │X                                                                                                                                       │      
+--                           │┌───────────────────────────┐┌─────┐┌──────────────────┐┌──────────────────────────────────┐┌─────┐┌───────────────────┐┌────────────── │      
+-- WR will wrap              ││                           ││     ││                  ││                                  ││     ││                   ││.............. │      
+--                           ││              0            ││  1  ││        2         ││                 3                ││  4  ││          5        ││.......6*..... │      
+-- RD has not started        ││                           ││     ││                  ││                                  ││     ││                   ││.............. │      
+--                           │└───────────────────────────┘└─────┘└──────────────────┘└──────────────────────────────────┘└─────┘└───────────────────┘└────────────── │      
+--                           │                                                                                                                                      ▲ │      
+--                           │                                                                                                                                      │ │      
+--                                                                                                                                                                  │        
+--                                                                                                                                                                ┌─┴─┐      
+--                                                                                                                                                                │WR │      
+--                                                                                                                                                                └───┘      
+                                                                                                                                                                          
+                                                                                                                                                                          
+--                                                       ┌───┐                                                                                                               
+--                                                       │RD │                                                                                                               
+--                                                       └─┬─┘                                                                                                               
+--                                                         │                                                                                                                 
+--                                                         │                                                                                                                 
+--                           │                             X                                                                                                          │      
+--                           │ ────────────────┐           ┌─────┐┌──────────────────┐┌──────────────────────────────────┐┌─────┐┌───────────────────┐┌────────────── │      
+-- WR has wrapped pkt-6      │ ................│           │     ││                  ││                                  ││     ││                   ││.............. │      
+--                           │ .......6*.......│           │  1  ││        2         ││                 3                ││  4  ││          5        ││.......6*..... │      
+-- RD is forced set to pkt-1 │ ................│           │     ││                  ││                                  ││     ││                   ││.............. │      
+--                           │ ────────────────┘           └─────┘└──────────────────┘└──────────────────────────────────┘└─────┘└───────────────────┘└────────────── │      
+-- pkt-0 is discarded        │                 ▲                                                                                                                      │      
+--                           │                 │                                                                                                                      │      
+--                                             │                                                                                                                             
+--                                           ┌─┴─┐                                                                                                                           
+--                                           │WR │                                                                                                                           
+--                                           └───┘                                                                                                                           
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+--                                                          ┌───┐                                                                                                            
+--                                                          │RD │                                                                                                            
+--                                                          └─┬─┘                                                                                                            
+--                                                            │                                                                                                              
+--                                                            ▼                                                                                                              
+--                                                      Read Lock Range                                                                                                      
+--                           │                             │◄───►│                                                                                                    │      
+--                           │ ────────────────┐ ┌──────── ┌─────┐ ────────────┐      ┌──────────────────────────────────┐┌─────┐┌───────────────────┐┌────────────── │      
+-- RD is locking read pkt-1  │                 │ │........ │#####│ ............│      │                                  ││     ││                   ││               │      
+--                           │        6*       │ │...7*... │##1##│ .....7*.....│      │                 3                ││  4  ││          5        ││       6*      │      
+-- WR will avoid overwrite   │                 │ │........ │#####│ ............│      │                                  ││     ││                   ││               │      
+-- pkt-1, by spliting pkt-7  │ ────────────────┘ └──────── └─────┘ ────────────┘      └──────────────────────────────────┘└─────┘└───────────────────┘└────────────── │      
+--                           │                                              ▲                                                                                         │      
+--                           │                                              │                                                                                         │      
+--                                                                          │                                                                                                
+--                                                                        ┌─┴─┐                                                                                              
+--                                                                        │WR │                                                                                              
+--                                                                        └───┘                                                                                              
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+--                                                                                        ┌───┐                                                                              
+--                                                                                        │RD │                                                                              
+--                                                                                        └─┬─┘                                                                              
+--                                                                                          │                                                                                
+--                                                                                          │                                                                                
+--                                                                                          ▼    Read Lock Range                                                             
+--                           │                                                        │◄────────────────────────────────►│                                            │      
+--                           │ ────────────────┐ ┌────────         ────────────┐ ┌─── ┌──────────────────────────────────┐ ───────────┐               ┌────────────── │      
+-- RD is locking read pkt-3  │                 │ │                             │ │... │##################################│ ...........│               │               │      
+--                           │        6*       │ │   7*                 7*     │ │.8* │#################3################│ ....8*.....│               │       6*      │      
+-- WR wil avoid overwrite    │                 │ │                             │ │... │##################################│ ...........│               │               │      
+-- pkt-3, by spliting pkt-8  │ ────────────────┘ └────────         ────────────┘ └─── └──────────────────────────────────┘ ───────────┘               └────────────── │      
+--                           │                                                                                                     ▲                                  │      
+--                           │                                                                                                     │                                  │      
+--                                                                                                                                 │                                         
+--                                                                                                                               ┌─┴─┐                                       
+--                                                                                                                               │WR │                                       
+--                                                                                                                               └───┘                                       
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+--                                                                                                                                                        ┌───┐              
+--                                                                                                                                                        │RD │              
+--                                                                                                                                                        └─┬─┘              
+--                                                                                                                                                          │                
+--                                                                                                                                                          │                
+--                                                                                                                                                          ▼ Read Lock Range
+--                           │ ───────────────►│                                                                                                      │◄───────────── │      
+--                           │ ────────────────┐ ────────────┐                   ┌───                                      ───────────┐ ┌──────────── ┌────────────── │      
+-- RD is locking read pkt-6  │ ################│ ............│                   │                                                    │ │............ │############## │      
+--                           │ #######6*#######│ .....9*.....│                   │ 8*                                          8*     │ │.....9*..... │#######6*##### │      
+-- WR will avoid overwrite   │ ################│ ............│                   │                                                    │ │............ │############## │      
+-- pkt-6, by spliting pkt-9  │ ────────────────┘ ────────────┘                   └───                                      ───────────┘ └──────────── └────────────── │      
+--                           │                            ▲                                                                                                           │      
+-- pkt-7 is discarded        │                            │                                                                                                           │      
+--                                                        │                                                                                                                  
+--                                                      ┌─┴─┐                                                                                                                
+--                                                      │WR │                                                                                                                
+--                                                      └───┘                                                                                                                
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+--                                                                                                                        ┌───┐                                              
+--                                                                                                                        │RD │                                              
+--                                                                                                                        └─┬─┘                                              
+--                                                                                                                          │                                                
+--                                                                                                                          │                                                
+-- pkt-9 was dropped                                                                                Read Lock Range         ▼                                                
+-- pkt-10                    │                                                   │◄──────────────────────────────────────────────────►│                               │      
+--                           │                                ┌───────────────── ┌───                                      ───────────┐ ────────┐                     │      
+-- RD is locking read pkt-8  │                                │................. │###                                      ###########│ ........│                     │      
+--                           │                                │.......10*....... │#8*                                      ####8*#####│ ...10*..│                     │      
+-- Harzard of extreme long   │                                │................. │###                                      ###########│ ........│                     │      
+-- lock                      │                                └───────────────── └───                                      ───────────┘ ────────┘                     │      
+--                           │                                         ▲                                                                                              │      
+-- WR will avoid overwrite   │                                         │                                                                                              │      
+-- pkt-8, by spliting pkt-10                                           │                                                                                                     
+--                                                                   ┌─┴─┐                                                                                                   
+--                                                                   │WR │                                                                                                   
+--                                                                   └───┘                                                                                                   
