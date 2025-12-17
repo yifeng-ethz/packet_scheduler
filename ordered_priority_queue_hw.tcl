@@ -244,6 +244,8 @@ set_parameter_property N_SHD HDL_PARAMETER true
 set dscpt \
 "<html>
 Enter the number of subheaders under one header packet, i.e., between two header packets. <br>
+You can consider Subheader as a packet and header as a super-packet containing multiple subheader packets. <br>
+This parameter defines how many subheader packets can be contained in one header packet. <br>
 More subheaders will be regarded as new header in track header = off mode. <br>
 Adjusting this parameter will require changing the code logic <br>
 </html>"
@@ -252,7 +254,7 @@ set_parameter_property N_SHD DESCRIPTION $dscpt
 
 add_parameter N_HIT NATURAL 
 set_parameter_property N_HIT DEFAULT_VALUE 255
-set_parameter_property N_HIT DISPLAY_NAME "Maximum Number of Hits in Packet"
+set_parameter_property N_HIT DISPLAY_NAME "Maximum Number of Hits in Subheader Packet"
 set_parameter_property N_HIT UNITS None
 set_parameter_property N_HIT ALLOWED_RANGES {255 511 1023 2047}
 set_parameter_property N_HIT HDL_PARAMETER true

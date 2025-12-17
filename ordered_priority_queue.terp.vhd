@@ -1,8 +1,8 @@
 -- ------------------------------------------------------------------------------------------------------------
 -- IP Name:             ordered_priority_queue
 -- Author:              Yifeng Wang (yifenwan@phys.ethz.ch)
--- Revision:            1.0
--- Date:                July 2, 2025 (file created)
+-- Revision:            1.0 - file created - July 2, 2025      
+-- Revision:            2.0 - all modules before frame table fully verified - Dec 11, 2025            
 -- Description:         Aggregate multiple ingress data flows into one single egress data flow
 --
 --                      - data structure is defined as:
@@ -246,6 +246,15 @@ architecture rtl of ${output_name} is
         end if;
     end function;
 
+    function min(a, b : integer) return integer is
+    begin
+        if a < b then
+            return a;
+        else
+            return b;
+        end if;
+    end function;
+
     -- ───────────────────────────────────────────────────────────────────────────────────────
     --                  COMMON 
     -- ───────────────────────────────────────────────────────────────────────────────────────
@@ -266,7 +275,7 @@ architecture rtl of ${output_name} is
     constant FIFO_RD_DELAY          : natural := 1; -- once the rptr is changed, typical q is delay by 1 cycle
     constant SUBFRAME_DURATION_CYCLES : natural := 16;
     constant FRAME_DURATION_CYCLES  : natural := N_SHD * SUBFRAME_DURATION_CYCLES; -- ex: 16 us frame (n_shr=128)
-    constant EGRESS_DELAY           : natural := 2; -- 2 additional cycles of delay wait for address to set on the page ram complex and data to be valid, so address change |-> 3 cycles data valid
+    constant EGRESS_DELAY           : natural := 3; -- 3 **additional cycles** of delay wait for address to set on the page ram complex and data to be valid, so address change |-> 4 cycles data valid
 
     -- ───────────────────────────────────────────────────────────────────────────────────────
     --                  TICKET_FIFO 
@@ -579,8 +588,8 @@ architecture rtl of ${output_name} is
     -- page allocator
     -- ────────────────────────────────────────────────
     -- constant
-    constant MAX_SHR_CNT_BITS               : natural := integer(ceil(log2(real(N_SHD)))) + CHANNEL_WIDTH; -- default is 8 + 2 bits (for 4 lanes) 
-    constant MAX_HIT_CNT_BITS               : natural := integer(ceil(log2(real(N_SHD)))) + integer(ceil(log2(real(N_HIT)))); -- default is 8 + 8 bits 
+    constant MAX_SHR_CNT_BITS               : natural := integer(ceil(log2(real(N_SHD*N_LANE)))) + 1; -- note: Nth bit + 1 = bit length, count for all lanes summed
+    constant MAX_HIT_CNT_BITS               : natural := min(integer(ceil(log2(real(N_SHD*N_HIT)))) + 1, 16); -- count for all lanes summed (limited to 16 bits)
     -- state
     type page_allocator_state_t is (IDLE, FETCH_TICKET, WRITE_HEAD, WRITE_TAIL, ALLOC_PAGE, WRITE_PAGE, RESET);
     signal page_allocator_state             : page_allocator_state_t;
@@ -627,6 +636,7 @@ architecture rtl of ${output_name} is
         page_length                         : unsigned(MAX_PKT_LENGTH_BITS+CHANNEL_WIDTH-1 downto 0); -- hint: max = N_LANE * max block length
         alloc_page_flow                     : alloc_page_flow_t; -- flow need to iterate all lanes
         write_meta_flow                     : write_meta_flow_t; -- flow to write header and trailer
+        write_meta_flow_d1                  : write_meta_flow_t;
         write_trailer                       : std_logic;
         reset_done                          : std_logic;
     end record;
@@ -664,13 +674,14 @@ architecture rtl of ${output_name} is
         page_length                 => (others => '0'),
         alloc_page_flow             => 0,
         write_meta_flow             => 0,
+        write_meta_flow_d1          => 0,
         write_trailer               => '0',
         reset_done                  => '0'
     );
 
     signal page_allocator           : page_allocator_reg_t;
 
-    type page_allocator_is_pending_ticket_d_t is array (1 to FIFO_RAW_DELAY) of std_logic_vector(N_LANE-1 downto 0);
+    type page_allocator_is_pending_ticket_d_t is array (0 to N_LANE-1) of std_logic_vector(FIFO_RAW_DELAY downto 1);
     signal page_allocator_is_pending_ticket_d   : page_allocator_is_pending_ticket_d_t;
 
     -- combinational wire
@@ -689,6 +700,7 @@ architecture rtl of ${output_name} is
     type page_allocator_if_alloc_blk_start_t is array (0 to N_LANE-1) of std_logic_vector(PAGE_RAM_ADDR_WIDTH-1 downto 0);
     signal page_allocator_if_alloc_blk_start    : page_allocator_if_alloc_blk_start_t;
     signal page_allocator_is_pending_ticket     : std_logic_vector(N_LANE-1 downto 0); -- asserted when rd/wr pointers mismatch 
+    signal page_allocator_is_pending_ticket_lane    : std_logic_vector(N_LANE-1 downto 0);
     -- handle
     type page_allocator_if_write_handle_data_t is array (0 to N_LANE-1) of std_logic_vector(HANDLE_LENGTH-1 downto 0);
     signal page_allocator_if_write_handle_data  : page_allocator_if_write_handle_data_t;
@@ -707,7 +719,7 @@ architecture rtl of ${output_name} is
     signal block_mover_state             : block_movers_state_t;
 
     -- types 
-    type handle_fifo_is_pending_handle_d_t is array (1 to FIFO_RAW_DELAY) of std_logic_vector(N_LANE-1 downto 0);
+    type handle_fifo_is_pending_handle_d_t is array (0 to N_LANE-1) of std_logic_vector(FIFO_RAW_DELAY downto 1);
     signal handle_fifo_is_pending_handle_d      : handle_fifo_is_pending_handle_d_t;
 
     type block_mover_handle_rptr_d_t is array (1 to FIFO_RD_DELAY) of unsigned(HANDLE_FIFO_ADDR_WIDTH-1 downto 0);
@@ -803,17 +815,19 @@ architecture rtl of ${output_name} is
         tile_index                      : unsigned(TILE_ID_WIDTH-1 downto 0);
     end record;
     type wsegs_t is array (0 to N_WR_SEG-1) of wseg_t;
+    type wtile_pipe_t is array (0 to 1) of unsigned(TILE_ID_WIDTH-1 downto 0);
     type update_ftable_tindex_t is array (0 to 1) of unsigned(TILE_ID_WIDTH-1 downto 0);
     type update_ftable_meta_t is array (0 to 1) of std_logic_vector(2*PAGE_RAM_ADDR_WIDTH-1 downto 0);
     type update_ftable_trltl_t is array (0 to 1) of unsigned(TILE_ID_WIDTH-1 downto 0);
-    type update_ftable_rspan_t is array (0 to 1) of unsigned(PAGE_RAM_ADDR_WIDTH-1 downto 0);
+    type update_ftable_bdytl_t is array (0 to 1) of unsigned(TILE_ID_WIDTH-1 downto 0);
+    type last_pkt_dbg_tile_index_t is array (0 to 2) of unsigned(TILE_ID_WIDTH-1 downto 0);
 
     type ftable_mapper_t is record
         new_frame_raw_addr              : unsigned(PAGE_RAM_ADDR_WIDTH-1 downto 0);
         frame_shr_cnt                   : unsigned(MAX_SHR_CNT_BITS-1 downto 0);
         frame_hit_cnt                   : unsigned(MAX_HIT_CNT_BITS-1 downto 0);
         wseg                            : wsegs_t;
-        wseg_last                       : wseg_t;
+        wseg_last_tile_pipe             : wtile_pipe_t;
         leading_wseg                    : unsigned(TILE_ID_WIDTH-1 downto 0);
         update_ftable_valid             : std_logic_vector(1 downto 0);
         update_ftable_tindex            : update_ftable_tindex_t;
@@ -821,10 +835,12 @@ architecture rtl of ${output_name} is
         update_ftable_meta              : update_ftable_meta_t;
         update_ftable_trltl_valid       : std_logic_vector(1 downto 0);
         update_ftable_trltl             : update_ftable_trltl_t;
-        update_ftable_rspan_valid       : std_logic_vector(1 downto 0);
-        update_ftable_rspan             : update_ftable_rspan_t;
+        update_ftable_bdytl_valid       : std_logic_vector(1 downto 0);
+        update_ftable_bdytl             : update_ftable_bdytl_t;
         update_ftable_hcmpl             : std_logic_vector(1 downto 0);
         flush_ftable_valid              : std_logic_vector(1 downto 0);
+        mgmt_tiles_start                : std_logic;
+        last_pkt_dbg_tile_index         : last_pkt_dbg_tile_index_t;
     end record;
 
     -- reg
@@ -836,7 +852,7 @@ architecture rtl of ${output_name} is
         frame_shr_cnt                   => (others => '0'),
         frame_hit_cnt                   => (others => '0'),
         wseg                            => (others => WSEG_REG_RESET),
-        wseg_last                       => WSEG_REG_RESET,
+        wseg_last_tile_pipe             => (others => (others => '0')),
         leading_wseg                    => (others => '0'),
         update_ftable_valid             => (others => '0'),
         update_ftable_tindex            => (others => (others => '0')),
@@ -844,22 +860,31 @@ architecture rtl of ${output_name} is
         update_ftable_meta              => (others => (others => '0')),
         update_ftable_trltl_valid       => (others => '0'),
         update_ftable_trltl             => (others => (others => '0')),
-        update_ftable_rspan_valid       => (others => '0'),
-        update_ftable_rspan             => (others => (others => '0')),
+        update_ftable_bdytl_valid       => (others => '0'),
+        update_ftable_bdytl             => (others => (others => '0')),
         update_ftable_hcmpl             => (others => '0'),
-        flush_ftable_valid              => (others => '0')
+        flush_ftable_valid              => (others => '0'),
+        mgmt_tiles_start                => '0',
+        last_pkt_dbg_tile_index         => (others => (others => '0'))
     );
     signal ftable_mapper                : ftable_mapper_t;
     signal ftable_mapper_update_ftable_spill_reg    : std_logic;
-    signal ftable_mapper_expand_wr_seg_tile_index_reg   : unsigned(TILE_ID_WIDTH-1 downto 0);
+    signal ftable_mapper_expand_wr_tile_index_reg   : unsigned(TILE_ID_WIDTH-1 downto 0);
     signal ftable_mapper_update_ftable_fspan_reg    : unsigned(PAGE_RAM_ADDR_WIDTH-1 downto 0); 
+    signal ftable_mapper_leading_wr_tile_index_reg  : unsigned(TILE_ID_WIDTH-1 downto 0);
+    signal ftable_mapper_last_pkt_spilled           : std_logic;
+    signal ftable_mapper_rd_tile_in_wr_seg          : unsigned(TILE_ID_WIDTH-1 downto 0);
+    signal ftable_mapper_expand_wr_tile_index_reg0  : natural range 0 to N_TILE-1;
 
     -- comb 
     signal ftable_mapper_update_ftable_fspan        : unsigned(PAGE_RAM_ADDR_WIDTH-1 downto 0); 
     signal ftable_mapper_update_ftable_spill        : std_logic;
     signal ftable_mapper_update_ftable_trail_span   : unsigned(PAGE_RAM_ADDR_WIDTH-1 downto 0);
-    signal ftable_mapper_leading_wr_seg_tile_index  : natural;
-    signal ftable_mapper_expand_wr_seg_tile_index   : unsigned(TILE_ID_WIDTH-1 downto 0);
+    signal ftable_mapper_leading_wr_seg_index       : unsigned(TILE_ID_WIDTH-1 downto 0);
+    signal ftable_mapper_leading_wr_tile_index      : unsigned(TILE_ID_WIDTH-1 downto 0);
+    signal ftable_mapper_expand_wr_tile_index       : unsigned(TILE_ID_WIDTH-1 downto 0);
+    signal ftable_mapper_writing_tile_index         : unsigned(TILE_ID_WIDTH-1 downto 0);
+    signal ftable_mapper_expand_wr_tile_index_0     : natural range 0 to N_TILE-1;
 
 
     -- ───────────────────────────────────────────────────────────────────────────────────────
@@ -880,8 +905,8 @@ architecture rtl of ${output_name} is
         update_ftable_meta                      : update_ftable_meta_t;
         update_ftable_trltl_valid               : std_logic_vector(1 downto 0);
         update_ftable_trltl                     : update_ftable_trltl_t;
-        update_ftable_rspan_valid               : std_logic_vector(1 downto 0);
-        update_ftable_rspan                     : update_ftable_rspan_t;
+        update_ftable_bdytl_valid               : std_logic_vector(1 downto 0);
+        update_ftable_bdytl                     : update_ftable_bdytl_t;
         update_ftable_hcmpl                     : std_logic_vector(1 downto 0);
         flush_ftable_valid                      : std_logic_vector(1 downto 0);
         tile_cmpl                               : std_logic_vector(N_TILE-1 downto 0);
@@ -899,8 +924,8 @@ architecture rtl of ${output_name} is
         update_ftable_meta                      => (others => (others => '0')),
         update_ftable_trltl_valid               => (others => '0'),
         update_ftable_trltl                     => (others => (others => '0')),
-        update_ftable_rspan_valid               => (others => '0'),
-        update_ftable_rspan                     => (others => (others => '0')),
+        update_ftable_bdytl_valid               => (others => '0'),
+        update_ftable_bdytl                     => (others => (others => '0')),
         update_ftable_hcmpl                     => (others => '0'),
         flush_ftable_valid                      => (others => '0'),
         tile_cmpl                               => (others => '0'),
@@ -915,11 +940,11 @@ architecture rtl of ${output_name} is
     -- ───────────────────────────────────────────────────────────────────────────────────────
     -- type
     type trail_tid_t is array (0 to N_TILE-1) of unsigned(TILE_ID_WIDTH downto 0); -- msb is valid
-    type remainder_span_t is array (0 to N_TILE-1) of unsigned(PAGE_RAM_ADDR_WIDTH downto 0); -- msb is valid
+    type body_tid_t is array (0 to N_TILE-1) of unsigned(TILE_ID_WIDTH downto 0); -- msb is lock
 
     type tile_regs_t is record
         trail_tid                   : trail_tid_t;
-        remainder_span              : remainder_span_t;
+        body_tid                    : body_tid_t;
         tile_cmpl                   : std_logic_vector(N_TILE-1 downto 0);
     end record;
 
@@ -927,7 +952,7 @@ architecture rtl of ${output_name} is
     signal tile_regs                : tile_regs_t;
     constant TILE_REGS_REG_RESET    : tile_regs_t := (
         trail_tid                   => (others => (others => '0')),
-        remainder_span              => (others => (others => '0')),
+        body_tid                    => (others => (others => '0')),
         tile_cmpl                   => (others => '0')
     );
 
@@ -935,7 +960,7 @@ architecture rtl of ${output_name} is
     -- frame table presenter
     -- ───────────────────────────────────────────────────────────────────────────────────────
     -- state
-    type ftable_presenter_state_t is (IDLE, WAIT_FOR_COMPLETE, PRESENTING, RESTART, WARPING, RESET);
+    type ftable_presenter_state_t is (IDLE, WAIT_FOR_COMPLETE, VERIFY, PRESENTING, RESTART, WARPING, RESET);
     signal ftable_presenter_state                   : ftable_presenter_state_t;
 
     -- type
@@ -956,11 +981,14 @@ architecture rtl of ${output_name} is
         page_ram_rptr                   : page_ram_rptr_t;
         output_data_valid               : std_logic_vector(EGRESS_DELAY downto 0);
         output_data                     : std_logic_vector(PAGE_RAM_DATA_WIDTH-1 downto 0);
-        trailing_active                 : std_logic;
+        trailing_active                 : std_logic_vector(EGRESS_DELAY downto 0);
         void_trail_tid                  : std_logic;
-        void_remainder_span             : std_logic;
+        void_body_tid                   : std_logic;
         trailing_tile_index             : unsigned(TILE_ID_WIDTH-1 downto 0);
         tile_pkt_rcnt                   : tile_pkt_rcnt_t;
+        crossing_trid                   : unsigned(TILE_ID_WIDTH-1 downto 0);
+        crossing_trid_valid             : std_logic;
+        pkt_rd_word_cnt                 : unsigned(PAGE_RAM_ADDR_WIDTH-1 downto 0);
     end record;
 
     constant FTABLE_PRESENTER_REG_RESET : ftable_presenter_t := (
@@ -969,11 +997,14 @@ architecture rtl of ${output_name} is
         page_ram_rptr                   => (others => (others => '0')),
         output_data_valid               => (others => '0'),
         output_data                     => (others => '0'),
-        trailing_active                 => '0',
+        trailing_active                 => (others => '0'),
         void_trail_tid                  => '0',
-        void_remainder_span             => '0',
+        void_body_tid                   => '0',
         trailing_tile_index             => (others => '0'),
-        tile_pkt_rcnt                   => (others => (others => '0'))
+        tile_pkt_rcnt                   => (others => (others => '0')),
+        crossing_trid                   => (others => '0'),
+        crossing_trid_valid             => '0',
+        pkt_rd_word_cnt                 => (others => '0')
     ); 
 
     -- signal
@@ -988,11 +1019,15 @@ architecture rtl of ${output_name} is
     signal ftable_presenter_leading_header_addr     : unsigned(PAGE_RAM_ADDR_WIDTH-1 downto 0);
     signal ftable_presenter_packet_length           : unsigned(PAGE_RAM_ADDR_WIDTH-1 downto 0);
     signal ftable_presenter_is_pkt_spilling         : std_logic;
+    signal ftable_presenter_if_in_range_warp_wr_seg : unsigned(TILE_ID_WIDTH-1 downto 0);
+    signal ftable_presenter_if_in_range_warp_rd_tile    : unsigned(TILE_ID_WIDTH-1 downto 0);   
+
 
 
 begin
 
     assert PAGE_RAM_ADDR_WIDTH = 16 report "PAGE RAM ADDR NON-DEFAULT (16 bits)" severity warning;
+    assert integer(ceil(log2(real(N_SHD*N_HIT)))) + 1 <= 16 report "N Hits counter will likely to overflow, resulting in functional error" severity warning;
 
     -- io mapping 
     i_clk           <= d_clk;
@@ -1190,7 +1225,6 @@ begin
                                         ingress_parser(i).ticket_we     <= '1';
                                         ingress_parser(i).ticket_wptr   <= ingress_parser(i).ticket_wptr + 1; -- increment write pointer as we will write to ticet FIFO
                                         ingress_parser(i).ticket_wdata  <= ingress_parser_if_write_ticket_data(i); -- see proc_assemble_write_ticket_fifo
-                                        ingress_parser(i).alert_eop     <= '0'; -- deassert alert of eop to page allocator once is written in a ticket once
                                         -- ticket credit
                                         if page_allocator.ticket_credit_update_valid(i) then -- update ticket credit, substract 1 ticket 
                                             ingress_parser(i).ticket_credit <= ingress_parser(i).ticket_credit + page_allocator.ticket_credit_update(i) - 1; 
@@ -1250,7 +1284,7 @@ begin
                                     update_header_ts_flow(i)                        <= 0; -- reset state, as return 0 (no error)
                                     -- write header ticket 
                                     if (ingress_parser(i).ticket_credit /= 0) then -- ok : enough credit
-                                        ingress_parser(i).alert_sop                     <= '0'; -- deassert alert of sop to page allocator once is written in a ticket once
+                                        ingress_parser(i).alert_sop                     <= '0'; -- sop ticket has been written (eop is optional asserted here)
                                         ingress_parser(i).ticket_we                     <= '1';
                                         -- ticket credit
                                         if page_allocator.ticket_credit_update_valid(i) then -- update ticket credit, substract 1 ticket 
@@ -1305,7 +1339,7 @@ begin
                                 ingress_parser(i).running_ts(11 downto 4)   <= unsigned(ingress_parser_if_subheader_shd_ts(i)); -- update subheader timestamp
                                 ingress_parser(i).shd_len                   <= ingress_parser_if_subheader_hit_cnt(i); -- shd_hcnt (8-bit) from 0 to 255 hits + 1 (SHD_SIZE)
                                 if (ingress_parser_if_subheader_hit_cnt(i) >= ingress_parser(i).lane_credit) then -- pkg size >= free words
-                                    -- error : continue to mask if packet larger than lane credit
+                                    -- error : incoming packet too large for lane FIFO (lane FIFO low credit)
                                     ingress_parser_state(i)         <= MASK_PKT;
                                 elsif (ingress_parser(i).ticket_credit = 0) then 
                                     -- error : ticket FIFO low credit
@@ -1315,25 +1349,72 @@ begin
                                         -- ok : but wait until subheader in lane FIFO, then write ticket FIFO
                                         ingress_parser_state(i)         <= WR_HITS;
                                     else
-                                        -- ok : write ticket to ticket FIFO with empty ticket
+                                        -- ok : write ticket to ticket FIFO now
                                         ingress_parser(i).ticket_we     <= '1';
                                         ingress_parser(i).ticket_wptr   <= ingress_parser(i).ticket_wptr + 1; -- increment write pointer as we will write to ticet FIFO
                                         ingress_parser(i).ticket_wdata  <= ingress_parser_if_write_ticket_data(i); -- see proc_assemble_write_ticket_fifo
-                                        ingress_parser(i).alert_sop     <= '0'; -- deassert alert of sop to page allocator once is written in a ticket once
                                         ingress_parser(i).alert_eop     <= '0'; -- deassert alert of eop to page allocator once is written in a ticket once
-                                        -- ticekt credit
+                                        -- ticket credit
                                         if page_allocator.ticket_credit_update_valid(i) then -- update ticket credit, substract 1 ticket 
                                             ingress_parser(i).ticket_credit <= ingress_parser(i).ticket_credit + page_allocator.ticket_credit_update(i) - 1; 
                                         else
                                             ingress_parser(i).ticket_credit <= ingress_parser(i).ticket_credit - 1;
                                         end if;
-                                        -- lane credit
-                                        if block_mover(i).lane_credit_update_valid then -- update lane credit if called on rx side, we write lane nothing here
-                                            ingress_parser(i).lane_credit   <= ingress_parser(i).lane_credit + block_mover(i).lane_credit_update; 
-                                        end if;
+                                        -- no need to update lane credit as the length is zero
                                     end if;
                                 end if;
+                            elsif (asi_ingress_startofpacket(i)(0) and ingress_parser_is_preamble(i) and not ingress_parser_hdr_err(i)) then -- [preamble]
+                                -- mark the sop (send special ticket to page allocator to indicate the start of frame, so the page allocator increase page wptr by offset of count * HDR_SIZE)
+                                ingress_parser(i).alert_sop     <= '1';
+                                -- update header ts (48-bit)
+                                ingress_parser(i).dt_type       <= ingress_parser_if_preamble_dt_type(i); -- 6 bits, dt_type : ...
+                                ingress_parser(i).feb_id        <= ingress_parser_if_preamble_feb_id(i); 
+                                update_header_ts_flow(i)        <= 0;
+                                ingress_parser_state(i)         <= UPDATE_HEADER_TS; 
+                            elsif ingress_parser_is_trailer(i) then -- [trailer]
+                                -- write special ticket for page allocator, to signal end of frame, so the page allocator increase page wptr by offset of count * TRL_SIZE)
+                                ingress_parser(i).alert_eop     <= '1';
                             end if;
+                        
+                        --     -- trigger by new subheader coming in
+                        --     if (ingress_parser_is_subheader(i) and not ingress_parser_shd_err(i)) then -- [subheader]
+                        --         -- update subheader ts (8-bit) and add to into global ts (48-bit) 
+                        --         -- write ticket to ticket FIFO
+                        --         -- ticket = {ts, start addr, length}
+                        --         -- errorDescriptor = {hit_err shd_err hdr_err}
+                        --         ingress_parser(i).running_ts(11 downto 4)   <= unsigned(ingress_parser_if_subheader_shd_ts(i)); -- update subheader timestamp
+                        --         ingress_parser(i).shd_len                   <= ingress_parser_if_subheader_hit_cnt(i); -- shd_hcnt (8-bit) from 0 to 255 hits + 1 (SHD_SIZE)
+                        --         if (ingress_parser_if_subheader_hit_cnt(i) >= ingress_parser(i).lane_credit) then -- pkg size >= free words
+                        --             -- error : continue to mask if packet larger than lane credit
+                        --             ingress_parser_state(i)         <= MASK_PKT;
+                        --         elsif (ingress_parser(i).ticket_credit = 0) then 
+                        --             -- error : ticket FIFO low credit
+                        --             ingress_parser_state(i)         <= MASK_PKT;
+                        --         else
+                        --             if (ingress_parser_if_subheader_hit_cnt(i) /= 0) then 
+                        --                 -- ok : but wait until subheader in lane FIFO, then write ticket FIFO
+                        --                 ingress_parser_state(i)         <= WR_HITS;
+                        --             else
+                        --                 -- ok : write ticket to ticket FIFO with empty ticket
+                        --                 ingress_parser(i).ticket_we     <= '1';
+                        --                 ingress_parser(i).ticket_wptr   <= ingress_parser(i).ticket_wptr + 1; -- increment write pointer as we will write to ticet FIFO
+                        --                 ingress_parser(i).ticket_wdata  <= ingress_parser_if_write_ticket_data(i); -- see proc_assemble_write_ticket_fifo
+                        --                 ingress_parser(i).alert_sop     <= '0'; -- deassert alert of sop to page allocator once is written in a ticket once
+                        --                 ingress_parser(i).alert_eop     <= '0'; -- deassert alert of eop to page allocator once is written in a ticket once
+                        --                 -- ticekt credit
+                        --                 if page_allocator.ticket_credit_update_valid(i) then -- update ticket credit, substract 1 ticket 
+                        --                     ingress_parser(i).ticket_credit <= ingress_parser(i).ticket_credit + page_allocator.ticket_credit_update(i) - 1; 
+                        --                 else
+                        --                     ingress_parser(i).ticket_credit <= ingress_parser(i).ticket_credit - 1;
+                        --                 end if;
+                        --                 -- lane credit
+                        --                 if block_mover(i).lane_credit_update_valid then -- update lane credit if called on rx side, we write lane nothing here
+                        --                     ingress_parser(i).lane_credit   <= ingress_parser(i).lane_credit + block_mover(i).lane_credit_update; 
+                        --                 end if;
+                        --             end if;
+                        --         end if;
+                        --     end if;
+                        -- end if;
                         end if;
                         
                     when WR_HITS => -- [hit(s)] 
@@ -1386,12 +1467,19 @@ begin
                         null;
                 end case;
 
+                -- deassert eop flag once written
+                for i in 0 to N_LANE-1 loop
+                    if (ingress_parser(i).ticket_we = '1' and ingress_parser(i).alert_eop = '1') then 
+                        ingress_parser(i).alert_eop         <= '0';
+                    end if;
+                end loop;
+
                 -- delay chain 
                 for j in 1 to FIFO_RAW_DELAY loop
                     if j = 1 then 
-                        page_allocator_is_pending_ticket_d(j)(i)       <= page_allocator_is_pending_ticket(i);
+                        page_allocator_is_pending_ticket_d(i)(j)       <= page_allocator_is_pending_ticket(i);
                     else 
-                        page_allocator_is_pending_ticket_d(j)(i)       <= page_allocator_is_pending_ticket_d(j-1)(i);
+                        page_allocator_is_pending_ticket_d(i)(j)       <= page_allocator_is_pending_ticket_d(i)(j-1);
                     end if;
                 end loop;
 
@@ -1413,8 +1501,8 @@ begin
     -- @description     process the read ticket FIFO data, assemble the page RAM write data and ticket write data
     -- ────────────────────────────────────────────────────────────────────────────────────────────────
     proc_page_allocator_comb : process (all)
-        variable total_subh             : unsigned(15 downto 0);
-        variable total_hit              : unsigned(15 downto 0);
+        variable total_subh             : unsigned(FRAME_SUBH_CNT_SIZE-1 downto 0);
+        variable total_hit              : unsigned(FRAME_HIT_CNT_SIZE-1 downto 0);
     begin
         -- assemble write handle to handle FIFO 
         for i in 0 to N_LANE-1 loop
@@ -1534,6 +1622,12 @@ begin
             end if;
         end loop;
 
+        -- derive the the pipeline is all set
+        page_allocator_is_pending_ticket_lane       <= (others => '0');
+        for i in 0 to N_LANE-1 loop
+            page_allocator_is_pending_ticket_lane(i)    <= and_reduce(page_allocator_is_pending_ticket_d(i));
+        end loop;
+
         -- conn. 
         for i in 0 to N_LANE-1 loop
         -- > handle FIFO
@@ -1567,7 +1661,7 @@ begin
                 case page_allocator_state is 
                     when IDLE => 
                         -- standby state, wait for ticket FIFO to have pending tickets
-                        if (and_reduce(page_allocator_is_pending_ticket_d(FIFO_RAW_DELAY)) = '1' and and_reduce(page_allocator_is_pending_ticket) = '1') then -- all lanes have packet, check both tail and head of the delay chain
+                        if (and_reduce(page_allocator_is_pending_ticket_lane) = '1' and and_reduce(page_allocator_is_pending_ticket) = '1') then -- all lanes have packet, check both tail and head of the delay chain
                             page_allocator_state                    <= FETCH_TICKET; -- fetch HOL ticket from ticket FIFO  
                         end if;
 
@@ -1746,6 +1840,8 @@ begin
                         null;
                 end case;
 
+                page_allocator.write_meta_flow_d1               <= page_allocator.write_meta_flow;
+
                 -- sync reset
                 if i_rst then 
                     page_allocator_state            <= RESET;
@@ -1778,8 +1874,12 @@ begin
                 handle_fifo_is_pending_handle(i)        <= '0';
             end if;
 
+            if (page_allocator.handle_we(i) = '1' and page_allocator.handle_wptr(i) - 1 = block_mover(i).handle_rptr) then -- read during write (wait 2 cycles)
+                handle_fifo_is_pending_handle(i)        <= '0';
+            end if;
+
             -- if pending handle valid, ready to read by incr rd_ptr (delayed pending_handle by FIFO_RAW_DELAY cycles)
-            if (handle_fifo_is_pending_handle_d(FIFO_RAW_DELAY)(i) = '1' and handle_fifo_is_pending_handle(i) = '1') then 
+            if (and_reduce(handle_fifo_is_pending_handle_d(i)) = '1' and handle_fifo_is_pending_handle(i) = '1') then 
                 handle_fifo_is_pending_handle_valid(i)  <= '1';
             else 
                 handle_fifo_is_pending_handle_valid(i)  <= '0';
@@ -1787,9 +1887,9 @@ begin
 
             -- if handle valid (in case rptr has changed, q will be delayed)
             if (block_mover(i).handle_rptr_d(FIFO_RD_DELAY) = block_mover(i).handle_rptr) then 
-                handle_fifo_is_q_valid(i)  <= '1';
+                handle_fifo_is_q_valid(i)   <= '1';
             else 
-                handle_fifo_is_q_valid(i)  <= '0';
+                handle_fifo_is_q_valid(i)   <= '0';
             end if;
 
             -- derive the pointer of read lane 
@@ -1893,9 +1993,9 @@ begin
                 -- delay chain
                 for j in 1 to FIFO_RAW_DELAY loop
                     if j = 1 then 
-                        handle_fifo_is_pending_handle_d(j)(i)        <= handle_fifo_is_pending_handle(i);
+                        handle_fifo_is_pending_handle_d(i)(j)        <= handle_fifo_is_pending_handle(i);
                     else 
-                        handle_fifo_is_pending_handle_d(j)(i)        <= handle_fifo_is_pending_handle_d(j-1)(i);
+                        handle_fifo_is_pending_handle_d(i)(j)        <= handle_fifo_is_pending_handle_d(i)(j-1);
                     end if;
                 end loop; 
 
@@ -2125,7 +2225,7 @@ begin
             ftable_mapper.update_ftable_valid               <= (others => '0');
             ftable_mapper.update_ftable_meta_valid          <= (others => '0');
             ftable_mapper.update_ftable_trltl_valid         <= (others => '0');
-            ftable_mapper.update_ftable_rspan_valid         <= (others => '0');
+            ftable_mapper.update_ftable_bdytl_valid         <= (others => '0');
             ftable_mapper.flush_ftable_valid                <= (others => '0');
             ftable_mapper.update_ftable_hcmpl               <= (others => '0');
 
@@ -2136,6 +2236,7 @@ begin
                         ftable_mapper.frame_shr_cnt             <= page_allocator.frame_shr_cnt_this / to_unsigned(N_LANE,page_allocator.frame_shr_cnt_this'length); -- declared sum of all subheaders at the ingress, it may be different from the aggregated ones
                         ftable_mapper.frame_hit_cnt             <= page_allocator.frame_hit_cnt_this;
                         ftable_mapper_state                     <= PREP_UPDATE;
+                        ftable_mapper_expand_wr_tile_index_reg0 <= ftable_mapper_expand_wr_tile_index_0; -- [timing] (1/2) first calc based on wr seg
                     elsif (page_allocator_state = WRITE_TAIL and page_allocator.write_meta_flow = 3) then -- write to the tile flag pipeline as the packet is ready and complete
                         ftable_mapper_state                     <= MODIFY_FRAME_TABLE;
                     end if;
@@ -2145,69 +2246,92 @@ begin
                         ftable_mapper_state                     <= UPDATE_FRAME_TABLE;
                     end if;
                     ftable_mapper_update_ftable_spill_reg       <= ftable_mapper_update_ftable_spill; -- if current wr pkt will spill
-                    ftable_mapper.leading_wseg                  <= to_unsigned(ftable_mapper_leading_wr_seg_tile_index,TILE_ID_WIDTH); -- before re-structure the tiles, latch the current leading wr tile index
-                    ftable_mapper_expand_wr_seg_tile_index_reg  <= ftable_mapper_expand_wr_seg_tile_index; -- if spill, what tile will its remainder part go to
+                    ftable_mapper.leading_wseg                  <= ftable_mapper_leading_wr_seg_index; -- seg id (leading)
+                    ftable_mapper_leading_wr_tile_index_reg     <= ftable_mapper_leading_wr_tile_index; -- tile id (leading)
+                    ftable_mapper_expand_wr_tile_index_reg      <= ftable_mapper_expand_wr_tile_index; -- [timing] (2/2) second calc based on rd tile id (expanding)
                     ftable_mapper_update_ftable_fspan_reg       <= ftable_mapper_update_ftable_fspan; -- if spill, what is the span of its remainder in that tile it will go
 
-                when UPDATE_FRAME_TABLE => -- write to tracker given active write segment as we have seen a new header 
-                    if (ftable_presenter_state = WARPING) then -- contention of modifying the frame table, wait here for 1 cycle until rd is finished warping to new tile
-                        -- manage the write segments : shrink the wr seg 
-                        if (ftable_presenter.rseg.tile_index = ftable_mapper.wseg(0).tile_index) then -- wait then scroll, but keep the last seg unchanged, effectively shrink the wr seg
-                            for i in 0 to N_WR_SEG-2 loop
-                                ftable_mapper.wseg(i).tile_index            <= ftable_mapper.wseg(i+1).tile_index;
+                when UPDATE_FRAME_TABLE => -- update tile fifos and manage the wr tiles
+                    if ftable_mapper_update_ftable_spill_reg then -- a) write will cross segment, generating spillover packet
+                        -- write modification of wr tiles
+                        if (ftable_mapper.leading_wseg < N_WR_SEG-1) then -- still space in the wr head : expand wr seg
+                            for i in 0 to N_WR_SEG-1 loop
+                                if (i > ftable_mapper.leading_wseg) then 
+                                    ftable_mapper.wseg(i).tile_index        <= ftable_mapper_expand_wr_tile_index_reg; -- expand the tiles of wr seg, rewrite the tile index of upper wr seg to new index
+                                end if;
                             end loop;
-                        end if;
-                    else 
-                        -- manage the write segments : expand or scroll
-                        if ftable_mapper_update_ftable_spill_reg then 
-                            -- a) write will cross segment, generating spillover packet
-                            -- re-arrange the wr regs to tile mapping
-                            if (ftable_mapper.leading_wseg < N_WR_SEG-1) then -- when still space in the wr head : expand wr seg
-                                for i in 0 to N_WR_SEG-1 loop
-                                    if (i > ftable_mapper.leading_wseg) then 
-                                        ftable_mapper.wseg(i).tile_index        <= ftable_mapper_expand_wr_seg_tile_index_reg; -- expand the tiles of wr seg, rewrite the tile index of upper wr seg to new index
-                                    end if;
+                        else -- wr segs are fully expanded 
+                            if ftable_presenter.crossing_trid_valid then -- rd has locked two segments : shrink and scroll
+                                for i in 0 to N_WR_SEG-3 loop -- 0 to 1
+                                    ftable_mapper.wseg(i).tile_index            <= ftable_mapper.wseg(i+1).tile_index;
                                 end loop;
-                            else -- when wr segs are fully expanded : scroll segs
+                                for i in N_WR_SEG-2 to N_WR_SEG-1 loop -- 2 to 3
+                                    ftable_mapper.wseg(i).tile_index            <= ftable_mapper.wseg(0).tile_index; -- last two seg will be repeat of wseg(0), some strange action as shrink-scroll
+                                end loop;
+                            else -- rd has not locked two segments : scroll 
                                 for i in 0 to N_WR_SEG-2 loop -- 0 to 2
                                     ftable_mapper.wseg(i).tile_index            <= ftable_mapper.wseg(i+1).tile_index;
                                 end loop;
-                                ftable_mapper.wseg(N_WR_SEG-1).tile_index       <= ftable_mapper_expand_wr_seg_tile_index_reg; -- set the active tile to correct tile index
+                                ftable_mapper.wseg(N_WR_SEG-1).tile_index       <= ftable_mapper_expand_wr_tile_index_reg; -- set the active tile to correct tile index
                             end if;
-
-                            -- note: there are two heads of mapper -> tracker 
-                            -- write to tracker[tile_index] = {header_addr, *where_is_trail} 
-                            --         *tracker[tile_index] = {remainder_span} 
-                            -- * : only for spillover case
-                            ftable_mapper.update_ftable_valid           <= "11";
-                            ftable_mapper.update_ftable_tindex(0)       <= ftable_mapper.leading_wseg; -- write to current tile
-                            ftable_mapper.update_ftable_meta_valid(0)   <= '1';
-                            ftable_mapper.update_ftable_meta(0)         <= std_logic_vector(ftable_mapper_update_ftable_fspan_reg) & std_logic_vector(ftable_mapper.new_frame_raw_addr); -- content
-                            ftable_mapper.update_ftable_trltl_valid(0)  <= '1';
-                            ftable_mapper.update_ftable_trltl(0)        <= ftable_mapper_expand_wr_seg_tile_index_reg; -- where is trail
-                            
-                            ftable_mapper.update_ftable_tindex(1)       <= ftable_mapper_expand_wr_seg_tile_index_reg; -- write to next tile
-                            ftable_mapper.update_ftable_rspan_valid(1)  <= '1';
-                            ftable_mapper.update_ftable_rspan(1)        <= ftable_mapper_update_ftable_trail_span;
-                            ftable_mapper.flush_ftable_valid(1)         <= '1';
-                        else
-                            -- b) write frame will not cross segment, normal write
-                            -- write to tracker[tile_index] = {header_addr}
-                            ftable_mapper.update_ftable_valid           <= "01";
-                            ftable_mapper.update_ftable_tindex(0)       <= ftable_mapper.leading_wseg; -- write to current tile
-                            ftable_mapper.update_ftable_meta_valid(0)   <= '1';
-                            ftable_mapper.update_ftable_meta(0)         <= std_logic_vector(ftable_mapper_update_ftable_fspan_reg) & std_logic_vector(ftable_mapper.new_frame_raw_addr);
                         end if;
-                        ftable_mapper.wseg_last.tile_index              <= ftable_mapper.leading_wseg; -- record last write to which tile
-                        ftable_mapper_state                             <= IDLE; -- write will be done in 1 cycle
+
+                        -- 3 debug header word will be written in the next pkt, but it can be scattered in different tiles as current pkt will spill
+                        for i in 0 to 2 loop
+                            if (i >= 0 and i <= 1) then -- debug word 3 and 4
+                                if (ftable_mapper.new_frame_raw_addr + to_unsigned(3+i,PAGE_RAM_ADDR_WIDTH) > ftable_mapper.new_frame_raw_addr) then -- not overflow yet
+                                    ftable_mapper.last_pkt_dbg_tile_index(i)        <= ftable_mapper_leading_wr_tile_index_reg;
+                                else -- overflow : tile id is the expanding one
+                                    ftable_mapper.last_pkt_dbg_tile_index(i)        <= ftable_mapper_expand_wr_tile_index_reg;
+                                end if;
+                            else -- trailer = debug word 5
+                                ftable_mapper.last_pkt_dbg_tile_index(i)        <= ftable_mapper_expand_wr_tile_index_reg; -- trailer will definitely go to next tile
+                            end if;
+                        end loop;
+
+                        -- note: there are two heads of mapper -> tracker 
+                        -- write to tracker[tile_index] = {meta(header_addr,pkt_length), *where_is_trail} 
+                        --         *tracker[tile_index] = {*where_is_head} 
+                        -- * : only for spillover case
+                        ftable_mapper.update_ftable_valid           <= "11";
+                        ftable_mapper.update_ftable_tindex(0)       <= ftable_mapper_leading_wr_tile_index_reg; -- current tile id
+                        ftable_mapper.update_ftable_meta_valid(0)   <= '1';
+                        ftable_mapper.update_ftable_meta(0)         <= std_logic_vector(ftable_mapper_update_ftable_fspan_reg) & std_logic_vector(ftable_mapper.new_frame_raw_addr); -- content
+                        ftable_mapper.update_ftable_trltl_valid(0)  <= '1';
+                        ftable_mapper.update_ftable_trltl(0)        <= ftable_mapper_expand_wr_tile_index_reg; -- where is trail
+                        
+                        ftable_mapper.update_ftable_tindex(1)       <= ftable_mapper_expand_wr_tile_index_reg; -- write to next tile
+                        ftable_mapper.update_ftable_bdytl_valid(1)  <= '1';
+                        ftable_mapper.update_ftable_bdytl(1)        <= ftable_mapper_leading_wr_tile_index_reg; -- link to head tile
+                        ftable_mapper.flush_ftable_valid(1)         <= '1';
+                    else -- b) write frame will not cross segment, normal write
+                        -- write to tracker[tile_index] = {header_addr}
+                        ftable_mapper.update_ftable_valid           <= "01";
+                        ftable_mapper.update_ftable_tindex(0)       <= ftable_mapper_leading_wr_tile_index_reg; -- current tile id
+                        ftable_mapper.update_ftable_meta_valid(0)   <= '1';
+                        ftable_mapper.update_ftable_meta(0)         <= std_logic_vector(ftable_mapper_update_ftable_fspan_reg) & std_logic_vector(ftable_mapper.new_frame_raw_addr);
+                        -- 3 debug header word will be in the current tile due to pkt will not spill
+                        for i in 0 to 2 loop
+                            ftable_mapper.last_pkt_dbg_tile_index(i)    <= ftable_mapper_leading_wr_tile_index_reg;
+                        end loop;
                     end if;
+                    ftable_mapper.wseg_last_tile_pipe(0)           <= ftable_mapper_leading_wr_tile_index_reg; -- record the tile of this pkt
+                    ftable_mapper.wseg_last_tile_pipe(1)           <= ftable_mapper.wseg_last_tile_pipe(0);
+                    ftable_mapper_state                            <= IDLE; -- write will be done in 1 cycle
+                    
 
                 when MODIFY_FRAME_TABLE => -- modify to reflect that the last written packet is ready
                     ftable_mapper_state                         <= IDLE; -- write will be done in 1 cycle
                     -- write to tracker[tile_index] = {header_addr}
                     ftable_mapper.update_ftable_valid           <= "01";
-                    ftable_mapper.update_ftable_tindex(0)       <= ftable_mapper.wseg_last.tile_index;
+                    ftable_mapper.update_ftable_tindex(0)       <= ftable_mapper.wseg_last_tile_pipe(1);
                     ftable_mapper.update_ftable_hcmpl(0)        <= '1';
+                    -- record for next time we fill the debug word for this pkt, if this pkt has spilled
+                    if ftable_mapper_update_ftable_spill_reg then 
+                        ftable_mapper_last_pkt_spilled          <= '1';
+                    else 
+                        ftable_mapper_last_pkt_spilled          <= '0';
+                    end if;
                     
                 when RESET =>
                     ftable_mapper                           <= FTABLE_MAPPER_REG_RESET;
@@ -2217,23 +2341,33 @@ begin
                     null;
             end case;
 
+            -- read modification of wr tiles
+            -- if (ftable_presenter_state = WARPING) then 
+            --     ftable_mapper.mgmt_tiles_start     <= '1';
+            -- end if;
+
+            if (ftable_presenter_state = WARPING) then -- rd only mod seg in warping, rd avoids wr, rd always after wr
+                if ftable_presenter_is_rd_tile_in_range then -- rd in range : check if rd moved
+                    if ftable_mapper_rd_tile_in_wr_seg > 0 then -- rd moved : wr shrink
+                        for i in 0 to N_WR_SEG-2 loop 
+                            ftable_mapper.wseg(i).tile_index            <= ftable_mapper.wseg(i+1).tile_index; -- effective shrink one tile
+                        end loop;
+                    end if;
+                else -- rd out of range : wr do nothing
+                end if;
+            end if;
+
             -- connections
             -- > page ram wr
-            -- page_tile_wr_addr               <= (others => (others => '0'));
-            -- page_tile_wr_data               <= (others => (others => '0'));
             page_tile_we                    <= (others => '0');
             for i in 0 to N_TILE-1 loop
-                if (ftable_mapper.leading_wseg = i) then 
+                if (ftable_mapper_writing_tile_index = i) then 
                     page_tile_wr_addr(i)            <= page_ram_wr_addr;
                     page_tile_wr_data(i)            <= page_ram_wr_data;
                     page_tile_we(i)                 <= page_ram_we;
-                    if ftable_mapper_update_ftable_spill_reg then -- wr address near overflow : quite switch tile, the wr side will not notice
-                        if (unsigned(page_tile_wr_addr(i)) = to_unsigned(PAGE_RAM_DEPTH-1,PAGE_RAM_ADDR_WIDTH)) then -- warp to new tile
-                            ftable_mapper.leading_wseg          <= ftable_mapper_expand_wr_seg_tile_index_reg; -- latch the current leading tile index which will be the updated one
-                        end if;
-                    end if;
                 end if; 
             end loop;  
+            -- ftable_mapper.writing_tile_index        <= ftable_mapper_writing_tile_index; -- latch the current leading tile index which will be the updated one
 
             if (i_rst = '1') then 
                 ftable_mapper_state             <= RESET;
@@ -2243,12 +2377,14 @@ begin
     end process;
 
     proc_frame_table_mapper_comb : process (all)
-        variable expected_new_wr_tile_index          : natural range 0 to N_WR_SEG-1;
+        variable expected_new_wr_tile_index          : natural range 0 to N_TILE-1;
+        variable expected_new_wr_tile_index_rd       : natural range 0 to N_TILE-1;
     begin
         -- derive the if spill flag
         ftable_mapper_update_ftable_fspan <= resize(
             ftable_mapper.frame_shr_cnt * to_unsigned(SHD_SIZE, ftable_mapper.frame_shr_cnt'length) 
-          + ftable_mapper.frame_hit_cnt * to_unsigned(HIT_SIZE, ftable_mapper.frame_hit_cnt'length),
+          + ftable_mapper.frame_hit_cnt * to_unsigned(HIT_SIZE, ftable_mapper.frame_hit_cnt'length)
+          + HDR_SIZE + TRL_SIZE,
           ftable_mapper_update_ftable_fspan'length
         ); -- write the max span of this frame
         if (to_integer(ftable_mapper.new_frame_raw_addr) + to_integer(ftable_mapper_update_ftable_fspan) > PAGE_RAM_DEPTH) then -- if the packet will be spill
@@ -2259,27 +2395,69 @@ begin
         -- if spill, what is the remainder unusable part in the expanding tile
         ftable_mapper_update_ftable_trail_span      <= to_unsigned(to_integer(ftable_mapper.new_frame_raw_addr) + to_integer(ftable_mapper_update_ftable_fspan) - PAGE_RAM_DEPTH, ftable_mapper_update_ftable_trail_span'length);
 
-        -- calculate the tile index of leading wr seg
-        ftable_mapper_leading_wr_seg_tile_index         <= 0;
+        -- calculate the seg index of current wr segs
+        ftable_mapper_leading_wr_seg_index         <= (others => '0');
         for i in N_WR_SEG-2 downto 0 loop
             if (ftable_mapper.wseg(i+1).tile_index /= ftable_mapper.wseg(i).tile_index) then 
-                ftable_mapper_leading_wr_seg_tile_index     <= i+1;
+                ftable_mapper_leading_wr_seg_index     <= to_unsigned(i+1,TILE_ID_WIDTH);
+            end if;
+        end loop;
+
+        -- calculate the tile index of leading wr seg
+        ftable_mapper_leading_wr_tile_index         <= (others => '0');
+        for i in 0 to N_WR_SEG-1 loop
+            if (ftable_mapper_leading_wr_seg_index = i) then 
+                ftable_mapper_leading_wr_tile_index     <= ftable_mapper.wseg(i).tile_index;
             end if;
         end loop;
         
-        -- calculate the tile index of expanding wr seg, taking into account of the read seg
+        -- calculate the tile index of expanding wr seg, taking into account of the read seg (current active and prelocked)
         expected_new_wr_tile_index          := 0;
-        for i in 0 to N_WR_SEG-2 loop
+        for i in 0 to N_WR_SEG-1 loop
             if (i = ftable_mapper.leading_wseg) then
-                expected_new_wr_tile_index          := (to_integer(ftable_mapper.wseg(i).tile_index) + 1) mod N_TILE;
+                expected_new_wr_tile_index          := (to_integer(ftable_mapper.wseg(i).tile_index) + 1) mod N_TILE; -- new tile is the leading seg->tile + 1
             end if;
         end loop;
-        if (expected_new_wr_tile_index = ftable_presenter.rseg.tile_index) then 
-            ftable_mapper_expand_wr_seg_tile_index          <= to_unsigned((expected_new_wr_tile_index + 1) mod N_TILE,TILE_ID_WIDTH); -- if read lock, jump over one tile further
-        else 
-            ftable_mapper_expand_wr_seg_tile_index          <= to_unsigned(expected_new_wr_tile_index,TILE_ID_WIDTH);
+        ftable_mapper_expand_wr_tile_index_0        <= expected_new_wr_tile_index; -- [timing] do pipeline outside
+
+        expected_new_wr_tile_index_rd               := ftable_mapper_expand_wr_tile_index_reg0; -- [timing] connect reg0 inside again
+        if (ftable_mapper_expand_wr_tile_index_reg0 = ftable_presenter.rseg.tile_index) then -- if read seg lock, jump over one tile further
+            expected_new_wr_tile_index_rd           := (ftable_mapper_expand_wr_tile_index_reg0 + 1) mod N_TILE; 
+        end if;
+        ftable_mapper_expand_wr_tile_index   <= to_unsigned(expected_new_wr_tile_index_rd,TILE_ID_WIDTH);
+        if (ftable_presenter.crossing_trid_valid) then -- if read shadow lock, jump over one tile further
+            if expected_new_wr_tile_index_rd = ftable_presenter.crossing_trid then 
+                ftable_mapper_expand_wr_tile_index      <= to_unsigned((expected_new_wr_tile_index_rd + 1) mod N_TILE,TILE_ID_WIDTH);
+            end if;
         end if;
 
+        -- derive the wr seg index based on current rd tile index
+        ftable_mapper_rd_tile_in_wr_seg         <= (others => '0');
+        for i in N_WR_SEG-1 downto 0 loop
+            if ftable_mapper.wseg(i).tile_index = ftable_presenter.rseg.tile_index then 
+                ftable_mapper_rd_tile_in_wr_seg        <= to_unsigned(i,TILE_ID_WIDTH);
+            end if;
+        end loop;
+
+        -- connect wr heads to page ram complex (select which page ram)
+        if ftable_mapper_update_ftable_spill_reg then -- current frame will spill over two tiles
+            if (unsigned(page_ram_wr_addr) >= ftable_mapper.new_frame_raw_addr) then -- not overflow
+                ftable_mapper_writing_tile_index                <= ftable_mapper_leading_wr_tile_index_reg;
+            else -- overflowing
+                ftable_mapper_writing_tile_index                <= ftable_mapper_expand_wr_tile_index_reg;
+            end if;
+            if (ftable_mapper_state = PREP_UPDATE) then -- glitch : the ftable_mapper_update_ftable_spill_reg is not updated (is for last pkt), so current pkt will be update after this cycle. because last pkt will spill, we should use the expanding anyways
+                ftable_mapper_writing_tile_index                <= ftable_mapper_expand_wr_tile_index_reg;
+            end if;
+        else 
+            ftable_mapper_writing_tile_index                    <= ftable_mapper_leading_wr_tile_index_reg;
+        end if;
+        -- wr last pkt debug word, can scatter in different tiles
+        for i in 3 to 5 loop
+            if (i = page_allocator.write_meta_flow_d1) then 
+                ftable_mapper_writing_tile_index                <= ftable_mapper.last_pkt_dbg_tile_index(i-3); 
+            end if;
+        end loop;
     end process;
 
     -- ────────────────────────────────────────────────────────────────────────────────────────────────
@@ -2299,6 +2477,21 @@ begin
             ftable_tracker.tile_we                          <= (others => '0');
 
             -- 1) Command from mapper
+            if (or_reduce(ftable_mapper.flush_ftable_valid) = '1') then -- priority 0 : flush the tile (delay 1 cycle, so we flush first before record)
+                -- reset the tile write pointer to match the read pointer, effectively flush the tile fifo
+                for a in 0 to 1 loop
+                    for i in 0 to N_TILE-1 loop
+                        if (to_integer(ftable_mapper.update_ftable_tindex(a)) = i) then -- tile address resolution of this head
+                            if (ftable_mapper.flush_ftable_valid(a) = '1') then 
+                                tile_regs.trail_tid(i)              <= (others => '0');
+                                tile_regs.body_tid(i)               <= (others => '0');
+                                ftable_tracker.tile_pkt_wcnt(i)     <= (others => '0');
+                            end if;
+                        end if;
+                    end loop;
+                end loop;
+            end if;
+
             case ftable_tracker_state is 
                 when IDLE =>
                     if (or_reduce(ftable_mapper.update_ftable_valid) = '1') then -- update request valid (only valid for 1 cycle)
@@ -2309,22 +2502,18 @@ begin
                         ftable_tracker.update_ftable_meta           <= ftable_mapper.update_ftable_meta;
                         ftable_tracker.update_ftable_trltl_valid    <= ftable_mapper.update_ftable_trltl_valid;
                         ftable_tracker.update_ftable_trltl          <= ftable_mapper.update_ftable_trltl;
-                        ftable_tracker.update_ftable_rspan_valid    <= ftable_mapper.update_ftable_rspan_valid;
-                        ftable_tracker.update_ftable_rspan          <= ftable_mapper.update_ftable_rspan;
+                        ftable_tracker.update_ftable_bdytl_valid    <= ftable_mapper.update_ftable_bdytl_valid;
+                        ftable_tracker.update_ftable_bdytl          <= ftable_mapper.update_ftable_bdytl;
                         ftable_tracker.update_ftable_hcmpl          <= ftable_mapper.update_ftable_hcmpl;
-                        ftable_tracker.flush_ftable_valid           <= ftable_mapper.flush_ftable_valid;
+                        -- ftable_tracker.flush_ftable_valid           <= ftable_mapper.flush_ftable_valid;
                         ftable_tracker_state                        <= RECORD_TILE; -- priority 1 : record meta info into this tile
                     end if;
 
                     if (or_reduce(ftable_tracker.update_ftable_valid) = '1') then 
                         ftable_tracker_state                        <= RECORD_TILE; -- priority 1 : record meta info into this tile (second entry)
                     end if;
-                    
-                    if (or_reduce(ftable_mapper.flush_ftable_valid) = '1') then -- priority 0 : flush the tile
-                        ftable_tracker_state                        <= FLUSH_TILE;
-                    end if;
 
-                when RECORD_TILE => -- write the mapper meta data into the tile FIFO complex 
+                when RECORD_TILE => -- write the mapper meta data into the tile FIFO complex (delay 2 cycles)
                     for a in 0 to 1 loop
                         for i in 0 to N_TILE-1 loop
                             if (to_integer(ftable_tracker.update_ftable_tindex(a)) = i) then -- tile address resolution of this head
@@ -2334,13 +2523,13 @@ begin
                                     ftable_tracker.tile_wdata(i)    <= ftable_tracker.update_ftable_meta(a);
                                 end if;
                                 if ftable_tracker.update_ftable_trltl_valid(a) then -- where to look for if the pkt has spilling to other tile
-                                    tile_regs.trail_tid(i)          <= '1' & ftable_tracker.update_ftable_trltl(a);
+                                    tile_regs.trail_tid(i)          <= '1' & ftable_tracker.update_ftable_trltl(a); -- msb is not used
                                 end if;
-                                if ftable_tracker.update_ftable_rspan_valid(a) then -- span of remainder of spilling pkt from other tile
-                                    tile_regs.remainder_span(i)     <= '1' & ftable_tracker.update_ftable_rspan(a);
+                                if ftable_tracker.update_ftable_bdytl_valid(a) then -- tile id of body of spilling pkt from other tile
+                                    tile_regs.body_tid(i)(tile_regs.body_tid(i)'length-2 downto 0)     <= ftable_tracker.update_ftable_bdytl(a); -- unlocked (needs to be active by rd, notify wr to not overwrite this seg)
                                 end if;
                                 if ftable_tracker.update_ftable_hcmpl(a) then -- incr write pkt counter
-                                    ftable_tracker.tile_pkt_wcnt(i) <= ftable_tracker.tile_pkt_wcnt(i) + 1;
+                                    ftable_tracker.tile_pkt_wcnt(i) <= ftable_tracker.tile_pkt_wcnt(i) + 1; 
                                 end if;
                             end if;
                         end loop;
@@ -2349,26 +2538,9 @@ begin
                     ftable_tracker.update_ftable_valid              <= (others => '0');
                     ftable_tracker.update_ftable_meta_valid         <= (others => '0');
                     ftable_tracker.update_ftable_trltl_valid        <= (others => '0');
-                    ftable_tracker.update_ftable_rspan_valid        <= (others => '0');
+                    ftable_tracker.update_ftable_bdytl_valid        <= (others => '0');
                     ftable_tracker.update_ftable_hcmpl              <= (others => '0');
                     ftable_tracker_state                            <= IDLE;
-
-                when FLUSH_TILE => -- write or read needs to clear this tile
-                    -- reset the tile write pointer to match the read pointer, effectively flush the tile fifo
-                    for a in 0 to 1 loop
-                        for i in 0 to N_TILE-1 loop
-                            if (to_integer(ftable_tracker.update_ftable_tindex(a)) = i) then -- tile address resolution of this head
-                                if (ftable_tracker.flush_ftable_valid(a) = '1') then 
-                                    tile_regs.trail_tid(i)              <= (others => '0');
-                                    tile_regs.remainder_span(i)         <= (others => '0');
-                                    ftable_tracker.tile_pkt_wcnt(i)     <= (others => '0');
-                                end if;
-                            end if;
-                        end loop;
-                    end loop;
-                    -- after execution : deassert the command signals
-                    ftable_tracker.flush_ftable_valid           <= (others => '0');
-                    ftable_tracker_state                        <= IDLE;
 
                 when RESET =>
                     ftable_tracker_state                        <= IDLE;
@@ -2379,11 +2551,11 @@ begin
             end case;
 
             -- 2) Modify from presenter
-            -- delete remainder span of current rd tile as we have crossing packet
-            if (ftable_presenter.void_remainder_span = '1') then
+            -- delete body pointer of current rd tile as we have crossing packet
+            if (ftable_presenter.void_body_tid = '1') then
                 for i in 0 to N_TILE-1 loop
                     if (to_integer(ftable_presenter.rseg.tile_index) = i) then 
-                        tile_regs.remainder_span(i)(tile_regs.remainder_span(i)'high)       <= '0'; -- void the valid bit of this reg
+                        tile_regs.body_tid(i)(tile_regs.body_tid(i)'high)       <= '0'; -- void the valid bit of this reg
                     end if;
                 end loop;
             end if;
@@ -2427,73 +2599,128 @@ begin
         if rising_edge(i_clk) then 
             -- default 
             ftable_presenter.void_trail_tid             <= '0';
-            ftable_presenter.void_remainder_span        <= '0';  
+            ftable_presenter.void_body_tid              <= '0';  
             ftable_presenter.output_data_valid          <= (others => '0');
 
             case ftable_presenter_state is
                 when IDLE => 
-                    if ftable_presenter_is_new_pkt_head then -- start when read segment has valid packet
+                    if ftable_presenter_is_new_pkt_head then -- rd slow : read pending pkt in rd tile
                         ftable_presenter_state                  <= WAIT_FOR_COMPLETE;
-                    elsif (ftable_presenter.rseg.tile_index /= to_unsigned(ftable_mapper_leading_wr_seg_tile_index,TILE_ID_WIDTH)) then -- wr tile has moved away from rd tile 
-                        -- chase it 
-                        ftable_presenter_state                  <= WARPING;
-                        -- free up current rd tile fifo
-                        for i in 0 to N_TILE-1 loop
-                            if (to_integer(ftable_presenter.rseg.tile_index) = i) then -- select the current read tile
-                                ftable_presenter.tile_rptr(i)           <= ftable_presenter.tile_rptr(i) + 1; -- incr the specific tile fifo
+                    end if; 
+                    if ftable_presenter.rseg.tile_index = ftable_mapper_leading_wr_tile_index_reg then -- rd fast but not away : wait here for pkt
+                        if ftable_presenter_is_new_pkt_head then 
+                            ftable_presenter_state                  <= WAIT_FOR_COMPLETE;
+                        end if;
+                    else -- wr fast and away : warp 
+                        if (ftable_mapper_state = PREP_UPDATE or ftable_mapper_state = UPDATE_FRAME_TABLE or (page_allocator_state = WRITE_HEAD and page_allocator.write_meta_flow = 0)) then -- contention : freeze. wr is modifying the tiles, rd will freeze here
+                            -- 3 cycles of stall, wr will modify the tiles here
+                        else -- contention : ok
+                            if ftable_presenter_is_rd_tile_in_range then -- in range : warp to next wr tile
+                                ftable_presenter_state                  <= WARPING;
+                                ftable_presenter.rseg.tile_index        <= ftable_presenter_if_in_range_warp_rd_tile;
+                                -- free up current rd tile fifo
+                                for i in 0 to N_TILE-1 loop
+                                    if (to_integer(ftable_presenter.rseg.tile_index) = i) then -- select the current read tile
+                                        ftable_presenter.tile_rptr(i)           <= ftable_tracker.tile_wptr(i); -- set the r to w ptr (flush fifo)
+                                    end if;
+                                end loop;
+                            else -- out of range : warp to tail of wr
+                                ftable_presenter_state                  <= WARPING;
+                                ftable_presenter.rseg.tile_index        <= ftable_mapper.wseg(0).tile_index; 
+                                -- free up current rd tile fifo
+                                for i in 0 to N_TILE-1 loop
+                                    if (to_integer(ftable_presenter.rseg.tile_index) = i) then -- select the current read tile
+                                        ftable_presenter.tile_rptr(i)           <= ftable_tracker.tile_wptr(i); -- set the r to w ptr (flush fifo)
+                                    end if;
+                                end loop;
                             end if;
-                            -- delete current rd tile aux reg
-                            ftable_presenter.void_trail_tid         <= '1';
-                        end loop;
+                        end if;
                     end if;
 
                 when WAIT_FOR_COMPLETE => -- wait for packet to be completed
                     if ftable_presenter_is_new_pkt_complete then 
                         ftable_presenter_state                  <= PRESENTING;
                         for i in 0 to N_TILE-1 loop
+                            -- set the read pointer to present the packet
                             if (to_integer(ftable_presenter.rseg.tile_index) = i) then
-                                -- set the read pointer to present the packet
                                 ftable_presenter.page_ram_rptr(i)       <= ftable_presenter_leading_header_addr; 
                             end if;
                         end loop;
+                        ftable_presenter.pkt_rd_word_cnt        <= (others => '0');
+
+                        -- [crossing] : skip if bond is broken
+                        if ftable_presenter_is_pkt_spilling then -- verify if the bond is still valid
+                            for i in 0 to N_TILE-1 loop
+                                if (to_integer(ftable_presenter.rseg.tile_index) = i) then
+                                    ftable_presenter.crossing_trid  <= tile_regs.trail_tid(i)(tile_regs.trail_tid(i)'length-2 downto 0); -- latch the trail tile id
+                                end if;
+                            end loop;
+                            ftable_presenter_state              <= VERIFY;
+                        end if;
                     end if;    
+
+                when VERIFY =>
+                    for i in 0 to N_TILE-1 loop
+                        if (to_integer(ftable_presenter.crossing_trid) = i) then
+                            if (tile_regs.body_tid(i)(tile_regs.body_tid(i)'length-2 downto 0) = ftable_presenter.rseg.tile_index) then -- ok : link verified (body[trail id] = trail[body id])
+                                ftable_presenter_state                      <= PRESENTING;
+                                ftable_presenter.crossing_trid_valid        <= '1';
+                            else -- broken : jump to tail of wr tile for reading of new pkt
+                                ftable_presenter_state                      <= IDLE;
+                                ftable_presenter.tile_pkt_rcnt(i)           <= ftable_presenter.tile_pkt_rcnt(i) + 1; -- skip this pkt
+                                ftable_presenter.tile_rptr(i)               <= ftable_presenter.tile_rptr(i) + 1;
+                            end if;
+                        end if;
+                    end loop;
 
                 when PRESENTING => -- continue to allow read to consume the packet 
                     ftable_presenter.output_data_valid(0)           <= '1'; -- preparing data...
+                    -- counter of rd word
+                    if (ftable_presenter.output_data_valid(EGRESS_DELAY) = '1' and aso_egress_ready = '1') then 
+                        ftable_presenter.pkt_rd_word_cnt            <= ftable_presenter.pkt_rd_word_cnt + 1;
+                    end if;
                     -- pipeline egress data valid bit
                     for i in 0 to EGRESS_DELAY-1 loop
                         ftable_presenter.output_data_valid(i+1)     <= ftable_presenter.output_data_valid(i);
                     end loop;
 
                     for i in 0 to N_TILE-1 loop
-                        if (ftable_presenter.rseg.tile_index = to_unsigned(i,TILE_ID_WIDTH)) then
+                        -- incr rd ptr 
+                        if (aso_egress_ready = '1') then 
+                            if ftable_presenter.trailing_active(0) then -- ghost
+                                if (ftable_presenter.trailing_tile_index = i) then
+                                    ftable_presenter.page_ram_rptr(i)           <= ftable_presenter.page_ram_rptr(i) + 1; 
+                                end if;
+                            elsif (ftable_presenter.rseg.tile_index = i) then -- normal
+                                ftable_presenter.page_ram_rptr(i)           <= ftable_presenter.page_ram_rptr(i) + 1;  
+                            end if; 
+                        else 
+                            ftable_presenter.page_ram_rptr(i)           <= ftable_presenter.page_ram_rptr(i) - to_unsigned(EGRESS_DELAY+1,PAGE_RAM_ADDR_WIDTH); -- rptr scrollback
+                        end if;
+
+                        -- read logic 
+                        if (ftable_presenter.rseg.tile_index = i) then
                             if (aso_egress_ready = '1') then 
-                                ftable_presenter.page_ram_rptr(i)           <= ftable_presenter.page_ram_rptr(i) + 1; -- incr rd ptr   
                                 -- pipe through the data
                                 ftable_presenter.output_data                <= page_ram_rd_data;
-                                -- if spilling and addr is soon to overflow
-                                if (ftable_presenter_is_pkt_spilling = '1' and ftable_presenter.page_ram_rptr(i) = to_unsigned(PAGE_RAM_DEPTH-1,PAGE_RAM_ADDR_WIDTH)) then -- jump to new tile and set pointer
-                                    ftable_presenter.rseg.tile_index            <= tile_regs.trail_tid(i)(tile_regs.trail_tid(i)'length-2 downto 0);
-                                    ftable_presenter.page_ram_rptr(i)           <= (others => '0');
-                                end if;
-
                                 if ftable_presenter_output_is_trailer then -- [exit] : seen trailer, this packet has finished
                                     ftable_presenter_state                                  <= IDLE;
                                     ftable_presenter.output_data_valid                      <= (others => '0'); -- data stop now!
-                                    if (ftable_presenter.trailing_active = '1') then -- we have switched tile, deassert trail span of aux reg as read has finished
-                                        ftable_presenter.trailing_active            <= '0';    
-                                        ftable_presenter.void_remainder_span        <= '1';
+                                    if (ftable_presenter.trailing_active(0) = '1') then -- we have switched tile, deassert trail span of aux reg as read has finished
+                                        ftable_presenter.trailing_active(0)         <= '0';    
+                                        ftable_presenter.void_body_tid              <= '1';
+                                        ftable_presenter.crossing_trid_valid        <= '0'; -- deassert the 2 rd seg flag
                                     end if;
                                     ftable_presenter.tile_pkt_rcnt(i)           <= ftable_presenter.tile_pkt_rcnt(i) + 1; -- incr rd counter
                                     ftable_presenter.tile_rptr(i)               <= ftable_presenter.tile_rptr(i) + 1; -- incr rd ptr
-                                elsif (to_integer(ftable_presenter.page_ram_rptr(i)) = PAGE_RAM_DEPTH-1) then -- warp to next tile
-                                    ftable_presenter.trailing_active            <= '1'; -- tracing the trail packet
-                                    ftable_presenter.trailing_tile_index        <= ftable_presenter_trail_tile_id; -- switch tile
-                                    ftable_presenter.page_ram_rptr(i)           <= (others => '0'); -- read from start
+                                elsif ((to_integer(ftable_presenter.page_ram_rptr(i)) = PAGE_RAM_DEPTH-1) and ftable_presenter_is_pkt_spilling = '1') then -- warp to next tile
+                                    ftable_presenter.trailing_active(0)         <= '1'; -- tracing the trail packet
+                                    ftable_presenter.trailing_tile_index        <= ftable_presenter.crossing_trid; -- ftable_presenter_trail_tile_id; -- switch tile ghostly
+                                    ftable_presenter.page_ram_rptr(i)           <= (others => '0'); -- this tile is finished, reset rd ptr
                                 end if;
                             else -- corner case : ready deasserted during packet transmission 
                                 ftable_presenter_state                      <= RESTART;
-                                ftable_presenter.page_ram_rptr(i)           <= ftable_presenter.page_ram_rptr(i) - to_unsigned(EGRESS_DELAY+1,PAGE_RAM_ADDR_WIDTH); -- rptr scrollback
+                                -- ftable_presenter.page_ram_rptr(i)           <= ftable_presenter.page_ram_rptr(i) - to_unsigned(EGRESS_DELAY+1,PAGE_RAM_ADDR_WIDTH); -- rptr scrollback
                                 ftable_presenter.output_data_valid          <= (0 => '1', others => '0'); -- reset the pipeline
                             end if;
                         end if;
@@ -2520,8 +2747,12 @@ begin
                         end if;
                     end loop;
                     
-                when WARPING => -- ask the wr 
-                    ftable_presenter.rseg.tile_index        <= ftable_mapper.wseg(0).tile_index; -- set new rd reg to the tile of tail of wr segs
+                when WARPING => -- set to rd tile to the tail of wr tile TODO: remove this state, it might cause contention. the wr will use it, so better do it fast in IDLE
+                    -- if ftable_presenter_is_rd_tile_in_range then -- in range : go to next wr tile (incr wr seg index)
+                    --     ftable_presenter.rseg.tile_index        <= ftable_presenter_if_in_range_warp_rd_tile;
+                    -- else -- out of range : set rd tile to the tail of wr tiles
+                    --     ftable_presenter.rseg.tile_index        <= ftable_mapper.wseg(0).tile_index; -- 
+                    -- end if;
                     ftable_presenter_state                  <= IDLE;
 
                 when RESET =>
@@ -2557,19 +2788,22 @@ begin
             -- connect the read address to appropriate page ram of the complex given tile index
             -- page_tile_rd_addr                   <= (others => (others => '0')); -- default
             for i in 0 to N_TILE-1 loop
-                if (to_integer(ftable_presenter.rseg.tile_index) = i) then
+                if (to_integer(ftable_presenter.rseg.tile_index) = i) then -- normal
                     page_tile_rd_addr(i)                <= page_ram_rd_addr; -- pipeline for timing
+                end if;
+                if ftable_presenter.trailing_active(0) then -- ghost
+                    if (to_integer(ftable_presenter.trailing_tile_index) = i) then 
+                        page_tile_rd_addr(i)                <= page_ram_rd_addr;
+                    end if;
                 end if;
             end loop;
 
-            -- page tile > [rd:data]
-            -- connect page ram complex with given index internal register
-            -- for i in 0 to N_TILE-1 loop
-            --     if (to_integer(ftable_presenter.rseg.tile_index) = i) then
-            --         page_ram_rd_data                    <= page_tile_rd_data_reg(i);
-            --     end if;
-            -- end loop;
             page_tile_rd_data_reg           <= page_tile_rd_data;
+
+            -- trailing active pipeline
+            for i in 0 to EGRESS_DELAY-1 loop
+                ftable_presenter.trailing_active(i+1)          <= ftable_presenter.trailing_active(i);
+            end loop;
 
             if (i_rst = '1') then 
                 ftable_presenter_state                  <= RESET;
@@ -2610,13 +2844,15 @@ begin
 
         -- derive the next tile to jump to, pkt is spilling
         ftable_presenter_is_pkt_spilling            <= '0';
-        if (ftable_presenter_packet_length > to_unsigned(PAGE_RAM_DEPTH,PAGE_RAM_ADDR_WIDTH+1) - ftable_presenter_leading_header_addr) then -- no space
+        if (to_integer(ftable_presenter_packet_length) + to_integer(ftable_presenter_leading_header_addr) >= PAGE_RAM_DEPTH) then -- no space
             ftable_presenter_is_pkt_spilling            <= '1';
         end if;
 
         -- derive output is trailer signal
         ftable_presenter_output_is_trailer           <= '0';
         if (ftable_presenter.output_data(35 downto 32) = "0001" and ftable_presenter.output_data(7 downto 0) = K284) then 
+            ftable_presenter_output_is_trailer           <= '1';
+        elsif (ftable_presenter_packet_length = ftable_presenter.pkt_rd_word_cnt) then 
             ftable_presenter_output_is_trailer           <= '1';
         end if;
 
@@ -2625,6 +2861,20 @@ begin
         for i in 0 to N_TILE-1 loop
             if (to_integer(ftable_presenter.rseg.tile_index) = i) then -- select the current read tile
                 ftable_presenter_trail_tile_id      <= tile_regs.trail_tid(i)(tile_regs.trail_tid(i)'length-2 downto 0); -- msb (valid) is trimmed
+            end if;
+        end loop;
+
+        -- derive the warping tile given rd is within range
+        ftable_presenter_if_in_range_warp_wr_seg      <= (others => '0');
+        for i in N_WR_SEG-2 downto 0 loop
+            if ftable_presenter.rseg.tile_index = ftable_mapper.wseg(i).tile_index then 
+                ftable_presenter_if_in_range_warp_wr_seg    <= to_unsigned(i+1,TILE_ID_WIDTH); 
+            end if;
+        end loop;
+        ftable_presenter_if_in_range_warp_rd_tile    <= (others => '0');
+        for i in 0 to N_WR_SEG-1 loop
+            if ftable_presenter_if_in_range_warp_wr_seg = i then
+                ftable_presenter_if_in_range_warp_rd_tile       <= ftable_mapper.wseg(i).tile_index;
             end if;
         end loop;
 
@@ -2641,13 +2891,23 @@ begin
             if (to_integer(ftable_presenter.rseg.tile_index) = i) then
                 page_ram_rd_addr                    <= std_logic_vector(ftable_presenter.page_ram_rptr(i));
             end if;
+            if ftable_presenter.trailing_active(0) then -- ghost
+                if (to_integer(ftable_presenter.trailing_tile_index) = i) then 
+                    page_ram_rd_addr                <= std_logic_vector(ftable_presenter.page_ram_rptr(i));
+                end if;
+            end if;
         end loop;
-        -- -- page tile > [rd:data]
+        -- page tile > [rd:data]
         -- connect page ram complex with given index to the avst I/F
         page_ram_rd_data                    <= (others => '0'); -- default
         for i in 0 to N_TILE-1 loop
             if (to_integer(ftable_presenter.rseg.tile_index) = i) then
                 page_ram_rd_data                    <= page_tile_rd_data_reg(i);
+            end if;
+            if ftable_presenter.trailing_active(EGRESS_DELAY) then -- ghost, note: we switch the data port with delay 
+                if (to_integer(ftable_presenter.trailing_tile_index) = i) then -- 
+                    page_ram_rd_data                    <= page_tile_rd_data_reg(i);
+                end if;
             end if;
         end loop;
         
