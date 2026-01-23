@@ -168,7 +168,7 @@ use altera_mf.all;
 entity ${output_name} is
     generic (
         -- IP basic
-        N_LANE                  : natural := 4; -- number of ingress lanes, e.g., 4 for x4
+        N_LANE                  : natural := 2; -- number of ingress lanes, e.g., 4 for x4
         MODE                    : string := "MERGING"; -- {MULTIPLEXING MERGING} multiplexing: ingress flows ts are interleaved; merging: ingress flows ts are sequenced and consistent
         TRACK_HEADER            : boolean := true; -- Select whether to track the header of ingress flow as the reference timestamp for each subheader packet.
         -- ingress format
@@ -183,7 +183,7 @@ entity ${output_name} is
         PAGE_RAM_DEPTH          : natural := 65536; -- size of the page RAM in unit of its WR data width, need to be larger than the full header packet, which is usually 65k max for each FEB flow
         PAGE_RAM_RD_WIDTH       : natural := 36; -- RD data width of the page RAM in unit of bits, write width = LANE_FIFO_WIDTH, read width can be larger to interface with PCIe DMA
         -- packet format (packet = subheader packet; w/o sop/eop; frame = header packet, w/ sop/eop)
-        N_SHD                   : natural := 256; -- number of subheader, e.g., 256, more than 256 will be dropped. each subframe is 16 cycles
+        N_SHD                   : natural := 128; -- number of subheader, e.g., 256, more than 256 will be dropped. each subframe is 16 cycles
         N_HIT                   : natural := 255; -- number of hits per subheader, e.g., 255, more than 255 will be dropped
         HDR_SIZE                : natural := 5; -- size of header in words, e.g., 5 words
         SHD_SIZE                : natural := 1; -- size of subheader in words, e.g., 1 word
@@ -821,6 +821,7 @@ architecture rtl of ${output_name} is
     type update_ftable_trltl_t is array (0 to 1) of unsigned(TILE_ID_WIDTH-1 downto 0);
     type update_ftable_bdytl_t is array (0 to 1) of unsigned(TILE_ID_WIDTH-1 downto 0);
     type last_pkt_dbg_tile_index_t is array (0 to 2) of unsigned(TILE_ID_WIDTH-1 downto 0);
+    type last_pkt_dbg_tile_index_pipe_t is array (0 to 1) of last_pkt_dbg_tile_index_t;
 
     type ftable_mapper_t is record
         new_frame_raw_addr              : unsigned(PAGE_RAM_ADDR_WIDTH-1 downto 0);
@@ -840,7 +841,7 @@ architecture rtl of ${output_name} is
         update_ftable_hcmpl             : std_logic_vector(1 downto 0);
         flush_ftable_valid              : std_logic_vector(1 downto 0);
         mgmt_tiles_start                : std_logic;
-        last_pkt_dbg_tile_index         : last_pkt_dbg_tile_index_t;
+        last_pkt_dbg_tile_index         : last_pkt_dbg_tile_index_pipe_t;
     end record;
 
     -- reg
@@ -865,7 +866,7 @@ architecture rtl of ${output_name} is
         update_ftable_hcmpl             => (others => '0'),
         flush_ftable_valid              => (others => '0'),
         mgmt_tiles_start                => '0',
-        last_pkt_dbg_tile_index         => (others => (others => '0'))
+        last_pkt_dbg_tile_index         => (others => (others => (others => '0')))
     );
     signal ftable_mapper                : ftable_mapper_t;
     signal ftable_mapper_update_ftable_spill_reg    : std_logic;
@@ -1129,7 +1130,7 @@ begin
             ingress_parser_hdr_err(i)                     <= asi_ingress_error(i)(2);
 
             -- de-assemble frame info from header
-            ingress_parser_if_subheader_hit_cnt(i)        <= unsigned(asi_ingress_data(i))(15 downto 8);
+            ingress_parser_if_subheader_hit_cnt(i)        <= unsigned(asi_ingress_data(i)(15 downto 8));
             ingress_parser_if_subheader_shd_ts(i)         <= asi_ingress_data(i)(31 downto 24);
             ingress_parser_if_preamble_dt_type(i)         <= asi_ingress_data(i)(31 downto 26);
             ingress_parser_if_preamble_feb_id(i)          <= asi_ingress_data(i)(23 downto 8);
@@ -1137,11 +1138,11 @@ begin
             -- assemble write ticket FIFO wdata
             -- shr ticket = {alert_sop_eop[1:0] ... ts[47:0], start addr[9:0], length[9:0]}
             if (ingress_parser_state(i) = IDLE) then -- IDLE : use comb ts and subh_cnt from ingress data
-                ingress_parser_if_write_ticket_data(i)(TICKET_TS_HI downto TICKET_TS_LO)                        <= std_logic_vector(ingress_parser(i).running_ts)(47 downto 12) & ingress_parser_if_subheader_shd_ts(i) & "0000"; -- ts[47:0]
+                ingress_parser_if_write_ticket_data(i)(TICKET_TS_HI downto TICKET_TS_LO)                        <= std_logic_vector(ingress_parser(i).running_ts(47 downto 12)) & ingress_parser_if_subheader_shd_ts(i) & "0000"; -- ts[47:0]
                 ingress_parser_if_write_ticket_data(i)(TICKET_LANE_RD_OFST_HI downto TICKET_LANE_RD_OFST_LO)    <= std_logic_vector(ingress_parser(i).lane_start_addr); -- start address of the lane FIFO
                 ingress_parser_if_write_ticket_data(i)(TICKET_BLOCK_LEN_HI downto TICKET_BLOCK_LEN_LO)          <= std_logic_vector(ingress_parser_if_subheader_hit_cnt(i)); -- length of the subheader (8-bit)
             else -- WR_HIT : use registered ts and subh_cnt
-                ingress_parser_if_write_ticket_data(i)(TICKET_TS_HI downto TICKET_TS_LO)                        <= std_logic_vector(ingress_parser(i).running_ts)(47 downto 0); -- ts[47:0]
+                ingress_parser_if_write_ticket_data(i)(TICKET_TS_HI downto TICKET_TS_LO)                        <= std_logic_vector(ingress_parser(i).running_ts(47 downto 0)); -- ts[47:0]
                 ingress_parser_if_write_ticket_data(i)(TICKET_LANE_RD_OFST_HI downto TICKET_LANE_RD_OFST_LO)    <= std_logic_vector(ingress_parser(i).lane_start_addr); -- start address of the lane FIFO
                 ingress_parser_if_write_ticket_data(i)(TICKET_BLOCK_LEN_HI downto TICKET_BLOCK_LEN_LO)          <= std_logic_vector(ingress_parser(i).shd_len); -- length of the subheader (8-bit)
             end if;
@@ -1169,11 +1170,11 @@ begin
             -- conn.
             -- > ticket FIFO
             ticket_fifos_wr_data(i)         <= ingress_parser(i).ticket_wdata;
-            ticket_fifos_wr_addr(i)         <= std_logic_vector(ingress_parser(i).ticket_wptr - 1); -- note: as we plus 1 for every time we write, e.g., need to start from -1 address
+            ticket_fifos_wr_addr(i)         <= std_logic_vector(ingress_parser(i).ticket_wptr - 1);
             ticket_fifos_we(i)              <= ingress_parser(i).ticket_we;
             -- > lane FIFO
             lane_fifos_wr_data(i)           <= ingress_parser(i).lane_wdata;
-            lane_fifos_wr_addr(i)           <= std_logic_vector(ingress_parser(i).lane_wptr - 1); -- note: as we plus 1 for every time we write, e.g., need to start from -1 address
+            lane_fifos_wr_addr(i)           <= std_logic_vector(ingress_parser(i).lane_wptr - 1);
             lane_fifos_we(i)                <= ingress_parser(i).lane_we;
         end loop;
     end process;
@@ -1603,7 +1604,7 @@ begin
                 else 
                     page_allocator_is_tk_future(i)              <= '0'; -- ok : expected
                 end if;
-            elsif (unsigned(ticket_fifos_rd_data(i)(47 downto 0)) > page_allocator.running_ts) then -- shr ticket
+            elsif (unsigned(ticket_fifos_rd_data(i)(47 downto 0)) > page_allocator.running_ts + to_unsigned(16, page_allocator.running_ts'length)) then -- shr ticket (allow 1 tick slack)
                 page_allocator_is_tk_future(i)              <= '1';
             else 
                 page_allocator_is_tk_future(i)              <= '0';
@@ -1615,7 +1616,7 @@ begin
                 else 
                     page_allocator_is_tk_past(i)                <= '0'; -- ok : expected
                 end if;
-            elsif (unsigned(ticket_fifos_rd_data(i)(47 downto 0)) < page_allocator.running_ts) then -- shr ticket
+            elsif (unsigned(ticket_fifos_rd_data(i)(47 downto 0)) + to_unsigned(16, page_allocator.running_ts'length) < page_allocator.running_ts) then -- shr ticket (allow 1 tick slack)
                 page_allocator_is_tk_past(i)                <= '1';
             else 
                 page_allocator_is_tk_past(i)                <= '0';
@@ -1633,7 +1634,7 @@ begin
         -- > handle FIFO
             handle_fifos_we(i)                                      <= page_allocator.handle_we(i);
             handle_fifos_wr_data(i)(HANDLE_LENGTH downto 0)         <= page_allocator.handle_wflag(i) & page_allocator_if_write_handle_data(i); -- handle = {flag 1-bit, data}
-            handle_fifos_wr_addr(i)                                 <= std_logic_vector(page_allocator.handle_wptr(i) - 1); -- note: we start from -1 ptr, so first write word will be in addr 0
+            handle_fifos_wr_addr(i)                                 <= std_logic_vector(page_allocator.handle_wptr(i) - 1);
         -- ticket FIFO >
             ticket_fifos_rd_addr(i)                                 <= std_logic_vector(page_allocator.ticket_rptr(i));  
         end loop;
@@ -1737,7 +1738,7 @@ begin
                                 page_allocator_state                    <= WRITE_TAIL;
                             else -- [exit 0] allocate page for all lanes with tickets obtained, because this is the first frame of this run, no trailer needs to write
                                 page_allocator.page_we                  <= '0'; -- stop write
-                                page_allocator.page_start_addr          <= page_allocator.frame_start_addr + to_unsigned(HDR_SIZE,page_allocator.page_start_addr'length); -- incr the page start addr by HDR_SIZE (5) from this frame top, because we wrote header
+                                page_allocator.page_start_addr          <= page_allocator.frame_start_addr + HDR_SIZE; -- incr the page start addr by HDR_SIZE (5) from this frame top, because we wrote header
                                 page_allocator.frame_cnt                <= page_allocator.frame_cnt + 1; -- incr the frame counter
                                 page_allocator_state                    <= IDLE; -- go back and get one shr ticket
                             end if;
@@ -1759,7 +1760,7 @@ begin
                             -- [reset]
                             page_allocator.write_meta_flow          <= 0;
                             page_allocator.write_trailer            <= '0';
-                            page_allocator.page_start_addr          <= page_allocator.page_start_addr + HDR_SIZE; -- incr the page start addr by HDR_SIZE (5), because we wrote header
+                            page_allocator.page_start_addr          <= page_allocator.page_start_addr + HDR_SIZE + TRL_SIZE; -- incr the page start addr by HDR_SIZE (5) + TRL_SIZE (1), because we wrote header + last trailer
                             page_allocator_state                    <= IDLE; -- go back and get one shr ticket
                             -- reset counters of last frame
                             page_allocator.frame_shr_cnt            <= (others => '0');
@@ -1910,6 +1911,7 @@ begin
             handle_fifo_if_rd(i).handle.src        <= unsigned(handle_fifos_rd_data(i)(HANDLE_SRC_HI downto HANDLE_SRC_LO));
             handle_fifo_if_rd(i).handle.dst        <= unsigned(handle_fifos_rd_data(i)(HANDLE_DST_HI downto HANDLE_DST_LO));
             handle_fifo_if_rd(i).handle.blk_len    <= unsigned(handle_fifos_rd_data(i)(HANDLE_LEN_HI downto HANDLE_LEN_LO));
+            handle_fifo_if_rd(i).flag              <= handle_fifos_rd_data(i)(HANDLE_LENGTH);
             -- > page RAM
             -- controlled by ARB 
         end loop;
@@ -2276,19 +2278,6 @@ begin
                             end if;
                         end if;
 
-                        -- 3 debug header word will be written in the next pkt, but it can be scattered in different tiles as current pkt will spill
-                        for i in 0 to 2 loop
-                            if (i >= 0 and i <= 1) then -- debug word 3 and 4
-                                if (ftable_mapper.new_frame_raw_addr + to_unsigned(3+i,PAGE_RAM_ADDR_WIDTH) > ftable_mapper.new_frame_raw_addr) then -- not overflow yet
-                                    ftable_mapper.last_pkt_dbg_tile_index(i)        <= ftable_mapper_leading_wr_tile_index_reg;
-                                else -- overflow : tile id is the expanding one
-                                    ftable_mapper.last_pkt_dbg_tile_index(i)        <= ftable_mapper_expand_wr_tile_index_reg;
-                                end if;
-                            else -- trailer = debug word 5
-                                ftable_mapper.last_pkt_dbg_tile_index(i)        <= ftable_mapper_expand_wr_tile_index_reg; -- trailer will definitely go to next tile
-                            end if;
-                        end loop;
-
                         -- note: there are two heads of mapper -> tracker 
                         -- write to tracker[tile_index] = {meta(header_addr,pkt_length), *where_is_trail} 
                         --         *tracker[tile_index] = {*where_is_head} 
@@ -2304,21 +2293,37 @@ begin
                         ftable_mapper.update_ftable_bdytl_valid(1)  <= '1';
                         ftable_mapper.update_ftable_bdytl(1)        <= ftable_mapper_leading_wr_tile_index_reg; -- link to head tile
                         ftable_mapper.flush_ftable_valid(1)         <= '1';
+
+                        -- 3 debug header word will be written in the next pkt, but it can be scattered in different tiles as current pkt will spill
+                        for i in 0 to 2 loop
+                            if (i >= 0 and i <= 1) then -- debug word 3 and 4
+                                if (ftable_mapper.new_frame_raw_addr + to_unsigned(3+i,PAGE_RAM_ADDR_WIDTH) > ftable_mapper.new_frame_raw_addr) then -- not overflow yet
+                                    ftable_mapper.last_pkt_dbg_tile_index(0)(i)        <= ftable_mapper_leading_wr_tile_index_reg;
+                                else -- overflow : tile id is the expanding one
+                                    ftable_mapper.last_pkt_dbg_tile_index(0)(i)        <= ftable_mapper_expand_wr_tile_index_reg;
+                                end if;
+                            else -- trailer = debug word 5
+                                ftable_mapper.last_pkt_dbg_tile_index(0)(i)        <= ftable_mapper_expand_wr_tile_index_reg; -- trailer will definitely go to next tile
+                            end if;
+                        end loop;
                     else -- b) write frame will not cross segment, normal write
                         -- write to tracker[tile_index] = {header_addr}
                         ftable_mapper.update_ftable_valid           <= "01";
                         ftable_mapper.update_ftable_tindex(0)       <= ftable_mapper_leading_wr_tile_index_reg; -- current tile id
                         ftable_mapper.update_ftable_meta_valid(0)   <= '1';
                         ftable_mapper.update_ftable_meta(0)         <= std_logic_vector(ftable_mapper_update_ftable_fspan_reg) & std_logic_vector(ftable_mapper.new_frame_raw_addr);
+                        
                         -- 3 debug header word will be in the current tile due to pkt will not spill
                         for i in 0 to 2 loop
-                            ftable_mapper.last_pkt_dbg_tile_index(i)    <= ftable_mapper_leading_wr_tile_index_reg;
+                            ftable_mapper.last_pkt_dbg_tile_index(0)(i)    <= ftable_mapper_leading_wr_tile_index_reg;
                         end loop;
                     end if;
+                    
                     ftable_mapper.wseg_last_tile_pipe(0)           <= ftable_mapper_leading_wr_tile_index_reg; -- record the tile of this pkt
                     ftable_mapper.wseg_last_tile_pipe(1)           <= ftable_mapper.wseg_last_tile_pipe(0);
+
+                    ftable_mapper.last_pkt_dbg_tile_index(1)       <= ftable_mapper.last_pkt_dbg_tile_index(0);
                     ftable_mapper_state                            <= IDLE; -- write will be done in 1 cycle
-                    
 
                 when MODIFY_FRAME_TABLE => -- modify to reflect that the last written packet is ready
                     ftable_mapper_state                         <= IDLE; -- write will be done in 1 cycle
@@ -2455,7 +2460,7 @@ begin
         -- wr last pkt debug word, can scatter in different tiles
         for i in 3 to 5 loop
             if (i = page_allocator.write_meta_flow_d1) then 
-                ftable_mapper_writing_tile_index                <= ftable_mapper.last_pkt_dbg_tile_index(i-3); 
+                ftable_mapper_writing_tile_index                <= ftable_mapper.last_pkt_dbg_tile_index(1)(i-3); 
             end if;
         end loop;
     end process;
@@ -2579,7 +2584,7 @@ begin
         -- connections
         -- tile fifos >
         for i in 0 to N_TILE-1 loop
-            tile_fifos_wr_addr(i)                   <= std_logic_vector(ftable_tracker.tile_wptr(i) - 1); -- ex: wr ptr to 1, 2, 3, ...   wr addr to 0, 1, 2, ...
+            tile_fifos_wr_addr(i)                   <= std_logic_vector(ftable_tracker.tile_wptr(i) - 1);
             tile_fifos_we(i)                        <= ftable_tracker.tile_we(i);
             tile_fifos_wr_data(i)                   <= ftable_tracker.tile_wdata(i);
         end loop;
@@ -2615,24 +2620,19 @@ begin
                         if (ftable_mapper_state = PREP_UPDATE or ftable_mapper_state = UPDATE_FRAME_TABLE or (page_allocator_state = WRITE_HEAD and page_allocator.write_meta_flow = 0)) then -- contention : freeze. wr is modifying the tiles, rd will freeze here
                             -- 3 cycles of stall, wr will modify the tiles here
                         else -- contention : ok
+                            ftable_presenter_state                  <= WARPING;
+                            -- free up current rd tile fifo
+                            for i in 0 to N_TILE-1 loop
+                                if (to_integer(ftable_presenter.rseg.tile_index) = i) then -- select the current read tile
+                                    ftable_presenter.tile_rptr(i)           <= ftable_tracker.tile_wptr(i); -- set the r to w ptr (flush fifo)
+                                    ftable_presenter.tile_pkt_rcnt(i)       <= (others => '0'); -- fresh tile will read from 0
+                                end if;
+                            end loop;
+                            -- set new rd seg tile index
                             if ftable_presenter_is_rd_tile_in_range then -- in range : warp to next wr tile
-                                ftable_presenter_state                  <= WARPING;
                                 ftable_presenter.rseg.tile_index        <= ftable_presenter_if_in_range_warp_rd_tile;
-                                -- free up current rd tile fifo
-                                for i in 0 to N_TILE-1 loop
-                                    if (to_integer(ftable_presenter.rseg.tile_index) = i) then -- select the current read tile
-                                        ftable_presenter.tile_rptr(i)           <= ftable_tracker.tile_wptr(i); -- set the r to w ptr (flush fifo)
-                                    end if;
-                                end loop;
                             else -- out of range : warp to tail of wr
-                                ftable_presenter_state                  <= WARPING;
                                 ftable_presenter.rseg.tile_index        <= ftable_mapper.wseg(0).tile_index; 
-                                -- free up current rd tile fifo
-                                for i in 0 to N_TILE-1 loop
-                                    if (to_integer(ftable_presenter.rseg.tile_index) = i) then -- select the current read tile
-                                        ftable_presenter.tile_rptr(i)           <= ftable_tracker.tile_wptr(i); -- set the r to w ptr (flush fifo)
-                                    end if;
-                                end loop;
                             end if;
                         end if;
                     end if;
@@ -2683,6 +2683,8 @@ begin
                     for i in 0 to EGRESS_DELAY-1 loop
                         ftable_presenter.output_data_valid(i+1)     <= ftable_presenter.output_data_valid(i);
                     end loop;
+                    -- pipe through the data
+                    ftable_presenter.output_data                <= page_ram_rd_data;
 
                     for i in 0 to N_TILE-1 loop
                         -- incr rd ptr 
@@ -2701,14 +2703,12 @@ begin
                         -- read logic 
                         if (ftable_presenter.rseg.tile_index = i) then
                             if (aso_egress_ready = '1') then 
-                                -- pipe through the data
-                                ftable_presenter.output_data                <= page_ram_rd_data;
                                 if ftable_presenter_output_is_trailer then -- [exit] : seen trailer, this packet has finished
                                     ftable_presenter_state                                  <= IDLE;
                                     ftable_presenter.output_data_valid                      <= (others => '0'); -- data stop now!
                                     if (ftable_presenter.trailing_active(0) = '1') then -- we have switched tile, deassert trail span of aux reg as read has finished
                                         ftable_presenter.trailing_active(0)         <= '0';    
-                                        ftable_presenter.void_body_tid              <= '1';
+                                        ftable_presenter.void_body_tid              <= '1'; -- not necessary
                                         ftable_presenter.crossing_trid_valid        <= '0'; -- deassert the 2 rd seg flag
                                     end if;
                                     ftable_presenter.tile_pkt_rcnt(i)           <= ftable_presenter.tile_pkt_rcnt(i) + 1; -- incr rd counter
@@ -2787,15 +2787,18 @@ begin
             -- page tile < [rd:addr] 
             -- connect the read address to appropriate page ram of the complex given tile index
             -- page_tile_rd_addr                   <= (others => (others => '0')); -- default
+            -- for i in 0 to N_TILE-1 loop
+            --     if (to_integer(ftable_presenter.rseg.tile_index) = i) then -- normal
+            --         page_tile_rd_addr(i)                <= page_ram_rd_addr; -- pipeline for timing
+            --     end if;
+            --     if ftable_presenter.trailing_active(0) then -- ghost
+            --         if (to_integer(ftable_presenter.trailing_tile_index) = i) then 
+            --             page_tile_rd_addr(i)                <= page_ram_rd_addr;
+            --         end if;
+            --     end if;
+            -- end loop;
             for i in 0 to N_TILE-1 loop
-                if (to_integer(ftable_presenter.rseg.tile_index) = i) then -- normal
-                    page_tile_rd_addr(i)                <= page_ram_rd_addr; -- pipeline for timing
-                end if;
-                if ftable_presenter.trailing_active(0) then -- ghost
-                    if (to_integer(ftable_presenter.trailing_tile_index) = i) then 
-                        page_tile_rd_addr(i)                <= page_ram_rd_addr;
-                    end if;
-                end if;
+                page_tile_rd_addr(i)            <= std_logic_vector(ftable_presenter.page_ram_rptr(i));
             end loop;
 
             page_tile_rd_data_reg           <= page_tile_rd_data;
@@ -2812,6 +2815,7 @@ begin
     end process;
 
     proc_frame_table_presenter_comb : process (all)
+        variable rd_data_sel_idx        : integer range 0 to N_TILE-1 := 0;
     begin
         -- WR:
         -- pointer increase after head is in (we need placeholder)
@@ -2884,32 +2888,39 @@ begin
         for i in 0 to N_TILE-1 loop
             tile_fifos_rd_addr(i)              <= std_logic_vector(ftable_presenter.tile_rptr(i));
         end loop;
-        -- page ram < [rd:addr]
-        -- connect read pointer to the page ram given tile index
-        page_ram_rd_addr                    <= (others => '0');
-        for i in 0 to N_TILE-1 loop
-            if (to_integer(ftable_presenter.rseg.tile_index) = i) then
-                page_ram_rd_addr                    <= std_logic_vector(ftable_presenter.page_ram_rptr(i));
-            end if;
-            if ftable_presenter.trailing_active(0) then -- ghost
-                if (to_integer(ftable_presenter.trailing_tile_index) = i) then 
-                    page_ram_rd_addr                <= std_logic_vector(ftable_presenter.page_ram_rptr(i));
-                end if;
-            end if;
-        end loop;
+        -- -- page ram < [rd:addr]
+        -- -- connect read pointer to the page ram given tile index
+        -- page_ram_rd_addr                    <= (others => '0');
+        -- for i in 0 to N_TILE-1 loop
+        --     if (to_integer(ftable_presenter.rseg.tile_index) = i) then
+        --         page_ram_rd_addr                    <= std_logic_vector(ftable_presenter.page_ram_rptr(i));
+        --     end if;
+        --     if ftable_presenter.trailing_active(0) then -- ghost
+        --         if (to_integer(ftable_presenter.trailing_tile_index) = i) then 
+        --             page_ram_rd_addr                <= std_logic_vector(ftable_presenter.page_ram_rptr(i));
+        --         end if;
+        --     end if;
+        -- end loop;
         -- page tile > [rd:data]
         -- connect page ram complex with given index to the avst I/F
-        page_ram_rd_data                    <= (others => '0'); -- default
-        for i in 0 to N_TILE-1 loop
-            if (to_integer(ftable_presenter.rseg.tile_index) = i) then
-                page_ram_rd_data                    <= page_tile_rd_data_reg(i);
-            end if;
-            if ftable_presenter.trailing_active(EGRESS_DELAY) then -- ghost, note: we switch the data port with delay 
-                if (to_integer(ftable_presenter.trailing_tile_index) = i) then -- 
-                    page_ram_rd_data                    <= page_tile_rd_data_reg(i);
-                end if;
-            end if;
-        end loop;
+        -- page_ram_rd_data                    <= (others => '0'); -- default
+        if ftable_presenter.trailing_active(EGRESS_DELAY) = '1' then 
+            rd_data_sel_idx                 := to_integer(ftable_presenter.trailing_tile_index);
+        else
+            rd_data_sel_idx                 := to_integer(ftable_presenter.rseg.tile_index);
+        end if;
+        page_ram_rd_data                    <= page_tile_rd_data_reg(rd_data_sel_idx);
+
+        -- for i in 0 to N_TILE-1 loop
+        --     if (to_integer(ftable_presenter.rseg.tile_index) = i) then
+        --         page_ram_rd_data                    <= page_tile_rd_data_reg(i);
+        --     end if;
+        --     if ftable_presenter.trailing_active(EGRESS_DELAY) then -- ghost, note: we switch the data port with delay 
+        --         if (to_integer(ftable_presenter.trailing_tile_index) = i) then -- 
+        --             page_ram_rd_data                    <= page_tile_rd_data_reg(i);
+        --         end if;
+        --     end if;
+        -- end loop;
         
     end process;
     

@@ -2,3 +2,12 @@
 *.bak
 greybox_tmp/
 .qsys_edit/
+
+# Testbench (ModelSim/Questa) generated artifacts
+tb/**/work/
+tb/**/transcript
+tb/**/*.vcd
+tb/**/vsim.wlf
+
+# TB copies of preprocessed DUTs (regenerated each run)
+tb/ordered_priority_queue/ordered_priority_queue.vhd
