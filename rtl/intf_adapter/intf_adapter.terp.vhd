@@ -22,9 +22,9 @@
 --                          d1                         1 bit                not used
 
 -- ------------------------------------------------------------------------------------------------------------
--- ================ synthsizer configuration =================== 	
--- altera vhdl_input_version vhdl_2008 
--- ============================================================= 
+-- ================ synthsizer configuration ===================
+-- altera vhdl_input_version vhdl_2008
+-- =============================================================
 -- general
 library ieee;
 use ieee.std_logic_1164.all;
@@ -100,7 +100,7 @@ entity ${output_name} is
             @@ } elseif {[string equal -nocase $ingress_format "AXI4"]} {
             -- TODO AXI4 interface
             @@ } else {
-        cds_ingress_${i}_data            : in  std_logic_vector(MU3E_SIG_WIDTH-1 downto 0); -- mu3e bundle signal    
+        cds_ingress_${i}_data            : in  std_logic_vector(MU3E_SIG_WIDTH-1 downto 0); -- mu3e bundle signal
             @@ }
         @@ }
 
@@ -130,10 +130,10 @@ entity ${output_name} is
             @@ } elseif {[string equal -nocase $egress_format "AXI4"]} {
         -- TODO AXI4 interface
             @@ } else {
-        cdm_egress_${i}_data              : out  std_logic_vector(MU3E_SIG_WIDTH-1 downto 0); -- mu3e bundle signal    
+        cdm_egress_${i}_data              : out  std_logic_vector(MU3E_SIG_WIDTH-1 downto 0); -- mu3e bundle signal
             @@ }
         @@ }
-            
+
 
         -- +---------------------+
         -- | CLK / RST Interface |
@@ -143,9 +143,9 @@ entity ${output_name} is
     );
 end entity ${output_name};
 
-architecture rtl of ${output_name} is 
+architecture rtl of ${output_name} is
     -- ───────────────────────────────────────────────────────────────────────────────────────
-    --                  COMMON 
+    --                  COMMON
     -- ───────────────────────────────────────────────────────────────────────────────────────
     -- universal 8b10b
 	constant K285					: std_logic_vector(7 downto 0) := "10111100"; -- 16#BC# -- byte 0 marks header begins
@@ -183,23 +183,24 @@ architecture rtl of ${output_name} is
 
     -- ────────────────────────────────────────────────────────────────────────────────────────────────
     -- EGRESS MAPPER
-    -- ──────────────────────────────────────────────────────────────────────────────────────────────── 
+    -- ────────────────────────────────────────────────────────────────────────────────────────────────
     signal egress_mapper           : ingress_mappers_t;
 
 
 begin
     -- ────────────────────────────────────────────────────────────────────────────────────────────────
-    -- io mapping 
+    -- io mapping
     -- ────────────────────────────────────────────────────────────────────────────────────────────────
     d_clk       <= data_clk;
     d_rst       <= data_reset;
 
     -- ────────────────────────────────────────────────────────────────────────────────────────────────
     -- @name            INGRESS MAPPER
+    -- @brief           Register and map raw MU3E lane words into internal per-lane record fields.
     -- ────────────────────────────────────────────────────────────────────────────────────────────────
     proc_ingress_mapper : process (d_clk)
     begin
-        if rising_edge(d_clk) then 
+        if rising_edge(d_clk) then
             @@ for {set i 0} {$i < $n_lane} {incr i} {
                 ingress_mapper($i).data      <= cds_ingress_${i}_data(MU3E_DATA_HI downto MU3E_DATA_LO);
                 ingress_mapper($i).datak     <= cds_ingress_${i}_data(MU3E_DATAK_HI downto MU3E_DATAK_LO);
@@ -208,7 +209,7 @@ begin
                 ingress_mapper($i).eop       <= cds_ingress_${i}_data(MU3E_EOP_HI downto MU3E_EOP_LO);
             @@ }
 
-            if d_rst then 
+            if d_rst then
 
             end if;
         end if;
@@ -216,10 +217,11 @@ begin
 
     -- ────────────────────────────────────────────────────────────────────────────────────────────────
     -- @name            EGRESS MAPPER
+    -- @brief           Map internal per-lane record fields back onto the enabled Avalon-ST outputs.
     -- ────────────────────────────────────────────────────────────────────────────────────────────────
     proc_egress_mapper : process (d_clk)
     begin
-        if rising_edge(d_clk) then 
+        if rising_edge(d_clk) then
             for i in 0 to N_LANE-1 loop
                 egress_mapper(i).data      <= ingress_mapper(i).data;
                 egress_mapper(i).datak     <= ingress_mapper(i).datak;
@@ -228,7 +230,7 @@ begin
                 egress_mapper(i).eop       <= ingress_mapper(i).eop;
             end loop;
 
-            if d_rst then 
+            if d_rst then
 
             end if;
         end if;
@@ -261,7 +263,7 @@ begin
     end process;
 
 
-          
+
 
 
 

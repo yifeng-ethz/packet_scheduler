@@ -5,9 +5,14 @@ greybox_tmp/
 
 # Testbench (ModelSim/Questa) generated artifacts
 tb/**/work/
+tb/**/work_*/
 tb/**/transcript
+tb/**/vsim.log
 tb/**/*.vcd
 tb/**/vsim.wlf
 
 # TB copies of preprocessed DUTs (regenerated each run)
-tb/ordered_priority_queue/ordered_priority_queue.vhd
+tb/**/ordered_priority_queue.vhd
+
+# TERP-generated wrappers (regenerated each run)
+rtl/ordered_priority_queue/split/top/ordered_priority_queue_top.vhd

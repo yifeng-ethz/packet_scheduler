@@ -1,0 +1,40 @@
+ordered_priority_queue RTL change log (timestamp alignment)
+Date: 2026-01-29
+
+Context / symptom (system_level_sim: feb_frame_assembly -> ordered_priority_queue):
+- Output hit timestamps mismatched vs ingress:
+  - ts_out - ts_in = -16 (one subheader tick) or 0xFF0 (= +4096 - 16)
+  - Strong correlation with ts[11] (N_SHD=128 "half-frame" bit).
+- Frame headers also showed a +0x800 (=2048) offset vs ingress, but note that hit timestamp reconstruction
+  uses only header ts[47:12], so the observed per-hit mismatch appeared as 0/+0x1000 in ts[47:12] plus -16 in ts[11:4].
+
+Root cause:
+- `frame_ts` was advanced *before* writing the frame header, so the header timestamp was effectively +1 frame.
+  In N_SHD=128 this shows up as a half-frame phase error (ts[11]) that leaks into hit timestamp reconstruction
+  via header ts[47:12] (odd/even frame effect).
+- `running_ts` was only advanced by the number of subheaders actually processed. The very first frame can be
+  shortened (observed 127 subheaders), so `running_ts` drifted by -1 subheader tick and stayed misaligned.
+- Note: the SOP ticket payload (serial/subh_cnt/hit_cnt) overlaps the same [47:0] bits as the subheader ticket
+  timestamp field, so SOP tickets cannot reliably carry a 48-bit header timestamp without redesigning the format.
+
+RTL changes (packet_scheduler/ordered_priority_queue.terp.vhd):
+1) In ingress_parser UPDATE_HEADER_TS flow=1:
+   - Capture the full ts[15:0] from the header word (bits 31:16) into running_ts(15:0).
+2) In page_allocator FETCH_TICKET when all lanes have SOP:
+   - Re-sync `page_allocator.running_ts` to the frame boundary (`running_ts <= frame_ts`) to avoid drift when
+     a frame is shortened (e.g., the first frame after reset/run).
+ 3) In page_allocator header/trailer write completion:
+   - Advance `frame_ts` *after* finishing writing the header (and optional trailer), not before.
+     This removes the off-by-one frame timestamp error.
+
+Simulation hookup:
+- `system_level_sim/tb/run_feb_to_opq.sh` compiles OPQ from the preprocessed source in
+  `packet_scheduler/tb/ordered_priority_queue/ordered_priority_queue.vhd`.
+  The generator script `packet_scheduler/tb/ordered_priority_queue/update_preprocessed.sh` was updated to apply
+  the same timestamp fixes to the copied Platform Designer VHDL so system-level simulation uses the patched RTL.
+
+Validation:
+- Re-run `system_level_sim/tb/run_feb_to_opq.sh` (NO_VCD=1 recommended) and confirm:
+  - `Top timestamp deltas (ts_out - ts_in)` collapses to only `0x000000000000`.
+  - `Header-hi delta (ts>>12)` is `{0: ...}` and `Subheader ts[11:4] delta` is `{0: ...}`.
+  - Missing hits remain limited to the initial packet 0 start-up behavior in current sim (934 hits in this run).

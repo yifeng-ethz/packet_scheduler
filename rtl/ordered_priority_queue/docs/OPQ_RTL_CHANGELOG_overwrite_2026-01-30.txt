@@ -1,0 +1,15 @@
+OPQ RTL change log (overwrite/backpressure debug) — 2026-01-30
+
+Scope:
+- ordered_priority_queue RTL (template + preprocessed sim patch)
+
+Changes:
+1) Added sim-only overwrite debug logging guarded by DEBUG_LV >= 2.
+   - New log file: opq_overwrite_debug.log
+   - Logs page RAM writes/reads and flags overwrite risk when write tile == active read tile.
+   - Implemented in `packet_scheduler/ordered_priority_queue.terp.vhd`
+   - Mirrored into `packet_scheduler/tb/ordered_priority_queue/update_preprocessed.sh`
+
+Backups:
+- packet_scheduler/rtl_backup/2026-01-30/ordered_priority_queue.terp.vhd
+- packet_scheduler/rtl_backup/2026-01-30/update_preprocessed.sh

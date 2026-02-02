@@ -468,7 +468,7 @@ add_fileset synth   QUARTUS_SYNTH my_generate
 proc my_generate { output_name } {
     # checkout this //acds/rel/18.1std/ip/merlin/altera_merlin_router/altera_merlin_router_hw.tcl
     
-    set template_file "intf_adapter.terp.vhd"
+    set template_file "rtl/intf_adapter/intf_adapter.terp.vhd"
 
     set template    [ read [ open $template_file r ] ]
 
@@ -603,4 +603,3 @@ proc my_elaborate {} {
 
     send_message INFO "elaboration <b>ok</b>"
 }
-

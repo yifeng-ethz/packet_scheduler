@@ -12,3 +12,6 @@
 ## Keeping patches when source changes
 - `ordered_priority_queue.vhd` is overwritten each run. Any manual edits must be encoded in `update_preprocessed.sh`; otherwise they will be lost.
 - If the preprocessed source changes and the script fails to match patterns, update `update_preprocessed.sh` to reapply parameter defaults and debug inserts before rerunning the simulation.
+
+## Notes
+- This TB folder generates the DUT from a local TERP template when `OPQ_USE_DEBUG_TERP=1` (see `update_preprocessed.sh`).

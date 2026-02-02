@@ -1,5 +1,5 @@
 ################################################
-# ordered_priority_queue "Ordered Priority Queue" v25.0.0716
+# ordered_priority_queue_v2 "Ordered Priority Queue (v2 split)" v26.1.0201
 # Yifeng Wang 2025.07.16
 ################################################
 
@@ -11,20 +11,21 @@ package require qsys
 # loc: $::env(QUARTUS_ROOTDIR)/../ip/altera/common/hw_tcl_packages/altera_terp.tcl
 package require -exact altera_terp 1.0
 
-# 25.0.0716 - file created 
+# 25.0.0716 - file created
 # 25.0.0722 - compilation successful, test ongoing
+# 26.1.0201 - split RTL wrapper (ordered_priority_queue_top.terp.vhd) integration
 
 ################################################
-# module ordered_priority_queue
+# module ordered_priority_queue_v2
 ################################################ 
-set_module_property NAME ordered_priority_queue
-set_module_property VERSION 25.0.0722
+set_module_property NAME ordered_priority_queue_v2
+set_module_property VERSION 26.1.0201
 set_module_property INTERNAL false
 set_module_property OPAQUE_ADDRESS_MAP true
 set_module_property GROUP "Mu3e Data Plane/Modules"
 set_module_property AUTHOR "Yifeng Wang"
 set_module_property ICON_PATH ../figures/mu3e_logo.png
-set_module_property DISPLAY_NAME "Ordered Priority Queue"
+set_module_property DISPLAY_NAME "Ordered Priority Queue (v2 split)"
 set_module_property INSTANTIATE_IN_SYSTEM_MODULE true
 set_module_property EDITABLE false
 set_module_property REPORT_TO_TALKBACK false
@@ -419,7 +420,8 @@ add_fileset synth   QUARTUS_SYNTH my_generate
 proc my_generate { output_name } {
     # checkout this //acds/rel/18.1std/ip/merlin/altera_merlin_router/altera_merlin_router_hw.tcl
     
-    set template_file "rtl/ordered_priority_queue/monolithic/ordered_priority_queue.terp.vhd"
+    # Split RTL TERP wrapper (generates a drop-in Avalon-ST wrapper around `opq_top`).
+    set template_file "rtl/ordered_priority_queue/split/top/ordered_priority_queue_top.terp.vhd"
 
     set template    [ read [ open $template_file r ] ]
 
@@ -427,7 +429,6 @@ proc my_generate { output_name } {
     set if_data_out_width [get_parameter_value PAGE_RAM_RD_WIDTH]
     set if_data_out_empty_width [expr int(ceil(log($if_data_out_width / $if_data_in_width)/log(2)))]
     set params(n_lane)              [get_parameter_value N_LANE]
-    set params(fifos_names)         [list "ticket_fifo" "lane_fifo" "handle_fifo"]
     set params(egress_empty_width)  $if_data_out_empty_width
 
     set params(output_name) $output_name
@@ -436,14 +437,22 @@ proc my_generate { output_name } {
 
     send_message INFO "<b>generated file: (${output_name}.vhd)</b>"
     
-    # top level file 
+    # Split RTL sources (VHDL only; inferred RAMs).
+    add_fileset_file "opq_util_pkg.vhd" VHDL PATH "./rtl/ordered_priority_queue/split/opq/common/opq_util_pkg.vhd"
+    add_fileset_file "opq_sync_ram.vhd" VHDL PATH "./rtl/ordered_priority_queue/split/opq/common/opq_sync_ram.vhd"
+    add_fileset_file "opq_ingress_parser.vhd" VHDL PATH "./rtl/ordered_priority_queue/split/opq/ingress/opq_ingress_parser.vhd"
+    add_fileset_file "opq_page_allocator.vhd" VHDL PATH "./rtl/ordered_priority_queue/split/opq/allocator/opq_page_allocator.vhd"
+    add_fileset_file "opq_block_mover.vhd" VHDL PATH "./rtl/ordered_priority_queue/split/opq/mover/opq_block_mover.vhd"
+    add_fileset_file "opq_b2p_arbiter.vhd" VHDL PATH "./rtl/ordered_priority_queue/split/opq/arbiter/opq_b2p_arbiter.vhd"
+    add_fileset_file "opq_frame_table_mapper.vhd" VHDL PATH "./rtl/ordered_priority_queue/split/opq/frame_table/opq_frame_table_mapper.vhd"
+    add_fileset_file "opq_frame_table_tracker.vhd" VHDL PATH "./rtl/ordered_priority_queue/split/opq/frame_table/opq_frame_table_tracker.vhd"
+    add_fileset_file "opq_frame_table_presenter.vhd" VHDL PATH "./rtl/ordered_priority_queue/split/opq/frame_table/opq_frame_table_presenter.vhd"
+    add_fileset_file "opq_frame_table.vhd" VHDL PATH "./rtl/ordered_priority_queue/split/opq/frame_table/opq_frame_table.vhd"
+    add_fileset_file "opq_rd_debug_if.vhd" VHDL PATH "./rtl/ordered_priority_queue/split/opq/debug/opq_rd_debug_if.vhd"
+    add_fileset_file "opq_top.vhd" VHDL PATH "./rtl/ordered_priority_queue/split/opq/top/opq_top.vhd"
+
+    # Top level file (wrapper generated from TERP template).
     add_fileset_file ${output_name}.vhd VHDL TEXT $result TOP_LEVEL_FILE
-    # fifos
-    add_fileset_file "handle_fifo.vhd" Verilog PATH "./rtl/vendor/alt_ram/handle_fifo.v"
-    add_fileset_file "lane_fifo.vhd" Verilog PATH "./rtl/vendor/alt_ram/lane_fifo.v"
-    add_fileset_file "ticket_fifo.vhd" Verilog PATH "./rtl/vendor/alt_ram/ticket_fifo.v"
-    add_fileset_file "page_ram.vhd" Verilog PATH "./rtl/vendor/alt_ram/page_ram.v"
-    add_fileset_file "tile_fifo.vhd" Verilog PATH "./rtl/vendor/alt_ram/tile_fifo.v"
 }
 
 
@@ -474,7 +483,8 @@ proc my_elaborate {} {
         set_interface_property ingress_${i} dataBitsPerSymbol $if_data_in_width
         set_interface_property ingress_${i} errorDescriptor {hit_err shd_err hdr_err}
         set_interface_property ingress_${i} firstSymbolInHighOrderBits true
-        set_interface_property ingress_${i} maxChannel [expr [get_parameter_value N_LANE] - 1]
+        # Channel value range (Qsys uses this to decide adapter insertion); should match CHANNEL_WIDTH, not N_LANE.
+        set_interface_property ingress_${i} maxChannel [expr (1 << [get_parameter_value CHANNEL_WIDTH]) - 1]
         set_interface_property ingress_${i} readyLatency 0
         set_interface_property ingress_${i} ENABLED true
         set_interface_property ingress_${i} EXPORT_OF ""

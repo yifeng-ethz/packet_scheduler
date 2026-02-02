@@ -5,9 +5,9 @@
 -- Description:         Random 1-bit toggler with adjustable rate via LFSR-based pseudo-random generator.
 -- ------------------------------------------------------------------------------------------------------------
 
--- ================ synthsizer configuration =================== 	
--- altera vhdl_input_version vhdl_2008 
--- ============================================================= 
+-- ================ synthsizer configuration ===================
+-- altera vhdl_input_version vhdl_2008
+-- =============================================================
 
 -- general
 library ieee;
@@ -79,6 +79,10 @@ architecture rtl of random_toggler is
 
 begin
 
+    -- ────────────────────────────────────────────────────────────────────────────────────────────────
+    -- @name            RANDOM TOGGLER
+    -- @brief           LFSR-based pseudo-random 1-bit toggler with rate divider and 1/2^K probability selector.
+    -- ────────────────────────────────────────────────────────────────────────────────────────────────
     proc_toggle : process(clk)
         variable k_int : natural;
     begin
@@ -92,7 +96,7 @@ begin
                 -- rate divider: advance LFSR only when counter expires
                 if rate_cnt = 0 then
                     rate_cnt <= rate_div;  -- reload
-                
+
                     -- advance PRNG
                     lfsr <= galois_next(lfsr);
 
