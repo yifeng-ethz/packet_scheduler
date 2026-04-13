@@ -100,40 +100,76 @@ The review of the archived packet_scheduler collateral shows these open items:
 
 ## Current Bring-Up Status
 
-- The new current-tree UVM harness now compiles and launches under the ETH
-  floating Mentor license on this host when run with the `questa_fse`
-  executable and both `LM_LICENSE_FILE` and `MGLS_LICENSE_FILE` chained to
+- The new current-tree UVM harness compiles and runs under the ETH floating
+  Mentor license on this host with `questa_fse`, `LM_LICENSE_FILE`, and
+  `MGLS_LICENSE_FILE` chained to
   `8161@lic-mentor.ethz.ch:/data1/intelFPGA_pro/23.1/questa_fse/LR-287689_License.dat`.
-- The `questa_fe` executable still fails on this host with `Invalid license
-  environment`, even though `lmutil lmdiag` reports `mtiverification` as
-  checkoutable.
-- The default active smoke `opq_basic_smoke_test` now passes end to end on the
-  current-tree harness:
-  - the basic hit-integrity scoreboard reports `expected=4 actual=4 missing=0 ghost=0`
-  - the first merged egress subheader now lands in the correct slot (`shd_ts=0x01`)
-    rather than being emitted one slot early at `shd_ts=0x00`
-- The monolithic template fixes folded into this bring-up include:
+- The current promoted regression on the VHDL monolithic DUT is:
+  - `opq_basic_smoke_test`
+  - `opq_edge_backpressure_test`
+  - `opq_edge_always_ready_test`
+  - `opq_prof_stress_test`
+  - `opq_error_lane_mask_test`
+  - `opq_error_ftable_overflow_test`
+  - `opq_error_counter_clear_test`
+  - `opq_cross_bp_credit_test`
+- The promoted suite currently reruns clean:
+  - `UVM summary: pass=8 fail=0 total=8`
+  - hit-integrity scoreboard closure remains clean on the integrity buckets
+  - the overflow bucket intentionally uses `OPQ_PAGE_RAM_DEPTH=512` to force
+    frame-table overwrite/drop behavior on a bounded runtime
+- The monolithic template fixes folded into the active DV promotion include:
   - `alloc_page_flow` wrap protection in `ALLOC_PAGE`
-  - egress `valid` / SOP / EOP gating during presenter restart
   - page-allocator timestamp compare tightening so the first real subheader is
     not forced into the zero slot
-- The remaining blockers are signoff-quality issues, not basic functionality:
-  - source-lint warnings in the monolithic VHDL still need disposition
-  - the coverage model and bucket closure are only partially implemented
-  - the current SV wrapper supports mixed-language SVA, but a full internal SV
-    source translation is still a separate follow-up task
+  - frame-table overwrite/drop accounting moved to tile-residency ownership so
+    CSR frame-table drop counters reflect actual overwritten contents
+  - reduced-depth `PAGE_RAM_DEPTH` fix on `page_start_addr` update
+- The active harness contract is now stronger than the initial bring-up:
+  - every promoted test reads and checks the standard CSR identity/capability
+    header before main stimulus
+  - the scoreboard tracks hits from ingress observation to egress using the
+    reconstructed 48-bit timestamp and a UVM-only 64-bit `HIT_ID`
+  - SVA is enabled by default for ingress AVST, egress AVST, and CSR protocol
+    checks
+- Probe buckets exist in the current tree but are not promoted into signoff yet:
+  - timestamp-boundary probe
+  - larger burst-hit probe
+  They expose remaining DUT limitations and are intentionally kept out of the
+  promoted closure set until the RTL behavior is fixed.
 
-## Recommended Execution Order
+## Current Coverage Snapshot
 
-1. Stand up a new current monolithic harness and wire in the covergroup model.
-2. Run and fix the three-layer lint flow on the monolithic DUT.
-3. Add SVA bind modules and make them part of every regression run.
-4. Promote a small current-tree core regression, then expand to the full
-   `DV_PLAN` matrix with coverage tracking.
-5. Publish a rerun-based signoff update with:
-   - exact RTL revision
-   - executed suite
-   - merged coverage numbers
-   - remaining justified gaps
-   - lint disposition
-   - SVA / formal status
+- Promoted merged closure command:
+  - `packet_scheduler/tb/scripts/run_cov_closure.sh`
+- Promoted merged functional result:
+  - `TOTAL COVERGROUP COVERAGE: 82.74%`
+- Implemented covergroup families in the current tree:
+  - configuration (`cg_cfg`)
+  - frame shape (`cg_frame`)
+  - subheader shape (`cg_subheader`)
+  - backpressure (`cg_bp`)
+  - CSR access (`cg_csr`)
+  - credit snapshots (`cg_credit`)
+  - lane / frame-table drop snapshots (`cg_drop`)
+  - ingress beat shape (`cg_ingress`)
+  - egress beat shape (`cg_egress`)
+- Assertion summary from the promoted merged closure:
+  - custom ingress/egress/CSR SVA: zero failures on the promoted suite
+  - the old template “non-default page RAM width” diagnostic was converted from
+    a failing `assert` into a non-failing warning so the reduced-depth overflow
+    bucket does not pollute the assertion failure count
+
+## Remaining Gaps
+
+- The functional coverage model is materially implemented, but not yet at the
+  archival `DV_PLAN.md` 100% target. The remaining holes are concentrated in
+  not-yet-promoted probe scenarios and parameter-space bins that are outside the
+  current promoted default-config closure set.
+- Source-lint warnings in the monolithic VHDL still need final disposition for
+  formal signoff.
+- Structural code-coverage numbers are produced by the merged UCDB flow, but
+  they are not yet summarized in this note with hole disposition.
+- The current SV wrapper supports mixed-language SVA, but a full internal SV
+  source translation remains a separate follow-up track rather than part of the
+  present VHDL signoff claim.

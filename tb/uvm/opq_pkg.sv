@@ -4,11 +4,23 @@ package opq_pkg;
   `uvm_analysis_imp_decl(_ingress)
   `uvm_analysis_imp_decl(_egress)
   `uvm_analysis_imp_decl(_frame)
+  `uvm_analysis_imp_decl(_bp)
+
+`ifndef OPQ_PAGE_RAM_DEPTH
+`define OPQ_PAGE_RAM_DEPTH 65536
+`endif
 
   localparam int OPQ_N_LANE = 2;
   localparam int OPQ_INGRESS_WIDTH = 36;
   localparam int OPQ_CHANNEL_WIDTH = 2;
   localparam int OPQ_PAGE_RAM_RD_WIDTH = 36;
+  localparam int OPQ_PAGE_RAM_DEPTH = `OPQ_PAGE_RAM_DEPTH;
+  localparam int OPQ_LANE_FIFO_DEPTH = 1024;
+  localparam int OPQ_TICKET_FIFO_DEPTH = 256;
+  localparam int OPQ_HANDLE_FIFO_DEPTH = 64;
+  localparam int OPQ_LANE_FIFO_MAX_CREDIT = OPQ_LANE_FIFO_DEPTH - 2;
+  localparam int OPQ_TICKET_FIFO_MAX_CREDIT = OPQ_TICKET_FIFO_DEPTH - 1;
+  localparam int OPQ_HANDLE_FIFO_MAX_CREDIT = OPQ_HANDLE_FIFO_DEPTH - 2;
   localparam int OPQ_N_SHD = 128;
   localparam int OPQ_N_HIT = 255;
   localparam int OPQ_MIN_SOP_GAP_CYCLES = 4000;
@@ -17,10 +29,28 @@ package opq_pkg;
   localparam bit [7:0] K285 = 8'hBC;
   localparam bit [7:0] K284 = 8'h9C;
   localparam bit [7:0] K237 = 8'hF7;
+  localparam bit [8:0] OPQ_CSR_WORD_UID = 9'h000;
+  localparam bit [8:0] OPQ_CSR_WORD_META = 9'h001;
+  localparam bit [8:0] OPQ_CSR_WORD_LANE_MASK = 9'h002;
+  localparam bit [8:0] OPQ_CSR_WORD_CTRL = 9'h003;
+  localparam bit [8:0] OPQ_CSR_WORD_STATUS = 9'h004;
+  localparam bit [8:0] OPQ_CSR_WORD_CAP = 9'h005;
+  localparam bit [8:0] OPQ_CSR_WORD_FT_WR_HDR = 9'h008;
+  localparam bit [8:0] OPQ_CSR_WORD_FT_WR_SHD = 9'h009;
+  localparam bit [8:0] OPQ_CSR_WORD_FT_WR_HIT = 9'h00A;
+  localparam bit [8:0] OPQ_CSR_WORD_FT_RD_HDR = 9'h00B;
+  localparam bit [8:0] OPQ_CSR_WORD_FT_RD_SHD = 9'h00C;
+  localparam bit [8:0] OPQ_CSR_WORD_FT_RD_HIT = 9'h00D;
+  localparam bit [8:0] OPQ_CSR_WORD_FT_DROP_HDR = 9'h00E;
+  localparam bit [8:0] OPQ_CSR_WORD_FT_DROP_SHD = 9'h00F;
+  localparam bit [8:0] OPQ_CSR_WORD_FT_DROP_HIT = 9'h010;
+  localparam bit [8:0] OPQ_CSR_LANE_REGION_BASE = 9'h040;
+  localparam bit [8:0] OPQ_CSR_LANE_REGION_STRIDE = 9'h010;
 
   typedef enum int {
     BP_ALWAYS_READY,
-    BP_PERIODIC_STALL
+    BP_PERIODIC_STALL,
+    BP_ALWAYS_STALL
   } opq_bp_mode_e;
 
   function automatic bit [31:0] make_preamble(bit [5:0] dt_type, bit [15:0] feb_id);

@@ -16,10 +16,13 @@ fi
 if [[ "$#" -eq 0 ]]; then
   TESTS=(
     opq_basic_smoke_test
-    opq_edge_placeholder_test
-    opq_prof_placeholder_test
-    opq_error_placeholder_test
-    opq_cross_placeholder_test
+    opq_edge_backpressure_test
+    opq_edge_always_ready_test
+    opq_prof_stress_test
+    opq_error_lane_mask_test
+    opq_error_ftable_overflow_test
+    opq_error_counter_clear_test
+    opq_cross_bp_credit_test
   )
 else
   TESTS=("$@")

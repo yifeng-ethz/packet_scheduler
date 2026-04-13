@@ -10,9 +10,11 @@ class opq_egress_driver extends uvm_driver #(opq_bp_item);
   `uvm_component_utils(opq_egress_driver)
 
   virtual opq_egress_if vif;
+  uvm_analysis_port #(opq_bp_item) bp_ap;
 
   function new(string name = "opq_egress_driver", uvm_component parent = null);
     super.new(name, parent);
+    bp_ap = new("bp_ap", this);
   endfunction
 
   task automatic wait_cycles(int unsigned cycles, bit ready_value);
@@ -33,6 +35,7 @@ class opq_egress_driver extends uvm_driver #(opq_bp_item);
 
     case (item.mode)
       BP_ALWAYS_READY: wait_cycles(high_cycles * repeats, 1'b1);
+      BP_ALWAYS_STALL: wait_cycles(low_cycles * repeats, 1'b0);
       BP_PERIODIC_STALL: begin
         repeat (repeats) begin
           wait_cycles(high_cycles, 1'b1);
@@ -69,6 +72,9 @@ class opq_egress_driver extends uvm_driver #(opq_bp_item);
         item = null;
         seq_item_port.try_next_item(item);
         if (item != null) begin
+          opq_bp_item item_clone;
+          $cast(item_clone, item.clone());
+          bp_ap.write(item_clone);
           apply_item(item);
           vif.drv_cb.ready <= 1'b1;
           seq_item_port.item_done();

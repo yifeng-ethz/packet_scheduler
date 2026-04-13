@@ -57,12 +57,14 @@ class opq_env extends uvm_env;
     super.connect_phase(phase);
     for (int i = 0; i < OPQ_N_LANE; i++) begin
       ingress_agent[i].drv.frame_ap.connect(scoreboard.frame_imp);
+      ingress_agent[i].drv.frame_ap.connect(coverage.frame_imp);
       ingress_agent[i].mon.ap.connect(scoreboard.ingress_imp);
       ingress_agent[i].mon.ap.connect(coverage.ingress_imp);
       vseqr.ingress_seqr[i] = ingress_agent[i].seqr;
     end
     egress_agent.mon.ap.connect(scoreboard.egress_imp);
     egress_agent.mon.ap.connect(coverage.egress_imp);
+    egress_agent.drv.bp_ap.connect(coverage.bp_imp);
     vseqr.egress_seqr = egress_agent.seqr;
   endfunction
 endclass

@@ -15,6 +15,7 @@ Usage:
 
 Environment:
   COV_ENABLE        1 to use `make run_cov`
+  OPQ_PAGE_RAM_DEPTH Optional page RAM depth override passed into the DUT wrapper generator
   QUESTA_PREFER_FE  0 by default; set to 1 to force the FE executable
   RUN_DO            Optional override for the vsim `-do` script
 EOF
@@ -39,6 +40,7 @@ fail_count=0
 run_one() {
   local test_name="$1"
   local log_file="${LOG_DIR}/${test_name}.log"
+  local page_ram_depth="${OPQ_PAGE_RAM_DEPTH:-65536}"
   local -a make_args=(
     "-C" "${UVM_DIR}"
     "QUESTA_PREFER_FE=${QUESTA_PREFER_FE:-0}"
@@ -49,6 +51,10 @@ run_one() {
   if [[ -n "${RUN_DO-}" ]]; then
     make_args+=("RUN_DO=${RUN_DO}")
   fi
+  if [[ "${test_name}" == "opq_error_ftable_overflow_test" && -z "${OPQ_PAGE_RAM_DEPTH-}" ]]; then
+    page_ram_depth=512
+  fi
+  make_args+=("OPQ_PAGE_RAM_DEPTH=${page_ram_depth}")
   if [[ "${COV_ENABLE:-0}" == "1" ]]; then
     target="run_cov"
   fi

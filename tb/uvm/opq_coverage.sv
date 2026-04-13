@@ -1,13 +1,175 @@
 class opq_coverage extends uvm_component;
   `uvm_component_utils(opq_coverage)
 
+  localparam int CSR_REGION_IDENTITY = 0;
+  localparam int CSR_REGION_CONTROL  = 1;
+  localparam int CSR_REGION_FTABLE   = 2;
+  localparam int CSR_REGION_LANE_CNT = 3;
+  localparam int CSR_REGION_CREDIT   = 4;
+  localparam int DROP_DOMAIN_LANE    = 0;
+  localparam int DROP_DOMAIN_FTABLE  = 1;
+
+  uvm_analysis_imp_frame #(opq_frame_item, opq_coverage) frame_imp;
   uvm_analysis_imp_ingress #(opq_beat_item, opq_coverage) ingress_imp;
   uvm_analysis_imp_egress #(opq_beat_item, opq_coverage) egress_imp;
+  uvm_analysis_imp_bp #(opq_bp_item, opq_coverage) bp_imp;
 
-  covergroup cg_cfg with function sample(int n_lane, int rd_width, int n_shd);
-    coverpoint n_lane { bins default_lane = {2}; }
-    coverpoint rd_width { bins width36 = {36}; }
-    coverpoint n_shd { bins subheader256 = {256}; }
+  covergroup cg_cfg with function sample(int n_lane, int rd_width, int n_shd, int page_depth);
+    coverpoint n_lane { bins active_cfg = {OPQ_N_LANE}; }
+    coverpoint rd_width { bins active_cfg = {OPQ_PAGE_RAM_RD_WIDTH}; }
+    coverpoint n_shd { bins active_cfg = {OPQ_N_SHD}; }
+    coverpoint page_depth {
+      bins reduced_overflow = {[256:1024]};
+      bins default_cfg = {65536};
+    }
+  endgroup
+
+  covergroup cg_frame with function sample(int lane, int subh_cnt, int hit_cnt, int pre_gap, bit [7:0] first_shd_ts);
+    coverpoint lane { bins lane0 = {0}; bins lane1 = {1}; }
+    coverpoint subh_cnt {
+      bins one = {1};
+      bins few = {[2:4]};
+      bins almost_full = {OPQ_N_SHD - 1};
+      bins max = {OPQ_N_SHD};
+    }
+    coverpoint hit_cnt {
+      bins zero = {0};
+      bins one = {1};
+      bins pair = {2};
+      bins burst = {16, 32};
+    }
+    coverpoint pre_gap {
+      bins none = {0};
+      bins frame_gap = {OPQ_MIN_SOP_GAP_CYCLES};
+      bins skew_gap = {OPQ_MIN_SOP_GAP_CYCLES + 32};
+    }
+    coverpoint first_shd_ts {
+      bins ts0 = {8'h00};
+      bins ts1 = {8'h01};
+      bins ts80 = {8'h80};
+      bins tsff = {8'hFF};
+    }
+  endgroup
+
+  covergroup cg_subheader with function sample(int hit_cnt, bit [7:0] shd_ts);
+    coverpoint hit_cnt {
+      bins zero = {0};
+      bins one = {1};
+      bins pair = {2};
+      bins burst = {16, 32};
+    }
+    coverpoint shd_ts {
+      bins ts0 = {8'h00};
+      bins ts1 = {8'h01};
+      bins ts7f = {8'h7F};
+      bins ts80 = {8'h80};
+      bins tsfe = {8'hFE};
+      bins tsff = {8'hFF};
+      bins other = default;
+    }
+    cross hit_cnt, shd_ts;
+  endgroup
+
+  covergroup cg_bp with function sample(int mode_i, int high_cycles, int low_cycles, int repeat_count);
+    coverpoint mode_i {
+      bins mode_ready = {int'(BP_ALWAYS_READY)};
+      bins mode_stall = {int'(BP_PERIODIC_STALL)};
+      bins mode_stuck_low = {int'(BP_ALWAYS_STALL)};
+    }
+    coverpoint high_cycles {
+      bins hi_one = {1};
+      bins hi_periodic = {6, 8};
+      bins hi_ready = {32};
+    }
+    coverpoint low_cycles {
+      bins lo_one = {1};
+      bins lo_short = {4};
+      bins lo_medium = {8};
+      bins lo_deep_stall = {[1024:65535]};
+    }
+    coverpoint repeat_count {
+      bins rep_one = {1};
+      bins rep_pair = {2};
+      bins rep_periodic = {24};
+      bins rep_many = {40};
+    }
+    cross mode_i, low_cycles;
+  endgroup
+
+  covergroup cg_csr with function sample(bit is_write, int region, int lane, int word_idx);
+    coverpoint is_write {
+      bins read = {0};
+      bins write = {1};
+    }
+    coverpoint region {
+      bins identity = {CSR_REGION_IDENTITY};
+      bins control = {CSR_REGION_CONTROL};
+      bins ftable = {CSR_REGION_FTABLE};
+      bins lane_cnt = {CSR_REGION_LANE_CNT};
+      bins credit = {CSR_REGION_CREDIT};
+    }
+    coverpoint lane {
+      bins none = {-1};
+      bins lane0 = {0};
+      bins lane1 = {1};
+      bins other = default;
+    }
+    coverpoint word_idx {
+      bins meta_words[] = {[0:5]};
+      bins ft_words[] = {[0:8]};
+      bins lane_words[] = {[0:10]};
+    }
+    cross is_write, region;
+    cross region, lane;
+  endgroup
+
+  covergroup cg_credit with function sample(int lane, int lane_credit, int ticket_credit);
+    coverpoint lane {
+      bins lane0 = {0};
+      bins lane1 = {1};
+    }
+    coverpoint lane_credit {
+      bins tight = {[0:32]};
+      bins active = {[33:OPQ_LANE_FIFO_MAX_CREDIT-1]};
+      bins full = {OPQ_LANE_FIFO_MAX_CREDIT};
+    }
+    coverpoint ticket_credit {
+      bins tight = {[0:4]};
+      bins active = {[5:OPQ_TICKET_FIFO_MAX_CREDIT-1]};
+      bins full = {OPQ_TICKET_FIFO_MAX_CREDIT};
+    }
+    cross lane, lane_credit;
+    cross lane, ticket_credit;
+  endgroup
+
+  covergroup cg_drop with function sample(int domain, int lane, int hdr_cnt, int shd_cnt, int hit_cnt);
+    coverpoint domain {
+      bins lane_domain = {DROP_DOMAIN_LANE};
+      bins ftable_domain = {DROP_DOMAIN_FTABLE};
+    }
+    coverpoint lane {
+      bins none = {-1};
+      bins lane0 = {0};
+      bins lane1 = {1};
+    }
+    coverpoint hdr_cnt {
+      bins zero = {0};
+      bins one = {1};
+      bins many = {[2:1024]};
+    }
+    coverpoint shd_cnt {
+      bins zero = {0};
+      bins one = {1};
+      bins few = {[2:16]};
+      bins many = {[17:4096]};
+    }
+    coverpoint hit_cnt {
+      bins zero = {0};
+      bins one = {1};
+      bins few = {[2:16]};
+      bins many = {[17:65535]};
+    }
+    cross domain, hdr_cnt, shd_cnt;
   endgroup
 
   covergroup cg_ingress with function sample(int lane, bit is_k, bit sop, bit eop, bit [7:0] low_byte);
@@ -38,16 +200,34 @@ class opq_coverage extends uvm_component;
 
   function new(string name = "opq_coverage", uvm_component parent = null);
     super.new(name, parent);
+    frame_imp = new("frame_imp", this);
     ingress_imp = new("ingress_imp", this);
     egress_imp = new("egress_imp", this);
+    bp_imp = new("bp_imp", this);
     cg_cfg = new();
+    cg_frame = new();
+    cg_subheader = new();
+    cg_bp = new();
+    cg_csr = new();
+    cg_credit = new();
+    cg_drop = new();
     cg_ingress = new();
     cg_egress = new();
   endfunction
 
   function void start_of_simulation_phase(uvm_phase phase);
     super.start_of_simulation_phase(phase);
-    cg_cfg.sample(OPQ_N_LANE, OPQ_PAGE_RAM_RD_WIDTH, OPQ_N_SHD);
+    cg_cfg.sample(OPQ_N_LANE, OPQ_PAGE_RAM_RD_WIDTH, OPQ_N_SHD, OPQ_PAGE_RAM_DEPTH);
+  endfunction
+
+  function void write_frame(opq_frame_item frame);
+    bit [7:0] first_shd_ts;
+
+    first_shd_ts = (frame.subheaders.size() == 0) ? 8'h00 : frame.subheaders[0].shd_ts;
+    cg_frame.sample(frame.lane_id, frame.subheaders.size(), frame.frame_hit_count_bits(), frame.pre_gap_cycles, first_shd_ts);
+    foreach (frame.subheaders[i]) begin
+      cg_subheader.sample(frame.subheaders[i].hit_count(), frame.subheaders[i].shd_ts);
+    end
   endfunction
 
   function void write_ingress(opq_beat_item beat);
@@ -62,9 +242,61 @@ class opq_coverage extends uvm_component;
     cg_egress.sample(is_preamble, is_hit, beat.sop, beat.eop, beat.data[7:0]);
   endfunction
 
+  function void write_bp(opq_bp_item item);
+    cg_bp.sample(int'(item.mode), item.high_cycles, item.low_cycles, item.repeat_count);
+  endfunction
+
+  function automatic void sample_csr_access(bit is_write, bit [8:0] addr);
+    int region;
+    int lane;
+    int word_idx;
+
+    region = CSR_REGION_CONTROL;
+    lane = -1;
+    word_idx = int'(addr);
+
+    if (addr <= OPQ_CSR_WORD_CAP) begin
+      if (addr <= OPQ_CSR_WORD_META) begin
+        region = CSR_REGION_IDENTITY;
+      end else begin
+        region = CSR_REGION_CONTROL;
+      end
+      word_idx = int'(addr);
+    end else if ((addr >= OPQ_CSR_WORD_FT_WR_HDR) && (addr <= OPQ_CSR_WORD_FT_DROP_HIT)) begin
+      region = CSR_REGION_FTABLE;
+      word_idx = int'(addr - OPQ_CSR_WORD_FT_WR_HDR);
+    end else if (addr >= OPQ_CSR_LANE_REGION_BASE) begin
+      lane = int'((addr - OPQ_CSR_LANE_REGION_BASE) / OPQ_CSR_LANE_REGION_STRIDE);
+      word_idx = int'((addr - OPQ_CSR_LANE_REGION_BASE) % OPQ_CSR_LANE_REGION_STRIDE);
+      if (word_idx >= 9) begin
+        region = CSR_REGION_CREDIT;
+      end else begin
+        region = CSR_REGION_LANE_CNT;
+      end
+    end
+
+    cg_csr.sample(is_write, region, lane, word_idx);
+  endfunction
+
+  function void sample_credit_snapshot(int lane, int lane_credit, int ticket_credit);
+    cg_credit.sample(lane, lane_credit, ticket_credit);
+  endfunction
+
+  function void sample_drop_snapshot(int domain, int lane, int hdr_cnt, int shd_cnt, int hit_cnt);
+    cg_drop.sample(domain, lane, hdr_cnt, shd_cnt, hit_cnt);
+  endfunction
+
   function void report_phase(uvm_phase phase);
     super.report_phase(phase);
-    `uvm_info(get_type_name(), $sformatf("Coverage cfg=%.2f ingress=%.2f egress=%.2f",
-      cg_cfg.get_inst_coverage(), cg_ingress.get_inst_coverage(), cg_egress.get_inst_coverage()), UVM_LOW)
+    `uvm_info(get_type_name(), $sformatf("Coverage cfg=%.2f frame=%.2f subh=%.2f bp=%.2f csr=%.2f credit=%.2f drop=%.2f ingress=%.2f egress=%.2f",
+      cg_cfg.get_inst_coverage(),
+      cg_frame.get_inst_coverage(),
+      cg_subheader.get_inst_coverage(),
+      cg_bp.get_inst_coverage(),
+      cg_csr.get_inst_coverage(),
+      cg_credit.get_inst_coverage(),
+      cg_drop.get_inst_coverage(),
+      cg_ingress.get_inst_coverage(),
+      cg_egress.get_inst_coverage()), UVM_LOW)
   endfunction
 endclass

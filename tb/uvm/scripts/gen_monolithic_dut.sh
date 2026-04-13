@@ -8,6 +8,7 @@ OUT_DIR="${1:-${PKT_DIR}/tb/rtl_gen_monolithic}"
 
 QUARTUS_SH="${QUARTUS_SH:-/data1/intelFPGA_pro/23.1/quartus/bin/quartus_sh}"
 QUARTUS_ROOTDIR="${QUARTUS_ROOTDIR:-/data1/intelFPGA_pro/23.1/quartus}"
+OPQ_PAGE_RAM_DEPTH="${OPQ_PAGE_RAM_DEPTH:-65536}"
 
 mkdir -p "${OUT_DIR}"
 
@@ -32,7 +33,7 @@ TCL
 
 QUARTUS_ROOTDIR="${QUARTUS_ROOTDIR}" "${QUARTUS_SH}" -t "${TCL_FILE}" >/dev/null
 
-cat > "${WRAP_VHD}" <<'VHDL'
+cat > "${WRAP_VHD}" <<VHDL
 library ieee;
 use ieee.std_logic_1164.all;
 
@@ -56,6 +57,14 @@ entity ordered_priority_queue_dut is
         aso_egress_startofpacket      : out std_logic;
         aso_egress_endofpacket        : out std_logic;
         aso_egress_error              : out std_logic_vector(2 downto 0);
+        avs_csr_address               : in  std_logic_vector(8 downto 0);
+        avs_csr_read                  : in  std_logic;
+        avs_csr_write                 : in  std_logic;
+        avs_csr_writedata             : in  std_logic_vector(31 downto 0);
+        avs_csr_readdata              : out std_logic_vector(31 downto 0);
+        avs_csr_readdatavalid         : out std_logic;
+        avs_csr_waitrequest           : out std_logic;
+        avs_csr_burstcount            : in  std_logic;
         d_clk                         : in  std_logic;
         d_reset                       : in  std_logic
     );
@@ -75,7 +84,7 @@ begin
             LANE_FIFO_WIDTH     => 40,
             TICKET_FIFO_DEPTH   => 256,
             HANDLE_FIFO_DEPTH   => 64,
-            PAGE_RAM_DEPTH      => 65536,
+            PAGE_RAM_DEPTH      => ${OPQ_PAGE_RAM_DEPTH},
             PAGE_RAM_RD_WIDTH   => 36,
             N_SHD               => 128,
             N_HIT               => 255,
@@ -107,14 +116,14 @@ begin
             aso_egress_startofpacket    => aso_egress_startofpacket,
             aso_egress_endofpacket      => aso_egress_endofpacket,
             aso_egress_error            => aso_egress_error,
-            avs_csr_address             => (others => '0'),
-            avs_csr_read                => '0',
-            avs_csr_write               => '0',
-            avs_csr_writedata           => (others => '0'),
-            avs_csr_readdata            => open,
-            avs_csr_readdatavalid       => open,
-            avs_csr_waitrequest         => open,
-            avs_csr_burstcount          => '0',
+            avs_csr_address             => avs_csr_address,
+            avs_csr_read                => avs_csr_read,
+            avs_csr_write               => avs_csr_write,
+            avs_csr_writedata           => avs_csr_writedata,
+            avs_csr_readdata            => avs_csr_readdata,
+            avs_csr_readdatavalid       => avs_csr_readdatavalid,
+            avs_csr_waitrequest         => avs_csr_waitrequest,
+            avs_csr_burstcount          => avs_csr_burstcount,
             d_clk                       => d_clk,
             d_reset                     => d_reset
         );

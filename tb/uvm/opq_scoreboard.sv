@@ -29,6 +29,12 @@ class opq_scoreboard extends uvm_component;
 
   bit        egress_preamble_seen;
   int unsigned sop_count;
+  int unsigned expected_lane_hdr_cnt[OPQ_N_LANE];
+  int unsigned expected_lane_shd_cnt[OPQ_N_LANE];
+  int unsigned expected_lane_hit_cnt[OPQ_N_LANE];
+  int unsigned actual_egress_hdr_cnt;
+  int unsigned actual_egress_shd_cnt;
+  int unsigned actual_egress_hit_cnt;
 
   opq_hit_trace_t pending_ingress_hits[OPQ_N_LANE][$];
   opq_hit_trace_t expected_hits[$];
@@ -70,6 +76,14 @@ class opq_scoreboard extends uvm_component;
     reset_egress_state();
     egress_preamble_seen = 1'b0;
     sop_count = 0;
+    foreach (expected_lane_hdr_cnt[i]) begin
+      expected_lane_hdr_cnt[i] = 0;
+      expected_lane_shd_cnt[i] = 0;
+      expected_lane_hit_cnt[i] = 0;
+    end
+    actual_egress_hdr_cnt = 0;
+    actual_egress_shd_cnt = 0;
+    actual_egress_hit_cnt = 0;
   endfunction
 
   function automatic string hit_key(bit [47:0] hit_ts, bit [31:0] hit_word);
@@ -94,6 +108,10 @@ class opq_scoreboard extends uvm_component;
       `uvm_error(get_type_name(), $sformatf("Frame contract arrived with invalid lane_id=%0d", frame.lane_id))
       return;
     end
+
+    expected_lane_hdr_cnt[frame.lane_id]++;
+    expected_lane_shd_cnt[frame.lane_id] += frame.subheaders.size();
+    expected_lane_hit_cnt[frame.lane_id] += frame.frame_hit_count_bits();
 
     foreach (frame.subheaders[i]) begin
       foreach (frame.subheaders[i].hits[j]) begin
@@ -210,6 +228,7 @@ class opq_scoreboard extends uvm_component;
         0: begin
           if (datak == 4'b0001 && data32[7:0] == K285) begin
             egress_preamble_seen = 1'b1;
+            actual_egress_hdr_cnt++;
           end
         end
         1: egress_frame_ts[47:16] = data32;
@@ -234,6 +253,7 @@ class opq_scoreboard extends uvm_component;
         ))
       end else begin
         push_actual_hit(data32);
+        actual_egress_hit_cnt++;
       end
       egress_hits_pending--;
       return;
@@ -243,6 +263,7 @@ class opq_scoreboard extends uvm_component;
       egress_current_shd = data32[31:24];
       egress_current_ts = {egress_frame_ts[47:12], data32[31:24], 4'b0000};
       egress_hits_pending = data32[15:8];
+      actual_egress_shd_cnt++;
       return;
     end
 
@@ -327,5 +348,29 @@ class opq_scoreboard extends uvm_component;
       "Hit integrity summary: expected=%0d actual=%0d missing=%0d ghost=%0d",
       expected_hits.size(), actual_hits.size(), missing_hits, ghost_hits
     ), UVM_LOW)
+  endfunction
+
+  function automatic int unsigned get_expected_lane_hdr_cnt(int lane_id);
+    return expected_lane_hdr_cnt[lane_id];
+  endfunction
+
+  function automatic int unsigned get_expected_lane_shd_cnt(int lane_id);
+    return expected_lane_shd_cnt[lane_id];
+  endfunction
+
+  function automatic int unsigned get_expected_lane_hit_cnt(int lane_id);
+    return expected_lane_hit_cnt[lane_id];
+  endfunction
+
+  function automatic int unsigned get_actual_egress_hdr_cnt();
+    return actual_egress_hdr_cnt;
+  endfunction
+
+  function automatic int unsigned get_actual_egress_shd_cnt();
+    return actual_egress_shd_cnt;
+  endfunction
+
+  function automatic int unsigned get_actual_egress_hit_cnt();
+    return actual_egress_hit_cnt;
   endfunction
 endclass

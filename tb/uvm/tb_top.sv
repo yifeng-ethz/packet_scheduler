@@ -12,6 +12,7 @@ module tb_top;
 
   opq_ingress_if ingress_if [OPQ_N_LANE] (d_clk);
   opq_egress_if egress_if (d_clk);
+  opq_csr_if csr_if (d_clk);
 
   always #(CLK_PERIOD/2) d_clk = ~d_clk;
 
@@ -27,6 +28,7 @@ module tb_top;
     end
   endgenerate
   assign egress_if.reset = d_reset;
+  assign csr_if.reset = d_reset;
 
   ordered_priority_queue_dut_sv dut (
     .asi_ingress_0_data(ingress_if[0].data),
@@ -47,6 +49,14 @@ module tb_top;
     .aso_egress_startofpacket(egress_if.startofpacket),
     .aso_egress_endofpacket(egress_if.endofpacket),
     .aso_egress_error(egress_if.error),
+    .avs_csr_address(csr_if.address),
+    .avs_csr_read(csr_if.read),
+    .avs_csr_write(csr_if.write),
+    .avs_csr_writedata(csr_if.writedata),
+    .avs_csr_readdata(csr_if.readdata),
+    .avs_csr_readdatavalid(csr_if.readdatavalid),
+    .avs_csr_waitrequest(csr_if.waitrequest),
+    .avs_csr_burstcount(csr_if.burstcount),
     .d_clk(d_clk),
     .d_reset(d_reset)
   );
@@ -77,10 +87,24 @@ module tb_top;
     .error(egress_if.error)
   );
 
+  opq_csr_sva csr_sva (
+    .clk(d_clk),
+    .reset(d_reset),
+    .address(csr_if.address),
+    .read(csr_if.read),
+    .write(csr_if.write),
+    .writedata(csr_if.writedata),
+    .burstcount(csr_if.burstcount),
+    .waitrequest(csr_if.waitrequest),
+    .readdatavalid(csr_if.readdatavalid)
+  );
+
   initial begin
+    csr_if.idle();
     uvm_config_db#(virtual opq_ingress_if)::set(null, "*", "ingress_vif_0", ingress_if[0]);
     uvm_config_db#(virtual opq_ingress_if)::set(null, "*", "ingress_vif_1", ingress_if[1]);
     uvm_config_db#(virtual opq_egress_if)::set(null, "*", "egress_vif", egress_if);
+    uvm_config_db#(virtual opq_csr_if)::set(null, "*", "csr_vif", csr_if);
     run_test();
   end
 endmodule

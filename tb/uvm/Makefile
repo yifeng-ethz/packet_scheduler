@@ -38,10 +38,12 @@ UVM_SRC := $(QUESTA_HOME)/verilog_src/uvm-1.2/src
 QUESTA_MODELSIM_INI ?= $(QUESTA_HOME)/modelsim.ini
 MODELSIM_INI := $(BUILD_DIR)/modelsim.ini
 DPI_CPP_PATH ?= /usr/bin/gcc
+OPQ_PAGE_RAM_DEPTH ?= 65536
 
 QUARTUS_SH ?= /data1/intelFPGA_pro/23.1/quartus/bin/quartus_sh
 QUARTUS_ROOTDIR := /data1/intelFPGA_pro/23.1/quartus
 UVM_DEFINES ?= +define+UVM_NO_DPI
+UVM_DEFINES += +define+OPQ_PAGE_RAM_DEPTH=$(OPQ_PAGE_RAM_DEPTH)
 TEST ?= opq_basic_smoke_test
 COV ?= 0
 COV_CODE ?= sbecft
@@ -81,6 +83,7 @@ SV_SRCS := \
 	$(TB_DIR)/opq_env_pkg.sv \
 	$(TB_DIR)/sva/opq_avst_ingress_sva.sv \
 	$(TB_DIR)/sva/opq_avst_egress_sva.sv \
+	$(TB_DIR)/sva/opq_csr_sva.sv \
 	$(TB_DIR)/tb_top.sv
 
 VHDL_SRCS := \

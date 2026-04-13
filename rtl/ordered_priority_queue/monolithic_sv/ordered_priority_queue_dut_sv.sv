@@ -17,6 +17,14 @@ module ordered_priority_queue_dut_sv (
   output logic        aso_egress_startofpacket,
   output logic        aso_egress_endofpacket,
   output logic [2:0]  aso_egress_error,
+  input  logic [8:0]  avs_csr_address,
+  input  logic        avs_csr_read,
+  input  logic        avs_csr_write,
+  input  logic [31:0] avs_csr_writedata,
+  output logic [31:0] avs_csr_readdata,
+  output logic        avs_csr_readdatavalid,
+  output logic        avs_csr_waitrequest,
+  input  logic        avs_csr_burstcount,
   input  logic        d_clk,
   input  logic        d_reset
 );
@@ -57,6 +65,12 @@ module ordered_priority_queue_dut_sv (
     .d_clk(d_clk),
     .d_reset(d_reset)
   );
+
+  always_comb begin
+    avs_csr_readdata = '0;
+    avs_csr_readdatavalid = avs_csr_read;
+    avs_csr_waitrequest = 1'b0;
+  end
 `else
   ordered_priority_queue_dut u_vhdl (
     .asi_ingress_0_data(asi_ingress_0_data),
@@ -77,6 +91,14 @@ module ordered_priority_queue_dut_sv (
     .aso_egress_startofpacket(aso_egress_startofpacket),
     .aso_egress_endofpacket(aso_egress_endofpacket),
     .aso_egress_error(aso_egress_error),
+    .avs_csr_address(avs_csr_address),
+    .avs_csr_read(avs_csr_read),
+    .avs_csr_write(avs_csr_write),
+    .avs_csr_writedata(avs_csr_writedata),
+    .avs_csr_readdata(avs_csr_readdata),
+    .avs_csr_readdatavalid(avs_csr_readdatavalid),
+    .avs_csr_waitrequest(avs_csr_waitrequest),
+    .avs_csr_burstcount(avs_csr_burstcount),
     .d_clk(d_clk),
     .d_reset(d_reset)
   );

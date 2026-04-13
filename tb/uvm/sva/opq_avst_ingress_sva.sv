@@ -8,14 +8,46 @@ module opq_avst_ingress_sva (
   input logic [0:0] endofpacket,
   input logic [2:0] error
 );
+  logic packet_open;
+
+  always_ff @(posedge clk) begin
+    if (reset) begin
+      packet_open <= 1'b0;
+    end else if (valid[0]) begin
+      if (startofpacket[0]) begin
+        packet_open <= 1'b1;
+      end
+      if (endofpacket[0]) begin
+        packet_open <= 1'b0;
+      end
+    end
+  end
+
   property p_sideband_requires_valid;
     @(posedge clk) disable iff (reset)
       (startofpacket[0] || endofpacket[0]) |-> valid[0];
   endproperty
 
+  property p_startofpacket_has_preamble;
+    @(posedge clk) disable iff (reset)
+      valid[0] && startofpacket[0] |-> (data[35:32] == 4'b0001) &&
+        ((data[7:0] == 8'hBC) || (data[7:0] == 8'hF7));
+  endproperty
+
   property p_preamble_has_sop;
     @(posedge clk) disable iff (reset)
       valid[0] && (data[35:32] == 4'b0001) && (data[7:0] == 8'hBC) |-> startofpacket[0];
+  endproperty
+
+  property p_no_nested_startofpacket;
+    @(posedge clk) disable iff (reset)
+      valid[0] && startofpacket[0] |-> !packet_open;
+  endproperty
+
+  property p_endofpacket_requires_open_packet;
+    @(posedge clk) disable iff (reset)
+      valid[0] && endofpacket[0] |-> (packet_open || startofpacket[0]
+        || ((data[35:32] == 4'b0001) && (data[7:0] == 8'h9C)));
   endproperty
 
   property p_hit_payload_not_k;
@@ -25,6 +57,9 @@ module opq_avst_ingress_sva (
   endproperty
 
   assert property (p_sideband_requires_valid);
+  assert property (p_startofpacket_has_preamble);
   assert property (p_preamble_has_sop);
+  assert property (p_no_nested_startofpacket);
+  assert property (p_endofpacket_requires_open_packet);
   assert property (p_hit_payload_not_k);
 endmodule

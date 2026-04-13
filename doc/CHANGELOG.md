@@ -1,5 +1,16 @@
 # Changelog
 
+## 26.3.0.0413
+
+- **RTL**: tightened the monolithic frame-table/drop accounting around actual tile residency rather than derived broken-link symptoms. Frame-table overwrite/flush now pushes header/subheader/hit loss into the CSR counters at the overwrite point, and the tracker retires linked trail/body residency when the presenter drains or invalidates a packet.
+- **RTL**: fixed the monolithic page allocator for reduced `PAGE_RAM_DEPTH` verification runs by resizing the page-length contribution when updating `page_start_addr`. This is required for the active reduced-depth overflow bucket and keeps the default 16-bit configuration behavior unchanged.
+- **RTL**: kept the non-default page-RAM-width diagnostic, but converted it from a failing template assertion into a non-failing warning so the promoted overflow bucket does not contaminate the SVA/assertion summary with an expected configuration note.
+- **Verification Harness Contract**: promoted the current-tree monolithic UVM harness to an active eight-test regression on the VHDL DUT: `opq_basic_smoke_test`, `opq_edge_backpressure_test`, `opq_edge_always_ready_test`, `opq_prof_stress_test`, `opq_error_lane_mask_test`, `opq_error_ftable_overflow_test`, `opq_error_counter_clear_test`, and `opq_cross_bp_credit_test`.
+- **Verification Harness Contract**: every promoted test now reads and checks the standard CSR identity/capability header before stimulus, exercises the runtime counter-clear path where relevant, and shares the same HIT-integrity scoreboard contract. The scoreboard still tracks ingress-to-egress hits by reconstructed 48-bit timestamp plus UVM-only `HIT_ID`, so missing and ghost hits are checked independently of CSR counter comparisons.
+- **Verification / SVA**: added active interface-level SVA for ingress AVST framing, egress AVST hold/packet markers, and CSR single-beat protocol. The promoted suite now reruns with these checks enabled by default.
+- **Verification / Coverage**: expanded the native covergroup model with configuration, frame/subheader shape, backpressure mode, CSR region access, credit snapshots, and lane/frame-table drop coverage. The promoted merged closure run uses the default configuration plus the reduced-depth overflow bucket (`OPQ_PAGE_RAM_DEPTH=512`) and reached `82.74%` total covergroup coverage on the current model.
+- **Verification / Probes**: added non-promoted probe tests for timestamp-boundary and larger burst-hit cases in the current tree. They are intentionally not part of the promoted closure set yet, because they expose remaining monolithic DUT limitations rather than stable signoff behavior.
+
 ## 26.2.0.0413
 
 - **RTL / Packaging**: added a real Avalon-MM CSR slave to the monolithic OPQ. The packaged IP now exposes the common Mu3e `UID + META` identity header at CSR words `0x000/0x001`, a software `LANE_MASK` control register, a `CTRL` clear pulse, status/capability words, and a per-lane counter window.

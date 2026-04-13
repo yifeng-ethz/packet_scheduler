@@ -199,11 +199,11 @@ entity ${output_name} is
         -- csr identity
         IP_UID                  : natural := 16#4F50514D#; -- ASCII "OPQM"
         VERSION_MAJOR           : natural := 26;
-        VERSION_MINOR           : natural := 2;
+        VERSION_MINOR           : natural := 3;
         VERSION_PATCH           : natural := 0;
         BUILD                   : natural := 413;
         VERSION_DATE            : natural := 20260413;
-        VERSION_GIT             : natural := 16#0E305A40#;
+        VERSION_GIT             : natural := 16#630F1720#;
         INSTANCE_ID             : natural := 0;
 
         -- debug configuration
@@ -292,6 +292,33 @@ architecture rtl of ${output_name} is
         return sum_ext(31 downto 0);
     end function;
 
+    function sat_sub32(a : unsigned(31 downto 0); b : natural) return unsigned is
+        variable a_v : natural;
+        variable sub_v : unsigned(31 downto 0);
+    begin
+        a_v := to_integer(a);
+        if a_v > b then
+            return to_unsigned(a_v - b, a'length);
+        elsif a_v = b then
+            sub_v := (others => '0');
+            return sub_v;
+        end if;
+        sub_v := (others => '0');
+        return sub_v;
+    end function;
+
+    function nonneg_delta(a, b : unsigned) return natural is
+        variable a_v : natural;
+        variable b_v : natural;
+    begin
+        a_v := to_integer(a);
+        b_v := to_integer(b);
+        if a_v > b_v then
+            return a_v - b_v;
+        end if;
+        return 0;
+    end function;
+
     function pack_version_word(
         major_v : natural;
         minor_v : natural;
@@ -334,6 +361,15 @@ architecture rtl of ${output_name} is
     constant CSR_WORD_CTRL          : natural := 16#003#;
     constant CSR_WORD_STATUS        : natural := 16#004#;
     constant CSR_WORD_CAP           : natural := 16#005#;
+    constant CSR_WORD_FT_WR_HDR     : natural := 16#008#;
+    constant CSR_WORD_FT_WR_SHD     : natural := 16#009#;
+    constant CSR_WORD_FT_WR_HIT     : natural := 16#00A#;
+    constant CSR_WORD_FT_RD_HDR     : natural := 16#00B#;
+    constant CSR_WORD_FT_RD_SHD     : natural := 16#00C#;
+    constant CSR_WORD_FT_RD_HIT     : natural := 16#00D#;
+    constant CSR_WORD_FT_DROP_HDR   : natural := 16#00E#;
+    constant CSR_WORD_FT_DROP_SHD   : natural := 16#00F#;
+    constant CSR_WORD_FT_DROP_HIT   : natural := 16#010#;
     constant CSR_VERSION_WORD       : std_logic_vector(31 downto 0) := pack_version_word(VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, BUILD);
 
     -- ───────────────────────────────────────────────────────────────────────────────────────
@@ -462,6 +498,15 @@ architecture rtl of ${output_name} is
     signal csr_drop_hdr_cnt                     : csr_lane_counter_t := (others => (others => '0'));
     signal csr_drop_shd_cnt                     : csr_lane_counter_t := (others => (others => '0'));
     signal csr_drop_hit_cnt                     : csr_lane_counter_t := (others => (others => '0'));
+    signal csr_ft_wr_hdr_cnt                    : unsigned(31 downto 0) := (others => '0');
+    signal csr_ft_wr_shd_cnt                    : unsigned(31 downto 0) := (others => '0');
+    signal csr_ft_wr_hit_cnt                    : unsigned(31 downto 0) := (others => '0');
+    signal csr_ft_rd_hdr_cnt                    : unsigned(31 downto 0) := (others => '0');
+    signal csr_ft_rd_shd_cnt                    : unsigned(31 downto 0) := (others => '0');
+    signal csr_ft_rd_hit_cnt                    : unsigned(31 downto 0) := (others => '0');
+    signal csr_ft_drop_hdr_cnt                  : unsigned(31 downto 0) := (others => '0');
+    signal csr_ft_drop_shd_cnt                  : unsigned(31 downto 0) := (others => '0');
+    signal csr_ft_drop_hit_cnt                  : unsigned(31 downto 0) := (others => '0');
     signal csr_lane_mask                        : std_logic_vector(N_LANE-1 downto 0) := (others => '0');
     signal csr_lane_mask_effective              : std_logic_vector(N_LANE-1 downto 0);
     signal csr_meta_page_sel                    : std_logic_vector(1 downto 0) := (others => '0');
@@ -553,8 +598,16 @@ architecture rtl of ${output_name} is
     -- tile fifo
     -- ────────────────────────────────────────────────
     constant TILE_FIFO_ADDR_WIDTH   : natural := 9; -- default to 512, no overflow is expected
-    constant TILE_FIFO_DATA_WIDTH   : natural := 2*PAGE_RAM_ADDR_WIDTH; -- we store meta info = {length, start_address} into this tile fifo as data
+    constant TILE_FIFO_DATA_WIDTH   : natural := 2*PAGE_RAM_ADDR_WIDTH + FRAME_SUBH_CNT_SIZE + FRAME_HIT_CNT_SIZE; -- we store meta info = {n_hit, n_subh, length, start_address} into this tile fifo as data
     constant TILE_FIFO_DEPTH        : natural := TILE_FIFO_ADDR_WIDTH**2;
+    constant TILE_META_ADDR_LO      : natural := 0;
+    constant TILE_META_ADDR_HI      : natural := PAGE_RAM_ADDR_WIDTH-1;
+    constant TILE_META_LEN_LO       : natural := PAGE_RAM_ADDR_WIDTH;
+    constant TILE_META_LEN_HI       : natural := 2*PAGE_RAM_ADDR_WIDTH-1;
+    constant TILE_META_NSHD_LO      : natural := 2*PAGE_RAM_ADDR_WIDTH;
+    constant TILE_META_NSHD_HI      : natural := 2*PAGE_RAM_ADDR_WIDTH + FRAME_SUBH_CNT_SIZE-1;
+    constant TILE_META_NHIT_LO      : natural := 2*PAGE_RAM_ADDR_WIDTH + FRAME_SUBH_CNT_SIZE;
+    constant TILE_META_NHIT_HI      : natural := 2*PAGE_RAM_ADDR_WIDTH + FRAME_SUBH_CNT_SIZE + FRAME_HIT_CNT_SIZE-1;
     component tile_fifo
     generic (
         DATA_WIDTH      : natural := TILE_FIFO_DATA_WIDTH;
@@ -893,7 +946,7 @@ architecture rtl of ${output_name} is
     type wsegs_t is array (0 to N_WR_SEG-1) of wseg_t;
     type wtile_pipe_t is array (0 to 1) of unsigned(TILE_ID_WIDTH-1 downto 0);
     type update_ftable_tindex_t is array (0 to 1) of unsigned(TILE_ID_WIDTH-1 downto 0);
-    type update_ftable_meta_t is array (0 to 1) of std_logic_vector(2*PAGE_RAM_ADDR_WIDTH-1 downto 0);
+    type update_ftable_meta_t is array (0 to 1) of std_logic_vector(TILE_FIFO_DATA_WIDTH-1 downto 0);
     type update_ftable_trltl_t is array (0 to 1) of unsigned(TILE_ID_WIDTH-1 downto 0);
     type update_ftable_bdytl_t is array (0 to 1) of unsigned(TILE_ID_WIDTH-1 downto 0);
     type last_pkt_dbg_tile_index_t is array (0 to 2) of unsigned(TILE_ID_WIDTH-1 downto 0);
@@ -973,6 +1026,8 @@ architecture rtl of ${output_name} is
 
     type tile_ptr_t is array (0 to N_TILE-1) of unsigned(TILE_FIFO_ADDR_WIDTH-1 downto 0);
     type tile_pkt_wcnt_t is array (0 to N_TILE-1) of unsigned(TILE_PKT_CNT_WIDTH-1 downto 0);
+    type tile_cnt32_t is array (0 to N_TILE-1) of unsigned(31 downto 0);
+    type flush_counter_pair_t is array (0 to 1) of unsigned(31 downto 0);
 
     -- type
     type ftable_tracker_t is record
@@ -991,9 +1046,24 @@ architecture rtl of ${output_name} is
         tile_wptr                               : tile_ptr_t;
         tile_wdata                              : tile_fifos_data_t;
         tile_pkt_wcnt                           : tile_pkt_wcnt_t;
+        tile_shd_wcnt                           : tile_cnt32_t;
+        tile_hit_wcnt                           : tile_cnt32_t;
+        tile_res_pkt_cnt                        : tile_cnt32_t;
+        tile_res_shd_cnt                        : tile_cnt32_t;
+        tile_res_hit_cnt                        : tile_cnt32_t;
+        trail_pkt_cnt                           : tile_cnt32_t;
+        trail_shd_cnt                           : tile_cnt32_t;
+        trail_hit_cnt                           : tile_cnt32_t;
+        body_pkt_cnt                            : tile_cnt32_t;
+        body_shd_cnt                            : tile_cnt32_t;
+        body_hit_cnt                            : tile_cnt32_t;
     end record;
 
     signal ftable_tracker                       : ftable_tracker_t;
+    signal ftable_flush_drop_valid              : std_logic_vector(1 downto 0) := (others => '0');
+    signal ftable_flush_drop_hdr_cnt            : flush_counter_pair_t := (others => (others => '0'));
+    signal ftable_flush_drop_shd_cnt            : flush_counter_pair_t := (others => (others => '0'));
+    signal ftable_flush_drop_hit_cnt            : flush_counter_pair_t := (others => (others => '0'));
     constant FTABLE_TRACKER_REG_RESET           : ftable_tracker_t := (
         update_ftable_valid                     => (others => '0'),
         update_ftable_tindex                    => (others => (others => '0')),
@@ -1009,7 +1079,18 @@ architecture rtl of ${output_name} is
         tile_we                                 => (others => '0'),
         tile_wptr                               => (others => (others => '0')),
         tile_wdata                              => (others => (others => '0')),
-        tile_pkt_wcnt                           => (others => (others => '0'))
+        tile_pkt_wcnt                           => (others => (others => '0')),
+        tile_shd_wcnt                           => (others => (others => '0')),
+        tile_hit_wcnt                           => (others => (others => '0')),
+        tile_res_pkt_cnt                        => (others => (others => '0')),
+        tile_res_shd_cnt                        => (others => (others => '0')),
+        tile_res_hit_cnt                        => (others => (others => '0')),
+        trail_pkt_cnt                           => (others => (others => '0')),
+        trail_shd_cnt                           => (others => (others => '0')),
+        trail_hit_cnt                           => (others => (others => '0')),
+        body_pkt_cnt                            => (others => (others => '0')),
+        body_shd_cnt                            => (others => (others => '0')),
+        body_hit_cnt                            => (others => (others => '0'))
     );
 
     -- ───────────────────────────────────────────────────────────────────────────────────────
@@ -1063,6 +1144,8 @@ architecture rtl of ${output_name} is
         void_body_tid                   : std_logic;
         trailing_tile_index             : unsigned(TILE_ID_WIDTH-1 downto 0);
         tile_pkt_rcnt                   : tile_pkt_rcnt_t;
+        tile_shd_rcnt                   : tile_cnt32_t;
+        tile_hit_rcnt                   : tile_cnt32_t;
         crossing_trid                   : unsigned(TILE_ID_WIDTH-1 downto 0);
         crossing_trid_valid             : std_logic;
         pkt_rd_word_cnt                 : unsigned(PAGE_RAM_ADDR_WIDTH-1 downto 0);
@@ -1079,6 +1162,8 @@ architecture rtl of ${output_name} is
         void_body_tid                   => '0',
         trailing_tile_index             => (others => '0'),
         tile_pkt_rcnt                   => (others => (others => '0')),
+        tile_shd_rcnt                   => (others => (others => '0')),
+        tile_hit_rcnt                   => (others => (others => '0')),
         crossing_trid                   => (others => '0'),
         crossing_trid_valid             => '0',
         pkt_rd_word_cnt                 => (others => '0')
@@ -1095,6 +1180,8 @@ architecture rtl of ${output_name} is
     signal ftable_presenter_output_is_trailer       : std_logic;
     signal ftable_presenter_leading_header_addr     : unsigned(PAGE_RAM_ADDR_WIDTH-1 downto 0);
     signal ftable_presenter_packet_length           : unsigned(PAGE_RAM_ADDR_WIDTH-1 downto 0);
+    signal ftable_presenter_packet_shd_cnt          : unsigned(MAX_SHR_CNT_BITS-1 downto 0);
+    signal ftable_presenter_packet_hit_cnt          : unsigned(MAX_HIT_CNT_BITS-1 downto 0);
     signal ftable_presenter_is_pkt_spilling         : std_logic;
     signal ftable_presenter_if_in_range_warp_wr_seg : unsigned(TILE_ID_WIDTH-1 downto 0);
     signal ftable_presenter_if_in_range_warp_rd_tile    : unsigned(TILE_ID_WIDTH-1 downto 0);
@@ -1103,7 +1190,14 @@ architecture rtl of ${output_name} is
 
 begin
 
-    assert PAGE_RAM_ADDR_WIDTH = 16 report "PAGE RAM ADDR NON-DEFAULT (16 bits)" severity warning;
+    gen_page_ram_addr_width_warn : if PAGE_RAM_ADDR_WIDTH /= 16 generate
+    begin
+        proc_page_ram_addr_width_warn : process
+        begin
+            report "PAGE RAM ADDR NON-DEFAULT (16 bits)" severity warning;
+            wait;
+        end process;
+    end generate;
     assert integer(ceil(log2(real(N_SHD*N_HIT)))) + 1 <= 16 report "N Hits counter will likely to overflow, resulting in functional error" severity warning;
 
     -- io mapping
@@ -1912,7 +2006,9 @@ begin
                     when WRITE_PAGE =>
                         -- update current running timestamp
                         page_allocator.running_ts(47 downto 4)          <= page_allocator.running_ts(47 downto 4) + 1; -- for each round, we increase the tracking ts by one subheader time unit
-                        page_allocator.page_start_addr                  <= unsigned(page_allocator.page_waddr) + page_allocator.page_length + to_unsigned(SHD_SIZE,page_allocator.page_start_addr'length); -- update to next page length, note: only 1 cycle, 1 word spacing for trailer
+                        page_allocator.page_start_addr                  <= unsigned(page_allocator.page_waddr)
+                                                                         + resize(page_allocator.page_length, page_allocator.page_start_addr'length)
+                                                                         + to_unsigned(SHD_SIZE, page_allocator.page_start_addr'length); -- update to next page length, note: only 1 cycle, 1 word spacing for trailer
                         page_allocator_state                            <= IDLE;
                         -- write happens here...
 
@@ -2380,7 +2476,9 @@ begin
                         ftable_mapper.update_ftable_valid           <= "11";
                         ftable_mapper.update_ftable_tindex(0)       <= ftable_mapper_leading_wr_tile_index_reg; -- current tile id
                         ftable_mapper.update_ftable_meta_valid(0)   <= '1';
-                        ftable_mapper.update_ftable_meta(0)         <= std_logic_vector(ftable_mapper_update_ftable_fspan_reg) & std_logic_vector(ftable_mapper.new_frame_raw_addr); -- content
+                        ftable_mapper.update_ftable_meta(0)         <= std_logic_vector(resize(ftable_mapper.frame_hit_cnt, FRAME_HIT_CNT_SIZE)) &
+                                                                       std_logic_vector(resize(ftable_mapper.frame_shr_cnt, FRAME_SUBH_CNT_SIZE)) &
+                                                                       std_logic_vector(ftable_mapper_update_ftable_fspan_reg) & std_logic_vector(ftable_mapper.new_frame_raw_addr); -- content
                         ftable_mapper.update_ftable_trltl_valid(0)  <= '1';
                         ftable_mapper.update_ftable_trltl(0)        <= ftable_mapper_expand_wr_tile_index_reg; -- where is trail
 
@@ -2406,7 +2504,9 @@ begin
                         ftable_mapper.update_ftable_valid           <= "01";
                         ftable_mapper.update_ftable_tindex(0)       <= ftable_mapper_leading_wr_tile_index_reg; -- current tile id
                         ftable_mapper.update_ftable_meta_valid(0)   <= '1';
-                        ftable_mapper.update_ftable_meta(0)         <= std_logic_vector(ftable_mapper_update_ftable_fspan_reg) & std_logic_vector(ftable_mapper.new_frame_raw_addr);
+                        ftable_mapper.update_ftable_meta(0)         <= std_logic_vector(resize(ftable_mapper.frame_hit_cnt, FRAME_HIT_CNT_SIZE)) &
+                                                                       std_logic_vector(resize(ftable_mapper.frame_shr_cnt, FRAME_SUBH_CNT_SIZE)) &
+                                                                       std_logic_vector(ftable_mapper_update_ftable_fspan_reg) & std_logic_vector(ftable_mapper.new_frame_raw_addr);
 
                         -- 3 debug header word will be in the current tile due to pkt will not spill
                         for i in 0 to 2 loop
@@ -2578,10 +2678,18 @@ begin
     -- read can flush the tile by deleted all starting addresses, remainder span and trail tile id
     -- the valid of starting addresses is managed by read and write pointers
     -- the modify of the registers are managed by their valid bit
+        variable trail_tile_v : natural range 0 to N_TILE-1;
+        variable body_tile_v  : natural range 0 to N_TILE-1;
+        variable meta_shd_v   : natural;
+        variable meta_hit_v   : natural;
     begin
         if rising_edge (i_clk) then
             -- default
             ftable_tracker.tile_we                          <= (others => '0');
+            ftable_flush_drop_valid                         <= (others => '0');
+            ftable_flush_drop_hdr_cnt                       <= (others => (others => '0'));
+            ftable_flush_drop_shd_cnt                       <= (others => (others => '0'));
+            ftable_flush_drop_hit_cnt                       <= (others => (others => '0'));
 
             -- 1) Command from mapper
             if (or_reduce(ftable_mapper.flush_ftable_valid) = '1') then -- priority 0 : flush the tile (delay 1 cycle, so we flush first before record)
@@ -2590,9 +2698,47 @@ begin
                     for i in 0 to N_TILE-1 loop
                         if (to_integer(ftable_mapper.update_ftable_tindex(a)) = i) then -- tile address resolution of this head
                             if (ftable_mapper.flush_ftable_valid(a) = '1') then
+                                ftable_flush_drop_valid(a)          <= '1';
+                                ftable_flush_drop_hdr_cnt(a)        <= ftable_tracker.tile_res_pkt_cnt(i);
+                                ftable_flush_drop_shd_cnt(a)        <= ftable_tracker.tile_res_shd_cnt(i);
+                                ftable_flush_drop_hit_cnt(a)        <= ftable_tracker.tile_res_hit_cnt(i);
+
+                                if (ftable_tracker.trail_pkt_cnt(i) /= to_unsigned(0, ftable_tracker.trail_pkt_cnt(i)'length)) then
+                                    trail_tile_v := to_integer(tile_regs.trail_tid(i)(tile_regs.trail_tid(i)'length-2 downto 0));
+                                    ftable_tracker.tile_res_pkt_cnt(trail_tile_v) <= sat_sub32(ftable_tracker.tile_res_pkt_cnt(trail_tile_v), to_integer(ftable_tracker.trail_pkt_cnt(i)));
+                                    ftable_tracker.tile_res_shd_cnt(trail_tile_v) <= sat_sub32(ftable_tracker.tile_res_shd_cnt(trail_tile_v), to_integer(ftable_tracker.trail_shd_cnt(i)));
+                                    ftable_tracker.tile_res_hit_cnt(trail_tile_v) <= sat_sub32(ftable_tracker.tile_res_hit_cnt(trail_tile_v), to_integer(ftable_tracker.trail_hit_cnt(i)));
+                                    ftable_tracker.body_pkt_cnt(trail_tile_v)     <= (others => '0');
+                                    ftable_tracker.body_shd_cnt(trail_tile_v)     <= (others => '0');
+                                    ftable_tracker.body_hit_cnt(trail_tile_v)     <= (others => '0');
+                                    tile_regs.body_tid(trail_tile_v)              <= (others => '0');
+                                end if;
+
+                                if (ftable_tracker.body_pkt_cnt(i) /= to_unsigned(0, ftable_tracker.body_pkt_cnt(i)'length)) then
+                                    body_tile_v := to_integer(tile_regs.body_tid(i)(tile_regs.body_tid(i)'length-2 downto 0));
+                                    ftable_tracker.tile_res_pkt_cnt(body_tile_v)  <= sat_sub32(ftable_tracker.tile_res_pkt_cnt(body_tile_v), to_integer(ftable_tracker.body_pkt_cnt(i)));
+                                    ftable_tracker.tile_res_shd_cnt(body_tile_v)  <= sat_sub32(ftable_tracker.tile_res_shd_cnt(body_tile_v), to_integer(ftable_tracker.body_shd_cnt(i)));
+                                    ftable_tracker.tile_res_hit_cnt(body_tile_v)  <= sat_sub32(ftable_tracker.tile_res_hit_cnt(body_tile_v), to_integer(ftable_tracker.body_hit_cnt(i)));
+                                    ftable_tracker.trail_pkt_cnt(body_tile_v)     <= (others => '0');
+                                    ftable_tracker.trail_shd_cnt(body_tile_v)     <= (others => '0');
+                                    ftable_tracker.trail_hit_cnt(body_tile_v)     <= (others => '0');
+                                    tile_regs.trail_tid(body_tile_v)              <= (others => '0');
+                                end if;
+
                                 tile_regs.trail_tid(i)              <= (others => '0');
                                 tile_regs.body_tid(i)               <= (others => '0');
                                 ftable_tracker.tile_pkt_wcnt(i)     <= (others => '0');
+                                ftable_tracker.tile_shd_wcnt(i)     <= ftable_presenter.tile_shd_rcnt(i);
+                                ftable_tracker.tile_hit_wcnt(i)     <= ftable_presenter.tile_hit_rcnt(i);
+                                ftable_tracker.tile_res_pkt_cnt(i)  <= (others => '0');
+                                ftable_tracker.tile_res_shd_cnt(i)  <= (others => '0');
+                                ftable_tracker.tile_res_hit_cnt(i)  <= (others => '0');
+                                ftable_tracker.trail_pkt_cnt(i)     <= (others => '0');
+                                ftable_tracker.trail_shd_cnt(i)     <= (others => '0');
+                                ftable_tracker.trail_hit_cnt(i)     <= (others => '0');
+                                ftable_tracker.body_pkt_cnt(i)      <= (others => '0');
+                                ftable_tracker.body_shd_cnt(i)      <= (others => '0');
+                                ftable_tracker.body_hit_cnt(i)      <= (others => '0');
                             end if;
                         end if;
                     end loop;
@@ -2622,18 +2768,35 @@ begin
 
                 when RECORD_TILE => -- write the mapper meta data into the tile FIFO complex (delay 2 cycles)
                     for a in 0 to 1 loop
+                        meta_shd_v := to_integer(unsigned(ftable_tracker.update_ftable_meta(a)(TILE_META_NSHD_HI downto TILE_META_NSHD_LO)));
+                        meta_hit_v := to_integer(unsigned(ftable_tracker.update_ftable_meta(a)(TILE_META_NHIT_HI downto TILE_META_NHIT_LO)));
                         for i in 0 to N_TILE-1 loop
                             if (to_integer(ftable_tracker.update_ftable_tindex(a)) = i) then -- tile address resolution of this head
                                 if ftable_tracker.update_ftable_meta_valid(a) then -- pkt header address in page ram
                                     ftable_tracker.tile_we(i)       <= '1';
                                     ftable_tracker.tile_wptr(i)     <= ftable_tracker.tile_wptr(i) + 1;
                                     ftable_tracker.tile_wdata(i)    <= ftable_tracker.update_ftable_meta(a);
+                                    ftable_tracker.tile_shd_wcnt(i) <= sat_add32(ftable_tracker.tile_shd_wcnt(i), meta_shd_v);
+                                    ftable_tracker.tile_hit_wcnt(i) <= sat_add32(ftable_tracker.tile_hit_wcnt(i), meta_hit_v);
+                                    ftable_tracker.tile_res_pkt_cnt(i) <= sat_add32(ftable_tracker.tile_res_pkt_cnt(i), 1);
+                                    ftable_tracker.tile_res_shd_cnt(i) <= sat_add32(ftable_tracker.tile_res_shd_cnt(i), meta_shd_v);
+                                    ftable_tracker.tile_res_hit_cnt(i) <= sat_add32(ftable_tracker.tile_res_hit_cnt(i), meta_hit_v);
                                 end if;
                                 if ftable_tracker.update_ftable_trltl_valid(a) then -- where to look for if the pkt has spilling to other tile
                                     tile_regs.trail_tid(i)          <= '1' & ftable_tracker.update_ftable_trltl(a); -- msb is not used
+                                    trail_tile_v := to_integer(ftable_tracker.update_ftable_trltl(a));
+                                    ftable_tracker.trail_pkt_cnt(i) <= sat_add32(ftable_tracker.trail_pkt_cnt(i), 1);
+                                    ftable_tracker.trail_shd_cnt(i) <= sat_add32(ftable_tracker.trail_shd_cnt(i), meta_shd_v);
+                                    ftable_tracker.trail_hit_cnt(i) <= sat_add32(ftable_tracker.trail_hit_cnt(i), meta_hit_v);
+                                    ftable_tracker.tile_res_pkt_cnt(trail_tile_v) <= sat_add32(ftable_tracker.tile_res_pkt_cnt(trail_tile_v), 1);
+                                    ftable_tracker.tile_res_shd_cnt(trail_tile_v) <= sat_add32(ftable_tracker.tile_res_shd_cnt(trail_tile_v), meta_shd_v);
+                                    ftable_tracker.tile_res_hit_cnt(trail_tile_v) <= sat_add32(ftable_tracker.tile_res_hit_cnt(trail_tile_v), meta_hit_v);
+                                    ftable_tracker.body_pkt_cnt(trail_tile_v) <= sat_add32(ftable_tracker.body_pkt_cnt(trail_tile_v), 1);
+                                    ftable_tracker.body_shd_cnt(trail_tile_v) <= sat_add32(ftable_tracker.body_shd_cnt(trail_tile_v), meta_shd_v);
+                                    ftable_tracker.body_hit_cnt(trail_tile_v) <= sat_add32(ftable_tracker.body_hit_cnt(trail_tile_v), meta_hit_v);
                                 end if;
                                 if ftable_tracker.update_ftable_bdytl_valid(a) then -- tile id of body of spilling pkt from other tile
-                                    tile_regs.body_tid(i)(tile_regs.body_tid(i)'length-2 downto 0)     <= ftable_tracker.update_ftable_bdytl(a); -- unlocked (needs to be active by rd, notify wr to not overwrite this seg)
+                                    tile_regs.body_tid(i)          <= '1' & ftable_tracker.update_ftable_bdytl(a);
                                 end if;
                                 if ftable_tracker.update_ftable_hcmpl(a) then -- incr write pkt counter
                                     ftable_tracker.tile_pkt_wcnt(i) <= ftable_tracker.tile_pkt_wcnt(i) + 1;
@@ -2658,6 +2821,47 @@ begin
             end case;
 
             -- 2) Modify from presenter
+            if (ftable_presenter_state = VERIFY) then
+                trail_tile_v := to_integer(ftable_presenter.crossing_trid);
+                if (tile_regs.body_tid(trail_tile_v)(tile_regs.body_tid(trail_tile_v)'length-2 downto 0) /= ftable_presenter.rseg.tile_index) then
+                    body_tile_v := to_integer(ftable_presenter.rseg.tile_index);
+                    ftable_tracker.tile_res_pkt_cnt(body_tile_v) <= sat_sub32(ftable_tracker.tile_res_pkt_cnt(body_tile_v), 1);
+                    ftable_tracker.tile_res_shd_cnt(body_tile_v) <= sat_sub32(ftable_tracker.tile_res_shd_cnt(body_tile_v), to_integer(ftable_presenter_packet_shd_cnt));
+                    ftable_tracker.tile_res_hit_cnt(body_tile_v) <= sat_sub32(ftable_tracker.tile_res_hit_cnt(body_tile_v), to_integer(ftable_presenter_packet_hit_cnt));
+                    ftable_tracker.trail_pkt_cnt(body_tile_v)    <= (others => '0');
+                    ftable_tracker.trail_shd_cnt(body_tile_v)    <= (others => '0');
+                    ftable_tracker.trail_hit_cnt(body_tile_v)    <= (others => '0');
+                    tile_regs.trail_tid(body_tile_v)             <= (others => '0');
+                    ftable_tracker.body_pkt_cnt(trail_tile_v)    <= (others => '0');
+                    ftable_tracker.body_shd_cnt(trail_tile_v)    <= (others => '0');
+                    ftable_tracker.body_hit_cnt(trail_tile_v)    <= (others => '0');
+                    tile_regs.body_tid(trail_tile_v)             <= (others => '0');
+                end if;
+            end if;
+
+            if (ftable_presenter_state = PRESENTING and aso_egress_ready = '1' and ftable_presenter_output_is_trailer = '1') then
+                body_tile_v := to_integer(ftable_presenter.rseg.tile_index);
+                ftable_tracker.tile_res_pkt_cnt(body_tile_v) <= sat_sub32(ftable_tracker.tile_res_pkt_cnt(body_tile_v), 1);
+                ftable_tracker.tile_res_shd_cnt(body_tile_v) <= sat_sub32(ftable_tracker.tile_res_shd_cnt(body_tile_v), to_integer(ftable_presenter_packet_shd_cnt));
+                ftable_tracker.tile_res_hit_cnt(body_tile_v) <= sat_sub32(ftable_tracker.tile_res_hit_cnt(body_tile_v), to_integer(ftable_presenter_packet_hit_cnt));
+
+                if (ftable_presenter.crossing_trid_valid = '1') then
+                    trail_tile_v := to_integer(ftable_presenter.crossing_trid);
+                    ftable_tracker.tile_res_pkt_cnt(trail_tile_v) <= sat_sub32(ftable_tracker.tile_res_pkt_cnt(trail_tile_v), 1);
+                    ftable_tracker.tile_res_shd_cnt(trail_tile_v) <= sat_sub32(ftable_tracker.tile_res_shd_cnt(trail_tile_v), to_integer(ftable_presenter_packet_shd_cnt));
+                    ftable_tracker.tile_res_hit_cnt(trail_tile_v) <= sat_sub32(ftable_tracker.tile_res_hit_cnt(trail_tile_v), to_integer(ftable_presenter_packet_hit_cnt));
+                    ftable_tracker.body_pkt_cnt(trail_tile_v)     <= (others => '0');
+                    ftable_tracker.body_shd_cnt(trail_tile_v)     <= (others => '0');
+                    ftable_tracker.body_hit_cnt(trail_tile_v)     <= (others => '0');
+                    tile_regs.body_tid(trail_tile_v)              <= (others => '0');
+                end if;
+
+                ftable_tracker.trail_pkt_cnt(body_tile_v) <= (others => '0');
+                ftable_tracker.trail_shd_cnt(body_tile_v) <= (others => '0');
+                ftable_tracker.trail_hit_cnt(body_tile_v) <= (others => '0');
+                tile_regs.trail_tid(body_tile_v)          <= (others => '0');
+            end if;
+
             -- delete body pointer of current rd tile as we have crossing packet
             if (ftable_presenter.void_body_tid = '1') then
                 for i in 0 to N_TILE-1 loop
@@ -2708,6 +2912,10 @@ begin
             ftable_presenter.void_trail_tid             <= '0';
             ftable_presenter.void_body_tid              <= '0';
             ftable_presenter.output_data_valid          <= (others => '0');
+            ftable_presenter_leading_header_addr        <= (others => '0');
+            ftable_presenter_packet_length              <= (others => '0');
+            ftable_presenter_packet_shd_cnt             <= (others => '0');
+            ftable_presenter_packet_hit_cnt             <= (others => '0');
 
             case ftable_presenter_state is
                 when IDLE =>
@@ -2770,6 +2978,8 @@ begin
                             else -- broken : jump to tail of wr tile for reading of new pkt
                                 ftable_presenter_state                      <= IDLE;
                                 ftable_presenter.tile_pkt_rcnt(i)           <= ftable_presenter.tile_pkt_rcnt(i) + 1; -- skip this pkt
+                                ftable_presenter.tile_shd_rcnt(i)           <= sat_add32(ftable_presenter.tile_shd_rcnt(i), to_integer(ftable_presenter_packet_shd_cnt));
+                                ftable_presenter.tile_hit_rcnt(i)           <= sat_add32(ftable_presenter.tile_hit_rcnt(i), to_integer(ftable_presenter_packet_hit_cnt));
                                 ftable_presenter.tile_rptr(i)               <= ftable_presenter.tile_rptr(i) + 1;
                             end if;
                         end if;
@@ -2817,6 +3027,8 @@ begin
                                         ftable_presenter.crossing_trid_valid        <= '0'; -- deassert the 2 rd seg flag
                                     end if;
                                     ftable_presenter.tile_pkt_rcnt(i)           <= ftable_presenter.tile_pkt_rcnt(i) + 1; -- incr rd counter
+                                    ftable_presenter.tile_shd_rcnt(i)           <= sat_add32(ftable_presenter.tile_shd_rcnt(i), to_integer(ftable_presenter_packet_shd_cnt));
+                                    ftable_presenter.tile_hit_rcnt(i)           <= sat_add32(ftable_presenter.tile_hit_rcnt(i), to_integer(ftable_presenter_packet_hit_cnt));
                                     ftable_presenter.tile_rptr(i)               <= ftable_presenter.tile_rptr(i) + 1; -- incr rd ptr
                                 elsif ((to_integer(ftable_presenter.page_ram_rptr(i)) = PAGE_RAM_DEPTH-1) and ftable_presenter_is_pkt_spilling = '1') then -- warp to next tile
                                     ftable_presenter.trailing_active(0)         <= '1'; -- tracing the trail packet
@@ -2824,12 +3036,9 @@ begin
                                     ftable_presenter.page_ram_rptr(i)           <= (others => '0'); -- this tile is finished, reset rd ptr
                                 end if;
                             else -- corner case : ready deasserted during packet transmission
-                                -- Restart: roll back the read pointer to the current output word and refill the pipeline.
-                                if (ftable_presenter.output_data_valid(EGRESS_DELAY) = '1') then
-                                    ftable_presenter_state                      <= RESTART;
-                                    ftable_presenter.page_ram_rptr(i)           <= ftable_presenter.page_ram_rptr(i) - to_unsigned(EGRESS_DELAY+1,PAGE_RAM_ADDR_WIDTH); -- rptr scrollback
-                                    ftable_presenter.output_data_valid          <= (others => '0'); -- restart pipeline
-                                end if;
+                                -- Hold the breakpoint word in PRESENTING. The page-RAM data and pointer
+                                -- pipelines are already frozen above, so dropping into RESTART here would
+                                -- incorrectly deassert `valid` while the current word is still outstanding.
                             end if;
                         end if;
                     end loop;
@@ -2888,8 +3097,10 @@ begin
             -- (pointer: where the data is in the page ram, length: for detecting spilling)
             for i in 0 to N_TILE-1 loop
                 if (to_integer(ftable_presenter.rseg.tile_index) = i) then -- select the current read tile
-                    ftable_presenter_leading_header_addr            <= unsigned(tile_fifos_rd_data(i)(PAGE_RAM_ADDR_WIDTH-1 downto 0));
-                    ftable_presenter_packet_length                  <= unsigned(tile_fifos_rd_data(i)(2*PAGE_RAM_ADDR_WIDTH-1 downto PAGE_RAM_ADDR_WIDTH));
+                    ftable_presenter_leading_header_addr            <= unsigned(tile_fifos_rd_data(i)(TILE_META_ADDR_HI downto TILE_META_ADDR_LO));
+                    ftable_presenter_packet_length                  <= unsigned(tile_fifos_rd_data(i)(TILE_META_LEN_HI downto TILE_META_LEN_LO));
+                    ftable_presenter_packet_shd_cnt                 <= resize(unsigned(tile_fifos_rd_data(i)(TILE_META_NSHD_HI downto TILE_META_NSHD_LO)), MAX_SHR_CNT_BITS);
+                    ftable_presenter_packet_hit_cnt                 <= resize(unsigned(tile_fifos_rd_data(i)(TILE_META_NHIT_HI downto TILE_META_NHIT_LO)), MAX_HIT_CNT_BITS);
                 end if;
             end loop;
 
@@ -2964,7 +3175,8 @@ begin
 
         -- derive the next tile to jump to, pkt is spilling
         ftable_presenter_is_pkt_spilling            <= '0';
-        if (to_integer(ftable_presenter_packet_length) + to_integer(ftable_presenter_leading_header_addr) >= PAGE_RAM_DEPTH) then -- no space
+        if (ftable_presenter_is_new_pkt_head = '1')
+            and (to_integer(ftable_presenter_packet_length) + to_integer(ftable_presenter_leading_header_addr) >= PAGE_RAM_DEPTH) then -- no space
             ftable_presenter_is_pkt_spilling            <= '1';
         end if;
 
@@ -3108,11 +3320,21 @@ begin
         variable offset_v      : natural;
         variable lane_v        : natural;
         variable lane_word_v   : natural;
+        variable tile_v        : natural;
         variable meta_word_v   : std_logic_vector(31 downto 0);
         variable csr_word_v    : std_logic_vector(31 downto 0);
         variable status_v      : std_logic_vector(31 downto 0);
         variable clear_v       : boolean;
         variable used_hits_v   : natural;
+        variable csr_ft_wr_hdr_v : unsigned(31 downto 0);
+        variable csr_ft_wr_shd_v : unsigned(31 downto 0);
+        variable csr_ft_wr_hit_v : unsigned(31 downto 0);
+        variable csr_ft_rd_hdr_v : unsigned(31 downto 0);
+        variable csr_ft_rd_shd_v : unsigned(31 downto 0);
+        variable csr_ft_rd_hit_v : unsigned(31 downto 0);
+        variable csr_ft_drop_hdr_v : unsigned(31 downto 0);
+        variable csr_ft_drop_shd_v : unsigned(31 downto 0);
+        variable csr_ft_drop_hit_v : unsigned(31 downto 0);
     begin
         if rising_edge(i_clk) then
             avs_csr_readdatavalid_reg <= '0';
@@ -3132,6 +3354,15 @@ begin
                 csr_drop_hdr_cnt          <= (others => (others => '0'));
                 csr_drop_shd_cnt          <= (others => (others => '0'));
                 csr_drop_hit_cnt          <= (others => (others => '0'));
+                csr_ft_wr_hdr_cnt         <= (others => '0');
+                csr_ft_wr_shd_cnt         <= (others => '0');
+                csr_ft_wr_hit_cnt         <= (others => '0');
+                csr_ft_rd_hdr_cnt         <= (others => '0');
+                csr_ft_rd_shd_cnt         <= (others => '0');
+                csr_ft_rd_hit_cnt         <= (others => '0');
+                csr_ft_drop_hdr_cnt       <= (others => '0');
+                csr_ft_drop_shd_cnt       <= (others => '0');
+                csr_ft_drop_hit_cnt       <= (others => '0');
             else
                 if avs_csr_write = '1' then
                     offset_v := to_integer(unsigned(avs_csr_address));
@@ -3157,12 +3388,39 @@ begin
                     csr_drop_hdr_cnt <= (others => (others => '0'));
                     csr_drop_shd_cnt <= (others => (others => '0'));
                     csr_drop_hit_cnt <= (others => (others => '0'));
+                    csr_ft_wr_hdr_cnt   <= (others => '0');
+                    csr_ft_wr_shd_cnt   <= (others => '0');
+                    csr_ft_wr_hit_cnt   <= (others => '0');
+                    csr_ft_rd_hdr_cnt   <= (others => '0');
+                    csr_ft_rd_shd_cnt   <= (others => '0');
+                    csr_ft_rd_hit_cnt   <= (others => '0');
+                    csr_ft_drop_hdr_cnt <= (others => '0');
+                    csr_ft_drop_shd_cnt <= (others => '0');
+                    csr_ft_drop_hit_cnt <= (others => '0');
                 else
+                    csr_ft_wr_hdr_v := csr_ft_wr_hdr_cnt;
+                    csr_ft_wr_shd_v := csr_ft_wr_shd_cnt;
+                    csr_ft_wr_hit_v := csr_ft_wr_hit_cnt;
+                    csr_ft_rd_hdr_v := csr_ft_rd_hdr_cnt;
+                    csr_ft_rd_shd_v := csr_ft_rd_shd_cnt;
+                    csr_ft_rd_hit_v := csr_ft_rd_hit_cnt;
+                    csr_ft_drop_hdr_v := csr_ft_drop_hdr_cnt;
+                    csr_ft_drop_shd_v := csr_ft_drop_shd_cnt;
+                    csr_ft_drop_hit_v := csr_ft_drop_hit_cnt;
                     for i in 0 to N_LANE-1 loop
-                        if (ingress_parser(i).ticket_we = '1') then
-                            if (ingress_parser(i).alert_sop = '1') then
+                        if (ingress_valid_eff(i) = '1' and csr_lane_mask_effective(i) = '0') then
+                            if ((ingress_parser_state(i) = IDLE or ingress_parser_state(i) = MASK_PKT)
+                                and asi_ingress_startofpacket(i)(0) = '1'
+                                and ingress_parser_is_preamble(i) = '1'
+                                and ingress_parser_hdr_err(i) = '0') then
                                 csr_wr_hdr_cnt(i) <= sat_add32(csr_wr_hdr_cnt(i), 1);
-                            else
+                            end if;
+
+                            if ((ingress_parser_state(i) = IDLE or ingress_parser_state(i) = MASK_PKT)
+                                and ingress_parser_is_subheader(i) = '1'
+                                and ingress_parser_shd_err(i) = '0'
+                                and ingress_parser_if_subheader_hit_cnt(i) < ingress_parser(i).lane_credit
+                                and ingress_parser(i).ticket_credit /= 0) then
                                 csr_wr_shd_cnt(i) <= sat_add32(csr_wr_shd_cnt(i), 1);
                             end if;
                         end if;
@@ -3226,6 +3484,40 @@ begin
                             csr_rd_hit_cnt(i) <= sat_add32(csr_rd_hit_cnt(i), to_integer(page_allocator.ticket(i).block_length));
                         end if;
                     end loop;
+
+                    for a in 0 to 1 loop
+                        if (ftable_mapper.update_ftable_meta_valid(a) = '1') then
+                            csr_ft_wr_hdr_v := sat_add32(csr_ft_wr_hdr_v, 1);
+                            csr_ft_wr_shd_v := sat_add32(csr_ft_wr_shd_v,
+                                to_integer(unsigned(ftable_mapper.update_ftable_meta(a)(TILE_META_NSHD_HI downto TILE_META_NSHD_LO))));
+                            csr_ft_wr_hit_v := sat_add32(csr_ft_wr_hit_v,
+                                to_integer(unsigned(ftable_mapper.update_ftable_meta(a)(TILE_META_NHIT_HI downto TILE_META_NHIT_LO))));
+                        end if;
+                    end loop;
+
+                    if (ftable_presenter_state = PRESENTING and aso_egress_ready = '1' and ftable_presenter_output_is_trailer = '1') then
+                        csr_ft_rd_hdr_v := sat_add32(csr_ft_rd_hdr_v, 1);
+                        csr_ft_rd_shd_v := sat_add32(csr_ft_rd_shd_v, to_integer(ftable_presenter_packet_shd_cnt));
+                        csr_ft_rd_hit_v := sat_add32(csr_ft_rd_hit_v, to_integer(ftable_presenter_packet_hit_cnt));
+                    end if;
+
+                    for a in 0 to 1 loop
+                        if (ftable_flush_drop_valid(a) = '1') then
+                            csr_ft_drop_hdr_v := sat_add32(csr_ft_drop_hdr_v, to_integer(ftable_flush_drop_hdr_cnt(a)));
+                            csr_ft_drop_shd_v := sat_add32(csr_ft_drop_shd_v, to_integer(ftable_flush_drop_shd_cnt(a)));
+                            csr_ft_drop_hit_v := sat_add32(csr_ft_drop_hit_v, to_integer(ftable_flush_drop_hit_cnt(a)));
+                        end if;
+                    end loop;
+
+                    csr_ft_wr_hdr_cnt <= csr_ft_wr_hdr_v;
+                    csr_ft_wr_shd_cnt <= csr_ft_wr_shd_v;
+                    csr_ft_wr_hit_cnt <= csr_ft_wr_hit_v;
+                    csr_ft_rd_hdr_cnt <= csr_ft_rd_hdr_v;
+                    csr_ft_rd_shd_cnt <= csr_ft_rd_shd_v;
+                    csr_ft_rd_hit_cnt <= csr_ft_rd_hit_v;
+                    csr_ft_drop_hdr_cnt <= csr_ft_drop_hdr_v;
+                    csr_ft_drop_shd_cnt <= csr_ft_drop_shd_v;
+                    csr_ft_drop_hit_cnt <= csr_ft_drop_hit_v;
                 end if;
 
                 meta_word_v := (others => '0');
@@ -3302,9 +3594,28 @@ begin
                             csr_word_v(0) := '1'; -- common UID + META header
                             csr_word_v(1) := '1'; -- lane mask control
                             csr_word_v(2) := '1'; -- per-lane counters
+                            csr_word_v(3) := '1'; -- frame-table counters
                             csr_word_v(15 downto 8) := std_logic_vector(to_unsigned(CSR_LANE_REGION_STRIDE, 8));
                             csr_word_v(23 downto 16) := std_logic_vector(to_unsigned(CSR_LANE_REGION_BASE, 8));
                             csr_word_v(31 downto 24) := std_logic_vector(to_unsigned(N_LANE, 8));
+                        when CSR_WORD_FT_WR_HDR =>
+                            csr_word_v := std_logic_vector(csr_ft_wr_hdr_cnt);
+                        when CSR_WORD_FT_WR_SHD =>
+                            csr_word_v := std_logic_vector(csr_ft_wr_shd_cnt);
+                        when CSR_WORD_FT_WR_HIT =>
+                            csr_word_v := std_logic_vector(csr_ft_wr_hit_cnt);
+                        when CSR_WORD_FT_RD_HDR =>
+                            csr_word_v := std_logic_vector(csr_ft_rd_hdr_cnt);
+                        when CSR_WORD_FT_RD_SHD =>
+                            csr_word_v := std_logic_vector(csr_ft_rd_shd_cnt);
+                        when CSR_WORD_FT_RD_HIT =>
+                            csr_word_v := std_logic_vector(csr_ft_rd_hit_cnt);
+                        when CSR_WORD_FT_DROP_HDR =>
+                            csr_word_v := std_logic_vector(csr_ft_drop_hdr_cnt);
+                        when CSR_WORD_FT_DROP_SHD =>
+                            csr_word_v := std_logic_vector(csr_ft_drop_shd_cnt);
+                        when CSR_WORD_FT_DROP_HIT =>
+                            csr_word_v := std_logic_vector(csr_ft_drop_hit_cnt);
                         when others =>
                             csr_word_v := (others => '0');
                     end case;
