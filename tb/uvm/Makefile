@@ -46,6 +46,7 @@ TEST ?= opq_basic_smoke_test
 COV ?= 0
 COV_CODE ?= sbecft
 RUN_DO ?= run -all; quit -f
+DUT_IMPL ?= vhdl
 
 LM_LICENSE_FILE := $(TB_LICENSE_CHAIN)
 export LM_LICENSE_FILE
@@ -68,6 +69,13 @@ ALT_RAM_SRCS := \
 SV_SRCS := \
 	$(UVM_SRC)/uvm_pkg.sv \
 	$(PKT_DIR)/rtl/ordered_priority_queue/monolithic_sv/ordered_priority_queue_dut_sv.sv \
+	$(PKT_DIR)/rtl/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv \
+	$(PKT_DIR)/rtl/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv \
+	$(PKT_DIR)/rtl/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_block_path.sv \
+	$(PKT_DIR)/rtl/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_tracker.sv \
+	$(PKT_DIR)/rtl/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_presenter.sv \
+	$(PKT_DIR)/rtl/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv \
+	$(PKT_DIR)/rtl/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic.sv \
 	$(TB_DIR)/opq_if.sv \
 	$(TB_DIR)/opq_pkg.sv \
 	$(TB_DIR)/opq_env_pkg.sv \
@@ -79,6 +87,9 @@ VHDL_SRCS := \
 	$(RTL_GEN_DIR)/ordered_priority_queue_dut_impl.vhd \
 	$(RTL_GEN_DIR)/ordered_priority_queue_dut.vhd
 
+ifeq ($(DUT_IMPL),native_sv)
+UVM_DEFINES += +define+OPQ_USE_NATIVE_SV
+endif
 VLOG_FLAGS := -modelsimini $(MODELSIM_INI) -sv -work $(BUILD_DIR)/work $(UVM_DEFINES) +incdir+$(UVM_SRC) +incdir+$(TB_DIR)
 VCOM_FLAGS := -modelsimini $(MODELSIM_INI) -2008 -work $(BUILD_DIR)/work
 VSIM_FLAGS := -modelsimini $(MODELSIM_INI) -L altera_mf -voptargs=+acc
@@ -132,9 +143,12 @@ prepare:
 		mv -f "$$tmp_file" "$(MODELSIM_INI)"; \
 	fi
 
-compile: gen_dut prepare
+compile: prepare
 	$(VLOG) $(VLOG_FLAGS) $(ALT_RAM_SRCS)
+ifeq ($(DUT_IMPL),vhdl)
+	$(MAKE) gen_dut
 	$(VCOM) $(VCOM_FLAGS) $(VHDL_SRCS)
+endif
 	$(VLOG) $(VLOG_FLAGS) $(SV_SRCS)
 
 run: compile

@@ -5,9 +5,10 @@ Various packet schedulers implementations for aggregating high-speed upload data
 - `rtl/`: synthesizable RTL + TERP templates (see `rtl/README.md`).
 - `tb/`: current active verification harness for monolithic OPQ.
 - `syn/`: Platform Designer / Qsys example systems and generation scripts.
-- `doc/`: current verification review and signoff notes.
+- `doc/`: changelog plus current verification review and signoff notes.
 - `legacy/`: deprecated directed TB and UVM harness archive (see `legacy/README.md`).
 - `trash_bin/`: generated artifacts + legacy snapshots (see `trash_bin/README.md`).
+- `VERSION`: active ordered-priority-queue rewrite/package version stamp.
 
 ## Platform Designer components (kept at repo root)
 - `intf_adapter_hw.tcl`

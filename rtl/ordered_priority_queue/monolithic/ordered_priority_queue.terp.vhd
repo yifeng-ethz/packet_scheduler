@@ -4,6 +4,7 @@
 -- Revision:            1.0 - file created - July 2, 2025
 -- Revision:            2.0 - all modules before frame table fully verified - Dec 11, 2025
 -- Revision:            2.1 - fix page_allocator baseline guards and alloc-page flow wrap - Apr 13, 2026
+-- Revision:            2.2 - add runtime CSR, per-lane counters, and software lane mask - Apr 13, 2026
 -- Description:         Aggregate multiple ingress data flows into one single egress data flow
 --
 --                      - data structure is defined as:
@@ -195,6 +196,15 @@ entity ${output_name} is
         FRAME_SERIAL_SIZE       : natural := 16; -- size of frame serial number in bits, e.g., 16 bits
         FRAME_SUBH_CNT_SIZE     : natural := 16; -- size of frame subheader count in bits, e.g., 16 bits
         FRAME_HIT_CNT_SIZE      : natural := 16; -- size of frame hit count in bits, e.g., 16 bits
+        -- csr identity
+        IP_UID                  : natural := 16#4F50514D#; -- ASCII "OPQM"
+        VERSION_MAJOR           : natural := 26;
+        VERSION_MINOR           : natural := 2;
+        VERSION_PATCH           : natural := 0;
+        BUILD                   : natural := 413;
+        VERSION_DATE            : natural := 20260413;
+        VERSION_GIT             : natural := 16#0E305A40#;
+        INSTANCE_ID             : natural := 0;
 
         -- debug configuration
         DEBUG_LV               : natural := 1 -- debug level, e.g., 0 for no debug, 1 for basic debug
@@ -228,6 +238,18 @@ entity ${output_name} is
         @@ }
 
         -- +---------------------+
+        -- | CSR / AVMM Slave    |
+        -- +---------------------+
+        avs_csr_address             : in  std_logic_vector(8 downto 0);
+        avs_csr_read                : in  std_logic;
+        avs_csr_write               : in  std_logic;
+        avs_csr_writedata           : in  std_logic_vector(31 downto 0);
+        avs_csr_readdata            : out std_logic_vector(31 downto 0);
+        avs_csr_readdatavalid       : out std_logic;
+        avs_csr_waitrequest         : out std_logic;
+        avs_csr_burstcount          : in  std_logic;
+
+        -- +---------------------+
         -- | CLK / RST Interface |
         -- +---------------------+
         d_clk                    : in std_logic; -- data path clock
@@ -258,6 +280,31 @@ architecture rtl of ${output_name} is
         end if;
     end function;
 
+    function sat_add32(a : unsigned(31 downto 0); b : natural) return unsigned is
+        variable sum_ext : unsigned(32 downto 0);
+        variable sat_v   : unsigned(31 downto 0);
+    begin
+        sum_ext := ('0' & a) + to_unsigned(b, sum_ext'length);
+        if sum_ext(sum_ext'high) = '1' then
+            sat_v := (others => '1');
+            return sat_v;
+        end if;
+        return sum_ext(31 downto 0);
+    end function;
+
+    function pack_version_word(
+        major_v : natural;
+        minor_v : natural;
+        patch_v : natural;
+        build_v : natural
+    ) return std_logic_vector is
+    begin
+        return std_logic_vector(to_unsigned(major_v, 8))
+            & std_logic_vector(to_unsigned(minor_v, 8))
+            & std_logic_vector(to_unsigned(patch_v, 4))
+            & std_logic_vector(to_unsigned(build_v, 12));
+    end function;
+
     -- ───────────────────────────────────────────────────────────────────────────────────────
     --                  COMMON
     -- ───────────────────────────────────────────────────────────────────────────────────────
@@ -279,6 +326,15 @@ architecture rtl of ${output_name} is
     constant SUBFRAME_DURATION_CYCLES : natural := 16;
     constant FRAME_DURATION_CYCLES  : natural := N_SHD * SUBFRAME_DURATION_CYCLES; -- ex: 16 us frame (n_shr=128)
     constant EGRESS_DELAY           : natural := 3; -- 3 **additional cycles** of delay wait for address to set on the page ram complex and data to be valid, so address change |-> 4 cycles data valid
+    constant CSR_LANE_REGION_BASE   : natural := 16#040#;
+    constant CSR_LANE_REGION_STRIDE : natural := 16#010#;
+    constant CSR_WORD_UID           : natural := 16#000#;
+    constant CSR_WORD_META          : natural := 16#001#;
+    constant CSR_WORD_LANE_MASK     : natural := 16#002#;
+    constant CSR_WORD_CTRL          : natural := 16#003#;
+    constant CSR_WORD_STATUS        : natural := 16#004#;
+    constant CSR_WORD_CAP           : natural := 16#005#;
+    constant CSR_VERSION_WORD       : std_logic_vector(31 downto 0) := pack_version_word(VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, BUILD);
 
     -- ───────────────────────────────────────────────────────────────────────────────────────
     --                  TICKET_FIFO
@@ -394,6 +450,23 @@ architecture rtl of ${output_name} is
     type asi_ingress_${sigType}_t is array (0 to N_LANE-1) of std_logic_vector(asi_ingress_0_${sigType}'high downto 0);
     signal asi_ingress_${sigType}               : asi_ingress_${sigType}_t;
     @@ }
+    signal ingress_valid_eff                    : std_logic_vector(N_LANE-1 downto 0);
+
+    type csr_lane_counter_t is array (0 to N_LANE-1) of unsigned(31 downto 0);
+    signal csr_wr_hdr_cnt                       : csr_lane_counter_t := (others => (others => '0'));
+    signal csr_wr_shd_cnt                       : csr_lane_counter_t := (others => (others => '0'));
+    signal csr_wr_hit_cnt                       : csr_lane_counter_t := (others => (others => '0'));
+    signal csr_rd_hdr_cnt                       : csr_lane_counter_t := (others => (others => '0'));
+    signal csr_rd_shd_cnt                       : csr_lane_counter_t := (others => (others => '0'));
+    signal csr_rd_hit_cnt                       : csr_lane_counter_t := (others => (others => '0'));
+    signal csr_drop_hdr_cnt                     : csr_lane_counter_t := (others => (others => '0'));
+    signal csr_drop_shd_cnt                     : csr_lane_counter_t := (others => (others => '0'));
+    signal csr_drop_hit_cnt                     : csr_lane_counter_t := (others => (others => '0'));
+    signal csr_lane_mask                        : std_logic_vector(N_LANE-1 downto 0) := (others => '0');
+    signal csr_lane_mask_effective              : std_logic_vector(N_LANE-1 downto 0);
+    signal csr_meta_page_sel                    : std_logic_vector(1 downto 0) := (others => '0');
+    signal avs_csr_readdata_reg                 : std_logic_vector(31 downto 0) := (others => '0');
+    signal avs_csr_readdatavalid_reg            : std_logic := '0';
 
 
 
@@ -1036,6 +1109,15 @@ begin
     -- io mapping
     i_clk           <= d_clk;
     i_rst           <= d_reset;
+    avs_csr_readdata <= avs_csr_readdata_reg;
+    avs_csr_readdatavalid <= avs_csr_readdatavalid_reg;
+    avs_csr_waitrequest <= '0';
+
+    gen_csr_lane_masking : for i in 0 to N_LANE-1 generate
+    begin
+        csr_lane_mask_effective(i) <= csr_lane_mask(i) when ingress_parser_state(i) = IDLE else '0';
+        ingress_valid_eff(i) <= asi_ingress_valid(i)(0) and not csr_lane_mask_effective(i);
+    end generate;
 
     -- ────────────────────────────────────────────────
     -- hls generate : fifos insts
@@ -1205,7 +1287,7 @@ begin
                 -- state machine of ingress parser (x N_LANE)
                 case ingress_parser_state(i) is
                     when IDLE =>
-                        if asi_ingress_valid(i)(0) then
+                        if ingress_valid_eff(i) then
                             -- trigger by new subheader coming in
                             if (ingress_parser_is_subheader(i) and not ingress_parser_shd_err(i)) then -- [subheader]
                                 -- update subheader ts (8-bit) and add to into global ts (48-bit)
@@ -1269,7 +1351,7 @@ begin
                         end if;
 
                     when UPDATE_HEADER_TS =>
-                        if asi_ingress_valid(i)(0) then
+                        if ingress_valid_eff(i) then
                             -- update header information (**48-bit running_ts**, 16-bit pkg_cnt, 15-bit running_shd_cnt, 31-bit send_ts, 16-bit hit_cnt)
                             case update_header_ts_flow(i) is
                                 when 0 => -- [data header 0]
@@ -1331,11 +1413,11 @@ begin
                         end if;
 
                     when MASK_PKT => -- mask until end of this subheader packet
-                        if (asi_ingress_valid(i)(0) and asi_ingress_endofpacket(i)(0)) then -- packet eop
+                        if (ingress_valid_eff(i) and asi_ingress_endofpacket(i)(0)) then -- packet eop
                             ingress_parser_state(i)        <= IDLE;
                         end if;
 
-                        if asi_ingress_valid(i)(0) then
+                        if ingress_valid_eff(i) then
                             -- trigger by new subheader coming in
                             if (ingress_parser_is_subheader(i) and not ingress_parser_shd_err(i)) then -- [subheader]
                                 -- update subheader ts (8-bit) and add to into global ts (48-bit)
@@ -1425,7 +1507,7 @@ begin
 
                     when WR_HITS => -- [hit(s)]
                         -- ingress data -> lane FIFO (write hits to lane FIFO)
-                        if (asi_ingress_valid(i)(0) and not ingress_parser_hit_err(i)) then -- hit w/o error
+                        if (ingress_valid_eff(i) and not ingress_parser_hit_err(i)) then -- hit w/o error
                             -- ok : write lane data
                             ingress_parser(i).lane_wdata            <= ingress_parser_if_write_lane_data(i); -- see proc_assemble_write_lane_fifo
                             ingress_parser(i).lane_wptr             <= ingress_parser(i).lane_wptr + 1; -- increment write pointer as we will write to lane FIFO
@@ -1436,7 +1518,7 @@ begin
                         end if;
 
                         -- exit : ticket -> ticket FIFO (write ticket when last hit)
-                        if (asi_ingress_valid(i)(0) and not ingress_parser_hit_err(i)) then -- kick the end of subheader
+                        if (ingress_valid_eff(i) and not ingress_parser_hit_err(i)) then -- kick the end of subheader
                             if (ingress_parser(i).lane_start_addr + ingress_parser(i).shd_len = ingress_parser(i).lane_wptr + 1) then -- note: write ticket in the last cycle of WR_HITS
                                 -- ok : write ticket to ticket FIFO now
                                 ingress_parser(i).ticket_we     <= '1';
@@ -3018,6 +3100,223 @@ begin
         end process;
         -- synopsys translate_on
     end generate;
+
+    -- ────────────────────────────────────────────────
+    -- Runtime CSR / software counters
+    -- ────────────────────────────────────────────────
+    proc_csr : process (i_clk)
+        variable offset_v      : natural;
+        variable lane_v        : natural;
+        variable lane_word_v   : natural;
+        variable meta_word_v   : std_logic_vector(31 downto 0);
+        variable csr_word_v    : std_logic_vector(31 downto 0);
+        variable status_v      : std_logic_vector(31 downto 0);
+        variable clear_v       : boolean;
+        variable used_hits_v   : natural;
+    begin
+        if rising_edge(i_clk) then
+            avs_csr_readdatavalid_reg <= '0';
+            clear_v := false;
+
+            if i_rst = '1' then
+                avs_csr_readdata_reg      <= (others => '0');
+                avs_csr_readdatavalid_reg <= '0';
+                csr_meta_page_sel         <= (others => '0');
+                csr_lane_mask             <= (others => '0');
+                csr_wr_hdr_cnt            <= (others => (others => '0'));
+                csr_wr_shd_cnt            <= (others => (others => '0'));
+                csr_wr_hit_cnt            <= (others => (others => '0'));
+                csr_rd_hdr_cnt            <= (others => (others => '0'));
+                csr_rd_shd_cnt            <= (others => (others => '0'));
+                csr_rd_hit_cnt            <= (others => (others => '0'));
+                csr_drop_hdr_cnt          <= (others => (others => '0'));
+                csr_drop_shd_cnt          <= (others => (others => '0'));
+                csr_drop_hit_cnt          <= (others => (others => '0'));
+            else
+                if avs_csr_write = '1' then
+                    offset_v := to_integer(unsigned(avs_csr_address));
+                    case offset_v is
+                        when CSR_WORD_META =>
+                            csr_meta_page_sel <= avs_csr_writedata(1 downto 0);
+                        when CSR_WORD_LANE_MASK =>
+                            csr_lane_mask <= avs_csr_writedata(csr_lane_mask'range);
+                        when CSR_WORD_CTRL =>
+                            clear_v := avs_csr_writedata(0) = '1';
+                        when others =>
+                            null;
+                    end case;
+                end if;
+
+                if clear_v then
+                    csr_wr_hdr_cnt   <= (others => (others => '0'));
+                    csr_wr_shd_cnt   <= (others => (others => '0'));
+                    csr_wr_hit_cnt   <= (others => (others => '0'));
+                    csr_rd_hdr_cnt   <= (others => (others => '0'));
+                    csr_rd_shd_cnt   <= (others => (others => '0'));
+                    csr_rd_hit_cnt   <= (others => (others => '0'));
+                    csr_drop_hdr_cnt <= (others => (others => '0'));
+                    csr_drop_shd_cnt <= (others => (others => '0'));
+                    csr_drop_hit_cnt <= (others => (others => '0'));
+                else
+                    for i in 0 to N_LANE-1 loop
+                        if (ingress_parser(i).ticket_we = '1') then
+                            if (ingress_parser(i).alert_sop = '1') then
+                                csr_wr_hdr_cnt(i) <= sat_add32(csr_wr_hdr_cnt(i), 1);
+                            else
+                                csr_wr_shd_cnt(i) <= sat_add32(csr_wr_shd_cnt(i), 1);
+                            end if;
+                        end if;
+
+                        if (ingress_parser(i).lane_we = '1') then
+                            csr_wr_hit_cnt(i) <= sat_add32(csr_wr_hit_cnt(i), 1);
+                        end if;
+
+                        if (csr_lane_mask_effective(i) = '1' and asi_ingress_valid(i)(0) = '1') then
+                            if (asi_ingress_startofpacket(i)(0) = '1' and ingress_parser_is_preamble(i) = '1') then
+                                csr_drop_hdr_cnt(i) <= sat_add32(csr_drop_hdr_cnt(i), 1);
+                            elsif (ingress_parser_is_subheader(i) = '1') then
+                                csr_drop_shd_cnt(i) <= sat_add32(csr_drop_shd_cnt(i), 1);
+                                csr_drop_hit_cnt(i) <= sat_add32(csr_drop_hit_cnt(i), to_integer(ingress_parser_if_subheader_hit_cnt(i)));
+                            end if;
+                        end if;
+
+                        if (ingress_valid_eff(i) = '1') then
+                            if ((ingress_parser_state(i) = IDLE or ingress_parser_state(i) = MASK_PKT) and ingress_parser_is_subheader(i) = '1') then
+                                if (ingress_parser_shd_err(i) = '1') then
+                                    csr_drop_shd_cnt(i) <= sat_add32(csr_drop_shd_cnt(i), 1);
+                                    csr_drop_hit_cnt(i) <= sat_add32(csr_drop_hit_cnt(i), to_integer(ingress_parser_if_subheader_hit_cnt(i)));
+                                elsif (ingress_parser_if_subheader_hit_cnt(i) >= ingress_parser(i).lane_credit or ingress_parser(i).ticket_credit = 0) then
+                                    csr_drop_shd_cnt(i) <= sat_add32(csr_drop_shd_cnt(i), 1);
+                                    csr_drop_hit_cnt(i) <= sat_add32(csr_drop_hit_cnt(i), to_integer(ingress_parser_if_subheader_hit_cnt(i)));
+                                end if;
+                            end if;
+
+                            if ((ingress_parser_state(i) = IDLE or ingress_parser_state(i) = MASK_PKT)
+                                and asi_ingress_startofpacket(i)(0) = '1'
+                                and ingress_parser_is_preamble(i) = '1'
+                                and ingress_parser_hdr_err(i) = '1') then
+                                csr_drop_hdr_cnt(i) <= sat_add32(csr_drop_hdr_cnt(i), 1);
+                            end if;
+
+                            if (ingress_parser_state(i) = UPDATE_HEADER_TS and update_header_ts_flow(i) = 3 and ingress_parser(i).ticket_credit = 0) then
+                                csr_drop_hdr_cnt(i) <= sat_add32(csr_drop_hdr_cnt(i), 1);
+                            end if;
+
+                            if (ingress_parser_state(i) = WR_HITS and ingress_parser_shd_err(i) = '1') then
+                                used_hits_v := to_integer(ingress_parser(i).lane_wptr - ingress_parser(i).lane_start_addr);
+                                if (to_integer(ingress_parser(i).shd_len) > used_hits_v) then
+                                    csr_drop_hit_cnt(i) <= sat_add32(csr_drop_hit_cnt(i), to_integer(ingress_parser(i).shd_len) - used_hits_v);
+                                end if;
+                            end if;
+                        end if;
+
+                        if (page_allocator_state = FETCH_TICKET) then
+                            if (and_reduce(page_allocator_is_tk_sop) = '1') then
+                                csr_rd_hdr_cnt(i) <= sat_add32(csr_rd_hdr_cnt(i), 1);
+                            elsif (page_allocator_is_tk_past(i) = '1') then
+                                csr_drop_shd_cnt(i) <= sat_add32(csr_drop_shd_cnt(i), 1);
+                                csr_drop_hit_cnt(i) <= sat_add32(csr_drop_hit_cnt(i), to_integer(page_allocator_if_read_ticket_ticket(i).block_length));
+                            end if;
+                        end if;
+
+                        if (page_allocator_state = ALLOC_PAGE and page_allocator.alloc_page_flow = i
+                            and page_allocator.lane_skipped(i) = '0'
+                            and page_allocator.lane_masked(i) = '0') then
+                            csr_rd_shd_cnt(i) <= sat_add32(csr_rd_shd_cnt(i), 1);
+                            csr_rd_hit_cnt(i) <= sat_add32(csr_rd_hit_cnt(i), to_integer(page_allocator.ticket(i).block_length));
+                        end if;
+                    end loop;
+                end if;
+
+                meta_word_v := (others => '0');
+                case csr_meta_page_sel is
+                    when "00" =>
+                        meta_word_v := CSR_VERSION_WORD;
+                    when "01" =>
+                        meta_word_v := std_logic_vector(to_unsigned(VERSION_DATE, 32));
+                    when "10" =>
+                        meta_word_v := std_logic_vector(to_unsigned(VERSION_GIT, 32));
+                    when others =>
+                        meta_word_v := std_logic_vector(to_unsigned(INSTANCE_ID, 32));
+                end case;
+
+                csr_word_v := (others => '0');
+                offset_v := to_integer(unsigned(avs_csr_address));
+                if (offset_v >= CSR_LANE_REGION_BASE) then
+                    lane_v := (offset_v - CSR_LANE_REGION_BASE) / CSR_LANE_REGION_STRIDE;
+                    lane_word_v := (offset_v - CSR_LANE_REGION_BASE) mod CSR_LANE_REGION_STRIDE;
+                    if (lane_v < N_LANE) then
+                        case lane_word_v is
+                            when 0 =>
+                                csr_word_v := std_logic_vector(csr_wr_hdr_cnt(lane_v));
+                            when 1 =>
+                                csr_word_v := std_logic_vector(csr_wr_shd_cnt(lane_v));
+                            when 2 =>
+                                csr_word_v := std_logic_vector(csr_wr_hit_cnt(lane_v));
+                            when 3 =>
+                                csr_word_v := std_logic_vector(csr_rd_hdr_cnt(lane_v));
+                            when 4 =>
+                                csr_word_v := std_logic_vector(csr_rd_shd_cnt(lane_v));
+                            when 5 =>
+                                csr_word_v := std_logic_vector(csr_rd_hit_cnt(lane_v));
+                            when 6 =>
+                                csr_word_v := std_logic_vector(csr_drop_hdr_cnt(lane_v));
+                            when 7 =>
+                                csr_word_v := std_logic_vector(csr_drop_shd_cnt(lane_v));
+                            when 8 =>
+                                csr_word_v := std_logic_vector(csr_drop_hit_cnt(lane_v));
+                            when 9 =>
+                                csr_word_v := std_logic_vector(resize(ingress_parser(lane_v).lane_credit, 32));
+                            when 10 =>
+                                csr_word_v := std_logic_vector(resize(ingress_parser(lane_v).ticket_credit, 32));
+                            when others =>
+                                csr_word_v := (others => '0');
+                        end case;
+                    end if;
+                else
+                    case offset_v is
+                        when CSR_WORD_UID =>
+                            csr_word_v := std_logic_vector(to_unsigned(IP_UID, 32));
+                        when CSR_WORD_META =>
+                            csr_word_v := meta_word_v;
+                        when CSR_WORD_LANE_MASK =>
+                            csr_word_v(csr_lane_mask'range) := csr_lane_mask;
+                        when CSR_WORD_CTRL =>
+                            csr_word_v := (others => '0');
+                        when CSR_WORD_STATUS =>
+                            status_v := (others => '0');
+                            status_v(csr_lane_mask'range) := csr_lane_mask;
+                            if (page_allocator_state /= IDLE) then
+                                status_v(16) := '1';
+                            end if;
+                            if (arbiter_state /= IDLE) then
+                                status_v(17) := '1';
+                            end if;
+                            if (ftable_presenter_state /= IDLE) then
+                                status_v(18) := '1';
+                            end if;
+                            status_v(19) := or_reduce(csr_lane_mask_effective);
+                            status_v(23 downto 20) := std_logic_vector(to_unsigned(N_LANE, 4));
+                            csr_word_v := status_v;
+                        when CSR_WORD_CAP =>
+                            csr_word_v(0) := '1'; -- common UID + META header
+                            csr_word_v(1) := '1'; -- lane mask control
+                            csr_word_v(2) := '1'; -- per-lane counters
+                            csr_word_v(15 downto 8) := std_logic_vector(to_unsigned(CSR_LANE_REGION_STRIDE, 8));
+                            csr_word_v(23 downto 16) := std_logic_vector(to_unsigned(CSR_LANE_REGION_BASE, 8));
+                            csr_word_v(31 downto 24) := std_logic_vector(to_unsigned(N_LANE, 8));
+                        when others =>
+                            csr_word_v := (others => '0');
+                    end case;
+                end if;
+
+                if (avs_csr_read = '1') then
+                    avs_csr_readdata_reg <= csr_word_v;
+                    avs_csr_readdatavalid_reg <= '1';
+                end if;
+            end if;
+        end if;
+    end process;
 
     -- @name proc_avalon_streaming_egress_comb
     -- @brief Drive the egress Avalon-ST sideband signals and gate `valid` during presenter restart/refill.

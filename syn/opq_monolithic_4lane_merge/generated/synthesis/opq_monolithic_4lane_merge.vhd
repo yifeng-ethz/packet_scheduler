@@ -9,6 +9,14 @@ use IEEE.numeric_std.all;
 entity opq_monolithic_4lane_merge is
 	port (
 		clk_clk                 : in  std_logic                     := '0';             --       clk.clk
+		csr_address             : in  std_logic_vector(8 downto 0)  := (others => '0'); --       csr.address
+		csr_read                : in  std_logic                     := '0';             --          .read
+		csr_write               : in  std_logic                     := '0';             --          .write
+		csr_writedata           : in  std_logic_vector(31 downto 0) := (others => '0'); --          .writedata
+		csr_readdata            : out std_logic_vector(31 downto 0);                    --          .readdata
+		csr_readdatavalid       : out std_logic;                                        --          .readdatavalid
+		csr_waitrequest         : out std_logic;                                        --          .waitrequest
+		csr_burstcount          : in  std_logic                     := '0';             --          .burstcount
 		egress_startofpacket    : out std_logic;                                        --    egress.startofpacket
 		egress_endofpacket      : out std_logic;                                        --          .endofpacket
 		egress_valid            : out std_logic;                                        --          .valid
@@ -47,7 +55,7 @@ architecture rtl of opq_monolithic_4lane_merge is
 	component opq_monolithic_4lane_merge_opq_0 is
 		generic (
 			N_LANE              : natural := 2;
-			MODE                : string  := "Merging";
+			MODE                : string  := "MERGING";
 			TRACK_HEADER        : boolean := true;
 			INGRESS_DATA_WIDTH  : natural := 32;
 			INGRESS_DATAK_WIDTH : natural := 4;
@@ -60,10 +68,22 @@ architecture rtl of opq_monolithic_4lane_merge is
 			PAGE_RAM_RD_WIDTH   : natural := 36;
 			N_SHD               : natural := 256;
 			N_HIT               : natural := 255;
-			DEBUG_LV            : natural := 1;
+			HDR_SIZE            : natural := 5;
+			SHD_SIZE            : natural := 1;
+			HIT_SIZE            : natural := 1;
+			TRL_SIZE            : natural := 1;
 			FRAME_SERIAL_SIZE   : natural := 16;
 			FRAME_SUBH_CNT_SIZE : natural := 16;
-			FRAME_HIT_CNT_SIZE  : natural := 16
+			FRAME_HIT_CNT_SIZE  : natural := 16;
+			DEBUG_LV            : natural := 1;
+			IP_UID              : natural := 1330663757;
+			VERSION_MAJOR       : natural := 26;
+			VERSION_MINOR       : natural := 2;
+			VERSION_PATCH       : natural := 0;
+			BUILD               : natural := 413;
+			VERSION_DATE        : natural := 20260413;
+			VERSION_GIT         : natural := 238049856;
+			INSTANCE_ID         : natural := 0
 		);
 		port (
 			aso_egress_startofpacket    : out std_logic;                                        -- startofpacket
@@ -74,6 +94,14 @@ architecture rtl of opq_monolithic_4lane_merge is
 			aso_egress_data             : out std_logic_vector(35 downto 0);                    -- data
 			d_clk                       : in  std_logic                     := 'X';             -- clk
 			d_reset                     : in  std_logic                     := 'X';             -- reset
+			avs_csr_address             : in  std_logic_vector(8 downto 0)  := (others => 'X'); -- address
+			avs_csr_read                : in  std_logic                     := 'X';             -- read
+			avs_csr_write               : in  std_logic                     := 'X';             -- write
+			avs_csr_writedata           : in  std_logic_vector(31 downto 0) := (others => 'X'); -- writedata
+			avs_csr_readdata            : out std_logic_vector(31 downto 0);                    -- readdata
+			avs_csr_readdatavalid       : out std_logic;                                        -- readdatavalid
+			avs_csr_waitrequest         : out std_logic;                                        -- waitrequest
+			avs_csr_burstcount          : in  std_logic                     := 'X';             -- burstcount
 			asi_ingress_0_channel       : in  std_logic_vector(1 downto 0)  := (others => 'X'); -- channel
 			asi_ingress_0_startofpacket : in  std_logic                     := 'X';             -- startofpacket
 			asi_ingress_0_endofpacket   : in  std_logic                     := 'X';             -- endofpacket
@@ -119,10 +147,22 @@ begin
 			PAGE_RAM_RD_WIDTH   => 36,
 			N_SHD               => 256,
 			N_HIT               => 255,
-			DEBUG_LV            => 1,
+			HDR_SIZE            => 5,
+			SHD_SIZE            => 1,
+			HIT_SIZE            => 1,
+			TRL_SIZE            => 1,
 			FRAME_SERIAL_SIZE   => 16,
 			FRAME_SUBH_CNT_SIZE => 16,
-			FRAME_HIT_CNT_SIZE  => 16
+			FRAME_HIT_CNT_SIZE  => 16,
+			DEBUG_LV            => 1,
+			IP_UID              => 1330663757,
+			VERSION_MAJOR       => 26,
+			VERSION_MINOR       => 2,
+			VERSION_PATCH       => 0,
+			BUILD               => 413,
+			VERSION_DATE        => 20260413,
+			VERSION_GIT         => 238049856,
+			INSTANCE_ID         => 0
 		)
 		port map (
 			aso_egress_startofpacket    => egress_startofpacket,    --        egress.startofpacket
@@ -133,6 +173,14 @@ begin
 			aso_egress_data             => egress_data,             --              .data
 			d_clk                       => clk_clk,                 -- clk_interface.clk
 			d_reset                     => reset_reset,             -- rst_interface.reset
+			avs_csr_address             => csr_address,             --           csr.address
+			avs_csr_read                => csr_read,                --              .read
+			avs_csr_write               => csr_write,               --              .write
+			avs_csr_writedata           => csr_writedata,           --              .writedata
+			avs_csr_readdata            => csr_readdata,            --              .readdata
+			avs_csr_readdatavalid       => csr_readdatavalid,       --              .readdatavalid
+			avs_csr_waitrequest         => csr_waitrequest,         --              .waitrequest
+			avs_csr_burstcount          => csr_burstcount,          --              .burstcount
 			asi_ingress_0_channel       => ingress_0_channel,       --     ingress_0.channel
 			asi_ingress_0_startofpacket => ingress_0_startofpacket, --              .startofpacket
 			asi_ingress_0_endofpacket   => ingress_0_endofpacket,   --              .endofpacket

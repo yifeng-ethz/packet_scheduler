@@ -1,0 +1,414 @@
+//------------------------------------------------------------------------------
+// ordered_priority_queue_monolithic_block_path
+// Version : 26.0.0
+// Date    : 20260413
+// Change  : Extract monolithic block mover plus B2P arbiter into standalone SV
+//------------------------------------------------------------------------------
+
+module ordered_priority_queue_monolithic_block_path #(
+  parameter int unsigned N_LANE = 2,
+  parameter int unsigned CHANNEL_WIDTH = 2,
+  parameter int unsigned LANE_FIFO_DEPTH = 1024,
+  parameter int unsigned LANE_FIFO_WIDTH = 40,
+  parameter int unsigned HANDLE_FIFO_DEPTH = 64,
+  parameter int unsigned PAGE_RAM_DEPTH = 65536,
+  parameter int unsigned N_HIT = 255,
+  parameter int unsigned HIT_SIZE = 1,
+  parameter int unsigned MAX_PKT_LENGTH = HIT_SIZE * N_HIT,
+  parameter int unsigned MAX_PKT_LENGTH_BITS = (MAX_PKT_LENGTH <= 1) ? 1 : $clog2(MAX_PKT_LENGTH),
+  parameter int unsigned FIFO_RAW_DELAY = 2,
+  parameter int unsigned FIFO_RD_DELAY = 1,
+  parameter int unsigned PAGE_RAM_DATA_WIDTH = 40,
+  parameter int unsigned LANE_FIFO_ADDR_WIDTH = $clog2(LANE_FIFO_DEPTH),
+  parameter int unsigned PAGE_RAM_ADDR_WIDTH = $clog2(PAGE_RAM_DEPTH),
+  parameter int unsigned HANDLE_FIFO_ADDR_WIDTH = $clog2(HANDLE_FIFO_DEPTH),
+  parameter int unsigned HANDLE_LENGTH = LANE_FIFO_ADDR_WIDTH + PAGE_RAM_ADDR_WIDTH + MAX_PKT_LENGTH_BITS
+) (
+  input  logic [N_LANE-1:0][HANDLE_FIFO_ADDR_WIDTH-1:0]    handle_wptr_i,
+  input  logic [N_LANE-1:0]                                handle_we_i,
+  input  logic [N_LANE-1:0][HANDLE_LENGTH:0]               handle_fifos_rd_data_i,
+  input  logic [N_LANE-1:0][LANE_FIFO_WIDTH-1:0]           lane_fifos_rd_data_i,
+  input  logic                                             fetch_ticket_active_i,
+  input  logic [N_LANE-1:0]                                tk_future_i,
+  input  logic                                             page_allocator_write_head_i,
+  input  logic                                             page_allocator_write_tail_i,
+  input  logic                                             page_allocator_write_page_i,
+  input  logic                                             page_allocator_page_we_i,
+  input  logic [PAGE_RAM_ADDR_WIDTH-1:0]                   page_allocator_page_waddr_i,
+  input  logic [PAGE_RAM_DATA_WIDTH-1:0]                   page_allocator_page_wdata_i,
+  output logic [N_LANE-1:0][HANDLE_FIFO_ADDR_WIDTH-1:0]    handle_fifos_rd_addr_o,
+  output logic [N_LANE-1:0][LANE_FIFO_ADDR_WIDTH-1:0]      lane_fifos_rd_addr_o,
+  output logic [N_LANE-1:0][LANE_FIFO_ADDR_WIDTH-1:0]      lane_credit_update_o,
+  output logic [N_LANE-1:0]                                lane_credit_update_valid_o,
+  output logic                                             page_ram_we_o,
+  output logic [PAGE_RAM_ADDR_WIDTH-1:0]                   page_ram_wr_addr_o,
+  output logic [PAGE_RAM_DATA_WIDTH-1:0]                   page_ram_wr_data_o,
+  input  logic                                             d_clk,
+  input  logic                                             d_reset
+);
+  localparam int unsigned LANE_FIFO_MAX_CREDIT = LANE_FIFO_DEPTH - 2;
+  localparam logic [9:0] QUANTUM_PER_SUBFRAME = 10'd256;
+  localparam logic [9:0] QUANTUM_MAX = 10'h3ff;
+  localparam int unsigned HANDLE_SRC_LO = 0;
+  localparam int unsigned HANDLE_SRC_HI = LANE_FIFO_ADDR_WIDTH - 1;
+  localparam int unsigned HANDLE_DST_LO = LANE_FIFO_ADDR_WIDTH;
+  localparam int unsigned HANDLE_DST_HI = LANE_FIFO_ADDR_WIDTH + PAGE_RAM_ADDR_WIDTH - 1;
+  localparam int unsigned HANDLE_LEN_LO = LANE_FIFO_ADDR_WIDTH + PAGE_RAM_ADDR_WIDTH;
+  localparam int unsigned HANDLE_LEN_HI = LANE_FIFO_ADDR_WIDTH + PAGE_RAM_ADDR_WIDTH + MAX_PKT_LENGTH_BITS - 1;
+
+  function automatic logic [N_LANE-1:0] rr_grant(
+    input logic [N_LANE-1:0] req,
+    input logic [N_LANE-1:0] priority_mask
+  );
+    logic [2*N_LANE-1:0] result0;
+    logic [2*N_LANE-1:0] result0p5;
+    logic [2*N_LANE-1:0] result1;
+    logic [2*N_LANE-1:0] result2;
+    begin
+      result0 = {req, req};
+      result0p5 = {~req, ~req};
+      result1 = result0p5 + priority_mask;
+      result2 = result0 & result1;
+      if (|result2[N_LANE-1:0]) begin
+        return result2[N_LANE-1:0];
+      end
+      return result2[2*N_LANE-1:N_LANE];
+    end
+  endfunction
+
+  typedef logic [LANE_FIFO_ADDR_WIDTH-1:0] lane_fifo_addr_t;
+  typedef logic [PAGE_RAM_ADDR_WIDTH-1:0] page_ram_addr_t;
+  typedef logic [HANDLE_FIFO_ADDR_WIDTH-1:0] handle_fifo_addr_t;
+  typedef logic [MAX_PKT_LENGTH_BITS-1:0] pkt_length_t;
+
+  typedef struct packed {
+    lane_fifo_addr_t src;
+    page_ram_addr_t  dst;
+    pkt_length_t     blk_len;
+  } handle_t;
+
+  localparam handle_t HANDLE_REG_RESET = '{
+    src: '0,
+    dst: '0,
+    blk_len: '0
+  };
+
+  typedef enum logic [2:0] {
+    BLOCK_MOVER_IDLE,
+    BLOCK_MOVER_PREP,
+    BLOCK_MOVER_WRITE_BLK,
+    BLOCK_MOVER_ABORT_WRITE_BLK,
+    BLOCK_MOVER_RESET
+  } block_mover_state_t;
+
+  typedef handle_fifo_addr_t handle_rptr_d_t [1:FIFO_RD_DELAY];
+
+  typedef struct {
+    pkt_length_t     word_wr_cnt;
+    handle_t         handle;
+    logic            flag;
+    handle_fifo_addr_t handle_rptr;
+    handle_rptr_d_t  handle_rptr_d;
+    page_ram_addr_t  page_wptr;
+    logic            page_wreq;
+    lane_fifo_addr_t lane_credit_update;
+    logic            lane_credit_update_valid;
+    logic            reset_done;
+  } block_mover_reg_t;
+
+  localparam block_mover_reg_t BLOCK_MOVER_REG_RESET = '{
+    word_wr_cnt: '0,
+    handle: HANDLE_REG_RESET,
+    flag: 1'b0,
+    handle_rptr: '0,
+    handle_rptr_d: '{default:'0},
+    page_wptr: '0,
+    page_wreq: 1'b0,
+    lane_credit_update: '0,
+    lane_credit_update_valid: 1'b0,
+    reset_done: 1'b0
+  };
+
+  typedef logic [9:0] quantum_t [N_LANE];
+
+  typedef enum logic [1:0] {
+    ARBITER_IDLE,
+    ARBITER_LOCKING,
+    ARBITER_LOCKED,
+    ARBITER_RESET
+  } arbiter_state_t;
+
+  typedef struct {
+    logic [N_LANE-1:0] sel_mask;
+    logic [N_LANE-1:0] priority_mask;
+    quantum_t          quantum;
+  } b2p_arb_t;
+
+  localparam b2p_arb_t B2P_ARB_REG_RESET = '{
+    sel_mask: '0,
+    priority_mask: {{(N_LANE-1){1'b0}}, 1'b1},
+    quantum: '{default:QUANTUM_PER_SUBFRAME}
+  };
+
+  block_mover_state_t block_mover_state [N_LANE];
+  block_mover_reg_t   block_mover [N_LANE];
+  logic [N_LANE-1:0][FIFO_RAW_DELAY:1] handle_fifo_is_pending_handle_d;
+  logic [N_LANE-1:0] handle_fifo_is_pending_handle;
+  logic [N_LANE-1:0] handle_fifo_is_pending_handle_valid;
+  logic [N_LANE-1:0] handle_fifo_is_q_valid;
+  handle_t           handle_fifo_if_rd_handle [N_LANE];
+  logic [N_LANE-1:0] handle_fifo_if_rd_flag;
+  logic [N_LANE-1:0] b2p_arb_req;
+  logic [N_LANE-1:0] b2p_arb_gnt;
+  quantum_t          b2p_arb_quantum_update_if_updating;
+  arbiter_state_t    arbiter_state;
+  b2p_arb_t          b2p_arb;
+  logic              page_ram_we_comb;
+  logic [PAGE_RAM_ADDR_WIDTH-1:0] page_ram_wr_addr_comb;
+  logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_wr_data_comb;
+  logic [$clog2(N_LANE)-1:0] grant_code;
+
+  always_comb begin : proc_block_mover_comb
+    for (int i = 0; i < N_LANE; i++) begin
+      handle_fifo_is_pending_handle[i] = 1'b0;
+      handle_fifo_is_pending_handle_valid[i] = 1'b0;
+      handle_fifo_is_q_valid[i] = 1'b0;
+      lane_fifos_rd_addr_o[i] = '0;
+      handle_fifos_rd_addr_o[i] = block_mover[i].handle_rptr;
+      handle_fifo_if_rd_handle[i].src = handle_fifos_rd_data_i[i][HANDLE_SRC_HI:HANDLE_SRC_LO];
+      handle_fifo_if_rd_handle[i].dst = handle_fifos_rd_data_i[i][HANDLE_DST_HI:HANDLE_DST_LO];
+      handle_fifo_if_rd_handle[i].blk_len = handle_fifos_rd_data_i[i][HANDLE_LEN_HI:HANDLE_LEN_LO];
+      handle_fifo_if_rd_flag[i] = handle_fifos_rd_data_i[i][HANDLE_LENGTH];
+      lane_credit_update_o[i] = block_mover[i].lane_credit_update;
+      lane_credit_update_valid_o[i] = block_mover[i].lane_credit_update_valid;
+
+      if (handle_wptr_i[i] != block_mover[i].handle_rptr) begin
+        handle_fifo_is_pending_handle[i] = 1'b1;
+      end
+      if (handle_we_i[i] && ((handle_wptr_i[i] - handle_fifo_addr_t'(1)) == block_mover[i].handle_rptr)) begin
+        handle_fifo_is_pending_handle[i] = 1'b0;
+      end
+      if ((&handle_fifo_is_pending_handle_d[i]) && handle_fifo_is_pending_handle[i]) begin
+        handle_fifo_is_pending_handle_valid[i] = 1'b1;
+      end
+      if (block_mover[i].handle_rptr_d[FIFO_RD_DELAY] == block_mover[i].handle_rptr) begin
+        handle_fifo_is_q_valid[i] = 1'b1;
+      end
+
+      if (b2p_arb_gnt[i]) begin
+        lane_fifos_rd_addr_o[i] = block_mover[i].handle.src + lane_fifo_addr_t'(block_mover[i].word_wr_cnt) +
+          lane_fifo_addr_t'(1);
+      end else begin
+        lane_fifos_rd_addr_o[i] = block_mover[i].handle.src + lane_fifo_addr_t'(block_mover[i].word_wr_cnt);
+      end
+
+      b2p_arb_req[i] = block_mover[i].page_wreq;
+      if ((QUANTUM_MAX - b2p_arb.quantum[i]) >= QUANTUM_PER_SUBFRAME) begin
+        b2p_arb_quantum_update_if_updating[i] = QUANTUM_PER_SUBFRAME;
+      end else if (b2p_arb_gnt[i] && b2p_arb_req[i]) begin
+        b2p_arb_quantum_update_if_updating[i] = QUANTUM_MAX - b2p_arb.quantum[i] + 10'd1;
+      end else begin
+        b2p_arb_quantum_update_if_updating[i] = QUANTUM_MAX - b2p_arb.quantum[i];
+      end
+    end
+  end
+
+  always_comb begin : proc_b2p_arbiter_comb
+    b2p_arb_gnt = rr_grant(b2p_arb_req, b2p_arb.priority_mask);
+    if (arbiter_state == ARBITER_LOCKED) begin
+      b2p_arb_gnt = b2p_arb.sel_mask;
+    end
+    if (page_allocator_write_page_i) begin
+      b2p_arb_gnt = '0;
+    end
+
+    grant_code = '0;
+    for (int i = 0; i < N_LANE; i++) begin
+      if (b2p_arb_gnt[i]) begin
+        grant_code = i[$clog2(N_LANE)-1:0];
+      end
+    end
+
+    page_ram_we_comb = 1'b0;
+    page_ram_wr_addr_comb = '0;
+    page_ram_wr_data_comb = '0;
+
+    for (int i = 0; i < N_LANE; i++) begin
+      if ((grant_code == i[$clog2(N_LANE)-1:0]) && (|b2p_arb_gnt) && block_mover[i].page_wreq) begin
+        page_ram_we_comb = 1'b1;
+        page_ram_wr_addr_comb = block_mover[i].page_wptr + page_ram_addr_t'(block_mover[i].word_wr_cnt);
+        page_ram_wr_data_comb = lane_fifos_rd_data_i[i];
+      end
+    end
+
+    if (page_allocator_write_page_i || page_allocator_write_head_i || page_allocator_write_tail_i) begin
+      page_ram_we_comb = page_allocator_page_we_i;
+      page_ram_wr_addr_comb = page_allocator_page_waddr_i;
+      page_ram_wr_data_comb = page_allocator_page_wdata_i;
+    end
+  end
+
+  always_ff @(posedge d_clk) begin : proc_block_mover_and_arbiter
+    for (int i = 0; i < N_LANE; i++) begin
+      block_mover[i].page_wreq <= 1'b0;
+      block_mover[i].lane_credit_update_valid <= 1'b0;
+
+      unique case (block_mover_state[i])
+        BLOCK_MOVER_IDLE: begin
+          block_mover[i].word_wr_cnt <= '0;
+          if (handle_fifo_is_pending_handle_valid[i] && handle_fifo_is_q_valid[i]) begin
+            block_mover[i].handle <= handle_fifo_if_rd_handle[i];
+            block_mover[i].flag <= handle_fifo_if_rd_flag[i];
+            if (!handle_fifo_if_rd_flag[i]) begin
+              block_mover_state[i] <= BLOCK_MOVER_PREP;
+            end else begin
+              block_mover_state[i] <= BLOCK_MOVER_ABORT_WRITE_BLK;
+            end
+          end
+        end
+
+        BLOCK_MOVER_PREP: begin
+          block_mover[i].page_wptr <= block_mover[i].handle.dst;
+          block_mover[i].page_wreq <= 1'b1;
+          block_mover_state[i] <= BLOCK_MOVER_WRITE_BLK;
+        end
+
+        BLOCK_MOVER_WRITE_BLK: begin
+          block_mover[i].page_wreq <= 1'b1;
+          if (block_mover[i].page_wreq && b2p_arb_gnt[i]) begin
+            block_mover[i].word_wr_cnt <= block_mover[i].word_wr_cnt + pkt_length_t'(1);
+            if ((block_mover[i].word_wr_cnt + pkt_length_t'(1)) == block_mover[i].handle.blk_len) begin
+              block_mover[i].lane_credit_update <= lane_fifo_addr_t'(block_mover[i].handle.blk_len);
+              block_mover[i].lane_credit_update_valid <= 1'b1;
+              block_mover[i].handle_rptr <= block_mover[i].handle_rptr + handle_fifo_addr_t'(1);
+              block_mover[i].page_wreq <= 1'b0;
+              block_mover_state[i] <= BLOCK_MOVER_IDLE;
+            end
+          end
+        end
+
+        BLOCK_MOVER_ABORT_WRITE_BLK: begin
+          block_mover[i].handle_rptr <= block_mover[i].handle_rptr + handle_fifo_addr_t'(1);
+          block_mover[i].lane_credit_update <= lane_fifo_addr_t'(block_mover[i].handle.blk_len);
+          block_mover[i].lane_credit_update_valid <= 1'b1;
+          block_mover_state[i] <= BLOCK_MOVER_IDLE;
+        end
+
+        BLOCK_MOVER_RESET: begin
+          if (!block_mover[i].reset_done) begin
+            block_mover[i].lane_credit_update <= lane_fifo_addr_t'(LANE_FIFO_MAX_CREDIT);
+            block_mover[i].lane_credit_update_valid <= 1'b1;
+            block_mover[i].reset_done <= 1'b1;
+          end else if (!d_reset) begin
+            block_mover_state[i] <= BLOCK_MOVER_IDLE;
+          end
+        end
+
+        default: begin
+        end
+      endcase
+
+      if (d_reset) begin
+        block_mover[i] <= BLOCK_MOVER_REG_RESET;
+        block_mover[i].reset_done <= 1'b0;
+        block_mover_state[i] <= BLOCK_MOVER_RESET;
+        handle_fifo_is_pending_handle_d[i] <= '0;
+      end else begin
+        for (int j = 1; j <= FIFO_RAW_DELAY; j++) begin
+          if (j == 1) begin
+            handle_fifo_is_pending_handle_d[i][j] <= handle_fifo_is_pending_handle[i];
+          end else begin
+            handle_fifo_is_pending_handle_d[i][j] <= handle_fifo_is_pending_handle_d[i][j-1];
+          end
+        end
+      end
+
+      for (int j = 1; j <= FIFO_RD_DELAY; j++) begin
+        if (j == 1) begin
+          block_mover[i].handle_rptr_d[j] <= block_mover[i].handle_rptr;
+        end else begin
+          block_mover[i].handle_rptr_d[j] <= block_mover[i].handle_rptr_d[j-1];
+        end
+      end
+    end
+
+    for (int i = 0; i < N_LANE; i++) begin
+      if (b2p_arb_gnt[i] && b2p_arb_req[i]) begin
+        b2p_arb.quantum[i] <= b2p_arb.quantum[i] - 10'd1;
+      end
+      if (fetch_ticket_active_i && !tk_future_i[i]) begin
+        b2p_arb.quantum[i] <= b2p_arb.quantum[i] + b2p_arb_quantum_update_if_updating[i];
+        if (b2p_arb_gnt[i] && b2p_arb_req[i]) begin
+          b2p_arb.quantum[i] <= b2p_arb.quantum[i] - 10'd1 + b2p_arb_quantum_update_if_updating[i];
+        end
+      end
+    end
+
+    unique case (arbiter_state)
+      ARBITER_IDLE: begin
+        if (|b2p_arb_req) begin
+          if (|b2p_arb_gnt) begin
+            b2p_arb.sel_mask <= b2p_arb_gnt;
+            arbiter_state <= ARBITER_LOCKED;
+          end else begin
+            arbiter_state <= ARBITER_LOCKING;
+          end
+        end
+      end
+
+      ARBITER_LOCKING: begin
+        if (|b2p_arb_gnt) begin
+          b2p_arb.sel_mask <= b2p_arb_gnt;
+          arbiter_state <= ARBITER_LOCKED;
+        end
+      end
+
+      ARBITER_LOCKED: begin
+        for (int i = 0; i < N_LANE; i++) begin
+          if (b2p_arb.sel_mask[i] && !b2p_arb_req[i]) begin
+            arbiter_state <= ARBITER_IDLE;
+            b2p_arb.priority_mask <= {b2p_arb.sel_mask[N_LANE-2:0], b2p_arb.sel_mask[N_LANE-1]};
+          end
+          if ((b2p_arb.quantum[i] == 10'd1) && b2p_arb_gnt[i] && b2p_arb_req[i]) begin
+            arbiter_state <= ARBITER_IDLE;
+          end
+        end
+      end
+
+      ARBITER_RESET: begin
+        b2p_arb <= B2P_ARB_REG_RESET;
+        arbiter_state <= ARBITER_IDLE;
+      end
+
+      default: begin
+      end
+    endcase
+
+    page_ram_we_o <= page_ram_we_comb;
+    page_ram_wr_addr_o <= page_ram_wr_addr_comb;
+    page_ram_wr_data_o <= page_ram_wr_data_comb;
+
+    if (d_reset) begin
+      b2p_arb <= B2P_ARB_REG_RESET;
+      arbiter_state <= ARBITER_RESET;
+      page_ram_we_o <= 1'b0;
+      page_ram_wr_addr_o <= '0;
+      page_ram_wr_data_o <= '0;
+    end
+  end
+
+  for (genvar g = 0; g < N_LANE; g++) begin : g_block_path_sva
+    property p_reset_enters_block_mover_reset;
+      @(posedge d_clk) d_reset |=> (block_mover_state[g] == BLOCK_MOVER_RESET);
+    endproperty
+    ap_reset_enters_block_mover_reset: assert property (p_reset_enters_block_mover_reset);
+
+    property p_abort_returns_credit;
+      @(posedge d_clk) disable iff (d_reset)
+        (block_mover_state[g] == BLOCK_MOVER_ABORT_WRITE_BLK)
+        |=> lane_credit_update_valid_o[g];
+    endproperty
+    ap_abort_returns_credit: assert property (p_abort_returns_credit);
+  end
+
+endmodule

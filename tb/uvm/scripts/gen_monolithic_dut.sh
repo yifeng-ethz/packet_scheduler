@@ -107,6 +107,14 @@ begin
             aso_egress_startofpacket    => aso_egress_startofpacket,
             aso_egress_endofpacket      => aso_egress_endofpacket,
             aso_egress_error            => aso_egress_error,
+            avs_csr_address             => (others => '0'),
+            avs_csr_read                => '0',
+            avs_csr_write               => '0',
+            avs_csr_writedata           => (others => '0'),
+            avs_csr_readdata            => open,
+            avs_csr_readdatavalid       => open,
+            avs_csr_waitrequest         => open,
+            avs_csr_burstcount          => '0',
             d_clk                       => d_clk,
             d_reset                     => d_reset
         );

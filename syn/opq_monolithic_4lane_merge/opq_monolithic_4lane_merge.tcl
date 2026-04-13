@@ -6,7 +6,7 @@ set_project_property DEVICE_FAMILY {Arria V}
 set_project_property DEVICE {5AGXBA7D4F31C5}
 set_project_property HIDE_FROM_IP_CATALOG {false}
 
-add_instance opq_0 ordered_priority_queue 25.0.722
+add_instance opq_0 ordered_priority_queue 26.2.0.0413
 set_instance_parameter_value opq_0 {N_LANE} {4}
 set_instance_parameter_value opq_0 {MODE} {MERGING}
 set_instance_parameter_value opq_0 {TRACK_HEADER} {true}
@@ -46,5 +46,8 @@ set_interface_property ingress_3 EXPORT_OF opq_0.ingress_3
 
 add_interface egress avalon_streaming source
 set_interface_property egress EXPORT_OF opq_0.egress
+
+add_interface csr avalon slave
+set_interface_property csr EXPORT_OF opq_0.csr
 
 save_system {opq_monolithic_4lane_merge.qsys}

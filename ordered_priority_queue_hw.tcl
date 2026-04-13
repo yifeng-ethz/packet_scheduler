@@ -5,7 +5,7 @@ package require -exact altera_terp 1.0
 
 set_module_property NAME                             ordered_priority_queue
 set_module_property DISPLAY_NAME                     "Ordered Priority Queue"
-set_module_property VERSION                          26.0.0.0413
+set_module_property VERSION                          26.2.0.0413
 set_module_property DESCRIPTION                      "Ordered Priority Queue Mu3e IP Core"
 set_module_property GROUP                            "Mu3e Data Plane/Modules"
 set_module_property AUTHOR                           "Yifeng Wang"
@@ -39,12 +39,12 @@ proc is_power_of_two {value} {
 # UID = ASCII "OPQM" (Ordered Priority Queue, Monolithic) = 0x4F50514D
 set IP_UID_DEFAULT_CONST        1330663757
 set VERSION_MAJOR_DEFAULT_CONST 26
-set VERSION_MINOR_DEFAULT_CONST 0
+set VERSION_MINOR_DEFAULT_CONST 2
 set VERSION_PATCH_DEFAULT_CONST 0
 set BUILD_DEFAULT_CONST         413
 set VERSION_DATE_DEFAULT_CONST  20260413
-# 0x28b0752 — submodule HEAD at packaging time
-set VERSION_GIT_DEFAULT_CONST   42665810
+# 0xE305A40 — current submodule HEAD baseline before this rewrite tranche
+set VERSION_GIT_DEFAULT_CONST   238049856
 set INSTANCE_ID_DEFAULT_CONST   0
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -218,7 +218,8 @@ proc elaborate {} {
     set_interface_property egress symbolsPerBeat    $symbols_per_beat
     set_interface_property egress dataBitsPerSymbol $ingress_beat_w
 
-    # Identity parameters have no RTL backing — they are catalog metadata only.
+    # Release identity is HDL-backed. Keep the packaged release stamp fixed in the
+    # GUI, but allow INSTANCE_ID override per instantiated system.
     set_parameter_property IP_UID         ENABLED false
     set_parameter_property VERSION_MAJOR  ENABLED false
     set_parameter_property VERSION_MINOR  ENABLED false
@@ -226,7 +227,7 @@ proc elaborate {} {
     set_parameter_property BUILD          ENABLED false
     set_parameter_property VERSION_DATE   ENABLED false
     set_parameter_property VERSION_GIT    ENABLED false
-    set_parameter_property INSTANCE_ID    ENABLED false
+    set_parameter_property INSTANCE_ID    ENABLED true
 }
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -413,53 +414,54 @@ set_parameter_property DEBUG_LV HDL_PARAMETER true
 set_parameter_property DEBUG_LV DESCRIPTION "0 = off, 1 = synthesizable debug, 2 = simulation-only debug."
 
 # ────────────────────────────────────────────────────────────────────────────
-# Identity parameters — catalog metadata only (no RTL backing, no CSR)
+# Identity parameters — common Mu3e UID + META header (HDL-backed)
 # ────────────────────────────────────────────────────────────────────────────
 add_parameter IP_UID NATURAL $IP_UID_DEFAULT_CONST
 set_parameter_property IP_UID DISPLAY_NAME "UID"
 set_parameter_property IP_UID ALLOWED_RANGES 0:2147483647
 set_parameter_property IP_UID DISPLAY_HINT hexadecimal
-set_parameter_property IP_UID HDL_PARAMETER false
-set_parameter_property IP_UID DESCRIPTION {ASCII four-char tag (default "OPQM"). Shown for catalog traceability only — this IP has no CSR.}
+set_parameter_property IP_UID HDL_PARAMETER true
+set_parameter_property IP_UID DESCRIPTION {ASCII four-char Mu3e IP identifier. Exposed at CSR word 0x00.}
 
 add_parameter VERSION_MAJOR NATURAL $VERSION_MAJOR_DEFAULT_CONST
 set_parameter_property VERSION_MAJOR DISPLAY_NAME "Version Major"
 set_parameter_property VERSION_MAJOR ALLOWED_RANGES 0:255
-set_parameter_property VERSION_MAJOR HDL_PARAMETER false
+set_parameter_property VERSION_MAJOR HDL_PARAMETER true
 
 add_parameter VERSION_MINOR NATURAL $VERSION_MINOR_DEFAULT_CONST
 set_parameter_property VERSION_MINOR DISPLAY_NAME "Version Minor"
 set_parameter_property VERSION_MINOR ALLOWED_RANGES 0:255
-set_parameter_property VERSION_MINOR HDL_PARAMETER false
+set_parameter_property VERSION_MINOR HDL_PARAMETER true
 
 add_parameter VERSION_PATCH NATURAL $VERSION_PATCH_DEFAULT_CONST
 set_parameter_property VERSION_PATCH DISPLAY_NAME "Version Patch"
 set_parameter_property VERSION_PATCH ALLOWED_RANGES 0:15
-set_parameter_property VERSION_PATCH HDL_PARAMETER false
+set_parameter_property VERSION_PATCH HDL_PARAMETER true
 
 add_parameter BUILD NATURAL $BUILD_DEFAULT_CONST
 set_parameter_property BUILD DISPLAY_NAME "Build Stamp"
 set_parameter_property BUILD ALLOWED_RANGES 0:4095
-set_parameter_property BUILD HDL_PARAMETER false
-set_parameter_property BUILD DESCRIPTION {12-bit MMDD packaging stamp packed into VERSION[11:0].}
+set_parameter_property BUILD HDL_PARAMETER true
+set_parameter_property BUILD DESCRIPTION {12-bit MMDD packaging stamp packed into META page 0 VERSION[11:0].}
 
 add_parameter VERSION_DATE NATURAL $VERSION_DATE_DEFAULT_CONST
 set_parameter_property VERSION_DATE DISPLAY_NAME "Version Date"
 set_parameter_property VERSION_DATE ALLOWED_RANGES 0:2147483647
-set_parameter_property VERSION_DATE HDL_PARAMETER false
-set_parameter_property VERSION_DATE DESCRIPTION {YYYYMMDD packaging date.}
+set_parameter_property VERSION_DATE HDL_PARAMETER true
+set_parameter_property VERSION_DATE DESCRIPTION {YYYYMMDD packaging date exposed through META page 1.}
 
 add_parameter VERSION_GIT NATURAL $VERSION_GIT_DEFAULT_CONST
 set_parameter_property VERSION_GIT DISPLAY_NAME "Git Stamp"
 set_parameter_property VERSION_GIT ALLOWED_RANGES 0:2147483647
 set_parameter_property VERSION_GIT DISPLAY_HINT hexadecimal
-set_parameter_property VERSION_GIT HDL_PARAMETER false
-set_parameter_property VERSION_GIT DESCRIPTION {Truncated submodule git hash at packaging time.}
+set_parameter_property VERSION_GIT HDL_PARAMETER true
+set_parameter_property VERSION_GIT DESCRIPTION {Truncated submodule git hash exposed through META page 2.}
 
 add_parameter INSTANCE_ID NATURAL $INSTANCE_ID_DEFAULT_CONST
 set_parameter_property INSTANCE_ID DISPLAY_NAME "Instance ID"
 set_parameter_property INSTANCE_ID ALLOWED_RANGES 0:2147483647
-set_parameter_property INSTANCE_ID HDL_PARAMETER false
+set_parameter_property INSTANCE_ID HDL_PARAMETER true
+set_parameter_property INSTANCE_ID DESCRIPTION {Per-instance integration identifier exposed through META page 3.}
 
 # ────────────────────────────────────────────────────────────────────────────
 # Derived (hidden) parameters
@@ -530,9 +532,9 @@ add_display_item "Debug" DEBUG_LV parameter
 add_display_item $TAB_IDENTITY "Delivered Profile" GROUP
 add_display_item $TAB_IDENTITY "Versioning"        GROUP
 
-add_html_text "Delivered Profile" profile_html {<html><b>Catalog revision</b><br/>This release is packaged as <b>26.0.0.0413</b>.<br/><br/><b>Runtime visibility</b><br/>This IP has <b>no CSR aperture</b>. The identity fields below are catalog metadata only — software cannot read UID/VERSION/GIT at runtime because there is no Avalon-MM slave. Runtime configuration is frozen at Platform Designer generation time via the HDL parameters on the <b>Configuration</b> tab.</html>}
+add_html_text "Delivered Profile" profile_html {<html><b>Catalog revision</b><br/>This release is packaged as <b>26.2.0.0413</b>.<br/><br/><b>Runtime visibility</b><br/>The monolithic OPQ now exposes a runtime <b>CSR Avalon-MM slave</b>. Software can read the common Mu3e <b>UID + META</b> header, inspect per-lane write/read/drop counters, and program a per-lane packet-boundary mask.</html>}
 
-add_html_text "Versioning" versioning_html {<html><b>Common identity header (packaging only)</b><br/>VERSION encoding: MAJOR[31:24] = 2-digit year, MINOR[23:16], PATCH[15:12], BUILD[11:0] = MMDD.<br/><br/>Identity fields are disabled in the GUI because they do not drive any RTL generic — changing them would have no effect.</html>}
+add_html_text "Versioning" versioning_html {<html><b>Common identity header</b><br/>CSR word <b>0x00</b> = UID. CSR word <b>0x01</b> = META with page selector[1:0] choosing VERSION / DATE / GIT / INSTANCE_ID.<br/><br/>VERSION encoding: MAJOR[31:24] = 2-digit year, MINOR[23:16], PATCH[15:12], BUILD[11:0] = MMDD.</html>}
 add_display_item "Versioning" IP_UID        parameter
 add_display_item "Versioning" VERSION_MAJOR parameter
 add_display_item "Versioning" VERSION_MINOR parameter
@@ -546,6 +548,7 @@ add_display_item "Versioning" INSTANCE_ID   parameter
 add_display_item $TAB_INTERFACES "Clock / Reset" GROUP
 add_display_item $TAB_INTERFACES "Ingress"       GROUP
 add_display_item $TAB_INTERFACES "Egress"        GROUP
+add_display_item $TAB_INTERFACES "CSR"           GROUP
 
 add_html_text "Clock / Reset" clock_html "<html><b>clk_interface</b> / <b>rst_interface</b><br/>Single synchronous data-path domain. All ingress lanes and the egress source are associated with this clock/reset pair.</html>"
 
@@ -567,15 +570,30 @@ add_html_text "Egress" egress_html {<html><b>egress</b> — Avalon-ST <i>source<
 <tr><td>error[2:0]</td><td>out</td><td>3</td><td>{hit_err, shd_err, hdr_err} — propagated from ingress parser.</td></tr>
 </table></html>}
 
+add_html_text "CSR" csr_html {<html><b>csr</b> — Avalon-MM <i>slave</i>, 32-bit data, 9-bit word address.<br/>Implements the common Mu3e UID + META identity header plus OPQ-specific runtime control and counters. <b>LANE_MASK</b> applies at packet boundaries: in-flight packets drain, then new packets on masked lanes are dropped and accounted.</html>}
+
 # ---- Register Map ----------------------------------------------------------
-add_display_item $TAB_REGMAP "No CSR Aperture" GROUP
-add_html_text "No CSR Aperture" no_csr_html {<html><b>This IP exposes no register map.</b><br/><br/>The Ordered Priority Queue monolithic core has no Avalon-MM slave. All runtime behavior is fixed by the HDL parameters on the <b>Configuration</b> tab and baked into the bitstream at Platform Designer generation time.<br/><br/>Consequences:
-<ul>
-<li>No software-visible UID / VERSION header.</li>
-<li>No runtime counters, status, or control bits exposed to host software.</li>
-<li>Reconfiguration requires regenerating the Qsys system and rebuilding the project.</li>
-</ul>
-If a future revision needs runtime observability (fill levels, drop counters, mode switching), a dedicated CSR window should be added to the monolithic core and this tab updated accordingly.</html>}
+add_display_item $TAB_REGMAP "CSR Map" GROUP
+add_html_text "CSR Map" csr_map_html {<html><table border="1" cellpadding="3" width="100%">
+<tr><th>Word</th><th>Name</th><th>Access</th><th>Description</th></tr>
+<tr><td>0x000</td><td>UID</td><td>RO</td><td>Immutable Mu3e IP identifier. Default ASCII "OPQM".</td></tr>
+<tr><td>0x001</td><td>META</td><td>RW/RO</td><td>Write page selector[1:0]. Read selected page: VERSION / DATE / GIT / INSTANCE_ID.</td></tr>
+<tr><td>0x002</td><td>LANE_MASK</td><td>RW</td><td>Bit <i>i</i> = 1 masks lane <i>i</i> at packet boundaries. Masked packets are dropped and counted.</td></tr>
+<tr><td>0x003</td><td>CTRL</td><td>WO</td><td>Bit 0 = write-1 pulse to clear all software-visible counters.</td></tr>
+<tr><td>0x004</td><td>STATUS</td><td>RO</td><td>Mask summary plus allocator / arbiter / presenter busy flags.</td></tr>
+<tr><td>0x005</td><td>CAP</td><td>RO</td><td>Capability summary and per-lane region geometry.</td></tr>
+<tr><td>0x040 + lane*0x10 + 0</td><td>WR_HDR_CNT</td><td>RO</td><td>Per-lane header ticket commits accepted from ingress.</td></tr>
+<tr><td>0x040 + lane*0x10 + 1</td><td>WR_SHD_CNT</td><td>RO</td><td>Per-lane subheader ticket commits accepted from ingress.</td></tr>
+<tr><td>0x040 + lane*0x10 + 2</td><td>WR_HIT_CNT</td><td>RO</td><td>Per-lane hit words written into the lane FIFO.</td></tr>
+<tr><td>0x040 + lane*0x10 + 3</td><td>RD_HDR_CNT</td><td>RO</td><td>Per-lane SOP/header tickets consumed by the page allocator.</td></tr>
+<tr><td>0x040 + lane*0x10 + 4</td><td>RD_SHD_CNT</td><td>RO</td><td>Per-lane subheaders accepted into the merged page stream.</td></tr>
+<tr><td>0x040 + lane*0x10 + 5</td><td>RD_HIT_CNT</td><td>RO</td><td>Per-lane hits accepted into the merged page stream.</td></tr>
+<tr><td>0x040 + lane*0x10 + 6</td><td>DROP_HDR_CNT</td><td>RO</td><td>Per-lane dropped headers (mask, header error, or header-ticket rejection).</td></tr>
+<tr><td>0x040 + lane*0x10 + 7</td><td>DROP_SHD_CNT</td><td>RO</td><td>Per-lane dropped subheaders (mask, parser rejection, or late ticket skip).</td></tr>
+<tr><td>0x040 + lane*0x10 + 8</td><td>DROP_HIT_CNT</td><td>RO</td><td>Per-lane dropped hits associated with masked / rejected / late subheaders.</td></tr>
+<tr><td>0x040 + lane*0x10 + 9</td><td>LANE_FREE_CREDIT</td><td>RO</td><td>Current lane-FIFO free-credit counter for that lane.</td></tr>
+<tr><td>0x040 + lane*0x10 + A</td><td>TICKET_FREE_CREDIT</td><td>RO</td><td>Current ticket-FIFO free-credit counter for that lane.</td></tr>
+</table></html>}
 
 # ────────────────────────────────────────────────────────────────────────────
 # Static interfaces — egress source + clock + reset
@@ -604,3 +622,30 @@ set_interface_property rst_interface associatedClock  clk_interface
 set_interface_property rst_interface synchronousEdges BOTH
 set_interface_property rst_interface ENABLED          true
 add_interface_port rst_interface d_reset reset Input 1
+
+add_interface csr avalon end
+set_interface_property csr addressUnits WORDS
+set_interface_property csr associatedClock clk_interface
+set_interface_property csr associatedReset rst_interface
+set_interface_property csr bitsPerSymbol 8
+set_interface_property csr burstOnBurstBoundariesOnly false
+set_interface_property csr burstcountUnits WORDS
+set_interface_property csr explicitAddressSpan 0
+set_interface_property csr holdTime 0
+set_interface_property csr linewrapBursts false
+set_interface_property csr maximumPendingReadTransactions 1
+set_interface_property csr maximumPendingWriteTransactions 0
+set_interface_property csr readLatency 0
+set_interface_property csr readWaitTime 1
+set_interface_property csr setupTime 0
+set_interface_property csr timingUnits Cycles
+set_interface_property csr writeWaitTime 0
+set_interface_property csr ENABLED true
+add_interface_port csr avs_csr_address address Input 9
+add_interface_port csr avs_csr_read read Input 1
+add_interface_port csr avs_csr_write write Input 1
+add_interface_port csr avs_csr_writedata writedata Input 32
+add_interface_port csr avs_csr_readdata readdata Output 32
+add_interface_port csr avs_csr_readdatavalid readdatavalid Output 1
+add_interface_port csr avs_csr_waitrequest waitrequest Output 1
+add_interface_port csr avs_csr_burstcount burstcount Input 1

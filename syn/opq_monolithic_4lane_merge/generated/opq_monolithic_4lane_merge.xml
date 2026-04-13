@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <deploy
- date="2026.04.13.14:44:38"
+ date="2026.04.13.20:32:48"
  outputDirectory="/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/opq_monolithic_4lane_merge/generated/">
  <perimeter>
   <parameter
@@ -56,6 +56,61 @@
    <property name="externallyDriven" value="false" />
    <property name="ptfSchematicName" value="" />
    <port name="clk_clk" direction="input" role="clk" width="1" />
+  </interface>
+  <interface name="csr" kind="avalon" start="0">
+   <property name="addressAlignment" value="DYNAMIC" />
+   <property name="addressGroup" value="0" />
+   <property name="addressSpan" value="2048" />
+   <property name="addressUnits" value="WORDS" />
+   <property name="alwaysBurstMaxBurst" value="false" />
+   <property name="associatedClock" value="clk" />
+   <property name="associatedReset" value="reset" />
+   <property name="bitsPerSymbol" value="8" />
+   <property name="bridgedAddressOffset" value="0" />
+   <property name="bridgesToMaster" value="" />
+   <property name="burstOnBurstBoundariesOnly" value="false" />
+   <property name="burstcountUnits" value="WORDS" />
+   <property name="constantBurstBehavior" value="false" />
+   <property name="explicitAddressSpan" value="0" />
+   <property name="holdTime" value="0" />
+   <property name="interleaveBursts" value="false" />
+   <property name="isBigEndian" value="false" />
+   <property name="isFlash" value="false" />
+   <property name="isMemoryDevice" value="false" />
+   <property name="isNonVolatileStorage" value="false" />
+   <property name="linewrapBursts" value="false" />
+   <property name="maximumPendingReadTransactions" value="1" />
+   <property name="maximumPendingWriteTransactions" value="0" />
+   <property name="minimumUninterruptedRunLength" value="1" />
+   <property name="printableDevice" value="false" />
+   <property name="readLatency" value="0" />
+   <property name="readWaitStates" value="1" />
+   <property name="readWaitTime" value="1" />
+   <property name="registerIncomingSignals" value="false" />
+   <property name="registerOutgoingSignals" value="false" />
+   <property name="setupTime" value="0" />
+   <property name="timingUnits" value="Cycles" />
+   <property name="transparentBridge" value="false" />
+   <property name="wellBehavedWaitrequest" value="false" />
+   <property name="writeLatency" value="0" />
+   <property name="writeWaitStates" value="0" />
+   <property name="writeWaitTime" value="0" />
+   <port name="csr_address" direction="input" role="address" width="9" />
+   <port name="csr_read" direction="input" role="read" width="1" />
+   <port name="csr_write" direction="input" role="write" width="1" />
+   <port name="csr_writedata" direction="input" role="writedata" width="32" />
+   <port name="csr_readdata" direction="output" role="readdata" width="32" />
+   <port
+       name="csr_readdatavalid"
+       direction="output"
+       role="readdatavalid"
+       width="1" />
+   <port
+       name="csr_waitrequest"
+       direction="output"
+       role="waitrequest"
+       width="1" />
+   <port name="csr_burstcount" direction="input" role="burstcount" width="1" />
   </interface>
   <interface name="egress" kind="avalon_streaming" start="1">
    <property name="associatedClock" value="clk" />
@@ -205,13 +260,13 @@
  </perimeter>
  <entity
    path=""
-   parameterizationKey="opq_monolithic_4lane_merge:1.0:AUTO_CLK_CLOCK_DOMAIN=-1,AUTO_CLK_CLOCK_RATE=-1,AUTO_CLK_RESET_DOMAIN=-1,AUTO_DEVICE=5AGXBA7D4F31C5,AUTO_DEVICE_FAMILY=Arria V,AUTO_DEVICE_SPEEDGRADE=5_H4,AUTO_GENERATION_ID=1776084278,AUTO_UNIQUE_ID=(ordered_priority_queue:25.0.722:CHANNEL_WIDTH=2,DEBUG_LV=1,FRAME_HIT_CNT_SIZE=16,FRAME_SERIAL_SIZE=16,FRAME_SUBH_CNT_SIZE=16,HANDLE_FIFO_DEPTH=64,INGRESS_DATAK_WIDTH=4,INGRESS_DATA_WIDTH=32,LANE_FIFO_DEPTH=1024,LANE_FIFO_WIDTH=40,MODE=MERGING,N_HIT=255,N_LANE=4,N_SHD=256,PAGE_RAM_DEPTH=65536,PAGE_RAM_RD_WIDTH=36,TICKET_FIFO_DEPTH=256,TRACK_HEADER=true)"
+   parameterizationKey="opq_monolithic_4lane_merge:1.0:AUTO_CLK_CLOCK_DOMAIN=-1,AUTO_CLK_CLOCK_RATE=-1,AUTO_CLK_RESET_DOMAIN=-1,AUTO_DEVICE=5AGXBA7D4F31C5,AUTO_DEVICE_FAMILY=Arria V,AUTO_DEVICE_SPEEDGRADE=5_H4,AUTO_GENERATION_ID=1776105168,AUTO_UNIQUE_ID=(ordered_priority_queue:26.2.0.413:BUILD=413,CHANNEL_WIDTH=2,DEBUG_LV=1,EGRESS_EMPTY_WIDTH_DERIVED=0,EGRESS_SYMBOLS_PER_BEAT_DERIVED=1,FRAME_HIT_CNT_SIZE=16,FRAME_SERIAL_SIZE=16,FRAME_SUBH_CNT_SIZE=16,HANDLE_FIFO_DEPTH=64,HDR_SIZE=5,HIT_SIZE=1,INGRESS_BEAT_WIDTH_DERIVED=36,INGRESS_DATAK_WIDTH=4,INGRESS_DATA_WIDTH=32,INSTANCE_ID=0,IP_UID=1330663757,LANE_FIFO_DEPTH=1024,LANE_FIFO_WIDTH=40,MODE=MERGING,N_HIT=255,N_LANE=4,N_SHD=256,PAGE_RAM_DEPTH=65536,PAGE_RAM_RD_WIDTH=36,SHD_SIZE=1,TICKET_FIFO_DEPTH=256,TRACK_HEADER=true,TRL_SIZE=1,VERSION_DATE=20260413,VERSION_GIT=238049856,VERSION_MAJOR=26,VERSION_MINOR=2,VERSION_PATCH=0)"
    instancePathKey="opq_monolithic_4lane_merge"
    kind="opq_monolithic_4lane_merge"
    version="1.0"
    name="opq_monolithic_4lane_merge">
   <parameter name="AUTO_CLK_CLOCK_RATE" value="-1" />
-  <parameter name="AUTO_GENERATION_ID" value="1776084278" />
+  <parameter name="AUTO_GENERATION_ID" value="1776105168" />
   <parameter name="AUTO_DEVICE" value="5AGXBA7D4F31C5" />
   <parameter name="AUTO_DEVICE_FAMILY" value="Arria V" />
   <parameter name="AUTO_CLK_RESET_DOMAIN" value="-1" />
@@ -229,23 +284,23 @@
        type="VHDL"
        attributes="TOP_LEVEL_FILE" />
    <file
-       path="/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/opq_monolithic_4lane_merge/generated/synthesis/submodules/handle_fifo.vhd"
+       path="/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/opq_monolithic_4lane_merge/generated/synthesis/submodules/handle_fifo.v"
        type="VERILOG"
        attributes="" />
    <file
-       path="/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/opq_monolithic_4lane_merge/generated/synthesis/submodules/lane_fifo.vhd"
+       path="/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/opq_monolithic_4lane_merge/generated/synthesis/submodules/lane_fifo.v"
        type="VERILOG"
        attributes="" />
    <file
-       path="/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/opq_monolithic_4lane_merge/generated/synthesis/submodules/ticket_fifo.vhd"
+       path="/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/opq_monolithic_4lane_merge/generated/synthesis/submodules/ticket_fifo.v"
        type="VERILOG"
        attributes="" />
    <file
-       path="/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/opq_monolithic_4lane_merge/generated/synthesis/submodules/page_ram.vhd"
+       path="/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/opq_monolithic_4lane_merge/generated/synthesis/submodules/page_ram.v"
        type="VERILOG"
        attributes="" />
    <file
-       path="/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/opq_monolithic_4lane_merge/generated/synthesis/submodules/tile_fifo.vhd"
+       path="/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/opq_monolithic_4lane_merge/generated/synthesis/submodules/tile_fifo.v"
        type="VERILOG"
        attributes="" />
   </childGeneratedFiles>
@@ -264,6 +319,7 @@
    <message level="Progress" culprit="current"></message>
    <message level="Progress" culprit="current"></message>
    <message level="Progress" culprit="current"></message>
+   <message level="Progress" culprit="current"></message>
    <message level="Debug">Transform: CustomInstructionTransform</message>
    <message level="Debug">No custom instruction connections, skipping transform </message>
    <message level="Debug" culprit="merlin_custom_instruction_transform"><![CDATA[After transform: <b>1</b> modules, <b>0</b> connections]]></message>
@@ -275,58 +331,73 @@
    <message level="Debug">Transform: ResetAdaptation</message>
    <message level="Debug" culprit="opq_monolithic_4lane_merge"><![CDATA["<b>opq_monolithic_4lane_merge</b>" reuses <b>ordered_priority_queue</b> "<b>submodules/opq_monolithic_4lane_merge_opq_0</b>"]]></message>
    <message level="Debug" culprit="opq_monolithic_4lane_merge">queue size: 0 starting:ordered_priority_queue "submodules/opq_monolithic_4lane_merge_opq_0"</message>
-   <message level="Info" culprit="opq_0"><![CDATA[<b>generated file: (opq_monolithic_4lane_merge_opq_0.vhd)</b>]]></message>
+   <message level="Info" culprit="opq_0">generated top-level file: opq_monolithic_4lane_merge_opq_0.vhd</message>
    <message level="Info" culprit="opq_0"><![CDATA["<b>opq_monolithic_4lane_merge</b>" instantiated <b>ordered_priority_queue</b> "<b>opq_0</b>"]]></message>
   </messages>
  </entity>
  <entity
    path="submodules/"
-   parameterizationKey="ordered_priority_queue:25.0.722:CHANNEL_WIDTH=2,DEBUG_LV=1,FRAME_HIT_CNT_SIZE=16,FRAME_SERIAL_SIZE=16,FRAME_SUBH_CNT_SIZE=16,HANDLE_FIFO_DEPTH=64,INGRESS_DATAK_WIDTH=4,INGRESS_DATA_WIDTH=32,LANE_FIFO_DEPTH=1024,LANE_FIFO_WIDTH=40,MODE=MERGING,N_HIT=255,N_LANE=4,N_SHD=256,PAGE_RAM_DEPTH=65536,PAGE_RAM_RD_WIDTH=36,TICKET_FIFO_DEPTH=256,TRACK_HEADER=true"
+   parameterizationKey="ordered_priority_queue:26.2.0.413:BUILD=413,CHANNEL_WIDTH=2,DEBUG_LV=1,EGRESS_EMPTY_WIDTH_DERIVED=0,EGRESS_SYMBOLS_PER_BEAT_DERIVED=1,FRAME_HIT_CNT_SIZE=16,FRAME_SERIAL_SIZE=16,FRAME_SUBH_CNT_SIZE=16,HANDLE_FIFO_DEPTH=64,HDR_SIZE=5,HIT_SIZE=1,INGRESS_BEAT_WIDTH_DERIVED=36,INGRESS_DATAK_WIDTH=4,INGRESS_DATA_WIDTH=32,INSTANCE_ID=0,IP_UID=1330663757,LANE_FIFO_DEPTH=1024,LANE_FIFO_WIDTH=40,MODE=MERGING,N_HIT=255,N_LANE=4,N_SHD=256,PAGE_RAM_DEPTH=65536,PAGE_RAM_RD_WIDTH=36,SHD_SIZE=1,TICKET_FIFO_DEPTH=256,TRACK_HEADER=true,TRL_SIZE=1,VERSION_DATE=20260413,VERSION_GIT=238049856,VERSION_MAJOR=26,VERSION_MINOR=2,VERSION_PATCH=0"
    instancePathKey="opq_monolithic_4lane_merge:.:opq_0"
    kind="ordered_priority_queue"
-   version="25.0.722"
+   version="26.2.0.413"
    name="opq_monolithic_4lane_merge_opq_0">
   <parameter name="FRAME_HIT_CNT_SIZE" value="16" />
-  <parameter name="PAGE_RAM_DEPTH" value="65536" />
-  <parameter name="TICKET_FIFO_DEPTH" value="256" />
+  <parameter name="HDR_SIZE" value="5" />
   <parameter name="N_LANE" value="4" />
   <parameter name="MODE" value="MERGING" />
+  <parameter name="VERSION_MAJOR" value="26" />
+  <parameter name="BUILD" value="413" />
+  <parameter name="HANDLE_FIFO_DEPTH" value="64" />
+  <parameter name="EGRESS_SYMBOLS_PER_BEAT_DERIVED" value="1" />
+  <parameter name="INGRESS_DATAK_WIDTH" value="4" />
+  <parameter name="PAGE_RAM_RD_WIDTH" value="36" />
+  <parameter name="INSTANCE_ID" value="0" />
+  <parameter name="VERSION_GIT" value="238049856" />
+  <parameter name="FRAME_SERIAL_SIZE" value="16" />
+  <parameter name="VERSION_MINOR" value="2" />
+  <parameter name="EGRESS_EMPTY_WIDTH_DERIVED" value="0" />
+  <parameter name="DEBUG_LV" value="1" />
+  <parameter name="SHD_SIZE" value="1" />
+  <parameter name="VERSION_PATCH" value="0" />
+  <parameter name="TRL_SIZE" value="1" />
+  <parameter name="PAGE_RAM_DEPTH" value="65536" />
+  <parameter name="TICKET_FIFO_DEPTH" value="256" />
   <parameter name="INGRESS_DATA_WIDTH" value="32" />
   <parameter name="N_SHD" value="256" />
   <parameter name="CHANNEL_WIDTH" value="2" />
   <parameter name="TRACK_HEADER" value="true" />
-  <parameter name="HANDLE_FIFO_DEPTH" value="64" />
-  <parameter name="INGRESS_DATAK_WIDTH" value="4" />
-  <parameter name="PAGE_RAM_RD_WIDTH" value="36" />
+  <parameter name="VERSION_DATE" value="20260413" />
+  <parameter name="INGRESS_BEAT_WIDTH_DERIVED" value="36" />
   <parameter name="LANE_FIFO_DEPTH" value="1024" />
-  <parameter name="FRAME_SERIAL_SIZE" value="16" />
   <parameter name="N_HIT" value="255" />
   <parameter name="FRAME_SUBH_CNT_SIZE" value="16" />
   <parameter name="LANE_FIFO_WIDTH" value="40" />
-  <parameter name="DEBUG_LV" value="1" />
+  <parameter name="HIT_SIZE" value="1" />
+  <parameter name="IP_UID" value="1330663757" />
   <generatedFiles>
    <file
        path="/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/opq_monolithic_4lane_merge/generated/synthesis/submodules/opq_monolithic_4lane_merge_opq_0.vhd"
        type="VHDL"
        attributes="TOP_LEVEL_FILE" />
    <file
-       path="/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/opq_monolithic_4lane_merge/generated/synthesis/submodules/handle_fifo.vhd"
+       path="/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/opq_monolithic_4lane_merge/generated/synthesis/submodules/handle_fifo.v"
        type="VERILOG"
        attributes="" />
    <file
-       path="/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/opq_monolithic_4lane_merge/generated/synthesis/submodules/lane_fifo.vhd"
+       path="/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/opq_monolithic_4lane_merge/generated/synthesis/submodules/lane_fifo.v"
        type="VERILOG"
        attributes="" />
    <file
-       path="/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/opq_monolithic_4lane_merge/generated/synthesis/submodules/ticket_fifo.vhd"
+       path="/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/opq_monolithic_4lane_merge/generated/synthesis/submodules/ticket_fifo.v"
        type="VERILOG"
        attributes="" />
    <file
-       path="/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/opq_monolithic_4lane_merge/generated/synthesis/submodules/page_ram.vhd"
+       path="/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/opq_monolithic_4lane_merge/generated/synthesis/submodules/page_ram.v"
        type="VERILOG"
        attributes="" />
    <file
-       path="/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/opq_monolithic_4lane_merge/generated/synthesis/submodules/tile_fifo.vhd"
+       path="/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/opq_monolithic_4lane_merge/generated/synthesis/submodules/tile_fifo.v"
        type="VERILOG"
        attributes="" />
   </generatedFiles>
@@ -339,7 +410,7 @@
   <instantiator instantiator="opq_monolithic_4lane_merge" as="opq_0" />
   <messages>
    <message level="Debug" culprit="opq_monolithic_4lane_merge">queue size: 0 starting:ordered_priority_queue "submodules/opq_monolithic_4lane_merge_opq_0"</message>
-   <message level="Info" culprit="opq_0"><![CDATA[<b>generated file: (opq_monolithic_4lane_merge_opq_0.vhd)</b>]]></message>
+   <message level="Info" culprit="opq_0">generated top-level file: opq_monolithic_4lane_merge_opq_0.vhd</message>
    <message level="Info" culprit="opq_0"><![CDATA["<b>opq_monolithic_4lane_merge</b>" instantiated <b>ordered_priority_queue</b> "<b>opq_0</b>"]]></message>
   </messages>
  </entity>
