@@ -154,6 +154,8 @@ use ieee.math_real.ceil;
 --use ieee.math_real.max;
 use ieee.std_logic_misc.or_reduce;
 use ieee.std_logic_misc.and_reduce;
+use std.textio.all;
+use ieee.std_logic_textio.all;
 -- altera-specific
 library altera_mf;
 use altera_mf.all;
@@ -1273,7 +1275,9 @@ begin
                                     ingress_parser(i).running_ts(47 downto 16)      <= unsigned(asi_ingress_data(i)(31 downto 0));
                                     update_header_ts_flow(i)                        <= update_header_ts_flow(i) + 1; -- next state
                                 when 1 => -- [data header 1]
-                                    ingress_parser(i).running_ts(15 downto 12)      <= unsigned(asi_ingress_data(i)(31 downto 28)); -- note: do not overwrite subheader ts bit field
+                                    -- Capture the full low 16 timestamp bits from the header word so the SOP ticket can
+                                    -- carry an accurate frame timestamp even in N_SHD=128 mode (bit11 toggles).
+                                    ingress_parser(i).running_ts(15 downto 0)       <= unsigned(asi_ingress_data(i)(31 downto 16));
                                     ingress_parser(i).pkg_cnt                       <= asi_ingress_data(i)(15 downto 0);
                                     update_header_ts_flow(i)                        <= update_header_ts_flow(i) + 1; -- next state
                                 when 2 => -- [debug word 0]
@@ -1719,7 +1723,9 @@ begin
                                     page_allocator.frame_start_addr                 <= page_allocator.page_start_addr;
                                 end if;
                                 page_allocator.frame_start_addr_last            <= page_allocator.frame_start_addr; -- latch last frame starting address, need this to write debug info the last frame
-                                page_allocator.frame_ts                         <= unsigned(page_allocator.frame_ts) + to_unsigned(FRAME_DURATION_CYCLES,page_allocator.frame_ts'length); -- incr frame ts after seen one aligned sop tickets
+                                -- Re-align running timestamp to the frame boundary at SOP.
+                                -- This prevents accumulated subheader-count drift (e.g., a shortened first frame).
+                                page_allocator.running_ts                       <= page_allocator.frame_ts;
                                 page_allocator.write_trailer                    <= page_allocator_if_read_ticket_ticket(i).alert_eop; -- it will be there fore the frame serial > 1, frame 0 has no trailer
                                 page_allocator_state                            <= WRITE_HEAD;
                                 page_allocator.write_meta_flow                  <= 0;
@@ -1740,6 +1746,7 @@ begin
                                 page_allocator.page_we                  <= '0'; -- stop write
                                 page_allocator.page_start_addr          <= page_allocator.frame_start_addr + HDR_SIZE; -- incr the page start addr by HDR_SIZE (5) from this frame top, because we wrote header
                                 page_allocator.frame_cnt                <= page_allocator.frame_cnt + 1; -- incr the frame counter
+                                page_allocator.frame_ts                 <= page_allocator.frame_ts + to_unsigned(FRAME_DURATION_CYCLES, page_allocator.frame_ts'length); -- advance to next frame start
                                 page_allocator_state                    <= IDLE; -- go back and get one shr ticket
                             end if;
                         end if;
@@ -1761,6 +1768,7 @@ begin
                             page_allocator.write_meta_flow          <= 0;
                             page_allocator.write_trailer            <= '0';
                             page_allocator.page_start_addr          <= page_allocator.page_start_addr + HDR_SIZE + TRL_SIZE; -- incr the page start addr by HDR_SIZE (5) + TRL_SIZE (1), because we wrote header + last trailer
+                            page_allocator.frame_ts                 <= page_allocator.frame_ts + to_unsigned(FRAME_DURATION_CYCLES, page_allocator.frame_ts'length); -- advance to next frame start
                             page_allocator_state                    <= IDLE; -- go back and get one shr ticket
                             -- reset counters of last frame
                             page_allocator.frame_shr_cnt            <= (others => '0');
@@ -2684,11 +2692,16 @@ begin
                         ftable_presenter.output_data_valid(i+1)     <= ftable_presenter.output_data_valid(i);
                     end loop;
                     -- pipe through the data
-                    ftable_presenter.output_data                <= page_ram_rd_data;
+                    -- During an egress stall, hold the breakpoint word stable.
+                    if (aso_egress_ready = '1') or (ftable_presenter.output_data_valid(EGRESS_DELAY) = '0') then
+                        ftable_presenter.output_data            <= page_ram_rd_data;
+                    end if;
 
                     for i in 0 to N_TILE-1 loop
                         -- incr rd ptr
-                        if (aso_egress_ready = '1') then
+                        -- During pipeline fill (valid has not reached the egress yet), ignore ready.
+                        -- Once valid is at the egress, only advance on ready=1.
+                        if (aso_egress_ready = '1') or (ftable_presenter.output_data_valid(EGRESS_DELAY) = '0') then
                             if ftable_presenter.trailing_active(0) then -- ghost
                                 if (ftable_presenter.trailing_tile_index = i) then
                                     ftable_presenter.page_ram_rptr(i)           <= ftable_presenter.page_ram_rptr(i) + 1;
@@ -2696,8 +2709,6 @@ begin
                             elsif (ftable_presenter.rseg.tile_index = i) then -- normal
                                 ftable_presenter.page_ram_rptr(i)           <= ftable_presenter.page_ram_rptr(i) + 1;
                             end if;
-                        else
-                            ftable_presenter.page_ram_rptr(i)           <= ftable_presenter.page_ram_rptr(i) - to_unsigned(EGRESS_DELAY+1,PAGE_RAM_ADDR_WIDTH); -- rptr scrollback
                         end if;
 
                         -- read logic
@@ -2719,30 +2730,34 @@ begin
                                     ftable_presenter.page_ram_rptr(i)           <= (others => '0'); -- this tile is finished, reset rd ptr
                                 end if;
                             else -- corner case : ready deasserted during packet transmission
-                                ftable_presenter_state                      <= RESTART;
-                                -- ftable_presenter.page_ram_rptr(i)           <= ftable_presenter.page_ram_rptr(i) - to_unsigned(EGRESS_DELAY+1,PAGE_RAM_ADDR_WIDTH); -- rptr scrollback
-                                ftable_presenter.output_data_valid          <= (0 => '1', others => '0'); -- reset the pipeline
+                                -- Restart: roll back the read pointer to the current output word and refill the pipeline.
+                                if (ftable_presenter.output_data_valid(EGRESS_DELAY) = '1') then
+                                    ftable_presenter_state                      <= RESTART;
+                                    ftable_presenter.page_ram_rptr(i)           <= ftable_presenter.page_ram_rptr(i) - to_unsigned(EGRESS_DELAY+1,PAGE_RAM_ADDR_WIDTH); -- rptr scrollback
+                                    ftable_presenter.output_data_valid          <= (others => '0'); -- restart pipeline
+                                end if;
                             end if;
                         end if;
                     end loop;
 
-                when RESTART => -- restart the transmission due to interrupt of ready deassertion in the middle of packet sending
+                when RESTART => -- refill the page RAM pipeline after a backpressure event
+                    -- Re-read starting at the stalled output word address (rptr already rolled back).
+                    -- We don't assert `valid` externally in this state (see egress comb) to avoid double-accept.
                     for i in 0 to N_TILE-1 loop
                         if (to_integer(ftable_presenter.rseg.tile_index) = i) then
-                            ftable_presenter.output_data_valid(0)       <= '1'; -- continuing preparing data...
-                            ftable_presenter.page_ram_rptr(i)           <= ftable_presenter.page_ram_rptr(i) + 1; -- incr rd ptr
-                            -- pipeline egress data valid bit
+                            -- keep refilling until the word reaches the egress tap
+                            ftable_presenter.output_data_valid(0)       <= '1';
                             for j in 0 to EGRESS_DELAY-1 loop
-                                ftable_presenter.output_data_valid(j+1)     <= ftable_presenter.output_data_valid(j);
+                                ftable_presenter.output_data_valid(j+1) <= ftable_presenter.output_data_valid(j);
                             end loop;
-                            -- check ready near valid
-                            if (ftable_presenter.output_data_valid(EGRESS_DELAY) = '1') then
-                                if (aso_egress_ready = '1') then
-                                    ftable_presenter_state                  <= PRESENTING; -- [success] : receiver asserts ready to capture from the last breakpoint
-                                else
-                                    ftable_presenter.page_ram_rptr(i)           <= ftable_presenter.page_ram_rptr(i) - to_unsigned(EGRESS_DELAY+1,PAGE_RAM_ADDR_WIDTH); -- rptr scrollback
-                                    ftable_presenter.output_data_valid          <= (0 => '1', others => '0'); -- reset the pipeline
-                                end if;
+                            ftable_presenter.output_data            <= page_ram_rd_data;
+
+                            if (ftable_presenter.output_data_valid(EGRESS_DELAY) = '0') then
+                                ftable_presenter.page_ram_rptr(i)       <= ftable_presenter.page_ram_rptr(i) + 1;
+                            end if;
+                            -- transition when the last shift will make the egress tap valid
+                            if (ftable_presenter.output_data_valid(EGRESS_DELAY-1) = '1') then
+                                ftable_presenter_state                  <= PRESENTING;
                             end if;
                         end if;
                     end loop;
@@ -2801,12 +2816,19 @@ begin
                 page_tile_rd_addr(i)            <= std_logic_vector(ftable_presenter.page_ram_rptr(i));
             end loop;
 
-            page_tile_rd_data_reg           <= page_tile_rd_data;
+            -- Keep the page RAM data pipeline aligned with egress backpressure.
+            -- If a valid word is stalled at the egress (valid=1, ready=0), hold this stage too,
+            -- otherwise the registered RAM output would overwrite in-flight words and cause duplicates.
+            if (aso_egress_ready = '1') or (ftable_presenter.output_data_valid(EGRESS_DELAY) = '0') then
+                page_tile_rd_data_reg           <= page_tile_rd_data;
+            end if;
 
-            -- trailing active pipeline
-            for i in 0 to EGRESS_DELAY-1 loop
-                ftable_presenter.trailing_active(i+1)          <= ftable_presenter.trailing_active(i);
-            end loop;
+            -- trailing active pipeline (keep aligned with output pipeline under backpressure)
+            if (aso_egress_ready = '1') or (ftable_presenter.output_data_valid(EGRESS_DELAY) = '0') then
+                for i in 0 to EGRESS_DELAY-1 loop
+                    ftable_presenter.trailing_active(i+1)          <= ftable_presenter.trailing_active(i);
+                end loop;
+            end if;
 
             if (i_rst = '1') then
                 ftable_presenter_state                  <= RESET;
@@ -2924,6 +2946,67 @@ begin
 
     end process;
 
+    -- ────────────────────────────────────────────────
+    -- Sim-only debug: log page RAM traffic and overwrite risk.
+    -- Enabled when DEBUG_LV >= 2 (non-synthesizable).
+    -- ────────────────────────────────────────────────
+    gen_overwrite_debug : if (DEBUG_LV >= 2) generate
+        -- synopsys translate_off
+        file f_overwrite : text open write_mode is "opq_overwrite_debug.log";
+    begin
+        proc_overwrite_debug : process (i_clk)
+            variable l : line;
+            variable rd_tile_i : integer;
+            variable wr_tile_i : integer;
+            variable overwrite_risk : boolean;
+        begin
+            if rising_edge(i_clk) then
+                if i_rst = '1' then
+                    null;
+                else
+                    rd_tile_i := to_integer(ftable_presenter.rseg.tile_index);
+                    wr_tile_i := to_integer(ftable_mapper_writing_tile_index);
+                    overwrite_risk := (ftable_presenter_state /= IDLE) and (wr_tile_i = rd_tile_i);
+
+                    if page_ram_we = '1' then
+                        write(l, string'("WRITE t="));
+                        write(l, now);
+                        write(l, string'(" tile="));
+                        write(l, wr_tile_i);
+                        write(l, string'(" addr="));
+                        hwrite(l, page_ram_wr_addr);
+                        write(l, string'(" data="));
+                        hwrite(l, page_ram_wr_data);
+                        if overwrite_risk then
+                            write(l, string'(" OVERWRITE_RISK rd_ptr="));
+                            hwrite(l, std_logic_vector(ftable_presenter.page_ram_rptr(rd_tile_i)));
+                            write(l, string'(" rd_cnt="));
+                            write(l, to_integer(ftable_presenter.pkt_rd_word_cnt));
+                            write(l, string'(" state="));
+                            write(l, ftable_presenter_state_t'image(ftable_presenter_state));
+                        end if;
+                        writeline(f_overwrite, l);
+                    end if;
+
+                    if (ftable_presenter.output_data_valid(EGRESS_DELAY) = '1') and (aso_egress_ready = '1') then
+                        write(l, string'("READ  t="));
+                        write(l, now);
+                        write(l, string'(" tile="));
+                        write(l, rd_tile_i);
+                        write(l, string'(" addr="));
+                        hwrite(l, std_logic_vector(ftable_presenter.page_ram_rptr(rd_tile_i)));
+                        write(l, string'(" data="));
+                        hwrite(l, page_ram_rd_data);
+                        write(l, string'(" state="));
+                        write(l, ftable_presenter_state_t'image(ftable_presenter_state));
+                        writeline(f_overwrite, l);
+                    end if;
+                end if;
+            end if;
+        end process;
+        -- synopsys translate_on
+    end generate;
+
     proc_avalon_streaming_egress_comb : process (all)
     begin
         -- default
@@ -2931,7 +3014,13 @@ begin
         aso_egress_endofpacket              <= '0';
         aso_egress_error                    <= (others => '0');
 
-        aso_egress_valid                    <= ftable_presenter.output_data_valid(EGRESS_DELAY);
+        -- Only assert `valid` while actually presenting a packet. During internal restart/refill,
+        -- suppress `valid` so the breakpoint word cannot be double-accepted.
+        if (ftable_presenter_state = PRESENTING) then
+            aso_egress_valid                <= ftable_presenter.output_data_valid(EGRESS_DELAY);
+        else
+            aso_egress_valid                <= '0';
+        end if;
         aso_egress_data                     <= ftable_presenter.output_data(aso_egress_data'high downto 0);
         if (ftable_presenter.output_data(35 downto 32) = "0001" and ftable_presenter.output_data(7 downto 0) = K285) then
             aso_egress_startofpacket            <= '1';
