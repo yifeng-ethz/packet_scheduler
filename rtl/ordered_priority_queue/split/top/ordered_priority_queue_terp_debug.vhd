@@ -13,8 +13,8 @@ use work.opq_util_pkg.all;
 
 -- Split OPQ drop-in replacement for the TERP-preprocessed monolithic RTL.
 -- Intended use:
---   - Compile this file instead of `packet_scheduler/tb/ordered_priority_queue/ordered_priority_queue.vhd`
---   - Keep using `packet_scheduler/tb/ordered_priority_queue/ordered_priority_queue_wrapper.vhd` unchanged.
+--   - Compile this file instead of the generated `packet_scheduler/legacy/tb/ordered_priority_queue_monolithic_smoke-nlane2/ordered_priority_queue.vhd`
+--   - Keep using `packet_scheduler/legacy/tb/ordered_priority_queue_monolithic_smoke-nlane2/ordered_priority_queue_wrapper.vhd` unchanged.
 --
 -- Notes:
 --   - This wrapper currently targets the 2-lane UVM/tb interface (asi_ingress_0/1_*).

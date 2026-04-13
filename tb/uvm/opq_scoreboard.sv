@@ -1,0 +1,331 @@
+class opq_scoreboard extends uvm_component;
+  `uvm_component_utils(opq_scoreboard)
+
+  typedef struct {
+    bit [63:0] hit_id;
+    bit [47:0] hit_ts;
+    bit [31:0] hit_word;
+    int        lane_id;
+    bit [7:0]  shd_ts;
+  } opq_hit_trace_t;
+
+  uvm_analysis_imp_frame #(opq_frame_item, opq_scoreboard) frame_imp;
+  uvm_analysis_imp_ingress #(opq_beat_item, opq_scoreboard) ingress_imp;
+  uvm_analysis_imp_egress #(opq_beat_item, opq_scoreboard) egress_imp;
+  opq_scoreboard_cfg cfg;
+
+  bit [47:0] ingress_frame_ts     [OPQ_N_LANE];
+  bit [47:0] ingress_current_ts   [OPQ_N_LANE];
+  bit [7:0]  ingress_current_shd  [OPQ_N_LANE];
+  int        ingress_header_idx   [OPQ_N_LANE];
+  int        ingress_hits_pending [OPQ_N_LANE];
+
+  bit        egress_in_packet;
+  bit [47:0] egress_frame_ts;
+  bit [47:0] egress_current_ts;
+  bit [7:0]  egress_current_shd;
+  int        egress_header_idx;
+  int        egress_hits_pending;
+
+  bit        egress_preamble_seen;
+  int unsigned sop_count;
+
+  opq_hit_trace_t pending_ingress_hits[OPQ_N_LANE][$];
+  opq_hit_trace_t expected_hits[$];
+  opq_hit_trace_t actual_hits[$];
+
+  function new(string name = "opq_scoreboard", uvm_component parent = null);
+    super.new(name, parent);
+    frame_imp = new("frame_imp", this);
+    ingress_imp = new("ingress_imp", this);
+    egress_imp = new("egress_imp", this);
+  endfunction
+
+  function automatic void reset_ingress_lane(int lane_id);
+    ingress_frame_ts[lane_id] = '0;
+    ingress_current_ts[lane_id] = '0;
+    ingress_current_shd[lane_id] = '0;
+    ingress_header_idx[lane_id] = -1;
+    ingress_hits_pending[lane_id] = 0;
+  endfunction
+
+  function automatic void reset_egress_state();
+    egress_in_packet = 1'b0;
+    egress_frame_ts = '0;
+    egress_current_ts = '0;
+    egress_current_shd = '0;
+    egress_header_idx = -1;
+    egress_hits_pending = 0;
+  endfunction
+
+  function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    if (!uvm_config_db#(opq_scoreboard_cfg)::get(this, "", "cfg", cfg)) begin
+      cfg = opq_scoreboard_cfg::type_id::create("cfg");
+    end
+
+    foreach (ingress_header_idx[i]) begin
+      reset_ingress_lane(i);
+    end
+    reset_egress_state();
+    egress_preamble_seen = 1'b0;
+    sop_count = 0;
+  endfunction
+
+  function automatic string hit_key(bit [47:0] hit_ts, bit [31:0] hit_word);
+    return $sformatf("%012h_%08h", hit_ts, hit_word);
+  endfunction
+
+  function automatic void push_actual_hit(bit [31:0] hit_word);
+    opq_hit_trace_t trace;
+
+    trace.hit_id = '0;
+    trace.hit_ts = egress_current_ts;
+    trace.hit_word = hit_word;
+    trace.lane_id = -1;
+    trace.shd_ts = egress_current_shd;
+    actual_hits.push_back(trace);
+  endfunction
+
+  function void write_frame(opq_frame_item frame);
+    opq_hit_trace_t trace;
+
+    if (frame.lane_id < 0 || frame.lane_id >= OPQ_N_LANE) begin
+      `uvm_error(get_type_name(), $sformatf("Frame contract arrived with invalid lane_id=%0d", frame.lane_id))
+      return;
+    end
+
+    foreach (frame.subheaders[i]) begin
+      foreach (frame.subheaders[i].hits[j]) begin
+        trace.hit_id = frame.subheaders[i].hits[j].debug_hit_id;
+        trace.hit_ts = {frame.frame_ts[47:12], frame.subheaders[i].shd_ts, 4'b0000};
+        trace.hit_word = frame.subheaders[i].hits[j].payload_word;
+        trace.lane_id = frame.lane_id;
+        trace.shd_ts = frame.subheaders[i].shd_ts;
+        pending_ingress_hits[frame.lane_id].push_back(trace);
+      end
+    end
+  endfunction
+
+  function void write_ingress(opq_beat_item beat);
+    bit [3:0] datak;
+    bit [31:0] data32;
+    int lane_id;
+
+    lane_id = beat.lane_id;
+    datak = beat.data[35:32];
+    data32 = beat.data[31:0];
+
+    if (lane_id < 0 || lane_id >= OPQ_N_LANE) begin
+      `uvm_error(get_type_name(), $sformatf("Ingress beat arrived with invalid lane_id=%0d", lane_id))
+      return;
+    end
+
+    if (datak == 4'b0001 && data32[7:0] == K285 && beat.sop) begin
+      ingress_header_idx[lane_id] = 0;
+      ingress_hits_pending[lane_id] = 0;
+      return;
+    end
+
+    if (ingress_header_idx[lane_id] >= 0) begin
+      case (ingress_header_idx[lane_id])
+        0: ingress_frame_ts[lane_id][47:16] = data32;
+        1: ingress_frame_ts[lane_id][15:0] = data32[31:16];
+        default: begin
+        end
+      endcase
+
+      if (ingress_header_idx[lane_id] == 3) begin
+        ingress_header_idx[lane_id] = -1;
+      end else begin
+        ingress_header_idx[lane_id]++;
+      end
+      return;
+    end
+
+    if (ingress_hits_pending[lane_id] > 0) begin
+      if (datak != 4'b0000) begin
+        `uvm_error(get_type_name(), $sformatf(
+          "Ingress lane %0d expected hit payload, got datak=0x%1h data=0x%08h",
+          lane_id, datak, data32
+        ))
+      end else begin
+        opq_hit_trace_t trace;
+        if (pending_ingress_hits[lane_id].size() == 0) begin
+          `uvm_error(get_type_name(), $sformatf(
+            "Ingress lane %0d observed hit ts=0x%012h word=0x%08h without queued debug HIT_ID",
+            lane_id, ingress_current_ts[lane_id], data32
+          ))
+          trace.hit_id = '0;
+          trace.hit_ts = ingress_current_ts[lane_id];
+          trace.hit_word = data32;
+          trace.lane_id = lane_id;
+          trace.shd_ts = ingress_current_shd[lane_id];
+        end else begin
+          trace = pending_ingress_hits[lane_id].pop_front();
+          if (trace.hit_word != data32 || trace.hit_ts != ingress_current_ts[lane_id] ||
+              trace.shd_ts != ingress_current_shd[lane_id]) begin
+            `uvm_error(get_type_name(), $sformatf(
+              "Ingress contract mismatch hit_id=0x%016h lane=%0d exp_ts=0x%012h got_ts=0x%012h exp_word=0x%08h got_word=0x%08h exp_shd=0x%02h got_shd=0x%02h",
+              trace.hit_id, lane_id, trace.hit_ts, ingress_current_ts[lane_id],
+              trace.hit_word, data32, trace.shd_ts, ingress_current_shd[lane_id]
+            ))
+          end
+          trace.hit_ts = ingress_current_ts[lane_id];
+          trace.hit_word = data32;
+          trace.shd_ts = ingress_current_shd[lane_id];
+        end
+        expected_hits.push_back(trace);
+      end
+      ingress_hits_pending[lane_id]--;
+      return;
+    end
+
+    if (datak == 4'b0001 && data32[7:0] == K237) begin
+      ingress_current_shd[lane_id] = data32[31:24];
+      ingress_current_ts[lane_id] = {ingress_frame_ts[lane_id][47:12], data32[31:24], 4'b0000};
+      ingress_hits_pending[lane_id] = data32[15:8];
+    end
+  endfunction
+
+  function void write_egress(opq_beat_item beat);
+    bit [3:0] datak;
+    bit [31:0] data32;
+
+    datak = beat.data[35:32];
+    data32 = beat.data[31:0];
+
+    if (beat.sop) begin
+      sop_count++;
+    end
+
+    if (!egress_in_packet) begin
+      egress_in_packet = 1'b1;
+      egress_header_idx = 0;
+      egress_hits_pending = 0;
+    end
+
+    if (egress_header_idx >= 0) begin
+      case (egress_header_idx)
+        0: begin
+          if (datak == 4'b0001 && data32[7:0] == K285) begin
+            egress_preamble_seen = 1'b1;
+          end
+        end
+        1: egress_frame_ts[47:16] = data32;
+        2: egress_frame_ts[15:0] = data32[31:16];
+        default: begin
+        end
+      endcase
+
+      if (egress_header_idx == 4) begin
+        egress_header_idx = -1;
+      end else begin
+        egress_header_idx++;
+      end
+      return;
+    end
+
+    if (egress_hits_pending > 0) begin
+      if (datak != 4'b0000) begin
+        `uvm_error(get_type_name(), $sformatf(
+          "Egress expected hit payload, got datak=0x%1h data=0x%08h",
+          datak, data32
+        ))
+      end else begin
+        push_actual_hit(data32);
+      end
+      egress_hits_pending--;
+      return;
+    end
+
+    if (datak == 4'b0001 && data32[7:0] == K237) begin
+      egress_current_shd = data32[31:24];
+      egress_current_ts = {egress_frame_ts[47:12], data32[31:24], 4'b0000};
+      egress_hits_pending = data32[15:8];
+      return;
+    end
+
+    if (datak == 4'b0001 && data32[7:0] == K284) begin
+      reset_egress_state();
+      return;
+    end
+  endfunction
+
+  function void check_phase(uvm_phase phase);
+    int actual_key_count[string];
+    string key;
+    int missing_hits;
+    int ghost_hits;
+
+    super.check_phase(phase);
+
+    if (cfg.require_egress_preamble && !egress_preamble_seen) begin
+      `uvm_error(get_type_name(), "No egress preamble (K285) observed")
+    end
+    if (sop_count < cfg.min_sop_count) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "Expected at least %0d egress SOP beats, saw %0d",
+        cfg.min_sop_count, sop_count
+      ))
+    end
+    if (!cfg.check_hit_integrity) begin
+      return;
+    end
+
+    foreach (pending_ingress_hits[i]) begin
+      if (pending_ingress_hits[i].size() != 0) begin
+        `uvm_error(get_type_name(), $sformatf(
+          "Lane %0d still has %0d queued debug HIT_ID entries that never reached ingress",
+          i, pending_ingress_hits[i].size()
+        ))
+      end
+    end
+
+    foreach (actual_hits[i]) begin
+      key = hit_key(actual_hits[i].hit_ts, actual_hits[i].hit_word);
+      if (!actual_key_count.exists(key)) begin
+        actual_key_count[key] = 0;
+      end
+      actual_key_count[key]++;
+    end
+
+    missing_hits = 0;
+    foreach (expected_hits[i]) begin
+      key = hit_key(expected_hits[i].hit_ts, expected_hits[i].hit_word);
+      if (actual_key_count.exists(key) && actual_key_count[key] > 0) begin
+        actual_key_count[key]--;
+      end else begin
+        missing_hits++;
+        `uvm_error(get_type_name(), $sformatf(
+          "Missing hit_id=0x%016h lane=%0d ts=0x%012h shd_ts=0x%02h word=0x%08h",
+          expected_hits[i].hit_id,
+          expected_hits[i].lane_id,
+          expected_hits[i].hit_ts,
+          expected_hits[i].shd_ts,
+          expected_hits[i].hit_word
+        ))
+      end
+    end
+
+    ghost_hits = 0;
+    foreach (actual_hits[i]) begin
+      key = hit_key(actual_hits[i].hit_ts, actual_hits[i].hit_word);
+      if (actual_key_count.exists(key) && actual_key_count[key] > 0) begin
+        ghost_hits++;
+        actual_key_count[key]--;
+        `uvm_error(get_type_name(), $sformatf(
+          "Ghost hit ts=0x%012h shd_ts=0x%02h word=0x%08h",
+          actual_hits[i].hit_ts,
+          actual_hits[i].shd_ts,
+          actual_hits[i].hit_word
+        ))
+      end
+    end
+
+    `uvm_info(get_type_name(), $sformatf(
+      "Hit integrity summary: expected=%0d actual=%0d missing=%0d ghost=%0d",
+      expected_hits.size(), actual_hits.size(), missing_hits, ghost_hits
+    ), UVM_LOW)
+  endfunction
+endclass

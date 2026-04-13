@@ -3,6 +3,7 @@
 -- Author:              Yifeng Wang (yifenwan@phys.ethz.ch)
 -- Revision:            1.0 - file created - July 2, 2025
 -- Revision:            2.0 - all modules before frame table fully verified - Dec 11, 2025
+-- Revision:            2.1 - fix page_allocator baseline guards and alloc-page flow wrap - Apr 13, 2026
 -- Description:         Aggregate multiple ingress data flows into one single egress data flow
 --
 --                      - data structure is defined as:
@@ -1608,7 +1609,7 @@ begin
                 else
                     page_allocator_is_tk_future(i)              <= '0'; -- ok : expected
                 end if;
-            elsif (unsigned(ticket_fifos_rd_data(i)(47 downto 0)) > page_allocator.running_ts + to_unsigned(16, page_allocator.running_ts'length)) then -- shr ticket (allow 1 tick slack)
+            elsif (unsigned(ticket_fifos_rd_data(i)(47 downto 0)) > page_allocator.running_ts) then -- shr ticket must match the current subheader slot exactly
                 page_allocator_is_tk_future(i)              <= '1';
             else
                 page_allocator_is_tk_future(i)              <= '0';
@@ -1620,7 +1621,7 @@ begin
                 else
                     page_allocator_is_tk_past(i)                <= '0'; -- ok : expected
                 end if;
-            elsif (unsigned(ticket_fifos_rd_data(i)(47 downto 0)) + to_unsigned(16, page_allocator.running_ts'length) < page_allocator.running_ts) then -- shr ticket (allow 1 tick slack)
+            elsif (unsigned(ticket_fifos_rd_data(i)(47 downto 0)) < page_allocator.running_ts) then -- shr ticket is behind the current subheader slot
                 page_allocator_is_tk_past(i)                <= '1';
             else
                 page_allocator_is_tk_past(i)                <= '0';
@@ -1778,7 +1779,11 @@ begin
                     when ALLOC_PAGE =>
                         -- allocate a page in the page RAM
                         -- default
-                        page_allocator.alloc_page_flow         <= page_allocator.alloc_page_flow + 1; -- increment flow
+                        if (page_allocator.alloc_page_flow = N_LANE-1) then
+                            page_allocator.alloc_page_flow     <= 0; -- wrap to avoid out-of-range
+                        else
+                            page_allocator.alloc_page_flow     <= page_allocator.alloc_page_flow + 1; -- increment flow
+                        end if;
 
                         -- flow : write to handle FIFO to start block mover
                         for i in 0 to N_LANE-1 loop -- do it in serial
@@ -2405,8 +2410,15 @@ begin
         else
             ftable_mapper_update_ftable_spill           <= '0';
         end if;
-        -- if spill, what is the remainder unusable part in the expanding tile
-        ftable_mapper_update_ftable_trail_span      <= to_unsigned(to_integer(ftable_mapper.new_frame_raw_addr) + to_integer(ftable_mapper_update_ftable_fspan) - PAGE_RAM_DEPTH, ftable_mapper_update_ftable_trail_span'length);
+        -- Only form the trail-span remainder when the frame actually spills into the next tile.
+        if (to_integer(ftable_mapper.new_frame_raw_addr) + to_integer(ftable_mapper_update_ftable_fspan) > PAGE_RAM_DEPTH) then
+            ftable_mapper_update_ftable_trail_span  <= to_unsigned(
+                to_integer(ftable_mapper.new_frame_raw_addr) + to_integer(ftable_mapper_update_ftable_fspan) - PAGE_RAM_DEPTH,
+                ftable_mapper_update_ftable_trail_span'length
+            );
+        else
+            ftable_mapper_update_ftable_trail_span  <= (others => '0');
+        end if;
 
         -- calculate the seg index of current wr segs
         ftable_mapper_leading_wr_seg_index         <= (others => '0');
@@ -3007,6 +3019,8 @@ begin
         -- synopsys translate_on
     end generate;
 
+    -- @name proc_avalon_streaming_egress_comb
+    -- @brief Drive the egress Avalon-ST sideband signals and gate `valid` during presenter restart/refill.
     proc_avalon_streaming_egress_comb : process (all)
     begin
         -- default
@@ -3022,10 +3036,10 @@ begin
             aso_egress_valid                <= '0';
         end if;
         aso_egress_data                     <= ftable_presenter.output_data(aso_egress_data'high downto 0);
-        if (ftable_presenter.output_data(35 downto 32) = "0001" and ftable_presenter.output_data(7 downto 0) = K285) then
+        if (aso_egress_valid = '1' and ftable_presenter.output_data(35 downto 32) = "0001" and ftable_presenter.output_data(7 downto 0) = K285) then
             aso_egress_startofpacket            <= '1';
         end if;
-        if (ftable_presenter.output_data(35 downto 32) = "0001" and ftable_presenter.output_data(7 downto 0) = K284) then
+        if (aso_egress_valid = '1' and ftable_presenter.output_data(35 downto 32) = "0001" and ftable_presenter.output_data(7 downto 0) = K284) then
             aso_egress_endofpacket            <= '1';
         end if;
     end process;

@@ -8,7 +8,7 @@ Changes:
    - New log file: opq_overwrite_debug.log
    - Logs page RAM writes/reads and flags overwrite risk when write tile == active read tile.
    - Implemented in `packet_scheduler/ordered_priority_queue.terp.vhd`
-   - Mirrored into `packet_scheduler/tb/ordered_priority_queue/update_preprocessed.sh`
+   - Mirrored into `packet_scheduler/legacy/tb/ordered_priority_queue_monolithic_smoke-nlane2/update_preprocessed.sh`
 
 Backups:
 - packet_scheduler/rtl_backup/2026-01-30/ordered_priority_queue.terp.vhd

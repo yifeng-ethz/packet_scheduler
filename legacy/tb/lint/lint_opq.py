@@ -29,16 +29,16 @@ def _is_text_ext(path: Path) -> bool:
 
 
 def _iter_targets(opq_split_dir: Path) -> list[Path]:
-    # lint_opq.py lives under packet_scheduler/tb/lint/.
+    # lint_opq.py lives under packet_scheduler/legacy/tb/lint/.
     # repo_root/.../mu3e-ip-cores
-    repo_root = opq_split_dir.parents[2]
+    repo_root = opq_split_dir.parents[3]
     pkt_sched = repo_root / "packet_scheduler"
     uvm_root_dir = repo_root / "uvm_order_priority_queue"
 
     roots = [
         pkt_sched / "rtl",
-        pkt_sched / "tb",
-        pkt_sched / "uvm",
+        pkt_sched / "legacy" / "tb",
+        pkt_sched / "legacy" / "uvm",
         uvm_root_dir / "tb",
         uvm_root_dir / "rtl_overrides",
     ]
@@ -49,7 +49,7 @@ def _iter_targets(opq_split_dir: Path) -> list[Path]:
         if "trash_bin" in parts:
             return True
         # Ignore generated preprocessed monolithic outputs in TB folders (produced by update_preprocessed.sh).
-        if ("packet_scheduler" in parts) and ("tb" in parts) and (p.name in {"ordered_priority_queue.vhd", "ordered_priority_queue_wrapper.vhd"}):
+        if ("packet_scheduler" in parts) and ("legacy" in parts) and ("tb" in parts) and (p.name in {"ordered_priority_queue.vhd", "ordered_priority_queue_wrapper.vhd"}):
             return True
         if any(part.startswith("work_uvm_") for part in p.parts):
             return True
@@ -107,9 +107,9 @@ def _check_vhdl_header(path: Path, text: str) -> list[LintError]:
         return []
 
     sp = str(path)
-    if "/packet_scheduler/tb/" in sp:
+    if "/packet_scheduler/legacy/tb/" in sp:
         return []
-    if "/packet_scheduler/uvm/" in sp:
+    if "/packet_scheduler/legacy/uvm/" in sp:
         return []
     if "/uvm_order_priority_queue/tb/" in sp:
         return []
@@ -139,9 +139,9 @@ def _check_vhdl_proc_doc(path: Path, text: str) -> list[LintError]:
         return []
 
     sp = str(path)
-    if "/packet_scheduler/tb/" in sp:
+    if "/packet_scheduler/legacy/tb/" in sp:
         return []
-    if "/packet_scheduler/uvm/" in sp:
+    if "/packet_scheduler/legacy/uvm/" in sp:
         return []
     if "/uvm_order_priority_queue/tb/" in sp:
         return []

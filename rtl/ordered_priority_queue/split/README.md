@@ -31,17 +31,17 @@ Testing plan:
 - Add UVM sequences to stress each module boundary (hit count extremes, backpressure, FIFO overflow).
 - Integrate into `opq_top` and re-run the full OPQ UVM regression.
 
-Current unit tests:
-- `packet_scheduler/tb/opq_b2p_arbiter_smoke-nlane2/tb_opq_b2p_arbiter.vhd` + `packet_scheduler/tb/opq_b2p_arbiter_smoke-nlane2/run_tb_b2p_arbiter.sh`
-- `packet_scheduler/tb/opq_block_mover_smoke-nlane1/tb_opq_block_mover.vhd` + `packet_scheduler/tb/opq_block_mover_smoke-nlane1/run_tb_block_mover.sh`
-- `packet_scheduler/tb/opq_frame_table_mapper_edgecases-nlane2/tb_opq_frame_table_mapper.vhd` + `packet_scheduler/tb/opq_frame_table_mapper_edgecases-nlane2/run_tb_frame_table_mapper.sh`
-- `packet_scheduler/tb/opq_frame_table_smoke-nlane2/tb_opq_frame_table.vhd` + `packet_scheduler/tb/opq_frame_table_smoke-nlane2/run_tb_frame_table.sh`
-- `packet_scheduler/tb/opq_ingress_parser_smoke-nlane1/tb_opq_ingress_parser.vhd` + `packet_scheduler/tb/opq_ingress_parser_smoke-nlane1/run_tb_ingress_parser.sh`
-- `packet_scheduler/tb/opq_page_allocator_smoke-nlane2/tb_opq_page_allocator.vhd` + `packet_scheduler/tb/opq_page_allocator_smoke-nlane2/run_tb_page_allocator.sh`
-- `packet_scheduler/tb/opq_rd_debug_if_smoke-ntile5/tb_opq_rd_debug_if.vhd` + `packet_scheduler/tb/opq_rd_debug_if_smoke-ntile5/run_tb_rd_debug_if.sh`
-- `packet_scheduler/tb/opq_top_smoke-nlane2/tb_opq_top.vhd` + `packet_scheduler/tb/opq_top_smoke-nlane2/run_tb_opq_top.sh`
+Current archived unit tests:
+- `packet_scheduler/legacy/tb/opq_b2p_arbiter_smoke-nlane2/tb_opq_b2p_arbiter.vhd` + `packet_scheduler/legacy/tb/opq_b2p_arbiter_smoke-nlane2/run_tb_b2p_arbiter.sh`
+- `packet_scheduler/legacy/tb/opq_block_mover_smoke-nlane1/tb_opq_block_mover.vhd` + `packet_scheduler/legacy/tb/opq_block_mover_smoke-nlane1/run_tb_block_mover.sh`
+- `packet_scheduler/legacy/tb/opq_frame_table_mapper_edgecases-nlane2/tb_opq_frame_table_mapper.vhd` + `packet_scheduler/legacy/tb/opq_frame_table_mapper_edgecases-nlane2/run_tb_frame_table_mapper.sh`
+- `packet_scheduler/legacy/tb/opq_frame_table_smoke-nlane2/tb_opq_frame_table.vhd` + `packet_scheduler/legacy/tb/opq_frame_table_smoke-nlane2/run_tb_frame_table.sh`
+- `packet_scheduler/legacy/tb/opq_ingress_parser_smoke-nlane1/tb_opq_ingress_parser.vhd` + `packet_scheduler/legacy/tb/opq_ingress_parser_smoke-nlane1/run_tb_ingress_parser.sh`
+- `packet_scheduler/legacy/tb/opq_page_allocator_smoke-nlane2/tb_opq_page_allocator.vhd` + `packet_scheduler/legacy/tb/opq_page_allocator_smoke-nlane2/run_tb_page_allocator.sh`
+- `packet_scheduler/legacy/tb/opq_rd_debug_if_smoke-ntile5/tb_opq_rd_debug_if.vhd` + `packet_scheduler/legacy/tb/opq_rd_debug_if_smoke-ntile5/run_tb_rd_debug_if.sh`
+- `packet_scheduler/legacy/tb/opq_top_smoke-nlane2/tb_opq_top.vhd` + `packet_scheduler/legacy/tb/opq_top_smoke-nlane2/run_tb_opq_top.sh`
 
-Current UVM:
-- `packet_scheduler/uvm/unit_frame_table/`: frame-table UVM random stress (compile/run via `run_uvm_frame_table.sh`).
-- `packet_scheduler/uvm/unit_page_allocator/`: page-allocator UVM random stress (compile/run via `run_uvm_page_allocator.sh`).
-- `packet_scheduler/uvm/unit_opq_top/`: top-level OPQ UVM reuse plan in `OPQ_TOP_UVM_PLAN.md` (runner `run_uvm_opq_top.sh`).
+Current archived UVM:
+- `packet_scheduler/legacy/uvm/unit_frame_table/`: frame-table UVM random stress (compile/run via `run_uvm_frame_table.sh`).
+- `packet_scheduler/legacy/uvm/unit_page_allocator/`: page-allocator UVM random stress (compile/run via `run_uvm_page_allocator.sh`).
+- `packet_scheduler/legacy/uvm/unit_opq_top/`: top-level OPQ UVM reuse plan in `OPQ_TOP_UVM_PLAN.md` (runner `run_uvm_opq_top.sh`).

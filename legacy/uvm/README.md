@@ -1,6 +1,8 @@
 # packet_scheduler UVM
 
-Unit-level UVM tests for split OPQ modules.
+Archived unit-level UVM tests for split OPQ modules.
+
+This directory is preserved under `legacy/` for reference only. It is not the current monolithic OPQ signoff environment.
 
 ## Suites
 - `unit_frame_table/`: random stress on frame-table mapper/tracker/presenter wrapper.
@@ -9,3 +11,4 @@ Unit-level UVM tests for split OPQ modules.
 
 ## Notes
 - The full regression/soak infrastructure lives under `uvm_order_priority_queue/` at the repo root and can run against `OPQ_IMPL=monolithic` or `OPQ_IMPL=split`.
+- Current packet_scheduler signoff requirements are documented in `packet_scheduler/doc/VERIFICATION_SIGNOFF.md`.

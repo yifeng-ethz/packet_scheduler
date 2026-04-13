@@ -1,523 +1,606 @@
-################################################
-# ordered_priority_queue "Ordered Priority Queue" v25.0.0716
-# Yifeng Wang 2025.07.16
-################################################
-
-################################################
-# request TCL package from ACDS 16.1
-################################################ 
-package require qsys
-# custom macro, for building .hdl.terp -> .hdl
-# loc: $::env(QUARTUS_ROOTDIR)/../ip/altera/common/hw_tcl_packages/altera_terp.tcl
+package require -exact qsys 16.1
+# altera_terp is shipped with ACDS under
+# $QUARTUS_ROOTDIR/../ip/altera/common/hw_tcl_packages/altera_terp.tcl
 package require -exact altera_terp 1.0
 
-# 25.0.0716 - file created 
-# 25.0.0722 - compilation successful, test ongoing
+set_module_property NAME                             ordered_priority_queue
+set_module_property DISPLAY_NAME                     "Ordered Priority Queue"
+set_module_property VERSION                          26.0.0.0413
+set_module_property DESCRIPTION                      "Ordered Priority Queue Mu3e IP Core"
+set_module_property GROUP                            "Mu3e Data Plane/Modules"
+set_module_property AUTHOR                           "Yifeng Wang"
+set_module_property ICON_PATH                        ../quartus_system/logo/mu3e_logo.png
+set_module_property INTERNAL                         false
+set_module_property OPAQUE_ADDRESS_MAP               true
+set_module_property INSTANTIATE_IN_SYSTEM_MODULE     true
+set_module_property EDITABLE                         true
+set_module_property REPORT_TO_TALKBACK               false
+set_module_property ALLOW_GREYBOX_GENERATION         false
+set_module_property REPORT_HIERARCHY                 false
+set_module_property ELABORATION_CALLBACK             elaborate
+set_module_property VALIDATION_CALLBACK              validate
 
-################################################
-# module ordered_priority_queue
-################################################ 
-set_module_property NAME ordered_priority_queue
-set_module_property VERSION 25.0.0722
-set_module_property INTERNAL false
-set_module_property OPAQUE_ADDRESS_MAP true
-set_module_property GROUP "Mu3e Data Plane/Modules"
-set_module_property AUTHOR "Yifeng Wang"
-set_module_property ICON_PATH ../quartus_system/logo/mu3e_logo.png
-set_module_property DISPLAY_NAME "Ordered Priority Queue"
-set_module_property INSTANTIATE_IN_SYSTEM_MODULE true
-set_module_property EDITABLE false
-set_module_property REPORT_TO_TALKBACK false
-set_module_property ALLOW_GREYBOX_GENERATION false
-set_module_property REPORT_HIERARCHY false
-set_module_property ELABORATION_CALLBACK my_elaborate
+proc add_html_text {group_name item_name html_text} {
+    add_display_item $group_name $item_name TEXT ""
+    set_display_item_property $item_name DISPLAY_HINT html
+    set_display_item_property $item_name TEXT $html_text
+}
 
+proc is_power_of_two {value} {
+    if {$value < 1} {
+        return 0
+    }
+    return [expr {($value & ($value - 1)) == 0}]
+}
 
-################################################ 
-# parameters
-################################################ 
-# Reference for html codes used in this section
- # ----------------------------------------------
- # &lt = less than (<)
- # &gt = greater than (>)
- # <b></b> = bold text
- # <ul></ul> = defines an unordered list
- # <li></li> = bullet list
- # <br> = line break
-add_parameter N_LANE NATURAL 
-set_parameter_property N_LANE DEFAULT_VALUE 2
+# ────────────────────────────────────────────────────────────────────────────
+# Identity constants — packaged 2026-04-13
+# ────────────────────────────────────────────────────────────────────────────
+# UID = ASCII "OPQM" (Ordered Priority Queue, Monolithic) = 0x4F50514D
+set IP_UID_DEFAULT_CONST        1330663757
+set VERSION_MAJOR_DEFAULT_CONST 26
+set VERSION_MINOR_DEFAULT_CONST 0
+set VERSION_PATCH_DEFAULT_CONST 0
+set BUILD_DEFAULT_CONST         413
+set VERSION_DATE_DEFAULT_CONST  20260413
+# 0x28b0752 — submodule HEAD at packaging time
+set VERSION_GIT_DEFAULT_CONST   42665810
+set INSTANCE_ID_DEFAULT_CONST   0
+
+# ────────────────────────────────────────────────────────────────────────────
+# Derived-value / GUI-text helper
+# ────────────────────────────────────────────────────────────────────────────
+proc compute_derived_values {} {
+    set n_lane          [get_parameter_value N_LANE]
+    set mode            [get_parameter_value MODE]
+    set data_w          [get_parameter_value INGRESS_DATA_WIDTH]
+    set datak_w         [get_parameter_value INGRESS_DATAK_WIDTH]
+    set channel_w       [get_parameter_value CHANNEL_WIDTH]
+    set lane_fifo_d     [get_parameter_value LANE_FIFO_DEPTH]
+    set lane_fifo_w     [get_parameter_value LANE_FIFO_WIDTH]
+    set ticket_fifo_d   [get_parameter_value TICKET_FIFO_DEPTH]
+    set handle_fifo_d   [get_parameter_value HANDLE_FIFO_DEPTH]
+    set page_ram_d      [get_parameter_value PAGE_RAM_DEPTH]
+    set page_ram_rd_w   [get_parameter_value PAGE_RAM_RD_WIDTH]
+    set n_shd           [get_parameter_value N_SHD]
+    set n_hit           [get_parameter_value N_HIT]
+
+    set ingress_beat_w  [expr {$data_w + $datak_w}]
+    set symbols_per_beat 1
+    if {$ingress_beat_w > 0 && $page_ram_rd_w >= $ingress_beat_w} {
+        set symbols_per_beat [expr {$page_ram_rd_w / $ingress_beat_w}]
+    }
+    set empty_w 0
+    if {$symbols_per_beat > 1} {
+        set empty_w [expr {int(ceil(log($symbols_per_beat) / log(2.0)))}]
+    }
+
+    set lane_store_bits   [expr {$n_lane * $lane_fifo_d  * $lane_fifo_w}]
+    set ticket_store_bits [expr {$n_lane * $ticket_fifo_d * 16}]
+    set handle_store_bits [expr {$n_lane * $handle_fifo_d * 16}]
+    set page_ram_bits     [expr {$page_ram_d * $lane_fifo_w}]
+    set total_store_bits  [expr {$lane_store_bits + $ticket_store_bits + $handle_store_bits + $page_ram_bits}]
+
+    set worst_case_hits_per_frame [expr {$n_shd * $n_hit}]
+
+    set_parameter_value INGRESS_BEAT_WIDTH_DERIVED   $ingress_beat_w
+    set_parameter_value EGRESS_SYMBOLS_PER_BEAT_DERIVED $symbols_per_beat
+    set_parameter_value EGRESS_EMPTY_WIDTH_DERIVED   $empty_w
+
+    catch {
+        set_display_item_property sizing_html TEXT "<html><b>Derived storage</b><br/>Ingress beat width: <b>${ingress_beat_w}</b> bits (data ${data_w} + datak ${datak_w})<br/>Egress symbols per beat: <b>${symbols_per_beat}</b>, empty width: <b>${empty_w}</b> bits<br/>Lane FIFO storage: <b>${lane_store_bits}</b> bits (${n_lane} \u00d7 ${lane_fifo_d} \u00d7 ${lane_fifo_w})<br/>Ticket FIFO storage: <b>${ticket_store_bits}</b> bits<br/>Handle FIFO storage: <b>${handle_store_bits}</b> bits<br/>Page RAM storage: <b>${page_ram_bits}</b> bits (${page_ram_d} \u00d7 ${lane_fifo_w})<br/>Total on-chip memory: <b>${total_store_bits}</b> bits</html>"
+    }
+    catch {
+        set_display_item_property packet_html TEXT "<html><b>Packet limits</b><br/>Subheaders per header packet: <b>${n_shd}</b><br/>Max hits per subheader: <b>${n_hit}</b><br/>Max hits per header packet: <b>${worst_case_hits_per_frame}</b> (worst case before <i>ingress parser</i> drop)</html>"
+    }
+    catch {
+        set_display_item_property throughput_html TEXT "<html><b>Expected throughput</b><br/>Aggregation mode: <b>${mode}</b><br/>Egress beat: <b>${page_ram_rd_w}</b> bits/cycle (${symbols_per_beat} ingress symbol(s) per egress beat)<br/>Per-lane ingress budget: <b>${ingress_beat_w}</b> bits/cycle at the shared data-path clock<br/>Backpressure: ingress lanes are <i>non-backlog</i> (drop-on-full inside the lane/ticket FIFOs); egress honours <code>ready</code>.</html>"
+    }
+}
+
+# ────────────────────────────────────────────────────────────────────────────
+# Validation callback
+# ────────────────────────────────────────────────────────────────────────────
+proc validate {} {
+    compute_derived_values
+
+    set n_lane          [get_parameter_value N_LANE]
+    set mode            [get_parameter_value MODE]
+    set data_w          [get_parameter_value INGRESS_DATA_WIDTH]
+    set datak_w         [get_parameter_value INGRESS_DATAK_WIDTH]
+    set channel_w       [get_parameter_value CHANNEL_WIDTH]
+    set lane_fifo_d     [get_parameter_value LANE_FIFO_DEPTH]
+    set lane_fifo_w     [get_parameter_value LANE_FIFO_WIDTH]
+    set ticket_fifo_d   [get_parameter_value TICKET_FIFO_DEPTH]
+    set handle_fifo_d   [get_parameter_value HANDLE_FIFO_DEPTH]
+    set page_ram_d      [get_parameter_value PAGE_RAM_DEPTH]
+    set page_ram_rd_w   [get_parameter_value PAGE_RAM_RD_WIDTH]
+    set n_shd           [get_parameter_value N_SHD]
+    set n_hit           [get_parameter_value N_HIT]
+    set debug_lv        [get_parameter_value DEBUG_LV]
+
+    set ingress_beat_w  [expr {$data_w + $datak_w}]
+    set min_lane_fifo_w [expr {$ingress_beat_w + 3}]
+
+    if {$n_lane < 1 || $n_lane > 16} {
+        send_message error "N_LANE must stay in 1..16."
+    }
+    if {$mode ne "MULTIPLEXING" && $mode ne "MERGING"} {
+        send_message error "MODE must be MULTIPLEXING or MERGING."
+    }
+    if {![is_power_of_two $lane_fifo_d] || $lane_fifo_d < 16 || $lane_fifo_d > 65536} {
+        send_message error "LANE_FIFO_DEPTH must be a power of two in 16..65536 (ring-buffer wrap)."
+    }
+    if {$lane_fifo_w < $min_lane_fifo_w} {
+        send_message error "LANE_FIFO_WIDTH (${lane_fifo_w}) must be at least ${min_lane_fifo_w} = data+datak+sop+eop+err."
+    }
+    if {$ticket_fifo_d < 2 || $ticket_fifo_d > 256} {
+        send_message error "TICKET_FIFO_DEPTH must stay in 2..256."
+    }
+    if {$ticket_fifo_d < $n_shd} {
+        send_message info "TICKET_FIFO_DEPTH (${ticket_fifo_d}) is smaller than N_SHD (${n_shd}); empty-subframe bursts may starve credit."
+    }
+    if {$handle_fifo_d < 2 || $handle_fifo_d > 256} {
+        send_message error "HANDLE_FIFO_DEPTH must stay in 2..256."
+    }
+    if {![is_power_of_two $page_ram_d]} {
+        send_message error "PAGE_RAM_DEPTH must be a power of two."
+    }
+    if {$ingress_beat_w > 0 && ($page_ram_rd_w % $ingress_beat_w) != 0} {
+        send_message error "PAGE_RAM_RD_WIDTH (${page_ram_rd_w}) must be an integer multiple of ingress beat width (${ingress_beat_w})."
+    }
+    if {$n_hit < 1} {
+        send_message error "N_HIT must be at least 1."
+    }
+    if {$debug_lv < 0 || $debug_lv > 2} {
+        send_message error "DEBUG_LV must stay in 0..2."
+    }
+    if {$channel_w < 0 || $channel_w > 4} {
+        send_message error "CHANNEL_WIDTH must stay in 0..4."
+    }
+}
+
+# ────────────────────────────────────────────────────────────────────────────
+# Elaboration callback — dynamic ingress fan-out + egress port sizing
+# ────────────────────────────────────────────────────────────────────────────
+proc elaborate {} {
+    compute_derived_values
+
+    set n_lane      [get_parameter_value N_LANE]
+    set data_w      [get_parameter_value INGRESS_DATA_WIDTH]
+    set datak_w     [get_parameter_value INGRESS_DATAK_WIDTH]
+    set channel_w   [get_parameter_value CHANNEL_WIDTH]
+    set ingress_beat_w [expr {$data_w + $datak_w}]
+
+    # Re-derive the PAGE_RAM_RD_WIDTH allowed range from current beat width
+    set allowed [list]
+    for {set i 1} {$i <= 8} {incr i} {
+        lappend allowed [expr {$ingress_beat_w * $i}]
+    }
+    set_parameter_property PAGE_RAM_RD_WIDTH ALLOWED_RANGES $allowed
+
+    set page_ram_rd_w    [get_parameter_value PAGE_RAM_RD_WIDTH]
+    set symbols_per_beat [expr {$page_ram_rd_w / $ingress_beat_w}]
+    set empty_w          0
+    if {$symbols_per_beat > 1} {
+        set empty_w [expr {int(ceil(log($symbols_per_beat) / log(2.0)))}]
+    }
+
+    # ---- Ingress sinks (one per lane) --------------------------------------
+    for {set i 0} {$i < $n_lane} {incr i} {
+        add_interface ingress_${i} avalon_streaming end
+        set_interface_property ingress_${i} associatedClock clk_interface
+        set_interface_property ingress_${i} associatedReset rst_interface
+        set_interface_property ingress_${i} dataBitsPerSymbol $ingress_beat_w
+        set_interface_property ingress_${i} errorDescriptor {hit_err shd_err hdr_err}
+        set_interface_property ingress_${i} firstSymbolInHighOrderBits true
+        set_interface_property ingress_${i} maxChannel [expr {$n_lane - 1}]
+        set_interface_property ingress_${i} readyLatency 0
+        set_interface_property ingress_${i} ENABLED true
+
+        if {$channel_w > 0} {
+            add_interface_port ingress_${i} asi_ingress_${i}_channel channel Input $channel_w
+        }
+        add_interface_port ingress_${i} asi_ingress_${i}_startofpacket startofpacket Input 1
+        add_interface_port ingress_${i} asi_ingress_${i}_endofpacket   endofpacket   Input 1
+        add_interface_port ingress_${i} asi_ingress_${i}_data          data          Input $ingress_beat_w
+        add_interface_port ingress_${i} asi_ingress_${i}_valid         valid         Input 1
+        add_interface_port ingress_${i} asi_ingress_${i}_error         error         Input 3
+    }
+
+    # ---- Egress source — dynamic data + optional empty ---------------------
+    add_interface_port egress aso_egress_data data Output $page_ram_rd_w
+    set_port_property aso_egress_data WIDTH_EXPR $page_ram_rd_w
+    if {$empty_w > 0} {
+        add_interface_port egress aso_egress_empty empty Output $empty_w
+        set_port_property aso_egress_empty WIDTH_EXPR $empty_w
+    }
+    set_interface_property egress symbolsPerBeat    $symbols_per_beat
+    set_interface_property egress dataBitsPerSymbol $ingress_beat_w
+
+    # Identity parameters have no RTL backing — they are catalog metadata only.
+    set_parameter_property IP_UID         ENABLED false
+    set_parameter_property VERSION_MAJOR  ENABLED false
+    set_parameter_property VERSION_MINOR  ENABLED false
+    set_parameter_property VERSION_PATCH  ENABLED false
+    set_parameter_property BUILD          ENABLED false
+    set_parameter_property VERSION_DATE   ENABLED false
+    set_parameter_property VERSION_GIT    ENABLED false
+    set_parameter_property INSTANCE_ID    ENABLED false
+}
+
+# ────────────────────────────────────────────────────────────────────────────
+# Fileset — terp-based generation of the monolithic core
+# ────────────────────────────────────────────────────────────────────────────
+add_fileset synth QUARTUS_SYNTH my_generate
+
+proc my_generate {output_name} {
+    set template_file "rtl/ordered_priority_queue/monolithic/ordered_priority_queue.terp.vhd"
+    set template      [read [open $template_file r]]
+
+    set data_w  [get_parameter_value INGRESS_DATA_WIDTH]
+    set datak_w [get_parameter_value INGRESS_DATAK_WIDTH]
+    set beat_w  [expr {$data_w + $datak_w}]
+    set out_w   [get_parameter_value PAGE_RAM_RD_WIDTH]
+    set empty_w 0
+    if {$out_w > $beat_w} {
+        set empty_w [expr {int(ceil(log($out_w / $beat_w) / log(2.0)))}]
+    }
+
+    set params(n_lane)             [get_parameter_value N_LANE]
+    set params(fifos_names)        [list "ticket_fifo" "lane_fifo" "handle_fifo"]
+    set params(egress_empty_width) $empty_w
+    set params(output_name)        $output_name
+
+    set result [altera_terp $template params]
+
+    send_message INFO "generated top-level file: ${output_name}.vhd"
+
+    add_fileset_file ${output_name}.vhd VHDL TEXT $result TOP_LEVEL_FILE
+    add_fileset_file "handle_fifo.v" VERILOG PATH "./rtl/vendor/alt_ram/handle_fifo.v"
+    add_fileset_file "lane_fifo.v"   VERILOG PATH "./rtl/vendor/alt_ram/lane_fifo.v"
+    add_fileset_file "ticket_fifo.v" VERILOG PATH "./rtl/vendor/alt_ram/ticket_fifo.v"
+    add_fileset_file "page_ram.v"    VERILOG PATH "./rtl/vendor/alt_ram/page_ram.v"
+    add_fileset_file "tile_fifo.v"   VERILOG PATH "./rtl/vendor/alt_ram/tile_fifo.v"
+}
+
+# ────────────────────────────────────────────────────────────────────────────
+# HDL parameters (mirror the entity generics of the monolithic core)
+# ────────────────────────────────────────────────────────────────────────────
+add_parameter N_LANE NATURAL 2
 set_parameter_property N_LANE DISPLAY_NAME "Number of Ingress Lanes"
-set_parameter_property N_LANE TYPE NATURAL
-set_parameter_property N_LANE UNITS None
 set_parameter_property N_LANE ALLOWED_RANGES 1:16
 set_parameter_property N_LANE HDL_PARAMETER true
-set dscpt \
-"<html>
-Select the number of ingress lanes for the ordered priority queue.<br>
-All ingress flows will be aggregated into one single egress flow.<br>
-</html>"
-set_parameter_property N_LANE LONG_DESCRIPTION $dscpt
-set_parameter_property N_LANE DESCRIPTION $dscpt
+set_parameter_property N_LANE DESCRIPTION "Number of ingress lanes aggregated into the single egress flow."
 
-add_parameter MODE STRING 
-set_parameter_property MODE DEFAULT_VALUE "Merging"
+add_parameter MODE STRING "MERGING"
 set_parameter_property MODE DISPLAY_NAME "Aggregation Mode"
-set_parameter_property MODE UNITS None
 set_parameter_property MODE ALLOWED_RANGES {MULTIPLEXING MERGING}
 set_parameter_property MODE HDL_PARAMETER true
-set dscpt \
-"<html>
-<ul>
-    <li><b>Multiplexing</b>: ingress flows ts are interleaved. </li>
-    <li><b>Merging</b>: ingress flows ts are sequenced and consistent. </li>
-</ul>
-</html>"
-set_parameter_property MODE LONG_DESCRIPTION $dscpt
-set_parameter_property MODE DESCRIPTION $dscpt
+set_parameter_property MODE DESCRIPTION "MULTIPLEXING interleaves ingress timestamps; MERGING sequences them consistently."
 
-add_parameter TRACK_HEADER BOOLEAN 
-set_parameter_property TRACK_HEADER DEFAULT_VALUE True
+add_parameter TRACK_HEADER BOOLEAN true
 set_parameter_property TRACK_HEADER DISPLAY_NAME "Track Header"
-set_parameter_property TRACK_HEADER UNITS None
-set_parameter_property TRACK_HEADER ALLOWED_RANGES {"true:Yes" "false:No"}
 set_parameter_property TRACK_HEADER DISPLAY_HINT "RADIO"
+set_parameter_property TRACK_HEADER ALLOWED_RANGES {"true:Yes" "false:No"}
 set_parameter_property TRACK_HEADER HDL_PARAMETER true
-set dscpt \
-"<html>
-Select whether to track the header of ingress flow as the reference timestamp for subsequent subheader packet. <br>
-<ul>
-    <li><b>True</b>: the header is tracked, i.e., ingress flow must contain header to assign global timestamp for subsequent subheaders. </li>
-    <li><b>False</b>: use subheader to infer the running timestamp in that flow. Maximum packet loss can not be longer than <b>256</b>, i.e., the number of subheaders in the header packets.</li>
-</ul>
-</html>"
-set_parameter_property TRACK_HEADER LONG_DESCRIPTION $dscpt
-set_parameter_property TRACK_HEADER DESCRIPTION $dscpt
+set_parameter_property TRACK_HEADER DESCRIPTION "When true, the header timestamp anchors subsequent subheader packets; when false, the running timestamp is inferred from subheaders (max packet loss bounded by N_SHD)."
 
-add_parameter INGRESS_DATA_WIDTH NATURAL 
-set_parameter_property INGRESS_DATA_WIDTH DEFAULT_VALUE 32
-set_parameter_property INGRESS_DATA_WIDTH DISPLAY_NAME "Data Port Width (data)"
+add_parameter INGRESS_DATA_WIDTH NATURAL 32
+set_parameter_property INGRESS_DATA_WIDTH DISPLAY_NAME "Ingress Data Width"
 set_parameter_property INGRESS_DATA_WIDTH UNITS Bits
 set_parameter_property INGRESS_DATA_WIDTH ALLOWED_RANGES 32:128
 set_parameter_property INGRESS_DATA_WIDTH HDL_PARAMETER true
-set dscpt \
-"<html>
-Enter the width of each ingress interface data port (data).<br>
-Default is <b>32</b> bits.<br>
-</html>"
-set_parameter_property INGRESS_DATA_WIDTH LONG_DESCRIPTION $dscpt
-set_parameter_property INGRESS_DATA_WIDTH DESCRIPTION $dscpt
+set_parameter_property INGRESS_DATA_WIDTH DESCRIPTION "Width of the ingress <i>data</i> field on each lane."
 
-add_parameter INGRESS_DATAK_WIDTH NATURAL 
-set_parameter_property INGRESS_DATAK_WIDTH DEFAULT_VALUE 4
-set_parameter_property INGRESS_DATAK_WIDTH DISPLAY_NAME "Data Port Width (datak)"
+add_parameter INGRESS_DATAK_WIDTH NATURAL 4
+set_parameter_property INGRESS_DATAK_WIDTH DISPLAY_NAME "Ingress DataK Width"
 set_parameter_property INGRESS_DATAK_WIDTH UNITS Bits
 set_parameter_property INGRESS_DATAK_WIDTH ALLOWED_RANGES 1:16
 set_parameter_property INGRESS_DATAK_WIDTH HDL_PARAMETER true
-set dscpt \
-"<html>
-Enter the width of each ingress interface data port (datak).<br>
-Default is <b>4</b> bits, each bit represents the byte is '1'=control symbol or '0'=data symbol.<br>
-</html>"
-set_parameter_property INGRESS_DATAK_WIDTH LONG_DESCRIPTION $dscpt
-set_parameter_property INGRESS_DATAK_WIDTH DESCRIPTION $dscpt
+set_parameter_property INGRESS_DATAK_WIDTH DESCRIPTION "Width of the ingress byte-is-k sideband (1 bit per byte of data)."
 
-add_parameter CHANNEL_WIDTH NATURAL 
-set_parameter_property CHANNEL_WIDTH DEFAULT_VALUE 2
-set_parameter_property CHANNEL_WIDTH DISPLAY_NAME "Channel Port Width"
+add_parameter CHANNEL_WIDTH NATURAL 2
+set_parameter_property CHANNEL_WIDTH DISPLAY_NAME "Channel Width"
 set_parameter_property CHANNEL_WIDTH UNITS Bits
 set_parameter_property CHANNEL_WIDTH ALLOWED_RANGES 0:4
 set_parameter_property CHANNEL_WIDTH HDL_PARAMETER true
-set dscpt \
-"<html>
-Enter the width of logical channel, e.g., 2 bits for 4 channels<br>
-Default is <b>2</b> bits, for 4 flow merging.<br>
-You may set it to 0 to disable channel port.<br>
-</html>"
-set_parameter_property CHANNEL_WIDTH LONG_DESCRIPTION $dscpt
-set_parameter_property CHANNEL_WIDTH DESCRIPTION $dscpt
+set_parameter_property CHANNEL_WIDTH DESCRIPTION "Logical-channel tag width per ingress lane; 0 disables the channel port."
 
-add_parameter LANE_FIFO_DEPTH NATURAL 
-set_parameter_property LANE_FIFO_DEPTH DEFAULT_VALUE 1024
+add_parameter LANE_FIFO_DEPTH NATURAL 1024
 set_parameter_property LANE_FIFO_DEPTH DISPLAY_NAME "Lane FIFO Depth"
-set_parameter_property LANE_FIFO_DEPTH UNITS None
 set_parameter_property LANE_FIFO_DEPTH ALLOWED_RANGES {16 32 64 128 256 512 1024 2048 4096 8192 16384 32768 65536}
 set_parameter_property LANE_FIFO_DEPTH HDL_PARAMETER true
-set dscpt \
-"<html>
-Enter the size of each lane FIFO in unit of its own data width. <br>
-Lane FIFO is between <b>ingress parser</b> and <b>block mover</b>.<br>
-Affects the max delay skew between each lane supported and maximum waiting time for the <b>page allocator</b>.<br>
-Must be a <b>power of two</b> (ring-buffer address wrap).<br>
-Using credit flow control. <br>
-</html>"
-set_parameter_property LANE_FIFO_DEPTH LONG_DESCRIPTION $dscpt
-set_parameter_property LANE_FIFO_DEPTH DESCRIPTION $dscpt
+set_parameter_property LANE_FIFO_DEPTH DESCRIPTION "Per-lane FIFO depth between the ingress parser and the block mover. Sets max lane-to-lane skew tolerated and the page allocator wait budget. Must be a power of two (ring-buffer wrap). Credit-controlled."
 
-add_parameter LANE_FIFO_WIDTH NATURAL 
-set_parameter_property LANE_FIFO_WIDTH DEFAULT_VALUE 40
+add_parameter LANE_FIFO_WIDTH NATURAL 40
 set_parameter_property LANE_FIFO_WIDTH DISPLAY_NAME "Lane FIFO Width"
 set_parameter_property LANE_FIFO_WIDTH UNITS Bits
 set_parameter_property LANE_FIFO_WIDTH ALLOWED_RANGES 39:80
 set_parameter_property LANE_FIFO_WIDTH HDL_PARAMETER true
-set dscpt \
-"<html>
-Enter the data width of each lane FIFO. <br>
-Data width of each lane FIFO in unit of bits, must be larger than total(39) = data(32)+datak(4)+eop(1)+sop(1)+err(1)<br>
-</html>"
-set_parameter_property LANE_FIFO_WIDTH LONG_DESCRIPTION $dscpt
-set_parameter_property LANE_FIFO_WIDTH DESCRIPTION $dscpt
+set_parameter_property LANE_FIFO_WIDTH DESCRIPTION "Lane FIFO data width. Minimum = data + datak + sop + eop + err = 39 for the default ingress beat."
 
-add_parameter TICKET_FIFO_DEPTH NATURAL 
-set_parameter_property TICKET_FIFO_DEPTH DEFAULT_VALUE 256
+add_parameter TICKET_FIFO_DEPTH NATURAL 256
 set_parameter_property TICKET_FIFO_DEPTH DISPLAY_NAME "Ticket FIFO Depth"
-set_parameter_property TICKET_FIFO_DEPTH UNITS None
 set_parameter_property TICKET_FIFO_DEPTH ALLOWED_RANGES 2:256
 set_parameter_property TICKET_FIFO_DEPTH HDL_PARAMETER true
-set dscpt \
-"<html>
-Enter the size of each ticket FIFO in unit of its data width. <br>
-Ticket FIFO is between <b>ingress parser</b> and <b>page allocator</b>.<br>
-Set accordingly to the expected latency and max delay skew it allows.<br>
-If too many empty subframes, the credit can be consumed quickly. Should be larger than N_SHD to absorb the burst per frame. <br>
-Using credit flow control. <br>
-</html>"
-set_parameter_property TICKET_FIFO_DEPTH LONG_DESCRIPTION $dscpt
-set_parameter_property TICKET_FIFO_DEPTH DESCRIPTION $dscpt
+set_parameter_property TICKET_FIFO_DEPTH DESCRIPTION "Per-lane ticket FIFO depth between ingress parser and page allocator. Should be larger than N_SHD so empty-subframe bursts do not starve credit."
 
-add_parameter HANDLE_FIFO_DEPTH NATURAL 
-set_parameter_property HANDLE_FIFO_DEPTH DEFAULT_VALUE 64
+add_parameter HANDLE_FIFO_DEPTH NATURAL 64
 set_parameter_property HANDLE_FIFO_DEPTH DISPLAY_NAME "Handle FIFO Depth"
-set_parameter_property HANDLE_FIFO_DEPTH UNITS None
 set_parameter_property HANDLE_FIFO_DEPTH ALLOWED_RANGES 2:256
 set_parameter_property HANDLE_FIFO_DEPTH HDL_PARAMETER true
-set dscpt \
-"<html>
-Enter the size of each handle FIFO in unit of its data width. <br>
-Handle FIFO is between <b>page allocator</b> and <b>block mover</b>.<br>
-Set accordingly to the expected latency and max delay skew it allows.<br>
-Drop means blk mover is too slow. <br>
-No credit flow control. <br>
-</html>"
-set_parameter_property HANDLE_FIFO_DEPTH LONG_DESCRIPTION $dscpt
-set_parameter_property HANDLE_FIFO_DEPTH DESCRIPTION $dscpt
+set_parameter_property HANDLE_FIFO_DEPTH DESCRIPTION "Per-lane handle FIFO depth between page allocator and block mover. No credit flow control — drops indicate the block mover is too slow."
 
-add_parameter PAGE_RAM_DEPTH NATURAL 
-set_parameter_property PAGE_RAM_DEPTH DEFAULT_VALUE 65536
+add_parameter PAGE_RAM_DEPTH NATURAL 65536
 set_parameter_property PAGE_RAM_DEPTH DISPLAY_NAME "Page RAM Depth"
-set_parameter_property PAGE_RAM_DEPTH UNITS None
 set_parameter_property PAGE_RAM_DEPTH ALLOWED_RANGES {8192 16384 32768 65536}
 set_parameter_property PAGE_RAM_DEPTH HDL_PARAMETER true
-set dscpt \
-"<html>
-Enter the size of the page RAM in unit of its WR data width. <br>
-Handle FIFO is between <b>block mover</b> and <b>???</b>.<br>
-This parameter needs to be larger than the full header packet, which is usually 8k by default.<br>
-Using novel dynamic segmentation for read packet integrity and write up-to-date. <br>
-If read side is too slow, read always returns the current reading packet, and the next packet will leap to the tail packet of the write thread. <br>
-Write will not overwrite the current reading segment, but will overwrite the last writing segment.  <br>
-So-called 3 segment. 2 for write to do ring-buffer write and 1 for read to continue current read.  <br>
-This solves read/write contention and read most recent packet. <br>
-</html>"
-set_parameter_property PAGE_RAM_DEPTH LONG_DESCRIPTION $dscpt
-set_parameter_property PAGE_RAM_DEPTH DESCRIPTION $dscpt
+set_parameter_property PAGE_RAM_DEPTH DESCRIPTION "Page RAM depth in units of lane-FIFO words. Must be larger than the full header packet. The 3-segment scheme reserves 2 for ring-buffer write and 1 for read continuation to resolve read/write contention while keeping the most recent packet available."
 
-add_parameter PAGE_RAM_RD_WIDTH NATURAL 
-set_parameter_property PAGE_RAM_RD_WIDTH DEFAULT_VALUE 36
-set_parameter_property PAGE_RAM_RD_WIDTH DISPLAY_NAME "Page RAM RD Width"
+add_parameter PAGE_RAM_RD_WIDTH NATURAL 36
+set_parameter_property PAGE_RAM_RD_WIDTH DISPLAY_NAME "Page RAM Read Width"
 set_parameter_property PAGE_RAM_RD_WIDTH UNITS Bits
 set_parameter_property PAGE_RAM_RD_WIDTH ALLOWED_RANGES {36 72 108 144 180 216 252 288}
 set_parameter_property PAGE_RAM_RD_WIDTH HDL_PARAMETER true
-set dscpt \
-"<html>
-Enter the size of the page RAM in unit of its WR data width. <br>
-RD data width of the page RAM in unit of bits <br>
-write width = LANE_FIFO_WIDTH, read width can be larger for interfacing with PCIe DMA or other high speed interface. <br>
-</html>"
-set_parameter_property PAGE_RAM_RD_WIDTH LONG_DESCRIPTION $dscpt
-set_parameter_property PAGE_RAM_RD_WIDTH DESCRIPTION $dscpt
+set_parameter_property PAGE_RAM_RD_WIDTH DESCRIPTION "Page RAM read-side data width. Must be an integer multiple of (INGRESS_DATA_WIDTH + INGRESS_DATAK_WIDTH); the excess is exposed via an Avalon-ST <code>empty</code> sideband."
 
-add_parameter N_SHD NATURAL 
-set_parameter_property N_SHD DEFAULT_VALUE 256
-set_parameter_property N_SHD DISPLAY_NAME "Number of Subheader Packets Between Header Packets"
-set_parameter_property N_SHD UNITS None
+add_parameter N_SHD NATURAL 256
+set_parameter_property N_SHD DISPLAY_NAME "Subheaders per Header Packet"
 set_parameter_property N_SHD ALLOWED_RANGES {128 256 512}
 set_parameter_property N_SHD HDL_PARAMETER true
-set dscpt \
-"<html>
-Enter the number of subheaders under one header packet, i.e., between two header packets. <br>
-You can consider Subheader as a packet and header as a super-packet containing multiple subheader packets. <br>
-This parameter defines how many subheader packets can be contained in one header packet. <br>
-More subheaders will be regarded as new header in track header = off mode. <br>
-Adjusting this parameter will require changing the code logic <br>
-</html>"
-set_parameter_property N_SHD LONG_DESCRIPTION $dscpt
-set_parameter_property N_SHD DESCRIPTION $dscpt
+set_parameter_property N_SHD DESCRIPTION "Number of subheader packets contained in one header packet. In track-header-off mode, subheaders beyond this count are treated as a new header."
 
-add_parameter N_HIT NATURAL 
-set_parameter_property N_HIT DEFAULT_VALUE 255
-set_parameter_property N_HIT DISPLAY_NAME "Maximum Number of Hits in Subheader Packet"
-set_parameter_property N_HIT UNITS None
+add_parameter N_HIT NATURAL 255
+set_parameter_property N_HIT DISPLAY_NAME "Hits per Subheader Packet"
 set_parameter_property N_HIT ALLOWED_RANGES {255 511 1023 2047}
 set_parameter_property N_HIT HDL_PARAMETER true
-set dscpt \
-"<html>
-Enter the number of hits inside one subheader packet. <br>
-Hits received above this parameter will be dropped by the <b>ingress parser</b> <br>
-To support more hits, you may need to adjust the <b>hit_cnt</b> bitfield mask of the subheader.<br>
-</html>"
-set_parameter_property N_HIT LONG_DESCRIPTION $dscpt
-set_parameter_property N_HIT DESCRIPTION $dscpt
+set_parameter_property N_HIT DESCRIPTION "Maximum hits per subheader packet. Hits past this count are dropped by the ingress parser. Larger values require widening the subheader <b>hit_cnt</b> mask."
 
-add_parameter DEBUG_LV NATURAL 
-set_parameter_property DEBUG_LV DEFAULT_VALUE 1
-set_parameter_property DEBUG_LV DISPLAY_NAME "Debug Level"
-set_parameter_property DEBUG_LV TYPE NATURAL
-set_parameter_property DEBUG_LV UNITS None
-set_parameter_property DEBUG_LV ALLOWED_RANGES {0 1 2}
-set_parameter_property DEBUG_LV HDL_PARAMETER true
-set dscpt \
-"<html>
-Select the debug level of the IP (affects generation).<br>
-<ul>
-	<li><b>0</b> : off <br> </li>
-	<li><b>1</b> : on, synthesizble <br> </li>
-	<li><b>2</b> : on, non-synthesizble, simulation-only <br> </li>
-</ul>
-</html>"
-set_parameter_property DEBUG_LV LONG_DESCRIPTION $dscpt
-set_parameter_property DEBUG_LV DESCRIPTION $dscpt
+add_parameter HDR_SIZE NATURAL 5
+set_parameter_property HDR_SIZE DISPLAY_NAME "Header Size"
+set_parameter_property HDR_SIZE UNITS None
+set_parameter_property HDR_SIZE ALLOWED_RANGES 1:16
+set_parameter_property HDR_SIZE HDL_PARAMETER true
+set_parameter_property HDR_SIZE DESCRIPTION "Header length in lane-FIFO words."
 
-add_parameter FRAME_SERIAL_SIZE NATURAL 
-set_parameter_property FRAME_SERIAL_SIZE DEFAULT_VALUE 16
+add_parameter SHD_SIZE NATURAL 1
+set_parameter_property SHD_SIZE DISPLAY_NAME "Subheader Size"
+set_parameter_property SHD_SIZE UNITS None
+set_parameter_property SHD_SIZE ALLOWED_RANGES 1:16
+set_parameter_property SHD_SIZE HDL_PARAMETER true
+set_parameter_property SHD_SIZE DESCRIPTION "Subheader length in lane-FIFO words."
+
+add_parameter HIT_SIZE NATURAL 1
+set_parameter_property HIT_SIZE DISPLAY_NAME "Hit Size"
+set_parameter_property HIT_SIZE UNITS None
+set_parameter_property HIT_SIZE ALLOWED_RANGES 1:16
+set_parameter_property HIT_SIZE HDL_PARAMETER true
+set_parameter_property HIT_SIZE DESCRIPTION "Hit length in lane-FIFO words."
+
+add_parameter TRL_SIZE NATURAL 1
+set_parameter_property TRL_SIZE DISPLAY_NAME "Trailer Size"
+set_parameter_property TRL_SIZE UNITS None
+set_parameter_property TRL_SIZE ALLOWED_RANGES 1:16
+set_parameter_property TRL_SIZE HDL_PARAMETER true
+set_parameter_property TRL_SIZE DESCRIPTION "Trailer length in lane-FIFO words."
+
+add_parameter FRAME_SERIAL_SIZE NATURAL 16
 set_parameter_property FRAME_SERIAL_SIZE DISPLAY_NAME "Frame Serial Size"
 set_parameter_property FRAME_SERIAL_SIZE UNITS Bits
 set_parameter_property FRAME_SERIAL_SIZE ALLOWED_RANGES 1:32
 set_parameter_property FRAME_SERIAL_SIZE HDL_PARAMETER true
-set dscpt \
-"<html>
-Enter the size of frame serial number in unit of bits. <br>
-Refer to mu3e spec book for details. <br>
-</html>"
-set_parameter_property FRAME_SERIAL_SIZE LONG_DESCRIPTION $dscpt
-set_parameter_property FRAME_SERIAL_SIZE DESCRIPTION $dscpt
+set_parameter_property FRAME_SERIAL_SIZE DESCRIPTION "Width of the frame serial number field (see Mu3e spec book)."
 
-add_parameter FRAME_SUBH_CNT_SIZE NATURAL 
-set_parameter_property FRAME_SUBH_CNT_SIZE DEFAULT_VALUE 16
+add_parameter FRAME_SUBH_CNT_SIZE NATURAL 16
 set_parameter_property FRAME_SUBH_CNT_SIZE DISPLAY_NAME "Frame Subheader Count Size"
 set_parameter_property FRAME_SUBH_CNT_SIZE UNITS Bits
 set_parameter_property FRAME_SUBH_CNT_SIZE ALLOWED_RANGES 1:32
 set_parameter_property FRAME_SUBH_CNT_SIZE HDL_PARAMETER true
-set dscpt \
-"<html>
-Enter the size of frame subheader count in unit of bits. <br>
-Refer to mu3e spec book for details. <br>
-</html>"
-set_parameter_property FRAME_SUBH_CNT_SIZE LONG_DESCRIPTION $dscpt
-set_parameter_property FRAME_SUBH_CNT_SIZE DESCRIPTION $dscpt
+set_parameter_property FRAME_SUBH_CNT_SIZE DESCRIPTION "Width of the frame subheader-count field."
 
-add_parameter FRAME_HIT_CNT_SIZE NATURAL 
-set_parameter_property FRAME_HIT_CNT_SIZE DEFAULT_VALUE 16
+add_parameter FRAME_HIT_CNT_SIZE NATURAL 16
 set_parameter_property FRAME_HIT_CNT_SIZE DISPLAY_NAME "Frame Hit Count Size"
 set_parameter_property FRAME_HIT_CNT_SIZE UNITS Bits
 set_parameter_property FRAME_HIT_CNT_SIZE ALLOWED_RANGES 1:32
 set_parameter_property FRAME_HIT_CNT_SIZE HDL_PARAMETER true
-set dscpt \
-"<html>
-Enter the size of frame hit count in unit of bits. <br>
-Refer to mu3e spec book for details. <br>
-</html>"
-set_parameter_property FRAME_HIT_CNT_SIZE LONG_DESCRIPTION $dscpt
-set_parameter_property FRAME_HIT_CNT_SIZE DESCRIPTION $dscpt
+set_parameter_property FRAME_HIT_CNT_SIZE DESCRIPTION "Width of the frame hit-count field."
 
-################################################ 
-# display items
-################################################ 
-# --------------------------------------------------------------- 
-add_display_item "" "IP Basic" GROUP ""
-# ---------------------------------------------------------------
-add_display_item  "IP Basic" N_LANE PARAMETER
-add_display_item  "IP Basic" MODE PARAMETER
-add_display_item  "IP Basic" TRACK_HEADER PARAMETER
+add_parameter DEBUG_LV NATURAL 1
+set_parameter_property DEBUG_LV DISPLAY_NAME "Debug Level"
+set_parameter_property DEBUG_LV ALLOWED_RANGES {0 1 2}
+set_parameter_property DEBUG_LV HDL_PARAMETER true
+set_parameter_property DEBUG_LV DESCRIPTION "0 = off, 1 = synthesizable debug, 2 = simulation-only debug."
 
-# --------------------------------------------------------------- 
-add_display_item "" "Ingress Format" GROUP ""
-# ---------------------------------------------------------------
-add_display_item  "Ingress Format" INGRESS_DATA_WIDTH PARAMETER
-add_display_item  "Ingress Format" INGRESS_DATAK_WIDTH PARAMETER
-add_display_item  "Ingress Format" CHANNEL_WIDTH PARAMETER
+# ────────────────────────────────────────────────────────────────────────────
+# Identity parameters — catalog metadata only (no RTL backing, no CSR)
+# ────────────────────────────────────────────────────────────────────────────
+add_parameter IP_UID NATURAL $IP_UID_DEFAULT_CONST
+set_parameter_property IP_UID DISPLAY_NAME "UID"
+set_parameter_property IP_UID ALLOWED_RANGES 0:2147483647
+set_parameter_property IP_UID DISPLAY_HINT hexadecimal
+set_parameter_property IP_UID HDL_PARAMETER false
+set_parameter_property IP_UID DESCRIPTION {ASCII four-char tag (default "OPQM"). Shown for catalog traceability only — this IP has no CSR.}
 
-# --------------------------------------------------------------- 
-add_display_item "" "IP Advance" GROUP ""
-# ---------------------------------------------------------------
-add_display_item  "IP Advance" LANE_FIFO_DEPTH PARAMETER
-add_display_item  "IP Advance" LANE_FIFO_WIDTH PARAMETER
-add_display_item  "IP Advance" TICKET_FIFO_DEPTH PARAMETER
-add_display_item  "IP Advance" HANDLE_FIFO_DEPTH PARAMETER
-add_display_item  "IP Advance" PAGE_RAM_DEPTH PARAMETER
-add_display_item  "IP Advance" PAGE_RAM_RD_WIDTH PARAMETER
+add_parameter VERSION_MAJOR NATURAL $VERSION_MAJOR_DEFAULT_CONST
+set_parameter_property VERSION_MAJOR DISPLAY_NAME "Version Major"
+set_parameter_property VERSION_MAJOR ALLOWED_RANGES 0:255
+set_parameter_property VERSION_MAJOR HDL_PARAMETER false
 
-# --------------------------------------------------------------- 
-add_display_item "" "Packet Format" GROUP ""
-# ---------------------------------------------------------------
-add_display_item  "Packet Format" N_SHD PARAMETER
-add_display_item  "Packet Format" N_HIT PARAMETER
-add_display_item  "Packet Format" FRAME_SERIAL_SIZE PARAMETER
-add_display_item  "Packet Format" FRAME_SUBH_CNT_SIZE PARAMETER
-add_display_item  "Packet Format" FRAME_HIT_CNT_SIZE PARAMETER
+add_parameter VERSION_MINOR NATURAL $VERSION_MINOR_DEFAULT_CONST
+set_parameter_property VERSION_MINOR DISPLAY_NAME "Version Minor"
+set_parameter_property VERSION_MINOR ALLOWED_RANGES 0:255
+set_parameter_property VERSION_MINOR HDL_PARAMETER false
 
-# --------------------------------------------------------------- 
-add_display_item "" "Debug" GROUP ""
-# ---------------------------------------------------------------
-add_display_item  "Debug" DEBUG_LV PARAMETER
+add_parameter VERSION_PATCH NATURAL $VERSION_PATCH_DEFAULT_CONST
+set_parameter_property VERSION_PATCH DISPLAY_NAME "Version Patch"
+set_parameter_property VERSION_PATCH ALLOWED_RANGES 0:15
+set_parameter_property VERSION_PATCH HDL_PARAMETER false
 
-################################################
-# ports
-################################################ 
+add_parameter BUILD NATURAL $BUILD_DEFAULT_CONST
+set_parameter_property BUILD DISPLAY_NAME "Build Stamp"
+set_parameter_property BUILD ALLOWED_RANGES 0:4095
+set_parameter_property BUILD HDL_PARAMETER false
+set_parameter_property BUILD DESCRIPTION {12-bit MMDD packaging stamp packed into VERSION[11:0].}
 
-####################
-# Egress Interface #
-####################
+add_parameter VERSION_DATE NATURAL $VERSION_DATE_DEFAULT_CONST
+set_parameter_property VERSION_DATE DISPLAY_NAME "Version Date"
+set_parameter_property VERSION_DATE ALLOWED_RANGES 0:2147483647
+set_parameter_property VERSION_DATE HDL_PARAMETER false
+set_parameter_property VERSION_DATE DESCRIPTION {YYYYMMDD packaging date.}
+
+add_parameter VERSION_GIT NATURAL $VERSION_GIT_DEFAULT_CONST
+set_parameter_property VERSION_GIT DISPLAY_NAME "Git Stamp"
+set_parameter_property VERSION_GIT ALLOWED_RANGES 0:2147483647
+set_parameter_property VERSION_GIT DISPLAY_HINT hexadecimal
+set_parameter_property VERSION_GIT HDL_PARAMETER false
+set_parameter_property VERSION_GIT DESCRIPTION {Truncated submodule git hash at packaging time.}
+
+add_parameter INSTANCE_ID NATURAL $INSTANCE_ID_DEFAULT_CONST
+set_parameter_property INSTANCE_ID DISPLAY_NAME "Instance ID"
+set_parameter_property INSTANCE_ID ALLOWED_RANGES 0:2147483647
+set_parameter_property INSTANCE_ID HDL_PARAMETER false
+
+# ────────────────────────────────────────────────────────────────────────────
+# Derived (hidden) parameters
+# ────────────────────────────────────────────────────────────────────────────
+foreach derived_name {INGRESS_BEAT_WIDTH_DERIVED EGRESS_SYMBOLS_PER_BEAT_DERIVED EGRESS_EMPTY_WIDTH_DERIVED} {
+    add_parameter $derived_name NATURAL 0
+    set_parameter_property $derived_name HDL_PARAMETER false
+    set_parameter_property $derived_name DERIVED true
+    set_parameter_property $derived_name VISIBLE false
+}
+
+# ────────────────────────────────────────────────────────────────────────────
+# GUI — 4-tab Mu3e layout
+# ────────────────────────────────────────────────────────────────────────────
+set TAB_CONFIGURATION "Configuration"
+set TAB_IDENTITY      "Identity"
+set TAB_INTERFACES    "Interfaces"
+set TAB_REGMAP        "Register Map"
+
+add_display_item "" $TAB_CONFIGURATION GROUP tab
+add_display_item "" $TAB_IDENTITY      GROUP tab
+add_display_item "" $TAB_INTERFACES    GROUP tab
+add_display_item "" $TAB_REGMAP        GROUP tab
+
+# ---- Configuration ---------------------------------------------------------
+add_display_item $TAB_CONFIGURATION "Overview"       GROUP
+add_display_item $TAB_CONFIGURATION "Aggregation"    GROUP
+add_display_item $TAB_CONFIGURATION "Ingress Format" GROUP
+add_display_item $TAB_CONFIGURATION "Sizing"         GROUP
+add_display_item $TAB_CONFIGURATION "Packet Format"  GROUP
+add_display_item $TAB_CONFIGURATION "Throughput"     GROUP
+add_display_item $TAB_CONFIGURATION "Debug"          GROUP
+
+add_html_text "Overview" overview_html {<html><b>Function</b><br/>Aggregates <i>N_LANE</i> ingress Avalon-ST flows (one per FEB) into a single timestamp-ordered egress flow. The monolithic core owns the full datapath: per-lane <b>ingress parser</b> \u2192 <b>lane FIFO</b> + <b>ticket FIFO</b> \u2192 <b>page allocator</b> \u2192 <b>block mover</b> \u2192 <b>page RAM</b> (3-segment dynamic) \u2192 egress.<br/><br/><b>Clocking</b><br/>Single synchronous data-path domain (<code>d_clk</code> / <code>d_reset</code>) shared by all lanes and the egress path.<br/><br/><b>Flow control</b><br/>Ingress lanes are non-backlog (drop-on-full inside the lane/ticket FIFOs). The egress source honours Avalon-ST <code>ready</code>.</html>}
+
+add_display_item "Aggregation" N_LANE       parameter
+add_display_item "Aggregation" MODE         parameter
+add_display_item "Aggregation" TRACK_HEADER parameter
+
+add_display_item "Ingress Format" INGRESS_DATA_WIDTH  parameter
+add_display_item "Ingress Format" INGRESS_DATAK_WIDTH parameter
+add_display_item "Ingress Format" CHANNEL_WIDTH       parameter
+
+add_display_item "Sizing" LANE_FIFO_DEPTH   parameter
+add_display_item "Sizing" LANE_FIFO_WIDTH   parameter
+add_display_item "Sizing" TICKET_FIFO_DEPTH parameter
+add_display_item "Sizing" HANDLE_FIFO_DEPTH parameter
+add_display_item "Sizing" PAGE_RAM_DEPTH    parameter
+add_display_item "Sizing" PAGE_RAM_RD_WIDTH parameter
+add_html_text "Sizing" sizing_html "<html><b>Derived storage</b><br/>Updated by the validation callback.</html>"
+
+add_display_item "Packet Format" N_SHD               parameter
+add_display_item "Packet Format" N_HIT               parameter
+add_display_item "Packet Format" HDR_SIZE            parameter
+add_display_item "Packet Format" SHD_SIZE            parameter
+add_display_item "Packet Format" HIT_SIZE            parameter
+add_display_item "Packet Format" TRL_SIZE            parameter
+add_display_item "Packet Format" FRAME_SERIAL_SIZE   parameter
+add_display_item "Packet Format" FRAME_SUBH_CNT_SIZE parameter
+add_display_item "Packet Format" FRAME_HIT_CNT_SIZE  parameter
+add_html_text "Packet Format" packet_html "<html><b>Packet limits</b><br/>Updated by the validation callback.</html>"
+
+add_html_text "Throughput" throughput_html "<html><b>Expected throughput</b><br/>Updated by the validation callback.</html>"
+
+add_display_item "Debug" DEBUG_LV parameter
+
+# ---- Identity --------------------------------------------------------------
+add_display_item $TAB_IDENTITY "Delivered Profile" GROUP
+add_display_item $TAB_IDENTITY "Versioning"        GROUP
+
+add_html_text "Delivered Profile" profile_html {<html><b>Catalog revision</b><br/>This release is packaged as <b>26.0.0.0413</b>.<br/><br/><b>Runtime visibility</b><br/>This IP has <b>no CSR aperture</b>. The identity fields below are catalog metadata only — software cannot read UID/VERSION/GIT at runtime because there is no Avalon-MM slave. Runtime configuration is frozen at Platform Designer generation time via the HDL parameters on the <b>Configuration</b> tab.</html>}
+
+add_html_text "Versioning" versioning_html {<html><b>Common identity header (packaging only)</b><br/>VERSION encoding: MAJOR[31:24] = 2-digit year, MINOR[23:16], PATCH[15:12], BUILD[11:0] = MMDD.<br/><br/>Identity fields are disabled in the GUI because they do not drive any RTL generic — changing them would have no effect.</html>}
+add_display_item "Versioning" IP_UID        parameter
+add_display_item "Versioning" VERSION_MAJOR parameter
+add_display_item "Versioning" VERSION_MINOR parameter
+add_display_item "Versioning" VERSION_PATCH parameter
+add_display_item "Versioning" BUILD         parameter
+add_display_item "Versioning" VERSION_DATE  parameter
+add_display_item "Versioning" VERSION_GIT   parameter
+add_display_item "Versioning" INSTANCE_ID   parameter
+
+# ---- Interfaces ------------------------------------------------------------
+add_display_item $TAB_INTERFACES "Clock / Reset" GROUP
+add_display_item $TAB_INTERFACES "Ingress"       GROUP
+add_display_item $TAB_INTERFACES "Egress"        GROUP
+
+add_html_text "Clock / Reset" clock_html "<html><b>clk_interface</b> / <b>rst_interface</b><br/>Single synchronous data-path domain. All ingress lanes and the egress source are associated with this clock/reset pair.</html>"
+
+add_html_text "Ingress" ingress_html {<html><b>ingress_0 \u2026 ingress_<i>N_LANE-1</i></b> — Avalon-ST <i>sinks</i>, one per FEB lane. <i>Non-backlog</i>: no <code>ready</code> exported; full FIFOs drop the in-flight packet internally. Field layout of the <code>data</code> port (MSB first):<br/>
+<table border="1" cellpadding="3" width="100%">
+<tr><th>Bits</th><th>Field</th><th>Description</th></tr>
+<tr><td>[beat-1 : beat-DATAK_W]</td><td>byte_is_k</td><td>8b/10b control-symbol flag per data byte. Example for default 36-bit beat: <code>"0001"</code> = sub-header, <code>"0000"</code> = hit.</td></tr>
+<tr><td>[DATA_W-1 : 0]</td><td>data</td><td>Payload bytes (hit or header content).</td></tr>
+</table>
+Sidebands: <code>channel</code> (<i>CHANNEL_WIDTH</i> bits, omitted when 0), <code>startofpacket</code>, <code>endofpacket</code>, <code>valid</code>, <code>error[2:0] = {hit_err, shd_err, hdr_err}</code>. An asserted <code>error</code> blocks the remainder of the packet until <code>eop</code> and revokes it.</html>}
+
+add_html_text "Egress" egress_html {<html><b>egress</b> — Avalon-ST <i>source</i>. Symbol width equals the ingress beat width; symbols per beat = <code>PAGE_RAM_RD_WIDTH / (INGRESS_DATA_WIDTH + INGRESS_DATAK_WIDTH)</code>. An <code>empty</code> sideband appears automatically when symbols-per-beat &gt; 1.<br/>
+<table border="1" cellpadding="3" width="100%">
+<tr><th>Port</th><th>Direction</th><th>Width</th><th>Description</th></tr>
+<tr><td>data</td><td>out</td><td>PAGE_RAM_RD_WIDTH</td><td>One or more ingress symbols packed MSB-first.</td></tr>
+<tr><td>empty</td><td>out</td><td>ceil(log2(symbolsPerBeat))</td><td>Number of unused symbols in the final beat of a packet (present only when symbolsPerBeat &gt; 1).</td></tr>
+<tr><td>startofpacket / endofpacket</td><td>out</td><td>1</td><td>Packet framing.</td></tr>
+<tr><td>valid / ready</td><td>out / in</td><td>1</td><td>Standard Avalon-ST handshake (backpressured).</td></tr>
+<tr><td>error[2:0]</td><td>out</td><td>3</td><td>{hit_err, shd_err, hdr_err} — propagated from ingress parser.</td></tr>
+</table></html>}
+
+# ---- Register Map ----------------------------------------------------------
+add_display_item $TAB_REGMAP "No CSR Aperture" GROUP
+add_html_text "No CSR Aperture" no_csr_html {<html><b>This IP exposes no register map.</b><br/><br/>The Ordered Priority Queue monolithic core has no Avalon-MM slave. All runtime behavior is fixed by the HDL parameters on the <b>Configuration</b> tab and baked into the bitstream at Platform Designer generation time.<br/><br/>Consequences:
+<ul>
+<li>No software-visible UID / VERSION header.</li>
+<li>No runtime counters, status, or control bits exposed to host software.</li>
+<li>Reconfiguration requires regenerating the Qsys system and rebuilding the project.</li>
+</ul>
+If a future revision needs runtime observability (fill levels, drop counters, mode switching), a dedicated CSR window should be added to the monolithic core and this tab updated accordingly.</html>}
+
+# ────────────────────────────────────────────────────────────────────────────
+# Static interfaces — egress source + clock + reset
+# (ingress sinks are added dynamically in the elaborate callback)
+# ────────────────────────────────────────────────────────────────────────────
 add_interface egress avalon_streaming start
-set_interface_property egress associatedClock clk_interface
-set_interface_property egress associatedReset rst_interface
-#set_interface_property egress dataBitsPerSymbol 36
-set_interface_property egress errorDescriptor {hit_err shd_err hdr_err}
+set_interface_property egress associatedClock        clk_interface
+set_interface_property egress associatedReset        rst_interface
+set_interface_property egress errorDescriptor        {hit_err shd_err hdr_err}
 set_interface_property egress firstSymbolInHighOrderBits true
-set_interface_property egress readyLatency 0
-set_interface_property egress ENABLED true
-set_interface_property egress EXPORT_OF ""
-set_interface_property egress PORT_NAME_MAP ""
-set_interface_property egress CMSIS_SVD_VARIABLES ""
-set_interface_property egress SVD_ADDRESS_GROUP ""
-
+set_interface_property egress readyLatency           0
+set_interface_property egress ENABLED                true
 add_interface_port egress aso_egress_startofpacket startofpacket Output 1
-add_interface_port egress aso_egress_endofpacket endofpacket Output 1
-add_interface_port egress aso_egress_valid valid Output 1
-add_interface_port egress aso_egress_ready ready Input 1
-add_interface_port egress aso_egress_error error Output 3
-    
+add_interface_port egress aso_egress_endofpacket   endofpacket   Output 1
+add_interface_port egress aso_egress_valid         valid         Output 1
+add_interface_port egress aso_egress_ready         ready         Input  1
+add_interface_port egress aso_egress_error         error         Output 3
 
-
-#############################
-# Clock and reset interface #
-#############################
-add_interface clk_interface clock end 
+add_interface clk_interface clock end
 set_interface_property clk_interface clockRate 0
-add_interface_port clk_interface d_clk 		clk			Input 1
+set_interface_property clk_interface ENABLED   true
+add_interface_port clk_interface d_clk clk Input 1
 
 add_interface rst_interface reset end
-set_interface_property rst_interface associatedClock clk_interface
+set_interface_property rst_interface associatedClock  clk_interface
 set_interface_property rst_interface synchronousEdges BOTH
-add_interface_port rst_interface d_reset	    reset		Input 1
-
-
-################################################
-# file sets
-################################################ 
-add_fileset synth   QUARTUS_SYNTH my_generate 
-
-proc my_generate { output_name } {
-    # checkout this //acds/rel/18.1std/ip/merlin/altera_merlin_router/altera_merlin_router_hw.tcl
-    
-    set template_file "rtl/ordered_priority_queue/monolithic/ordered_priority_queue.terp.vhd"
-
-    set template    [ read [ open $template_file r ] ]
-
-    set if_data_in_width [expr [get_parameter_value INGRESS_DATA_WIDTH] + [get_parameter_value INGRESS_DATAK_WIDTH]] 
-    set if_data_out_width [get_parameter_value PAGE_RAM_RD_WIDTH]
-    set if_data_out_empty_width [expr int(ceil(log($if_data_out_width / $if_data_in_width)/log(2)))]
-    set params(n_lane)              [get_parameter_value N_LANE]
-    set params(fifos_names)         [list "ticket_fifo" "lane_fifo" "handle_fifo"]
-    set params(egress_empty_width)  $if_data_out_empty_width
-
-    set params(output_name) $output_name
-
-    set result          [ altera_terp $template params ]
-
-    send_message INFO "<b>generated file: (${output_name}.vhd)</b>"
-    
-    # top level file 
-    add_fileset_file ${output_name}.vhd VHDL TEXT $result TOP_LEVEL_FILE
-    # fifos
-    add_fileset_file "handle_fifo.vhd" Verilog PATH "./rtl/vendor/alt_ram/handle_fifo.v"
-    add_fileset_file "lane_fifo.vhd" Verilog PATH "./rtl/vendor/alt_ram/lane_fifo.v"
-    add_fileset_file "ticket_fifo.vhd" Verilog PATH "./rtl/vendor/alt_ram/ticket_fifo.v"
-    add_fileset_file "page_ram.vhd" Verilog PATH "./rtl/vendor/alt_ram/page_ram.v"
-    add_fileset_file "tile_fifo.vhd" Verilog PATH "./rtl/vendor/alt_ram/tile_fifo.v"
-}
-
-
-################################################
-# callbacks
-################################################
-proc my_elaborate {} {
-	
-	send_message INFO "performing elaboration"
-
-    # -----
-    # set parameter values
-    
-
-
-    # ------
-    # build more ports 
-
-    ############################## 
-    # Ingress Interface x N_LANE #
-    ##############################
-    set if_data_in_width [expr [get_parameter_value INGRESS_DATA_WIDTH] + [get_parameter_value INGRESS_DATAK_WIDTH]] 
-
-    for {set i 0 } {$i < [get_parameter_value N_LANE]} {incr i} {
-        add_interface ingress_${i} avalon_streaming end
-        set_interface_property ingress_${i} associatedClock clk_interface
-        set_interface_property ingress_${i} associatedReset rst_interface
-        set_interface_property ingress_${i} dataBitsPerSymbol $if_data_in_width
-        set_interface_property ingress_${i} errorDescriptor {hit_err shd_err hdr_err}
-        set_interface_property ingress_${i} firstSymbolInHighOrderBits true
-        set_interface_property ingress_${i} maxChannel [expr [get_parameter_value N_LANE] - 1]
-        set_interface_property ingress_${i} readyLatency 0
-        set_interface_property ingress_${i} ENABLED true
-        set_interface_property ingress_${i} EXPORT_OF ""
-        set_interface_property ingress_${i} PORT_NAME_MAP ""
-        set_interface_property ingress_${i} CMSIS_SVD_VARIABLES ""
-        set_interface_property ingress_${i} SVD_ADDRESS_GROUP ""
-
-        if {[get_parameter_value CHANNEL_WIDTH] > 0} {
-            add_interface_port ingress_${i} asi_ingress_${i}_channel channel Input [get_parameter_value CHANNEL_WIDTH]
-        } 
-
-        add_interface_port ingress_${i} asi_ingress_${i}_startofpacket startofpacket Input 1
-        add_interface_port ingress_${i} asi_ingress_${i}_endofpacket endofpacket Input 1
-        add_interface_port ingress_${i} asi_ingress_${i}_data data Input $if_data_in_width
-        add_interface_port ingress_${i} asi_ingress_${i}_valid valid Input 1
-        add_interface_port ingress_${i} asi_ingress_${i}_error error Input 3
-    }
-
-    # Egress Interface
-    # -- re-set allowed range for user input
-    set page_ram_rd_width_allowed_ranges_list [list]
-    for {set i 1} {$i <= 8} {incr i} {
-        lappend page_ram_rd_width_allowed_ranges_list [expr $if_data_in_width * $i]
-    }
-    set_parameter_property PAGE_RAM_RD_WIDTH ALLOWED_RANGES $page_ram_rd_width_allowed_ranges_list
-    # -- add data port
-    set if_data_out_width [get_parameter_value PAGE_RAM_RD_WIDTH]
-    add_interface_port egress aso_egress_data data Output $if_data_out_width
-    set_port_property aso_egress_data WIDTH_EXPR $if_data_out_width; # multiple of size of symbol
-    # -- add empty port
-    set if_data_out_n_symbols [expr $if_data_out_width / $if_data_in_width]
-    set if_data_out_empty_width [expr int(ceil(log($if_data_out_width / $if_data_in_width)/log(2)))]
-    if {$if_data_out_empty_width < 1} {
-        send_message INFO "No empty port needed, as the output data width ($if_data_out_width) is same as the input data width ($if_data_in_width)."
-    } else {
-        add_interface_port egress aso_egress_empty empty Output 
-        set_port_property aso_egress_empty WIDTH_EXPR $if_data_out_empty_width
-        send_message INFO "empty port added. output data will represent ($if_data_out_n_symbols) symbols"
-    }
-    # -- re-set interface properties
-    set_interface_property egress symbolsPerBeat $if_data_out_n_symbols; # number of symbols per beat
-    set_interface_property egress dataBitsPerSymbol $if_data_in_width; # size of ingress width
-
-
-    send_message INFO "elaboration <b>ok</b>"
-}
+set_interface_property rst_interface ENABLED          true
+add_interface_port rst_interface d_reset reset Input 1

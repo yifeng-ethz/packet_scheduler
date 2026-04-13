@@ -1,10 +1,12 @@
 # packet_scheduler
 Various packet schedulers implementations for aggregating high-speed upload data flows
 
-## Structure (2026-02-02)
+## Structure (2026-04-13)
 - `rtl/`: synthesizable RTL + TERP templates (see `rtl/README.md`).
-- `tb/`: directed testbenches (see `tb/README.md`).
-- `uvm/`: unit UVM tests for split blocks (see `uvm/README.md`).
+- `tb/`: current active verification harness for monolithic OPQ.
+- `syn/`: Platform Designer / Qsys example systems and generation scripts.
+- `doc/`: current verification review and signoff notes.
+- `legacy/`: deprecated directed TB and UVM harness archive (see `legacy/README.md`).
 - `trash_bin/`: generated artifacts + legacy snapshots (see `trash_bin/README.md`).
 
 ## Platform Designer components (kept at repo root)
