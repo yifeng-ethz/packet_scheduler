@@ -1,6 +1,11 @@
 # Changelog
 Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 
+## 26.3.5.0414
+
+- **Verification Harness Contract**: fixed the active max-hit virtual sequence so non-default `N_SHD` runs derive second-frame subheader timestamps from the actual frame base (`frame_ts[11:4]`) instead of reusing a hard-coded low-byte slot value. This preserves the restored absolute `ts[11:4]` contract when `N_SHD=128`.
+- **Verification**: the promoted basic non-default sweep now keeps `opq_basic_smoke_test`, `opq_basic_ts_boundary_test`, and `opq_edge_max_hits_test` passing at both `N_SHD=256` and `N_SHD=128`. The remaining `N_SHD=512` mismatch stays open as a separate packet-format / timestamp-epoch issue, because the subheader timestamp field itself is still only 8 bits wide and the current VHDL DUT does not yet extend that low-byte slot across the second 256-subheader epoch.
+
 ## 26.3.4.0414
 
 - **RTL**: kept the full ingress header `ts[15:0]` exposure, but fixed the subheader reconstruction semantics back to the original absolute contract. Monolithic and split ingress parsers now form per-subheader timestamps as `frame_ts[47:12] | shd_ts[11:4] | 4'b0` instead of treating the subheader byte as an additive offset into the full low word.

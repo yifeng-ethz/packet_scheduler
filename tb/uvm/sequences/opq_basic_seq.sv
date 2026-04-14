@@ -1,3 +1,10 @@
+//------------------------------------------------------------------------------
+// IP Name   : opq_basic_seq
+// Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
+// Revision  : 0.1 - derive absolute subheader timestamps from frame_ts for parameterized sequences
+// Description:
+//   UVM virtual sequences for the active OPQ regression buckets.
+//------------------------------------------------------------------------------
 class opq_lane_frame_sequence extends uvm_sequence #(opq_frame_item);
   `uvm_object_utils(opq_lane_frame_sequence)
 
@@ -40,6 +47,13 @@ class opq_virtual_sequence_base extends uvm_sequence #(uvm_sequence_item);
 
   function new(string name = "opq_virtual_sequence_base");
     super.new(name);
+  endfunction
+
+  function automatic bit [7:0] abs_shd_ts(bit [47:0] frame_ts, int unsigned shd_slot_offset);
+    bit [7:0] shd_slot_offset_v;
+
+    shd_slot_offset_v = shd_slot_offset[7:0];
+    return frame_ts[11:4] + shd_slot_offset_v;
   endfunction
 
   function automatic opq_frame_item build_frame(
@@ -507,10 +521,10 @@ class opq_max_hits_virtual_sequence extends opq_virtual_sequence_base;
     lane0_frames.push_back(build_dense_frame(
       "lane0_hit32",
       0,
-      48'd0,
+      ts_step,
       16'd1,
       1,
-      8'h02,
+      abs_shd_ts(ts_step, 2),
       OPQ_MIN_SOP_GAP_CYCLES,
       32,
       32'h7400_0000
@@ -518,10 +532,10 @@ class opq_max_hits_virtual_sequence extends opq_virtual_sequence_base;
     lane1_frames.push_back(build_dense_frame(
       "lane1_hit32",
       1,
-      48'd0,
+      ts_step,
       16'd1,
       1,
-      8'h02,
+      abs_shd_ts(ts_step, 2),
       OPQ_MIN_SOP_GAP_CYCLES,
       32,
       32'h7500_0000
