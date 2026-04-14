@@ -5,7 +5,7 @@
  version="18.1"
  fabric="QSYS">
  <!-- Format version 18.1 625 (Future versions may contain additional information.) -->
- <!-- 2026.04.13.20:32:48 -->
+ <!-- 2026.04.14.18:43:06 -->
  <!-- A collection of modules and connections -->
  <parameter name="clockCrossingAdapter">
   <type>com.altera.sopcmodel.ensemble.EClockAdapter</type>
@@ -57,7 +57,7 @@
  </parameter>
  <parameter name="generationId">
   <type>int</type>
-  <value>1776105168</value>
+  <value>1776184986</value>
   <derived>false</derived>
   <enabled>true</enabled>
   <visible>true</visible>
@@ -154,7 +154,7 @@
  <module
    name="opq_0"
    kind="ordered_priority_queue"
-   version="26.2.0.413"
+   version="26.3.10.414"
    path="opq_0">
   <!-- Describes a single module. Module parameters are
 the requested settings for a module instance. -->
@@ -352,7 +352,7 @@ the requested settings for a module instance. -->
   </parameter>
   <parameter name="VERSION_MINOR">
    <type>int</type>
-   <value>2</value>
+   <value>3</value>
    <derived>false</derived>
    <enabled>false</enabled>
    <visible>true</visible>
@@ -360,7 +360,7 @@ the requested settings for a module instance. -->
   </parameter>
   <parameter name="VERSION_PATCH">
    <type>int</type>
-   <value>0</value>
+   <value>10</value>
    <derived>false</derived>
    <enabled>false</enabled>
    <visible>true</visible>
@@ -368,7 +368,7 @@ the requested settings for a module instance. -->
   </parameter>
   <parameter name="BUILD">
    <type>int</type>
-   <value>413</value>
+   <value>414</value>
    <derived>false</derived>
    <enabled>false</enabled>
    <visible>true</visible>
@@ -376,7 +376,7 @@ the requested settings for a module instance. -->
   </parameter>
   <parameter name="VERSION_DATE">
    <type>int</type>
-   <value>20260413</value>
+   <value>20260414</value>
    <derived>false</derived>
    <enabled>false</enabled>
    <visible>true</visible>
@@ -384,7 +384,7 @@ the requested settings for a module instance. -->
   </parameter>
   <parameter name="VERSION_GIT">
    <type>int</type>
-   <value>238049856</value>
+   <value>1661933344</value>
    <derived>false</derived>
    <enabled>false</enabled>
    <visible>true</visible>
@@ -1693,7 +1693,7 @@ parameters are a RESULT of the module parameters. -->
   <type>com.altera.entityinterfaces.IElementClass</type>
   <subtype>com.altera.entityinterfaces.IModule</subtype>
   <displayName>Ordered Priority Queue</displayName>
-  <version>26.2.0.413</version>
+  <version>26.3.10.414</version>
  </plugin>
  <plugin>
   <instanceCount>1</instanceCount>
@@ -1736,5 +1736,5 @@ parameters are a RESULT of the module parameters. -->
   <version>18.1</version>
  </plugin>
  <reportVersion>18.1 625</reportVersion>
- <uniqueIdentifier>0242D46AB00F0000019D881E1DE0</uniqueIdentifier>
+ <uniqueIdentifier>0242D46AB00F0000019D8CE00A9A</uniqueIdentifier>
 </EnsembleReport>

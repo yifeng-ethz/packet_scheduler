@@ -69,9 +69,9 @@
  <module
    name="opq_0"
    kind="ordered_priority_queue"
-   version="26.2.0.413"
+   version="26.3.10.414"
    enabled="1">
-  <parameter name="BUILD" value="413" />
+  <parameter name="BUILD" value="414" />
   <parameter name="CHANNEL_WIDTH" value="2" />
   <parameter name="DEBUG_LV" value="1" />
   <parameter name="FRAME_HIT_CNT_SIZE" value="16" />
@@ -96,11 +96,11 @@
   <parameter name="TICKET_FIFO_DEPTH" value="256" />
   <parameter name="TRACK_HEADER" value="true" />
   <parameter name="TRL_SIZE" value="1" />
-  <parameter name="VERSION_DATE" value="20260413" />
-  <parameter name="VERSION_GIT" value="238049856" />
+  <parameter name="VERSION_DATE" value="20260414" />
+  <parameter name="VERSION_GIT" value="1661933344" />
   <parameter name="VERSION_MAJOR" value="26" />
-  <parameter name="VERSION_MINOR" value="2" />
-  <parameter name="VERSION_PATCH" value="0" />
+  <parameter name="VERSION_MINOR" value="3" />
+  <parameter name="VERSION_PATCH" value="10" />
  </module>
  <interconnectRequirement for="$system" name="qsys_mm.clockCrossingAdapter" value="HANDSHAKE" />
  <interconnectRequirement for="$system" name="qsys_mm.enableEccProtection" value="FALSE" />

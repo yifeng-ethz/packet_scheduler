@@ -78,11 +78,11 @@ architecture rtl of opq_monolithic_4lane_merge is
 			DEBUG_LV            : natural := 1;
 			IP_UID              : natural := 1330663757;
 			VERSION_MAJOR       : natural := 26;
-			VERSION_MINOR       : natural := 2;
-			VERSION_PATCH       : natural := 0;
-			BUILD               : natural := 413;
-			VERSION_DATE        : natural := 20260413;
-			VERSION_GIT         : natural := 238049856;
+			VERSION_MINOR       : natural := 3;
+			VERSION_PATCH       : natural := 10;
+			BUILD               : natural := 414;
+			VERSION_DATE        : natural := 20260414;
+			VERSION_GIT         : natural := 1661933344;
 			INSTANCE_ID         : natural := 0
 		);
 		port (
@@ -157,11 +157,11 @@ begin
 			DEBUG_LV            => 1,
 			IP_UID              => 1330663757,
 			VERSION_MAJOR       => 26,
-			VERSION_MINOR       => 2,
-			VERSION_PATCH       => 0,
-			BUILD               => 413,
-			VERSION_DATE        => 20260413,
-			VERSION_GIT         => 238049856,
+			VERSION_MINOR       => 3,
+			VERSION_PATCH       => 10,
+			BUILD               => 414,
+			VERSION_DATE        => 20260414,
+			VERSION_GIT         => 1661933344,
 			INSTANCE_ID         => 0
 		)
 		port map (

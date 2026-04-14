@@ -2,7 +2,7 @@ Info: Starting: Create HDL design files for synthesis
 Info: qsys-generate /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/opq_monolithic_4lane_merge/opq_monolithic_4lane_merge.qsys --synthesis=VHDL --output-directory=/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/opq_monolithic_4lane_merge/generated/synthesis --family="Arria V" --part=5AGXBA7D4F31C5
 Progress: Loading opq_monolithic_4lane_merge/opq_monolithic_4lane_merge.qsys
 Progress: Reading input file
-Progress: Adding opq_0 [ordered_priority_queue 26.2.0.413]
+Progress: Adding opq_0 [ordered_priority_queue 26.3.10.414]
 Progress: Parameterizing module opq_0
 Progress: Building connections
 Progress: Parameterizing connections

@@ -1,4 +1,4 @@
-package require -exact qsys 16.0
+package require -exact qsys 16.1
 
 create_system {opq_monolithic_4lane_merge}
 
@@ -6,7 +6,7 @@ set_project_property DEVICE_FAMILY {Arria V}
 set_project_property DEVICE {5AGXBA7D4F31C5}
 set_project_property HIDE_FROM_IP_CATALOG {false}
 
-add_instance opq_0 ordered_priority_queue 26.2.0.0413
+add_instance opq_0 ordered_priority_queue 26.3.10.0414
 set_instance_parameter_value opq_0 {N_LANE} {4}
 set_instance_parameter_value opq_0 {MODE} {MERGING}
 set_instance_parameter_value opq_0 {TRACK_HEADER} {true}
