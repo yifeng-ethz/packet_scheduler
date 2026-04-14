@@ -1,8 +1,16 @@
+//------------------------------------------------------------------------------
+// IP Name   : opq_base_test
+// Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
+// Revision  : 0.1 - active base test for OPQ UVM harness
+// Description:
+//   Shared UVM base test with CSR helpers and scoreboard/counter checks.
+//------------------------------------------------------------------------------
 class opq_base_test extends uvm_test;
   `uvm_component_utils(opq_base_test)
 
   opq_env env;
   opq_scoreboard_cfg sb_cfg;
+  opq_dut_cfg dut_cfg;
   virtual opq_csr_if csr_vif;
 
   function new(string name = "opq_base_test", uvm_component parent = null);
@@ -18,6 +26,10 @@ class opq_base_test extends uvm_test;
   function void build_phase(uvm_phase phase);
     sb_cfg = create_scoreboard_cfg();
     uvm_config_db#(opq_scoreboard_cfg)::set(this, "env.scoreboard", "cfg", sb_cfg);
+    if (!uvm_config_db#(opq_dut_cfg)::get(this, "", "dut_cfg", dut_cfg)) begin
+      dut_cfg = opq_dut_cfg::type_id::create("dut_cfg");
+      uvm_config_db#(opq_dut_cfg)::set(this, "*", "dut_cfg", dut_cfg);
+    end
     super.build_phase(phase);
     if (!uvm_config_db#(virtual opq_csr_if)::get(this, "", "csr_vif", csr_vif)) begin
       `uvm_fatal(get_type_name(), "Missing csr_vif")

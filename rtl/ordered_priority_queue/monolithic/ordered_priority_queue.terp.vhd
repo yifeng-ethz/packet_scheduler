@@ -5,6 +5,9 @@
 -- Revision:            2.0 - all modules before frame table fully verified - Dec 11, 2025
 -- Revision:            2.1 - fix page_allocator baseline guards and alloc-page flow wrap - Apr 13, 2026
 -- Revision:            2.2 - add runtime CSR, per-lane counters, and software lane mask - Apr 13, 2026
+-- Revision:            2.3 - preserve full frame-base timestamp in subheader tickets - Apr 14, 2026
+-- Revision:            2.4 - consume full ts[15:0] from ingress header word 1 - Apr 14, 2026
+-- Revision:            2.5 - restore absolute ts[11:4] subheader contract with full frame ts[15:0] - Apr 14, 2026
 -- Description:         Aggregate multiple ingress data flows into one single egress data flow
 --
 --                      - data structure is defined as:
@@ -200,9 +203,9 @@ entity ${output_name} is
         IP_UID                  : natural := 16#4F50514D#; -- ASCII "OPQM"
         VERSION_MAJOR           : natural := 26;
         VERSION_MINOR           : natural := 3;
-        VERSION_PATCH           : natural := 1;
+        VERSION_PATCH           : natural := 4;
         BUILD                   : natural := 413;
-        VERSION_DATE            : natural := 20260413;
+        VERSION_DATE            : natural := 20260414;
         VERSION_GIT             : natural := 16#630F1720#;
         INSTANCE_ID             : natural := 0;
 
@@ -317,6 +320,11 @@ architecture rtl of ${output_name} is
             return a_v - b_v;
         end if;
         return 0;
+    end function;
+
+    function make_subheader_ticket_ts(frame_ts_base : unsigned(47 downto 0); shd_ts : std_logic_vector(7 downto 0)) return unsigned is
+    begin
+        return frame_ts_base(47 downto 12) & unsigned(shd_ts) & to_unsigned(0, 4);
     end function;
 
     function pack_version_word(
@@ -659,6 +667,7 @@ architecture rtl of ${output_name} is
         ticket_wdata                    : std_logic_vector(TICKET_FIFO_DATA_WIDTH-1 downto 0);
         ticket_credit                   : unsigned(TICKET_FIFO_ADDR_WIDTH-1 downto 0);
         -- register
+        frame_ts_base                   : unsigned(47 downto 0);
         running_ts                      : unsigned(47 downto 0);
         shd_len                         : unsigned(MAX_PKT_LENGTH_BITS-1 downto 0);
         dt_type                         : std_logic_vector(5 downto 0); -- 6 bits, unique for each subdetector
@@ -681,6 +690,7 @@ architecture rtl of ${output_name} is
         ticket_wptr     => (others => '0'),
         ticket_wdata    => (others => '0'),
         ticket_credit   => to_unsigned(TICKET_FIFO_MAX_CREDIT,TICKET_FIFO_ADDR_WIDTH),
+        frame_ts_base   => (others => '0'),
         running_ts      => (others => '0'),
         shd_len         => (others => '0'),
         dt_type         => (others => '0'),
@@ -1325,7 +1335,7 @@ begin
             -- assemble write ticket FIFO wdata
             -- shr ticket = {alert_sop_eop[1:0] ... ts[47:0], start addr[9:0], length[9:0]}
             if (ingress_parser_state(i) = IDLE) then -- IDLE : use comb ts and subh_cnt from ingress data
-                ingress_parser_if_write_ticket_data(i)(TICKET_TS_HI downto TICKET_TS_LO)                        <= std_logic_vector(ingress_parser(i).running_ts(47 downto 12)) & ingress_parser_if_subheader_shd_ts(i) & "0000"; -- ts[47:0]
+                ingress_parser_if_write_ticket_data(i)(TICKET_TS_HI downto TICKET_TS_LO)                        <= std_logic_vector(make_subheader_ticket_ts(ingress_parser(i).frame_ts_base, ingress_parser_if_subheader_shd_ts(i))); -- ts[47:0]
                 ingress_parser_if_write_ticket_data(i)(TICKET_LANE_RD_OFST_HI downto TICKET_LANE_RD_OFST_LO)    <= std_logic_vector(ingress_parser(i).lane_start_addr); -- start address of the lane FIFO
                 ingress_parser_if_write_ticket_data(i)(TICKET_BLOCK_LEN_HI downto TICKET_BLOCK_LEN_LO)          <= std_logic_vector(ingress_parser_if_subheader_hit_cnt(i)); -- length of the subheader (8-bit)
             else -- WR_HIT : use registered ts and subh_cnt
@@ -1400,7 +1410,7 @@ begin
                                 -- write ticket to ticket FIFO
                                 -- ticket = {ts, start addr, length}
                                 -- errorDescriptor = {hit_err shd_err hdr_err}
-                                ingress_parser(i).running_ts(11 downto 4)   <= unsigned(ingress_parser_if_subheader_shd_ts(i)); -- update subheader timestamp
+                                ingress_parser(i).running_ts                <= make_subheader_ticket_ts(ingress_parser(i).frame_ts_base, ingress_parser_if_subheader_shd_ts(i)); -- absolute ts = frame ts[47:12] + subheader ts[11:4]
                                 ingress_parser(i).shd_len                   <= ingress_parser_if_subheader_hit_cnt(i); -- shd_hcnt (8-bit) from 0 to 255 hits + 1 (SHD_SIZE)
                                 if (ingress_parser_if_subheader_hit_cnt(i) >= ingress_parser(i).lane_credit) then -- pkg size >= free words
                                     -- error : incoming packet too large for lane FIFO (lane FIFO low credit)
@@ -1461,12 +1471,15 @@ begin
                             -- update header information (**48-bit running_ts**, 16-bit pkg_cnt, 15-bit running_shd_cnt, 31-bit send_ts, 16-bit hit_cnt)
                             case update_header_ts_flow(i) is
                                 when 0 => -- [data header 0]
+                                    ingress_parser(i).frame_ts_base(47 downto 16)   <= unsigned(asi_ingress_data(i)(31 downto 0));
                                     ingress_parser(i).running_ts(47 downto 16)      <= unsigned(asi_ingress_data(i)(31 downto 0));
                                     update_header_ts_flow(i)                        <= update_header_ts_flow(i) + 1; -- next state
                                 when 1 => -- [data header 1]
-                                    -- Capture the full low 16 timestamp bits from the header word so the SOP ticket can
-                                    -- carry an accurate frame timestamp even in N_SHD=128 mode (bit11 toggles).
-                                    ingress_parser(i).running_ts(15 downto 0)       <= unsigned(asi_ingress_data(i)(31 downto 16));
+                                    -- Consume the full frame-base ts[15:0] directly from the ingress
+                                    -- header word so absolute ticket timestamps stay unambiguous even
+                                    -- after long lane stalls or non-default frame periods.
+                                    ingress_parser(i).frame_ts_base(15 downto 0)   <= unsigned(asi_ingress_data(i)(31 downto 16));
+                                    ingress_parser(i).running_ts(15 downto 0)      <= unsigned(asi_ingress_data(i)(31 downto 16));
                                     ingress_parser(i).pkg_cnt                       <= asi_ingress_data(i)(15 downto 0);
                                     update_header_ts_flow(i)                        <= update_header_ts_flow(i) + 1; -- next state
                                 when 2 => -- [debug word 0]
@@ -1530,7 +1543,7 @@ begin
                                 -- write ticket to ticket FIFO
                                 -- ticket = {ts, start addr, length}
                                 -- errorDescriptor = {hit_err shd_err hdr_err}
-                                ingress_parser(i).running_ts(11 downto 4)   <= unsigned(ingress_parser_if_subheader_shd_ts(i)); -- update subheader timestamp
+                                ingress_parser(i).running_ts                <= make_subheader_ticket_ts(ingress_parser(i).frame_ts_base, ingress_parser_if_subheader_shd_ts(i)); -- absolute ts = frame ts[47:12] + subheader ts[11:4]
                                 ingress_parser(i).shd_len                   <= ingress_parser_if_subheader_hit_cnt(i); -- shd_hcnt (8-bit) from 0 to 255 hits + 1 (SHD_SIZE)
                                 if (ingress_parser_if_subheader_hit_cnt(i) >= ingress_parser(i).lane_credit) then -- pkg size >= free words
                                     -- error : incoming packet too large for lane FIFO (lane FIFO low credit)

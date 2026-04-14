@@ -1,7 +1,10 @@
 -- ------------------------------------------------------------------------------------------------------------
 -- IP Name:             opq_ingress_parser
--- Author:              Yifeng Wang (original OPQ) / split+refactor by Codex
+-- Author:              Yifeng Wang (yifenwan@phys.ethz.ch)
 -- Revision:            0.1 - split from ordered_priority_queue.terp.vhd
+-- Revision:            0.2 - preserve full frame-base timestamp in subheader tickets
+-- Revision:            0.3 - consume full ts[15:0] from ingress header word 1
+-- Revision:            0.4 - restore absolute ts[11:4] subheader contract with full frame ts[15:0]
 -- Description:         Parses per-lane ingress Avalon-ST words into lane FIFO hit data and ticket FIFO
 --                      descriptors. Trims hits beyond N_HIT to avoid downstream overflow.
 -- ------------------------------------------------------------------------------------------------------------
@@ -92,6 +95,11 @@ architecture rtl of opq_ingress_parser is
   constant LANE_FIFO_MAX_CREDIT  : natural := LANE_FIFO_DEPTH - 2;
   constant TICKET_FIFO_MAX_CREDIT : natural := TICKET_FIFO_DEPTH - 1;
 
+  function make_subheader_ticket_ts(frame_ts_base : unsigned(47 downto 0); shd_ts : std_logic_vector(7 downto 0)) return unsigned is
+  begin
+    return frame_ts_base(47 downto 12) & unsigned(shd_ts) & to_unsigned(0, 4);
+  end function;
+
   constant TICKET_TS_LO            : natural := 0;
   constant TICKET_TS_HI            : natural := 47;
   constant TICKET_LANE_RD_OFST_LO  : natural := 48;
@@ -127,7 +135,8 @@ architecture rtl of opq_ingress_parser is
     ticket_wdata  : std_logic_vector(TICKET_FIFO_DATA_WIDTH-1 downto 0);
     ticket_credit : ticket_addr_t;
 
-    running_ts       : unsigned(47 downto 0);
+    frame_ts_base     : unsigned(47 downto 0);
+    running_ts        : unsigned(47 downto 0);
     pending_ticket_ts : unsigned(47 downto 0);
 
     hdr_flow : natural range 0 to 3;
@@ -154,6 +163,7 @@ architecture rtl of opq_ingress_parser is
     ticket_wptr => (others => '0'),
     ticket_wdata => (others => '0'),
     ticket_credit => to_unsigned(TICKET_FIFO_MAX_CREDIT, TICKET_FIFO_ADDR_W),
+    frame_ts_base => (others => '0'),
     running_ts => (others => '0'),
     pending_ticket_ts => (others => '0'),
     hdr_flow => 0,
@@ -311,11 +321,11 @@ begin
                 end if;
                 r(i).lane_start_addr <= r(i).lane_wptr;
 
-                -- Ticket timestamp: {running_ts[47:12], shd_ts[7:0], 4'b0}.
-                ts_v := r(i).running_ts(47 downto 12) & unsigned(subh_shd_ts(i)) & to_unsigned(0, 4);
+                -- Ticket timestamp uses the full frame ts[47:12] plus the absolute
+                -- subheader ts[11:4] carried in the ingress subheader word.
+                ts_v := make_subheader_ticket_ts(r(i).frame_ts_base, subh_shd_ts(i));
                 r(i).pending_ticket_ts <= ts_v;
-                r(i).running_ts(11 downto 4) <= unsigned(subh_shd_ts(i));
-                r(i).running_ts(3 downto 0)  <= (others => '0');
+                r(i).running_ts <= ts_v;
 
                 if shd_len_v = 0 then
                   -- Empty ticket: write immediately (no hit words will follow).
@@ -425,10 +435,14 @@ begin
               case r(i).hdr_flow is
                 when 0 =>
                   -- header word0: ts[47:16]
+                  r(i).frame_ts_base(47 downto 16) <= unsigned(i_ingress_data(i)(31 downto 0));
                   r(i).running_ts(47 downto 16) <= unsigned(i_ingress_data(i)(31 downto 0));
                   r(i).hdr_flow <= 1;
                 when 1 =>
                   -- header word1: ts[15:0] + serial/pkg_cnt[15:0]
+                  -- Consume the full frame-base low word directly from ingress so ticket
+                  -- timestamps remain unambiguous after long lane stalls.
+                  r(i).frame_ts_base(15 downto 0) <= unsigned(i_ingress_data(i)(31 downto 16));
                   r(i).running_ts(15 downto 0) <= unsigned(i_ingress_data(i)(31 downto 16));
                   r(i).pkg_cnt <= unsigned(i_ingress_data(i)(15 downto 0));
                   r(i).hdr_flow <= 2;

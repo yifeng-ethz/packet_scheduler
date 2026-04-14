@@ -1,3 +1,6 @@
+#
+# Author: Yifeng Wang (yifenwan@phys.ethz.ch)
+#
 package require -exact qsys 16.1
 # altera_terp is shipped with ACDS under
 # $QUARTUS_ROOTDIR/../ip/altera/common/hw_tcl_packages/altera_terp.tcl
@@ -5,10 +8,10 @@ package require -exact altera_terp 1.0
 
 set_module_property NAME                             ordered_priority_queue
 set_module_property DISPLAY_NAME                     "Ordered Priority Queue"
-set_module_property VERSION                          26.3.1.0413
+set_module_property VERSION                          26.3.4.0414
 set_module_property DESCRIPTION                      "Ordered Priority Queue Mu3e IP Core"
 set_module_property GROUP                            "Mu3e Data Plane/Modules"
-set_module_property AUTHOR                           "Yifeng Wang"
+set_module_property AUTHOR                           "Yifeng Wang (yifenwan@phys.ethz.ch)"
 set_module_property ICON_PATH                        ../quartus_system/logo/mu3e_logo.png
 set_module_property INTERNAL                         false
 set_module_property OPAQUE_ADDRESS_MAP               true
@@ -40,9 +43,9 @@ proc is_power_of_two {value} {
 set IP_UID_DEFAULT_CONST        1330663757
 set VERSION_MAJOR_DEFAULT_CONST 26
 set VERSION_MINOR_DEFAULT_CONST 3
-set VERSION_PATCH_DEFAULT_CONST 1
-set BUILD_DEFAULT_CONST         413
-set VERSION_DATE_DEFAULT_CONST  20260413
+set VERSION_PATCH_DEFAULT_CONST 4
+set BUILD_DEFAULT_CONST         414
+set VERSION_DATE_DEFAULT_CONST  20260414
 # 0x630F1720 — current submodule HEAD baseline before the DV promotion tranche
 set VERSION_GIT_DEFAULT_CONST   1661933344
 set INSTANCE_ID_DEFAULT_CONST   0
@@ -532,7 +535,7 @@ add_display_item "Debug" DEBUG_LV parameter
 add_display_item $TAB_IDENTITY "Delivered Profile" GROUP
 add_display_item $TAB_IDENTITY "Versioning"        GROUP
 
-add_html_text "Delivered Profile" profile_html {<html><b>Catalog revision</b><br/>This release is packaged as <b>26.3.1.0413</b>.<br/><br/><b>Runtime visibility</b><br/>The monolithic OPQ exposes a runtime <b>CSR Avalon-MM slave</b>. Software can read the common Mu3e <b>UID + META</b> header, inspect per-lane write/read/drop counters, clear counter state, and program a per-lane packet-boundary mask.</html>}
+add_html_text "Delivered Profile" profile_html {<html><b>Catalog revision</b><br/>This release is packaged as <b>26.3.4.0414</b>.<br/><br/><b>Runtime visibility</b><br/>The monolithic OPQ exposes a runtime <b>CSR Avalon-MM slave</b>. Software can read the common Mu3e <b>UID + META</b> header, inspect per-lane write/read/drop counters, clear counter state, and program a per-lane packet-boundary mask.</html>}
 
 add_html_text "Versioning" versioning_html {<html><b>Common identity header</b><br/>CSR word <b>0x00</b> = UID. CSR word <b>0x01</b> = META with page selector[1:0] choosing VERSION / DATE / GIT / INSTANCE_ID.<br/><br/>VERSION encoding: MAJOR[31:24] = 2-digit year, MINOR[23:16], PATCH[15:12], BUILD[11:0] = MMDD.</html>}
 add_display_item "Versioning" IP_UID        parameter

@@ -1,3 +1,12 @@
+//------------------------------------------------------------------------------
+// IP Name   : opq_scoreboard
+// Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
+// Revision  : 0.1 - add full absolute hit timestamp reconstruction
+// Revision  : 0.2 - consume explicit full frame ts[15:0] from header word 2
+// Revision  : 0.3 - reconstruct hits from frame ts[47:12] + absolute subheader ts[11:4]
+// Description:
+//   Scoreboard for ingress-to-egress hit integrity and CSR-visible packet counts.
+//------------------------------------------------------------------------------
 class opq_scoreboard extends uvm_component;
   `uvm_component_utils(opq_scoreboard)
 
@@ -9,6 +18,17 @@ class opq_scoreboard extends uvm_component;
     bit [7:0]  shd_ts;
   } opq_hit_trace_t;
 
+  typedef struct {
+    bit [47:0] frame_ts_full;
+    bit [15:0] pkg_cnt;
+    bit [15:0] subh_cnt;
+    bit [15:0] hit_cnt;
+    bit [31:0] data_header0;
+    bit [31:0] data_header1;
+    bit [31:0] debug_header0;
+    bit [31:0] debug_header1;
+  } opq_frame_meta_t;
+
   uvm_analysis_imp_frame #(opq_frame_item, opq_scoreboard) frame_imp;
   uvm_analysis_imp_ingress #(opq_beat_item, opq_scoreboard) ingress_imp;
   uvm_analysis_imp_egress #(opq_beat_item, opq_scoreboard) egress_imp;
@@ -19,6 +39,8 @@ class opq_scoreboard extends uvm_component;
   bit [7:0]  ingress_current_shd  [OPQ_N_LANE];
   int        ingress_header_idx   [OPQ_N_LANE];
   int        ingress_hits_pending [OPQ_N_LANE];
+  bit        ingress_have_frame_meta [OPQ_N_LANE];
+  opq_frame_meta_t ingress_frame_meta [OPQ_N_LANE];
 
   bit        egress_in_packet;
   bit [47:0] egress_frame_ts;
@@ -37,6 +59,7 @@ class opq_scoreboard extends uvm_component;
   int unsigned actual_egress_hit_cnt;
 
   opq_hit_trace_t pending_ingress_hits[OPQ_N_LANE][$];
+  opq_frame_meta_t pending_ingress_frames[OPQ_N_LANE][$];
   opq_hit_trace_t expected_hits[$];
   opq_hit_trace_t actual_hits[$];
 
@@ -53,6 +76,8 @@ class opq_scoreboard extends uvm_component;
     ingress_current_shd[lane_id] = '0;
     ingress_header_idx[lane_id] = -1;
     ingress_hits_pending[lane_id] = 0;
+    ingress_have_frame_meta[lane_id] = 1'b0;
+    ingress_frame_meta[lane_id] = '{default: '0};
   endfunction
 
   function automatic void reset_egress_state();
@@ -90,6 +115,14 @@ class opq_scoreboard extends uvm_component;
     return $sformatf("%012h_%08h", hit_ts, hit_word);
   endfunction
 
+  function automatic bit [47:0] make_abs_hit_ts(bit [47:0] frame_ts, bit [7:0] shd_ts);
+    return {frame_ts[47:12], shd_ts, 4'b0000};
+  endfunction
+
+  function automatic bit [47:0] make_egress_hit_ts(bit [47:0] frame_ts, bit [7:0] shd_ts_abs_low8);
+    return {frame_ts[47:12], shd_ts_abs_low8, 4'b0000};
+  endfunction
+
   function automatic void push_actual_hit(bit [31:0] hit_word);
     opq_hit_trace_t trace;
 
@@ -102,12 +135,23 @@ class opq_scoreboard extends uvm_component;
   endfunction
 
   function void write_frame(opq_frame_item frame);
+    opq_frame_meta_t meta;
     opq_hit_trace_t trace;
 
     if (frame.lane_id < 0 || frame.lane_id >= OPQ_N_LANE) begin
       `uvm_error(get_type_name(), $sformatf("Frame contract arrived with invalid lane_id=%0d", frame.lane_id))
       return;
     end
+
+    meta.frame_ts_full = frame.frame_ts;
+    meta.pkg_cnt = frame.pkg_cnt;
+    meta.subh_cnt = frame.frame_subh_count_bits();
+    meta.hit_cnt = frame.frame_hit_count_bits();
+    meta.data_header0 = make_frame_data_header0(frame.frame_ts);
+    meta.data_header1 = make_frame_data_header1(frame.frame_ts, frame.pkg_cnt);
+    meta.debug_header0 = make_frame_debug_header0(frame.frame_subh_count_bits(), frame.frame_hit_count_bits());
+    meta.debug_header1 = make_frame_debug_header1(frame.frame_ts);
+    pending_ingress_frames[frame.lane_id].push_back(meta);
 
     expected_lane_hdr_cnt[frame.lane_id]++;
     expected_lane_shd_cnt[frame.lane_id] += frame.subheaders.size();
@@ -116,7 +160,7 @@ class opq_scoreboard extends uvm_component;
     foreach (frame.subheaders[i]) begin
       foreach (frame.subheaders[i].hits[j]) begin
         trace.hit_id = frame.subheaders[i].hits[j].debug_hit_id;
-        trace.hit_ts = {frame.frame_ts[47:12], frame.subheaders[i].shd_ts, 4'b0000};
+        trace.hit_ts = make_abs_hit_ts(frame.frame_ts, frame.subheaders[i].shd_ts);
         trace.hit_word = frame.subheaders[i].hits[j].payload_word;
         trace.lane_id = frame.lane_id;
         trace.shd_ts = frame.subheaders[i].shd_ts;
@@ -140,6 +184,17 @@ class opq_scoreboard extends uvm_component;
     end
 
     if (datak == 4'b0001 && data32[7:0] == K285 && beat.sop) begin
+      if (pending_ingress_frames[lane_id].size() == 0) begin
+        `uvm_error(get_type_name(), $sformatf(
+          "Ingress lane %0d observed frame preamble without queued frame metadata",
+          lane_id
+        ))
+        ingress_have_frame_meta[lane_id] = 1'b0;
+      end else begin
+        ingress_frame_meta[lane_id] = pending_ingress_frames[lane_id].pop_front();
+        ingress_have_frame_meta[lane_id] = 1'b1;
+        ingress_frame_ts[lane_id] = ingress_frame_meta[lane_id].frame_ts_full;
+      end
       ingress_header_idx[lane_id] = 0;
       ingress_hits_pending[lane_id] = 0;
       return;
@@ -147,14 +202,49 @@ class opq_scoreboard extends uvm_component;
 
     if (ingress_header_idx[lane_id] >= 0) begin
       case (ingress_header_idx[lane_id])
-        0: ingress_frame_ts[lane_id][47:16] = data32;
-        1: ingress_frame_ts[lane_id][15:0] = data32[31:16];
+        0: begin
+          if (cfg.check_feb_contract && ingress_have_frame_meta[lane_id] &&
+              data32 != ingress_frame_meta[lane_id].data_header0) begin
+            `uvm_error(get_type_name(), $sformatf(
+              "Ingress lane %0d data_header0 mismatch expected=0x%08h got=0x%08h",
+              lane_id, ingress_frame_meta[lane_id].data_header0, data32
+            ))
+          end
+        end
+        1: begin
+          if (cfg.check_feb_contract && ingress_have_frame_meta[lane_id] &&
+              data32 != ingress_frame_meta[lane_id].data_header1) begin
+            `uvm_error(get_type_name(), $sformatf(
+              "Ingress lane %0d data_header1 mismatch expected=0x%08h got=0x%08h",
+              lane_id, ingress_frame_meta[lane_id].data_header1, data32
+            ))
+          end
+        end
+        2: begin
+          if (cfg.check_feb_contract && ingress_have_frame_meta[lane_id] &&
+              data32 != ingress_frame_meta[lane_id].debug_header0) begin
+            `uvm_error(get_type_name(), $sformatf(
+              "Ingress lane %0d debug_header0 mismatch expected=0x%08h got=0x%08h",
+              lane_id, ingress_frame_meta[lane_id].debug_header0, data32
+            ))
+          end
+        end
+        3: begin
+          if (cfg.check_feb_contract && ingress_have_frame_meta[lane_id] &&
+              data32 != ingress_frame_meta[lane_id].debug_header1) begin
+            `uvm_error(get_type_name(), $sformatf(
+              "Ingress lane %0d debug_header1 mismatch expected=0x%08h got=0x%08h",
+              lane_id, ingress_frame_meta[lane_id].debug_header1, data32
+            ))
+          end
+        end
         default: begin
         end
       endcase
 
       if (ingress_header_idx[lane_id] == 3) begin
         ingress_header_idx[lane_id] = -1;
+        ingress_have_frame_meta[lane_id] = 1'b0;
       end else begin
         ingress_header_idx[lane_id]++;
       end
@@ -201,7 +291,7 @@ class opq_scoreboard extends uvm_component;
 
     if (datak == 4'b0001 && data32[7:0] == K237) begin
       ingress_current_shd[lane_id] = data32[31:24];
-      ingress_current_ts[lane_id] = {ingress_frame_ts[lane_id][47:12], data32[31:24], 4'b0000};
+      ingress_current_ts[lane_id] = make_abs_hit_ts(ingress_frame_ts[lane_id], data32[31:24]);
       ingress_hits_pending[lane_id] = data32[15:8];
     end
   endfunction
@@ -261,7 +351,7 @@ class opq_scoreboard extends uvm_component;
 
     if (datak == 4'b0001 && data32[7:0] == K237) begin
       egress_current_shd = data32[31:24];
-      egress_current_ts = {egress_frame_ts[47:12], data32[31:24], 4'b0000};
+      egress_current_ts = make_egress_hit_ts(egress_frame_ts, data32[31:24]);
       egress_hits_pending = data32[15:8];
       actual_egress_shd_cnt++;
       return;
@@ -299,6 +389,12 @@ class opq_scoreboard extends uvm_component;
         `uvm_error(get_type_name(), $sformatf(
           "Lane %0d still has %0d queued debug HIT_ID entries that never reached ingress",
           i, pending_ingress_hits[i].size()
+        ))
+      end
+      if (pending_ingress_frames[i].size() != 0) begin
+        `uvm_error(get_type_name(), $sformatf(
+          "Lane %0d still has %0d queued frame metadata entries that never reached ingress",
+          i, pending_ingress_frames[i].size()
         ))
       end
     end

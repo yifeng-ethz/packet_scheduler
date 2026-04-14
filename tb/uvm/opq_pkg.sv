@@ -1,3 +1,10 @@
+//------------------------------------------------------------------------------
+// IP Name   : opq_pkg
+// Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
+// Revision  : 0.1 - align UVM frame header with full ts[15:0] ingress contract
+// Description:
+//   Shared UVM types, helpers, and packet-format builders for the OPQ harness.
+//------------------------------------------------------------------------------
 package opq_pkg;
   import uvm_pkg::*;
   `include "uvm_macros.svh"
@@ -8,6 +15,9 @@ package opq_pkg;
 
 `ifndef OPQ_PAGE_RAM_DEPTH
 `define OPQ_PAGE_RAM_DEPTH 65536
+`endif
+`ifndef OPQ_N_SHD
+`define OPQ_N_SHD 256
 `endif
 
   localparam int OPQ_N_LANE = 2;
@@ -21,10 +31,11 @@ package opq_pkg;
   localparam int OPQ_LANE_FIFO_MAX_CREDIT = OPQ_LANE_FIFO_DEPTH - 2;
   localparam int OPQ_TICKET_FIFO_MAX_CREDIT = OPQ_TICKET_FIFO_DEPTH - 1;
   localparam int OPQ_HANDLE_FIFO_MAX_CREDIT = OPQ_HANDLE_FIFO_DEPTH - 2;
-  localparam int OPQ_N_SHD = 128;
+  localparam int OPQ_N_SHD = `OPQ_N_SHD;
   localparam int OPQ_N_HIT = 255;
   localparam int OPQ_MIN_SOP_GAP_CYCLES = 4000;
   localparam int OPQ_POST_RESET_SETTLE_CYCLES = 4;
+  localparam int OPQ_FRAME_HDR_AUX_WORDS = 4;
 
   localparam bit [7:0] K285 = 8'hBC;
   localparam bit [7:0] K284 = 8'h9C;
@@ -68,6 +79,43 @@ package opq_pkg;
     data32[31:24] = shd_ts;
     data32[15:8] = hit_cnt;
     data32[7:0] = K237;
+    return data32;
+  endfunction
+
+  function automatic bit [35:0] frame_ts_hdr36(bit [47:0] frame_ts);
+    return frame_ts[47:12];
+  endfunction
+
+  function automatic bit [31:0] make_frame_data_header0(bit [47:0] frame_ts);
+    return frame_ts_hdr36(frame_ts)[35:4];
+  endfunction
+
+  function automatic bit [31:0] make_frame_data_header1(
+    bit [47:0] frame_ts,
+    bit [15:0] pkg_cnt
+  );
+    bit [31:0] data32;
+    data32 = '0;
+    data32[31:16] = frame_ts[15:0];
+    data32[15:0] = pkg_cnt;
+    return data32;
+  endfunction
+
+  function automatic bit [31:0] make_frame_debug_header0(
+    bit [15:0] subheader_cnt,
+    bit [15:0] hit_cnt
+  );
+    bit [31:0] data32;
+    data32 = '0;
+    data32[30:16] = subheader_cnt[14:0];
+    data32[15:0] = hit_cnt;
+    return data32;
+  endfunction
+
+  function automatic bit [31:0] make_frame_debug_header1(bit [47:0] frame_ts);
+    bit [31:0] data32;
+    data32 = '0;
+    data32[30:0] = frame_ts[30:0];
     return data32;
   endfunction
 
@@ -204,13 +252,37 @@ package opq_pkg;
     endfunction
   endclass
 
+  class opq_dut_cfg extends uvm_object;
+    int unsigned n_lane;
+    int unsigned page_ram_depth;
+    int unsigned n_shd;
+    int unsigned n_hit;
+
+    `uvm_object_utils_begin(opq_dut_cfg)
+      `uvm_field_int(n_lane, UVM_DEFAULT)
+      `uvm_field_int(page_ram_depth, UVM_DEFAULT)
+      `uvm_field_int(n_shd, UVM_DEFAULT)
+      `uvm_field_int(n_hit, UVM_DEFAULT)
+    `uvm_object_utils_end
+
+    function new(string name = "opq_dut_cfg");
+      super.new(name);
+      n_lane = OPQ_N_LANE;
+      page_ram_depth = OPQ_PAGE_RAM_DEPTH;
+      n_shd = OPQ_N_SHD;
+      n_hit = OPQ_N_HIT;
+    endfunction
+  endclass
+
   class opq_scoreboard_cfg extends uvm_object;
     bit check_hit_integrity;
+    bit check_feb_contract;
     bit require_egress_preamble;
     int unsigned min_sop_count;
 
     `uvm_object_utils_begin(opq_scoreboard_cfg)
       `uvm_field_int(check_hit_integrity, UVM_DEFAULT)
+      `uvm_field_int(check_feb_contract, UVM_DEFAULT)
       `uvm_field_int(require_egress_preamble, UVM_DEFAULT)
       `uvm_field_int(min_sop_count, UVM_DEFAULT)
     `uvm_object_utils_end
@@ -218,6 +290,7 @@ package opq_pkg;
     function new(string name = "opq_scoreboard_cfg");
       super.new(name);
       check_hit_integrity = 1'b1;
+      check_feb_contract = 1'b1;
       require_egress_preamble = 1'b0;
       min_sop_count = 0;
     endfunction

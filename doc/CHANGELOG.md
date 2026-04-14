@@ -1,4 +1,11 @@
 # Changelog
+Author: Yifeng Wang (yifenwan@phys.ethz.ch)
+
+## 26.3.4.0414
+
+- **RTL**: kept the full ingress header `ts[15:0]` exposure, but fixed the subheader reconstruction semantics back to the original absolute contract. Monolithic and split ingress parsers now form per-subheader timestamps as `frame_ts[47:12] | shd_ts[11:4] | 4'b0` instead of treating the subheader byte as an additive offset into the full low word.
+- **Verification Harness Contract**: corrected the UVM scoreboard to use the same absolute timestamp contract for both ingress expectation and egress observation. This removes the false `N_SHD=128` boundary mismatch that appeared only when frame periods were smaller than the old `4096`-cycle default spacing.
+- **Verification**: default `N_SHD=256` behavior remains compatible, while the restored absolute subheader contract reopens the reduced-window parameter sweep on a sound timestamp basis. `N_SHD=512` stays an explicit open contract/debug topic because the ingress subheader timestamp field itself is still only 8 bits wide and the original OPQ header documents that counts above 256 subheaders are dropped.
 
 ## 26.3.1.0413
 
