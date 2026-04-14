@@ -15,14 +15,23 @@ fi
 
 if [[ "$#" -eq 0 ]]; then
   TESTS=(
-    opq_basic_smoke_test
+    opq_basic_subheader_shape_test
     opq_edge_backpressure_test
     opq_edge_always_ready_test
+    opq_edge_ready_medium_profile_test
+    opq_edge_stuck_low_backpressure_test
+    opq_edge_toggle_backpressure_test
     opq_prof_stress_test
+    opq_prof_lane_skew_test
     opq_error_lane_mask_test
-    opq_error_ftable_overflow_test
+    opq_error_lane_mask_single_hit_test
+    opq_error_lane_mask_burst_test
     opq_error_counter_clear_test
     opq_cross_bp_credit_test
+    opq_cross_drr_allowance_test
+    opq_cross_drr_idle_lane_test
+    opq_cross_drr_zero_allowance_test
+    opq_cross_drr_short_allowance_test
   )
 else
   TESTS=("$@")
@@ -32,6 +41,10 @@ rm -rf "${COV_DIR}"
 mkdir -p "${COV_DIR}"
 
 COV_ENABLE=1 "${SCRIPT_DIR}/run_uvm.sh" "${TESTS[@]}"
+OPQ_N_SHD_LIST=128,256,512 COV_ENABLE=1 "${SCRIPT_DIR}/run_param.sh" \
+  opq_basic_smoke_test \
+  opq_basic_ts_boundary_test \
+  opq_edge_max_hits_test
 
 mapfile -t UCDBS < <(find "${COV_DIR}" -maxdepth 1 -type f -name '*.ucdb' | sort)
 if [[ "${#UCDBS[@]}" -eq 0 ]]; then

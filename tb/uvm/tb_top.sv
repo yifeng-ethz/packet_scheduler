@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 // IP Name   : tb_top
 // Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
-// Revision  : 0.2 - enable absolute-ts hit contract SVA and publish dut_cfg
+// Revision  : 0.3 - add DRR arbiter SVA for the VHDL monolithic DUT path
 // Description:
 //   Top-level mixed-language OPQ UVM harness wrapper.
 //------------------------------------------------------------------------------
@@ -20,6 +20,7 @@ module tb_top;
   opq_ingress_if ingress_if [OPQ_N_LANE] (d_clk);
   opq_egress_if egress_if (d_clk);
   opq_csr_if csr_if (d_clk);
+  opq_drop_if #(OPQ_N_LANE) drop_if (d_clk);
 
   always #(CLK_PERIOD/2) d_clk = ~d_clk;
 
@@ -36,6 +37,25 @@ module tb_top;
   endgenerate
   assign egress_if.reset = d_reset;
   assign csr_if.reset = d_reset;
+  assign drop_if.reset = d_reset;
+
+`ifndef OPQ_USE_NATIVE_SV
+  generate
+    for (i = 0; i < OPQ_N_LANE; i++) begin : gen_drop_tap
+      assign drop_if.valid[i] = dut.u_vhdl.u_impl.dbg_drop_valid[i];
+      assign drop_if.shd_drop_cnt[i] = drop_if.valid[i] ? 16'd1 : 16'd0;
+      assign drop_if.hit_drop_cnt[i] = drop_if.valid[i] ? dut.u_vhdl.u_impl.dbg_drop_hit_cnt[(i*16) +: 16] : 16'd0;
+    end
+  endgenerate
+`else
+  generate
+    for (i = 0; i < OPQ_N_LANE; i++) begin : gen_drop_tap_stub
+      assign drop_if.valid[i] = 1'b0;
+      assign drop_if.shd_drop_cnt[i] = '0;
+      assign drop_if.hit_drop_cnt[i] = '0;
+    end
+  endgenerate
+`endif
 
   ordered_priority_queue_dut_sv dut (
     .asi_ingress_0_data(ingress_if[0].data),
@@ -114,6 +134,23 @@ module tb_top;
     .ready(egress_if.ready)
   );
 
+`ifndef OPQ_USE_NATIVE_SV
+  opq_drr_sva #(
+    .N_LANE(OPQ_N_LANE)
+  ) drr_sva (
+    .clk(d_clk),
+    .reset(d_reset),
+    .req_raw(dut.u_vhdl.u_impl.b2p_arb_req),
+    .req_eligible(dut.u_vhdl.u_impl.b2p_arb_req_eligible),
+    .gnt(dut.u_vhdl.u_impl.b2p_arb_gnt),
+    .sel_mask(dut.u_vhdl.u_impl.b2p_arb_sel_mask_dbg),
+    .lock_event(dut.u_vhdl.u_impl.b2p_arb_lock_event),
+    .defer_event(dut.u_vhdl.u_impl.b2p_arb_defer_event),
+    .locked(dut.u_vhdl.u_impl.b2p_arb_locked),
+    .pa_write(dut.u_vhdl.u_impl.b2p_arb_pa_write)
+  );
+`endif
+
   initial begin
     opq_dut_cfg dut_cfg;
 
@@ -123,6 +160,7 @@ module tb_top;
     uvm_config_db#(virtual opq_ingress_if)::set(null, "*", "ingress_vif_1", ingress_if[1]);
     uvm_config_db#(virtual opq_egress_if)::set(null, "*", "egress_vif", egress_if);
     uvm_config_db#(virtual opq_csr_if)::set(null, "*", "csr_vif", csr_if);
+    uvm_config_db#(virtual opq_drop_if #(OPQ_N_LANE))::set(null, "*", "drop_vif", drop_if);
     uvm_config_db#(opq_dut_cfg)::set(null, "*", "dut_cfg", dut_cfg);
     run_test();
   end

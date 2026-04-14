@@ -13,6 +13,11 @@ history, but they are not current signoff evidence.
 
 ## Source Material Reviewed
 
+- `packet_scheduler/tb/DV_PLAN.md`
+- `packet_scheduler/tb/DV_HARNESS.md`
+- `packet_scheduler/tb/DV_PARAM.md`
+- `packet_scheduler/tb/DV_PROBE.md`
+- `packet_scheduler/tb/DV_FORMAL.md`
 - `packet_scheduler/legacy/tb/DV_PLAN.md`
 - `packet_scheduler/legacy/tb/DV_HARNESS.md`
 - `slow-control_hub/doc/VERIFICATION_SIGNOFF.md`
@@ -88,16 +93,15 @@ runtime without analysis.
 
 ## Current Gaps
 
-The review of the archived packet_scheduler collateral shows these open items:
+The archival collateral has now been surfaced into current-tree planning files,
+but these signoff gaps remain:
 
-- the old `legacy/tb/DV_PLAN.md` and `legacy/tb/DV_HARNESS.md` describe an
-  ambitious monolithic UVM environment, but that environment is not present as
-  a current checked-in harness
-- the archived `legacy/uvm/` tree only contains split-era unit UVM content
-- there is no current signoff note for packet_scheduler analogous to the
-  `slow-control_hub` signoff record until this file
-- the required three-layer lint evidence and current-tree coverage merge are
-  not yet captured in-repo for monolithic OPQ
+- the live harness is still limited to the current 2-lane default-symbol path
+  and does not yet close the full archived parameter matrix
+- the required three-layer lint evidence and current-tree merged coverage hole
+  disposition are not yet fully captured in-repo for monolithic OPQ
+- the archived large directed catalog remains only partially implemented in the
+  live harness
 
 ## Current Bring-Up Status
 
@@ -107,18 +111,45 @@ The review of the archived packet_scheduler collateral shows these open items:
   `8161@lic-mentor.ethz.ch:/data1/intelFPGA_pro/23.1/questa_fse/LR-287689_License.dat`.
 - The current promoted regression on the VHDL monolithic DUT is:
   - `opq_basic_smoke_test`
+  - `opq_basic_ts_boundary_test`
+  - `opq_basic_subheader_shape_test`
   - `opq_edge_backpressure_test`
   - `opq_edge_always_ready_test`
+  - `opq_edge_ready_medium_profile_test`
+  - `opq_edge_stuck_low_backpressure_test`
+  - `opq_edge_max_hits_test`
+  - `opq_edge_toggle_backpressure_test`
   - `opq_prof_stress_test`
+  - `opq_prof_lane_skew_test`
   - `opq_error_lane_mask_test`
-  - `opq_error_ftable_overflow_test`
+  - `opq_error_lane_mask_single_hit_test`
+  - `opq_error_lane_mask_burst_test`
   - `opq_error_counter_clear_test`
   - `opq_cross_bp_credit_test`
-- The promoted suite currently reruns clean:
-  - `UVM summary: pass=8 fail=0 total=8`
-  - hit-integrity scoreboard closure remains clean on the integrity buckets
-  - the overflow bucket intentionally uses `OPQ_PAGE_RAM_DEPTH=512` to force
-    frame-table overwrite/drop behavior on a bounded runtime
+  - `opq_cross_drr_allowance_test`
+  - `opq_cross_drr_idle_lane_test`
+  - `opq_cross_drr_zero_allowance_test`
+  - `opq_cross_drr_short_allowance_test`
+- Additional validated cases now surfaced by the active bucket wrappers:
+  - the current-tree bucket wrappers now surface the still-relevant current
+    plan buckets directly: `DV_BASIC`, `DV_PARAM`, `DV_EDGE`, `DV_PROF`,
+    `DV_ERROR`, `DV_CROSS`, `DV_PROBE`, and `DV_FORMAL`
+  - `opq_cross_drr_idle_lane_test` clarified a real DUT/harness contract point:
+    an "idle" lane on the current monolithic path must still emit empty frames
+    to preserve legal frame cadence; permanent silence is not a valid directed
+    stimulus for the page allocator
+  - `opq_cross_drr_bursty_random_test` is implemented but intentionally not yet
+    promoted because it still reproduces a real DUT bug
+  - `opq_error_ftable_overflow_test` is implemented but intentionally not yet
+    promoted because it still reproduces a real DUT bug
+- The promoted suite currently reruns clean on the active harness and merged
+  coverage closure:
+  - 20 unique promoted testcase names are green on the current-tree harness
+  - the merged closure samples 17 direct promoted tests plus the
+    `N_SHD=128/256/512` sweep of `opq_basic_smoke_test`,
+    `opq_basic_ts_boundary_test`, and `opq_edge_max_hits_test`
+  - hit-integrity scoreboard closure remains clean on the promoted integrity
+    buckets
 - The monolithic template fixes folded into the active DV promotion include:
   - `alloc_page_flow` wrap protection in `ALLOC_PAGE`
   - page-allocator timestamp compare tightening so the first real subheader is
@@ -133,18 +164,56 @@ The review of the archived packet_scheduler collateral shows these open items:
     reconstructed 48-bit timestamp and a UVM-only 64-bit `HIT_ID`
   - SVA is enabled by default for ingress AVST, egress AVST, and CSR protocol
     checks
-- Probe buckets exist in the current tree but are not promoted into signoff yet:
-  - timestamp-boundary probe
-  - larger burst-hit probe
-  They expose remaining DUT limitations and are intentionally kept out of the
-  promoted closure set until the RTL behavior is fixed.
+- The DRR closure work added:
+  - runtime DRR allowance programming checks through CSR
+  - a dedicated `opq_drr_sva` family for grant/defer/lock ownership
+  - directed empty-frame-idle, zero-allowance, and short-allowance tests that
+    are now green on the active harness
+  - a constrained-random hot-lane burst testcase that now serves as the main
+    reproducer for the remaining monolithic DRR / presenter closure gaps
+- The current egress sideband status is not yet signoff-clean:
+  - the DUT exports `aso_egress_startofpacket/endofpacket`
+  - but accepted egress beats can still appear before a clean K285-marked start
+    beat on the active monolithic VHDL path
+  - because of that, the promoted hit-contract SVA remains data-framed rather
+    than sideband-framed, and the sidebands are treated as debug observables
+    rather than a signoff-quality primary framing oracle
+- The bursty DRR testcase still exposes an open monolithic DUT gap:
+  - the presenter / egress path still has a stall-boundary corruption bug under
+    periodic backpressure
+  - exact late-drop hit identity is still not observable enough from the live
+    DUT, so final CSR totals alone are not sufficient for promoted per-hit
+    integrity closure on that testcase
+- The reduced-depth overflow testcase also exposes an open monolithic DUT gap:
+  - under forced overwrite with always-stall backpressure, the DUT can still
+    emit accepted egress beats that do not belong to any well-formed frame
+  - this makes `opq_error_ftable_overflow_test` valuable bug evidence, but not
+    valid promoted signoff coverage today
+- The timestamp-boundary, max-hit, subheader-shape, and directed DRR
+  allowance/idle/zero/short cases are no longer blockers. They are now
+  reflected in the published merged coverage snapshot below.
 
 ## Current Coverage Snapshot
 
 - Promoted merged closure command:
   - `packet_scheduler/tb/scripts/run_cov_closure.sh`
+- Active compile / elaboration-time sweep command:
+  - `packet_scheduler/tb/scripts/run_param.sh`
 - Promoted merged functional result:
-  - `TOTAL COVERGROUP COVERAGE: 82.74%`
+  - total covergroup coverage: `87.60%`
+  - total directive coverage: `100.00%`
+  - filtered total by instance: `69.76%`
+- Per-family merged functional result:
+  - `cg_cfg`: `72.02%`
+  - `cg_frame`: `100.00%`
+  - `cg_subheader`: `100.00%`
+  - `cg_bp`: `85.00%`
+  - `cg_csr`: `95.23%`
+  - `cg_credit`: `60.00%`
+  - `cg_drop`: `81.94%`
+  - `cg_drr`: `81.83%`
+  - `cg_ingress`: `100.00%`
+  - `cg_egress`: `100.00%`
 - Implemented covergroup families in the current tree:
   - configuration (`cg_cfg`)
   - frame shape (`cg_frame`)
@@ -153,31 +222,57 @@ The review of the archived packet_scheduler collateral shows these open items:
   - CSR access (`cg_csr`)
   - credit snapshots (`cg_credit`)
   - lane / frame-table drop snapshots (`cg_drop`)
+  - DRR allowance / defer / service shape (`cg_drr`)
   - ingress beat shape (`cg_ingress`)
   - egress beat shape (`cg_egress`)
 - Assertion summary from the promoted merged closure:
   - custom ingress/egress/CSR SVA: zero failures on the promoted suite
+  - custom DRR SVA: zero failures on the promoted directed DRR suite
+  - the merged run now includes the promoted suite plus the active named
+    `N_SHD=128/256/512` parameter bucket for `opq_basic_smoke_test`,
+    `opq_basic_ts_boundary_test`, and `opq_edge_max_hits_test`
+  - the VHDL template warning assertion on the `N_HIT` counter estimate still
+    appears in UCDB assertion accounting as a warning-site hit, not as a
+    promoted-suite `** Error:` failure
   - the old template “non-default page RAM width” diagnostic was converted from
     a failing `assert` into a non-failing warning so the reduced-depth overflow
     bucket does not pollute the assertion failure count
 - Structural code-coverage plumbing is now verified on the active harness:
-  - `COV_ENABLE=1 packet_scheduler/tb/scripts/run_uvm.sh opq_basic_smoke_test`
-    produces a UCDB with non-empty code coverage
-  - smoke structural snapshot:
-    - statements: `48.75%`
-    - branches: `33.82%`
-    - conditions: `22.97%`
-    - toggles: `29.74%`
+  - `packet_scheduler/tb/scripts/run_cov_closure.sh` now produces a merged UCDB
+    with non-empty code coverage
+  - current merged structural snapshot:
+    - statements: `61.68%`
+    - branches: `35.36%`
+    - conditions: `25.40%`
+    - expressions: `100.00%`
+    - toggles: `37.22%`
     - FSM states: `92.30%`
     - FSM transitions: `62.50%`
-    - filtered total: `52.15%`
+    - filtered total: `59.21%`
+
+- Coverage merge caveat on parameter sweeps:
+  - merging UCDBs across different elaborated DUT parameter points still emits
+    `vcover` source-mismatch warnings on the generated VHDL wrapper path
+  - the current merged report is therefore treated as an active baseline and
+    planning aid, not final multi-config structural signoff closure yet
 
 ## Remaining Gaps
 
 - The functional coverage model is materially implemented, but not yet at the
   archival `DV_PLAN.md` 100% target. The remaining holes are concentrated in
-  not-yet-promoted probe scenarios and parameter-space bins that are outside the
-  current promoted default-config closure set.
+  not-yet-promoted probe scenarios and parameter-space bins that are outside
+  the current promoted default-config closure set:
+  - `cg_cfg`: reduced-overflow and non-default `ticket_depth` cross bins
+  - `cg_bp`: deep-stall repeat bins not yet sampled by the promoted healthy path
+  - `cg_credit`: tight-credit / active-credit combinations
+  - `cg_drop`: frame-table overwrite late-drop bins, still probe-only today
+  - `cg_drr`: lane1 tiny/zero allowance and defer-heavy burst combinations,
+    still tied to the open bursty-random probe path
+- The DRR allowance testcase is now a clean passing evidence point, but the
+  broader directed DRR trio is also green. The bursty constrained-random DRR
+  testcase remains open and is blocking promotion of full DRR signoff closure.
+- The forced-overwrite error testcase remains open and is blocking promotion of
+  overwrite/drop signoff closure.
 - Source-lint warnings in the monolithic VHDL still need final disposition for
   formal signoff.
 - Structural code-coverage numbers are now produced by the UCDB flow, but the

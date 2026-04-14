@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 // IP Name   : opq_base_test
 // Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
-// Revision  : 0.1 - active base test for OPQ UVM harness
+// Revision  : 0.2 - add DRR defer helpers for block-level scheduler checks
 // Description:
 //   Shared UVM base test with CSR helpers and scoreboard/counter checks.
 //------------------------------------------------------------------------------
@@ -65,6 +65,12 @@ class opq_base_test extends uvm_test;
     csr_write32(OPQ_CSR_WORD_CTRL, 32'h0000_0001);
   endtask
 
+  task automatic csr_write_lane_drr_allowance(int lane_id, int unsigned allowance);
+    bit [8:0] lane_base;
+    lane_base = OPQ_CSR_LANE_REGION_BASE + lane_id * OPQ_CSR_LANE_REGION_STRIDE;
+    csr_write32(lane_base + OPQ_CSR_LANE_WORD_DRR_ALLOWANCE, allowance[31:0]);
+  endtask
+
   task automatic expect_csr_value(string what, bit [8:0] addr, int unsigned expected);
     bit [31:0] actual;
     csr_read32(addr, actual);
@@ -121,7 +127,7 @@ class opq_base_test extends uvm_test;
         status_word
       ))
     end
-    if (cap_word[3:0] !== 4'hF) begin
+    if (cap_word[4:0] !== 5'h1F) begin
       `uvm_error(get_type_name(), $sformatf(
         "CSR capability feature bits mismatch actual=0x%08h",
         cap_word
@@ -147,7 +153,7 @@ class opq_base_test extends uvm_test;
     end
   endtask
 
-  task automatic check_lane_no_drop_and_credit(int lane_id);
+  task automatic check_lane_no_drop_and_credit(int lane_id, bit sample_default_drr = 1'b1);
     bit [8:0] lane_base;
     lane_base = OPQ_CSR_LANE_REGION_BASE + lane_id * OPQ_CSR_LANE_REGION_STRIDE;
     expect_csr_value($sformatf("lane%0d_wr_hdr", lane_id), lane_base + 9'h000,
@@ -167,6 +173,38 @@ class opq_base_test extends uvm_test;
     expect_csr_value($sformatf("lane%0d_drop_hit", lane_id), lane_base + 9'h008, 0);
     sample_lane_drop_snapshot(lane_id);
     sample_lane_credit_snapshot(lane_id, 1'b1);
+    if (sample_default_drr) begin
+      sample_lane_drr_snapshot(lane_id, OPQ_DRR_DEFAULT_ALLOWANCE, 1'b0, 1'b0);
+    end
+  endtask
+
+  task automatic check_lane_drop_accounting_and_credit(int lane_id, bit require_full_credit = 1'b1);
+    bit [8:0] lane_base;
+    bit [31:0] drop_shd_word;
+    bit [31:0] drop_hit_word;
+    lane_base = OPQ_CSR_LANE_REGION_BASE + lane_id * OPQ_CSR_LANE_REGION_STRIDE;
+    csr_read32(lane_base + 9'h007, drop_shd_word);
+    csr_read32(lane_base + 9'h008, drop_hit_word);
+    env.scoreboard.apply_lane_drop_totals(lane_id, drop_shd_word, drop_hit_word);
+    expect_csr_value($sformatf("lane%0d_wr_hdr", lane_id), lane_base + 9'h000,
+      env.scoreboard.get_expected_lane_hdr_cnt(lane_id));
+    expect_csr_value($sformatf("lane%0d_wr_shd", lane_id), lane_base + 9'h001,
+      env.scoreboard.get_accepted_lane_shd_cnt(lane_id));
+    expect_csr_value($sformatf("lane%0d_wr_hit", lane_id), lane_base + 9'h002,
+      env.scoreboard.get_accepted_lane_hit_cnt(lane_id));
+    expect_csr_value($sformatf("lane%0d_rd_hdr", lane_id), lane_base + 9'h003,
+      env.scoreboard.get_expected_lane_hdr_cnt(lane_id));
+    expect_csr_value($sformatf("lane%0d_rd_shd", lane_id), lane_base + 9'h004,
+      env.scoreboard.get_accepted_lane_shd_cnt(lane_id));
+    expect_csr_value($sformatf("lane%0d_rd_hit", lane_id), lane_base + 9'h005,
+      env.scoreboard.get_accepted_lane_hit_cnt(lane_id));
+    expect_csr_value($sformatf("lane%0d_drop_hdr", lane_id), lane_base + 9'h006, 0);
+    expect_csr_value($sformatf("lane%0d_drop_shd", lane_id), lane_base + 9'h007,
+      env.scoreboard.get_dropped_lane_shd_cnt(lane_id));
+    expect_csr_value($sformatf("lane%0d_drop_hit", lane_id), lane_base + 9'h008,
+      env.scoreboard.get_dropped_lane_hit_cnt(lane_id));
+    sample_lane_drop_snapshot(lane_id);
+    sample_lane_credit_snapshot(lane_id, require_full_credit);
   endtask
 
   task automatic check_frame_table_counts();
@@ -233,6 +271,87 @@ class opq_base_test extends uvm_test;
       hdr_drop_word,
       shd_drop_word,
       hit_drop_word
+    );
+  endtask
+
+  task automatic read_lane_drr_snapshot(
+    int lane_id,
+    output int unsigned allowance_word,
+    output int unsigned quantum_word,
+    output int unsigned grant_cnt_word,
+    output int unsigned beat_cnt_word,
+    output int unsigned defer_cnt_word
+  );
+    bit [8:0] lane_base;
+    bit [31:0] allowance_word_raw;
+    bit [31:0] quantum_word_raw;
+    bit [31:0] grant_cnt_word_raw;
+    bit [31:0] beat_cnt_word_raw;
+    bit [31:0] defer_cnt_word_raw;
+
+    lane_base = OPQ_CSR_LANE_REGION_BASE + lane_id * OPQ_CSR_LANE_REGION_STRIDE;
+    csr_read32(lane_base + OPQ_CSR_LANE_WORD_DRR_ALLOWANCE, allowance_word_raw);
+    csr_read32(lane_base + OPQ_CSR_LANE_WORD_DRR_QUANTUM, quantum_word_raw);
+    csr_read32(lane_base + OPQ_CSR_LANE_WORD_DRR_GRANT_CNT, grant_cnt_word_raw);
+    csr_read32(lane_base + OPQ_CSR_LANE_WORD_DRR_BEAT_CNT, beat_cnt_word_raw);
+    csr_read32(lane_base + OPQ_CSR_LANE_WORD_DRR_DEFER_CNT, defer_cnt_word_raw);
+
+    allowance_word = allowance_word_raw;
+    quantum_word = quantum_word_raw;
+    grant_cnt_word = grant_cnt_word_raw;
+    beat_cnt_word = beat_cnt_word_raw;
+    defer_cnt_word = defer_cnt_word_raw;
+  endtask
+
+  task automatic sample_lane_drr_snapshot(
+    int lane_id,
+    int expected_allowance = -1,
+    bit require_nonzero_service = 1'b0,
+    bit require_nonzero_defer = 1'b0
+  );
+    int unsigned allowance_word;
+    int unsigned quantum_word;
+    int unsigned grant_cnt_word;
+    int unsigned beat_cnt_word;
+    int unsigned defer_cnt_word;
+
+    read_lane_drr_snapshot(
+      lane_id,
+      allowance_word,
+      quantum_word,
+      grant_cnt_word,
+      beat_cnt_word,
+      defer_cnt_word
+    );
+
+    if ((expected_allowance >= 0) && (allowance_word !== expected_allowance[31:0])) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "lane%0d DRR allowance mismatch expected=%0d actual=%0d",
+        lane_id, expected_allowance, allowance_word
+      ))
+    end
+    if (require_nonzero_service) begin
+      if ((grant_cnt_word == 0) || (beat_cnt_word == 0)) begin
+        `uvm_error(get_type_name(), $sformatf(
+          "lane%0d expected non-zero DRR service counters, grant=%0d beat=%0d",
+          lane_id, grant_cnt_word, beat_cnt_word
+        ))
+      end
+    end
+    if (require_nonzero_defer && (defer_cnt_word == 0)) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "lane%0d expected non-zero DRR defer counter",
+        lane_id
+      ))
+    end
+
+    env.coverage.sample_drr_snapshot(
+      lane_id,
+      allowance_word,
+      quantum_word,
+      grant_cnt_word,
+      beat_cnt_word,
+      defer_cnt_word
     );
   endtask
 

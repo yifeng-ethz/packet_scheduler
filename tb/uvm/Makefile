@@ -92,6 +92,7 @@ SV_SRCS := \
 	$(TB_DIR)/sva/opq_avst_egress_sva.sv \
 	$(TB_DIR)/sva/opq_hit3_contract_sva.sv \
 	$(TB_DIR)/sva/opq_csr_sva.sv \
+	$(TB_DIR)/sva/opq_drr_sva.sv \
 	$(TB_DIR)/tb_top.sv
 
 VHDL_SRCS := \

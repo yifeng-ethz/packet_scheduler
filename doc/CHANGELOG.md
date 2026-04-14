@@ -1,6 +1,29 @@
 # Changelog
 Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 
+## 26.3.9.0414
+
+- **Verification / Bucket Promotion**: promoted additional still-relevant current-tree cases into the active bucket wrappers. `run_basic.sh` now includes `opq_basic_subheader_shape_test`; `run_edge.sh` adds `opq_edge_ready_medium_profile_test` and `opq_edge_stuck_low_backpressure_test`; `run_error.sh` adds `opq_error_lane_mask_single_hit_test` and `opq_error_lane_mask_burst_test`; `run_cross.sh` adds `opq_cross_drr_idle_lane_test`, `opq_cross_drr_zero_allowance_test`, and `opq_cross_drr_short_allowance_test`.
+- **Verification / DRR Contract**: fixed the directed single-active-lane DRR stimulus to keep the inactive peer lane on empty-frame cadence instead of making it permanently silent. This matches the current monolithic page-allocator contract and closes the directed idle-lane/zero-allowance/short-allowance DRR tests without weakening the scoreboard or SVA contract.
+- **Verification / Coverage Closure**: reran the merged closure on the promoted suite plus the `N_SHD=128/256/512` parameter bucket. The current merged result is `87.60%` total covergroup coverage, `100.00%` directive coverage, and `69.76%` filtered total by instance. The merged structural snapshot is now `61.68%` statements, `35.36%` branches, `25.40%` conditions, `37.22%` toggles, `92.30%` FSM states, and `62.50%` FSM transitions.
+- **Verification / Current Docs**: updated the current-tree DV collateral (`DV_PLAN.md`, `DV_HARNESS.md`, `DV_BASIC.md`, `DV_EDGE.md`, `DV_ERROR.md`, `DV_CROSS.md`, `tb/README.md`, and `doc/VERIFICATION_SIGNOFF.md`) to reflect the promoted bucket set, the empty-frame-cadence clarification for idle lanes, and a direct trace from earlier requested features to implemented evidence versus remaining backlog.
+
+## 26.3.8.0414
+
+- **Verification / Plan Surface**: promoted three still-relevant current-tree DV companions from the archived intent into active collateral: `tb/DV_PARAM.md` for compile/elaboration-time configuration sweep, `tb/DV_PROBE.md` for non-promoted bug reproducers, and `tb/DV_FORMAL.md` for formal-readiness and proof targets. `tb/README.md`, `tb/DV_PLAN.md`, `tb/DV_HARNESS.md`, and `doc/VERIFICATION_SIGNOFF.md` now reference these files directly.
+- **Verification / Sweep Runner**: added `tb/scripts/run_param.sh` and wired it into `run_all.sh`. The new runner executes the active `N_SHD=128/256/512` sweep on `opq_basic_smoke_test`, `opq_basic_ts_boundary_test`, and `opq_edge_max_hits_test`, while preserving per-configuration logs and UCDB names for auditability.
+- **Verification / Coverage Model**: refactored `tb/uvm/opq_coverage.sv` so `cg_cfg` now has explicit active signoff bins for `N_SHD`, ticket depth, and their cross, instead of collapsing the current configuration into single active-point bins. This makes the non-default parameter sweep visible in merged functional coverage instead of being implied by ad hoc reruns.
+- **Verification**: reran `tb/scripts/run_param.sh` successfully across `N_SHD=128/256/512`; the three active sweep tests remain green with zero `UVM_ERROR` / `UVM_FATAL`.
+- **Verification / Coverage Baseline**: reran the merged coverage closure with the active promoted suite plus the named parameter bucket. The current baseline is `80.42%` total covergroup coverage, `100.00%` directive coverage, and `68.40%` filtered total by instance. The generated-VHDL `line__1367` warning assertion remains visible in UCDB assertion accounting as a warning-site hit, and multi-config UCDB merge on the generated wrapper still emits source-mismatch warnings, so multi-config structural coverage remains an active baseline rather than final signoff closure.
+
+## 26.3.7.0414
+
+- **Verification / DRR Contract**: added active monolithic DRR signoff collateral in the current tree. `tb/DV_PLAN.md` and `tb/DV_HARNESS.md` now include the block-level DRR allowance/defer intent, build-time configuration randomization terminology, a formal-verification section, and a high-level plan/code traceability table for chief-architect closure tracking.
+- **Verification / SVA**: added `tb/uvm/sva/opq_drr_sva.sv` and bound it in `tb_top.sv`. The active mixed-language harness now checks onehot grant / lock ownership, defer-event legality, and page-allocator preemption on the monolithic VHDL DRR arbiter.
+- **Verification / Current Cases**: added the directed `opq_cross_drr_allowance_test` and the constrained-random `opq_cross_drr_bursty_random_test` to the live cross bucket. The allowance case is green on the active harness and now serves as the stable DRR evidence point for CSR-programmed allowance/defer behavior.
+- **RTL / Presenter Backpressure**: tightened the monolithic frame-table presenter for egress stalls. The output-valid pipe is no longer unconditionally cleared every cycle, and the page-RAM read-data path now captures a skid copy of the unfreezable RAM-q stage before resuming. This removes the immediate Avalon-ST hold violation seen under the new DRR burst stress.
+- **Verification / Bug Exposure**: the new bursty constrained-random DRR testcase still reproduces an open monolithic DUT bug: the frame-table path can expose a frame as complete before all delayed DRR block writes are resident. The current symptom is repeated subheaders plus missing/ghost hits under asymmetric block sizes and periodic backpressure. This remains an active backlog item rather than a closed signoff claim.
+
 ## 26.3.6.0414
 
 - **RTL / Timestamp Contract**: kept the full frame-base timestamp visible in the packet/header path and closed the `N_SHD=512` ambiguity by extending the subheader `ts[11:4]` low byte across wrap inside both the monolithic and split ingress parsers. Subheader tickets now keep an absolute `ts[47:0]` ordering basis even when a frame spans the second 256-subheader epoch or a lane stalls for a long time before resuming.

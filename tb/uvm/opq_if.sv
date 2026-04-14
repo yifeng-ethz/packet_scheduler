@@ -117,3 +117,14 @@ interface opq_csr_if(input logic clk);
     idle();
   endtask
 endinterface
+
+interface opq_drop_if #(parameter int N_LANE = 2) (input logic clk);
+  logic reset;
+  logic [N_LANE-1:0] valid;
+  logic [15:0] shd_drop_cnt [N_LANE];
+  logic [15:0] hit_drop_cnt [N_LANE];
+
+  clocking mon_cb @(posedge clk);
+    input reset, valid, shd_drop_cnt, hit_drop_cnt;
+  endclocking
+endinterface

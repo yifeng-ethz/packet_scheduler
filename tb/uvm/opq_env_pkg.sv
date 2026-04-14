@@ -5,6 +5,7 @@ package opq_env_pkg;
 
   `include "opq_ingress_agent.sv"
   `include "opq_egress_agent.sv"
+  `include "opq_drop_monitor.sv"
   `include "opq_scoreboard.sv"
   `include "opq_coverage.sv"
   `include "opq_env.sv"

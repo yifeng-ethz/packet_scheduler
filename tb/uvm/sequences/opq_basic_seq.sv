@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 // IP Name   : opq_basic_seq
 // Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
-// Revision  : 0.1 - derive absolute subheader timestamps from frame_ts for parameterized sequences
+// Revision  : 0.3 - keep inactive DRR lanes on realistic empty-frame cadence
 // Description:
 //   UVM virtual sequences for the active OPQ regression buckets.
 //------------------------------------------------------------------------------
@@ -357,6 +357,165 @@ class opq_stress_virtual_sequence extends opq_virtual_sequence_base;
   endtask
 endclass
 
+class opq_subheader_shape_virtual_sequence extends opq_virtual_sequence_base;
+  `uvm_object_utils(opq_subheader_shape_virtual_sequence)
+
+  function new(string name = "opq_subheader_shape_virtual_sequence");
+    super.new(name);
+  endfunction
+
+  task body();
+    opq_frame_item lane0_frames[$];
+    opq_frame_item lane1_frames[$];
+    bit [31:0] pair_hits[$];
+    bit [31:0] burst_hits[$];
+    bit [47:0] ts_step;
+
+    ts_step = OPQ_N_SHD * 16;
+
+    pair_hits = {32'h7F10_0001, 32'h7F10_0002};
+    burst_hits.delete();
+    for (int hit_idx = 0; hit_idx < 32; hit_idx++) begin
+      burst_hits.push_back(32'h7F20_0000 + hit_idx);
+    end
+
+    lane0_frames.push_back(build_single_subheader_frame(
+      "lane0_pair_ts7f", 0, 48'd0, 16'd0, 8'h7F, 0, pair_hits
+    ));
+    lane1_frames.push_back(build_single_subheader_frame(
+      "lane1_burst_ts7f", 1, 48'd0, 16'd0, 8'h7F, 0, burst_hits
+    ));
+
+    pair_hits = {32'h8010_0001, 32'h8010_0002};
+    burst_hits.delete();
+    for (int hit_idx = 0; hit_idx < 32; hit_idx++) begin
+      burst_hits.push_back(32'h8020_0000 + hit_idx);
+    end
+
+    lane0_frames.push_back(build_single_subheader_frame(
+      "lane0_pair_ts80", 0, ts_step, 16'd1, 8'h80, OPQ_MIN_SOP_GAP_CYCLES, pair_hits
+    ));
+    lane1_frames.push_back(build_single_subheader_frame(
+      "lane1_burst_ts80", 1, ts_step, 16'd1, 8'h80, OPQ_MIN_SOP_GAP_CYCLES, burst_hits
+    ));
+
+    pair_hits = {32'hFE10_0001, 32'hFE10_0002};
+    burst_hits.delete();
+    for (int hit_idx = 0; hit_idx < 32; hit_idx++) begin
+      burst_hits.push_back(32'hFE20_0000 + hit_idx);
+    end
+
+    lane0_frames.push_back(build_single_subheader_frame(
+      "lane0_pair_tsfe", 0, ts_step * 2, 16'd2, 8'hFE, OPQ_MIN_SOP_GAP_CYCLES, pair_hits
+    ));
+    lane1_frames.push_back(build_single_subheader_frame(
+      "lane1_burst_tsfe", 1, ts_step * 2, 16'd2, 8'hFE, OPQ_MIN_SOP_GAP_CYCLES, burst_hits
+    ));
+
+    pair_hits = {32'hFF10_0001, 32'hFF10_0002};
+    burst_hits.delete();
+    for (int hit_idx = 0; hit_idx < 32; hit_idx++) begin
+      burst_hits.push_back(32'hFF20_0000 + hit_idx);
+    end
+
+    lane0_frames.push_back(build_single_subheader_frame(
+      "lane0_pair_tsff", 0, ts_step * 3, 16'd3, 8'hFF, OPQ_MIN_SOP_GAP_CYCLES, pair_hits
+    ));
+    lane1_frames.push_back(build_single_subheader_frame(
+      "lane1_burst_tsff", 1, ts_step * 3, 16'd3, 8'hFF, OPQ_MIN_SOP_GAP_CYCLES, burst_hits
+    ));
+
+    start_lane_frames(lane0_frames, lane1_frames);
+  endtask
+endclass
+
+class opq_single_lane_virtual_sequence extends opq_virtual_sequence_base;
+  `uvm_object_utils(opq_single_lane_virtual_sequence)
+
+  int unsigned active_lane;
+  int unsigned frame_count;
+  int unsigned subheaders_per_frame;
+  int unsigned hit_count;
+  int unsigned inter_frame_gap_cycles;
+  bit          drive_idle_frame_cadence;
+
+  function new(string name = "opq_single_lane_virtual_sequence");
+    super.new(name);
+    active_lane = 0;
+    frame_count = 4;
+    subheaders_per_frame = 8;
+    hit_count = 8;
+    inter_frame_gap_cycles = OPQ_MIN_SOP_GAP_CYCLES;
+    drive_idle_frame_cadence = 1'b1;
+  endfunction
+
+  task body();
+    opq_frame_item lane0_frames[$];
+    opq_frame_item lane1_frames[$];
+    bit [47:0] ts_step;
+
+    if (active_lane >= OPQ_N_LANE) begin
+      `uvm_fatal(get_type_name(), $sformatf(
+        "opq_single_lane_virtual_sequence active_lane=%0d out of range",
+        active_lane
+      ))
+    end
+
+    ts_step = OPQ_N_SHD * 16;
+
+    for (int frame_idx = 0; frame_idx < frame_count; frame_idx++) begin
+      opq_frame_item tr;
+      opq_frame_item idle_tr;
+      int unsigned pre_gap_cycles;
+      int unsigned shd_ts_base;
+      int unsigned idle_lane;
+
+      pre_gap_cycles = (frame_idx == 0) ? 0 : inter_frame_gap_cycles;
+      shd_ts_base = (frame_idx == 0) ? 1 : frame_idx * OPQ_N_SHD;
+      tr = build_dense_frame(
+        $sformatf("lane%0d_single_%0d", active_lane, frame_idx),
+        active_lane,
+        ts_step * frame_idx,
+        frame_idx[15:0],
+        subheaders_per_frame,
+        shd_ts_base,
+        pre_gap_cycles,
+        hit_count,
+        32'h7800_0000 + (active_lane << 20) + frame_idx
+      );
+
+      if (active_lane == 0) begin
+        lane0_frames.push_back(tr);
+      end else begin
+        lane1_frames.push_back(tr);
+      end
+
+      if (drive_idle_frame_cadence) begin
+        idle_lane = (active_lane == 0) ? 1 : 0;
+        idle_tr = build_frame(
+          $sformatf("lane%0d_idle_%0d", idle_lane, frame_idx),
+          idle_lane,
+          ts_step * frame_idx,
+          frame_idx[15:0],
+          subheaders_per_frame,
+          shd_ts_base,
+          pre_gap_cycles,
+          '0,
+          '0,
+          0
+        );
+        if (idle_lane == 0) begin
+          lane0_frames.push_back(idle_tr);
+        end else begin
+          lane1_frames.push_back(idle_tr);
+        end
+      end
+    end
+
+    start_lane_frames(lane0_frames, lane1_frames);
+  endtask
+endclass
+
 class opq_masked_drop_virtual_sequence extends opq_virtual_sequence_base;
   `uvm_object_utils(opq_masked_drop_virtual_sequence)
 
@@ -375,6 +534,88 @@ class opq_masked_drop_virtual_sequence extends opq_virtual_sequence_base;
 
     lane0_frames.push_back(build_single_subheader_frame("lane0_masked", 0, 48'd0, 16'd0, 8'h01, 0, lane0_hits));
     lane1_frames.push_back(build_single_subheader_frame("lane1_masked", 1, 48'd0, 16'd0, 8'h01, 0, lane1_hits));
+    start_lane_frames(lane0_frames, lane1_frames);
+  endtask
+endclass
+
+class opq_single_hit_masked_drop_virtual_sequence extends opq_virtual_sequence_base;
+  `uvm_object_utils(opq_single_hit_masked_drop_virtual_sequence)
+
+  function new(string name = "opq_single_hit_masked_drop_virtual_sequence");
+    super.new(name);
+  endfunction
+
+  task body();
+    opq_frame_item lane0_frames[$];
+    opq_frame_item lane1_frames[$];
+    bit [31:0] lane0_hits[$];
+    bit [31:0] lane1_hits[$];
+
+    lane0_hits = {32'hAAA1_0001};
+    lane1_hits = {32'hBBB1_0001};
+
+    lane0_frames.push_back(build_single_subheader_frame(
+      "lane0_masked_single", 0, 48'd0, 16'd0, 8'h01, 0, lane0_hits
+    ));
+    lane1_frames.push_back(build_single_subheader_frame(
+      "lane1_masked_single", 1, 48'd0, 16'd0, 8'h01, 0, lane1_hits
+    ));
+    start_lane_frames(lane0_frames, lane1_frames);
+  endtask
+endclass
+
+class opq_burst_masked_drop_virtual_sequence extends opq_virtual_sequence_base;
+  `uvm_object_utils(opq_burst_masked_drop_virtual_sequence)
+
+  int unsigned frame_count;
+  int unsigned subheaders_per_frame;
+  int unsigned hit_count_per_subheader;
+
+  function new(string name = "opq_burst_masked_drop_virtual_sequence");
+    super.new(name);
+    frame_count = 3;
+    subheaders_per_frame = 4;
+    hit_count_per_subheader = 8;
+  endfunction
+
+  task body();
+    opq_frame_item lane0_frames[$];
+    opq_frame_item lane1_frames[$];
+    bit [47:0] ts_step;
+
+    ts_step = OPQ_N_SHD * 16;
+
+    for (int frame_idx = 0; frame_idx < frame_count; frame_idx++) begin
+      int unsigned pre_gap_cycles;
+      int unsigned shd_ts_base;
+
+      pre_gap_cycles = (frame_idx == 0) ? 0 : OPQ_MIN_SOP_GAP_CYCLES;
+      shd_ts_base = (frame_idx == 0) ? 1 : frame_idx * OPQ_N_SHD;
+
+      lane0_frames.push_back(build_dense_frame(
+        $sformatf("lane0_masked_burst_%0d", frame_idx),
+        0,
+        ts_step * frame_idx,
+        frame_idx[15:0],
+        subheaders_per_frame,
+        shd_ts_base,
+        pre_gap_cycles,
+        hit_count_per_subheader,
+        32'h7A00_0000 + frame_idx
+      ));
+      lane1_frames.push_back(build_dense_frame(
+        $sformatf("lane1_masked_burst_%0d", frame_idx),
+        1,
+        ts_step * frame_idx,
+        frame_idx[15:0],
+        subheaders_per_frame,
+        shd_ts_base,
+        pre_gap_cycles,
+        hit_count_per_subheader,
+        32'h7B00_0000 + frame_idx
+      ));
+    end
+
     start_lane_frames(lane0_frames, lane1_frames);
   endtask
 endclass
@@ -438,6 +679,146 @@ class opq_soak_virtual_sequence extends opq_virtual_sequence_base;
         lane1_hit0,
         lane1_hit1,
         hit_count
+      ));
+    end
+
+    start_lane_frames(lane0_frames, lane1_frames);
+  endtask
+endclass
+
+class opq_drr_saturation_virtual_sequence extends opq_virtual_sequence_base;
+  `uvm_object_utils(opq_drr_saturation_virtual_sequence)
+
+  int unsigned frame_count;
+  int unsigned subheaders_per_frame;
+  int unsigned hit_count_per_subheader;
+
+  function new(string name = "opq_drr_saturation_virtual_sequence");
+    super.new(name);
+    frame_count = 4;
+    subheaders_per_frame = 8;
+    hit_count_per_subheader = 32;
+  endfunction
+
+  task body();
+    opq_frame_item lane0_frames[$];
+    opq_frame_item lane1_frames[$];
+    bit [47:0] ts_step;
+
+    ts_step = OPQ_N_SHD * 16;
+
+    for (int frame_idx = 0; frame_idx < frame_count; frame_idx++) begin
+      int unsigned pre_gap_cycles;
+      int unsigned shd_ts_base;
+
+      pre_gap_cycles = (frame_idx == 0) ? 0 : OPQ_MIN_SOP_GAP_CYCLES;
+      shd_ts_base = (frame_idx == 0) ? 1 : frame_idx * OPQ_N_SHD;
+
+      lane0_frames.push_back(build_dense_frame(
+        $sformatf("lane0_drr_%0d", frame_idx),
+        0,
+        ts_step * frame_idx,
+        frame_idx[15:0],
+        subheaders_per_frame,
+        shd_ts_base,
+        pre_gap_cycles,
+        hit_count_per_subheader,
+        32'h7600_0000 + frame_idx
+      ));
+      lane1_frames.push_back(build_dense_frame(
+        $sformatf("lane1_drr_%0d", frame_idx),
+        1,
+        ts_step * frame_idx,
+        frame_idx[15:0],
+        subheaders_per_frame,
+        shd_ts_base,
+        pre_gap_cycles,
+        hit_count_per_subheader,
+        32'h7700_0000 + frame_idx
+      ));
+    end
+
+    start_lane_frames(lane0_frames, lane1_frames);
+  endtask
+endclass
+
+class opq_drr_bursty_random_virtual_sequence extends opq_virtual_sequence_base;
+  `uvm_object_utils(opq_drr_bursty_random_virtual_sequence)
+
+  rand int unsigned hot_lane;
+  rand int unsigned frame_count;
+  rand int unsigned subheaders_per_frame;
+  rand int unsigned hot_hits_per_subheader;
+  rand int unsigned cold_hits_per_subheader;
+  rand int unsigned hot_gap_cycles;
+  rand int unsigned cold_gap_cycles;
+
+  constraint c_hot_lane { hot_lane < OPQ_N_LANE; }
+  constraint c_frame_count { frame_count inside {[4:8]}; }
+  constraint c_subheaders { subheaders_per_frame inside {[8:16]}; }
+  constraint c_hot_hits { hot_hits_per_subheader inside {[24:48]}; }
+  constraint c_cold_hits { cold_hits_per_subheader inside {[1:8]}; }
+  constraint c_gap_hot { hot_gap_cycles inside {0, 8, 16}; }
+  constraint c_gap_cold {
+    cold_gap_cycles inside {
+      OPQ_MIN_SOP_GAP_CYCLES,
+      OPQ_MIN_SOP_GAP_CYCLES + 32,
+      OPQ_MIN_SOP_GAP_CYCLES + 128
+    };
+  }
+
+  function new(string name = "opq_drr_bursty_random_virtual_sequence");
+    super.new(name);
+    hot_lane = 0;
+    frame_count = 6;
+    subheaders_per_frame = 8;
+    hot_hits_per_subheader = 32;
+    cold_hits_per_subheader = 4;
+    hot_gap_cycles = 0;
+    cold_gap_cycles = OPQ_MIN_SOP_GAP_CYCLES + 32;
+  endfunction
+
+  task body();
+    opq_frame_item lane0_frames[$];
+    opq_frame_item lane1_frames[$];
+    bit [47:0] ts_step;
+
+    ts_step = OPQ_N_SHD * 16;
+
+    for (int frame_idx = 0; frame_idx < frame_count; frame_idx++) begin
+      int unsigned shd_ts_base;
+      int unsigned lane0_gap_cycles;
+      int unsigned lane1_gap_cycles;
+      int unsigned lane0_hits_per_subheader;
+      int unsigned lane1_hits_per_subheader;
+
+      shd_ts_base = (frame_idx == 0) ? 1 : frame_idx * OPQ_N_SHD;
+      lane0_gap_cycles = (frame_idx == 0) ? 0 : ((hot_lane == 0) ? hot_gap_cycles : cold_gap_cycles);
+      lane1_gap_cycles = (frame_idx == 0) ? 0 : ((hot_lane == 1) ? hot_gap_cycles : cold_gap_cycles);
+      lane0_hits_per_subheader = (hot_lane == 0) ? hot_hits_per_subheader : cold_hits_per_subheader;
+      lane1_hits_per_subheader = (hot_lane == 1) ? hot_hits_per_subheader : cold_hits_per_subheader;
+
+      lane0_frames.push_back(build_dense_frame(
+        $sformatf("lane0_drr_rand_%0d", frame_idx),
+        0,
+        ts_step * frame_idx,
+        frame_idx[15:0],
+        subheaders_per_frame,
+        shd_ts_base,
+        lane0_gap_cycles,
+        lane0_hits_per_subheader,
+        32'h7600_8000 + frame_idx
+      ));
+      lane1_frames.push_back(build_dense_frame(
+        $sformatf("lane1_drr_rand_%0d", frame_idx),
+        1,
+        ts_step * frame_idx,
+        frame_idx[15:0],
+        subheaders_per_frame,
+        shd_ts_base,
+        lane1_gap_cycles,
+        lane1_hits_per_subheader,
+        32'h7700_8000 + frame_idx
       ));
     end
 

@@ -12,6 +12,7 @@ package opq_pkg;
   `uvm_analysis_imp_decl(_egress)
   `uvm_analysis_imp_decl(_frame)
   `uvm_analysis_imp_decl(_bp)
+  `uvm_analysis_imp_decl(_drop)
 
 `ifndef OPQ_PAGE_RAM_DEPTH
 `define OPQ_PAGE_RAM_DEPTH 65536
@@ -36,6 +37,7 @@ package opq_pkg;
   localparam int OPQ_HANDLE_FIFO_MAX_CREDIT = OPQ_HANDLE_FIFO_DEPTH - 2;
   localparam int OPQ_N_SHD = `OPQ_N_SHD;
   localparam int OPQ_N_HIT = 255;
+  localparam int OPQ_DRR_DEFAULT_ALLOWANCE = 256;
   localparam int OPQ_MIN_SOP_GAP_CYCLES = 4000;
   localparam int OPQ_POST_RESET_SETTLE_CYCLES = 4;
   localparam int OPQ_FRAME_HDR_AUX_WORDS = 4;
@@ -60,6 +62,11 @@ package opq_pkg;
   localparam bit [8:0] OPQ_CSR_WORD_FT_DROP_HIT = 9'h010;
   localparam bit [8:0] OPQ_CSR_LANE_REGION_BASE = 9'h040;
   localparam bit [8:0] OPQ_CSR_LANE_REGION_STRIDE = 9'h010;
+  localparam bit [3:0] OPQ_CSR_LANE_WORD_DRR_ALLOWANCE = 4'hB;
+  localparam bit [3:0] OPQ_CSR_LANE_WORD_DRR_QUANTUM = 4'hC;
+  localparam bit [3:0] OPQ_CSR_LANE_WORD_DRR_GRANT_CNT = 4'hD;
+  localparam bit [3:0] OPQ_CSR_LANE_WORD_DRR_BEAT_CNT = 4'hE;
+  localparam bit [3:0] OPQ_CSR_LANE_WORD_DRR_DEFER_CNT = 4'hF;
 
   typedef enum int {
     BP_ALWAYS_READY,
@@ -255,6 +262,25 @@ package opq_pkg;
     endfunction
   endclass
 
+  class opq_drop_item extends uvm_sequence_item;
+    int lane_id;
+    int unsigned shd_drop_cnt;
+    int unsigned hit_drop_cnt;
+
+    `uvm_object_utils_begin(opq_drop_item)
+      `uvm_field_int(lane_id, UVM_DEFAULT)
+      `uvm_field_int(shd_drop_cnt, UVM_DEFAULT)
+      `uvm_field_int(hit_drop_cnt, UVM_DEFAULT)
+    `uvm_object_utils_end
+
+    function new(string name = "opq_drop_item");
+      super.new(name);
+      lane_id = -1;
+      shd_drop_cnt = 0;
+      hit_drop_cnt = 0;
+    endfunction
+  endclass
+
   class opq_dut_cfg extends uvm_object;
     int unsigned n_lane;
     int unsigned page_ram_depth;
@@ -284,12 +310,14 @@ package opq_pkg;
     bit check_hit_integrity;
     bit check_feb_contract;
     bit require_egress_preamble;
+    bit allow_drop_accounting;
     int unsigned min_sop_count;
 
     `uvm_object_utils_begin(opq_scoreboard_cfg)
       `uvm_field_int(check_hit_integrity, UVM_DEFAULT)
       `uvm_field_int(check_feb_contract, UVM_DEFAULT)
       `uvm_field_int(require_egress_preamble, UVM_DEFAULT)
+      `uvm_field_int(allow_drop_accounting, UVM_DEFAULT)
       `uvm_field_int(min_sop_count, UVM_DEFAULT)
     `uvm_object_utils_end
 
@@ -298,6 +326,7 @@ package opq_pkg;
       check_hit_integrity = 1'b1;
       check_feb_contract = 1'b1;
       require_egress_preamble = 1'b0;
+      allow_drop_accounting = 1'b0;
       min_sop_count = 0;
     endfunction
   endclass

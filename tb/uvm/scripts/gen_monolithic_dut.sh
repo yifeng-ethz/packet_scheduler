@@ -18,6 +18,7 @@ QUARTUS_ROOTDIR="${QUARTUS_ROOTDIR:-/data1/intelFPGA_pro/23.1/quartus}"
 OPQ_PAGE_RAM_DEPTH="${OPQ_PAGE_RAM_DEPTH:-65536}"
 OPQ_N_SHD="${OPQ_N_SHD:-256}"
 OPQ_TICKET_FIFO_DEPTH="${OPQ_TICKET_FIFO_DEPTH:-256}"
+OPQ_DEBUG_LV="${OPQ_DEBUG_LV:-1}"
 
 mkdir -p "${OUT_DIR}"
 
@@ -104,7 +105,7 @@ begin
             FRAME_SERIAL_SIZE   => 16,
             FRAME_SUBH_CNT_SIZE => 16,
             FRAME_HIT_CNT_SIZE  => 16,
-            DEBUG_LV            => 1
+            DEBUG_LV            => ${OPQ_DEBUG_LV}
         )
         port map (
             asi_ingress_0_data          => asi_ingress_0_data,

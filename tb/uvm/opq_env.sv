@@ -14,9 +14,11 @@ class opq_env extends uvm_env;
 
   virtual opq_ingress_if ingress_vif[OPQ_N_LANE];
   virtual opq_egress_if egress_vif;
+  virtual opq_drop_if #(OPQ_N_LANE) drop_vif;
 
   opq_ingress_agent ingress_agent[OPQ_N_LANE];
   opq_egress_agent egress_agent;
+  opq_drop_monitor drop_monitor;
   opq_scoreboard scoreboard;
   opq_coverage coverage;
   opq_virtual_sequencer vseqr;
@@ -36,10 +38,14 @@ class opq_env extends uvm_env;
     if (!uvm_config_db#(virtual opq_egress_if)::get(this, "", "egress_vif", egress_vif)) begin
       `uvm_fatal(get_type_name(), "Missing egress_vif")
     end
+    if (!uvm_config_db#(virtual opq_drop_if #(OPQ_N_LANE))::get(this, "", "drop_vif", drop_vif)) begin
+      `uvm_fatal(get_type_name(), "Missing drop_vif")
+    end
 
     vseqr = opq_virtual_sequencer::type_id::create("vseqr", this);
     scoreboard = opq_scoreboard::type_id::create("scoreboard", this);
     coverage = opq_coverage::type_id::create("coverage", this);
+    drop_monitor = opq_drop_monitor::type_id::create("drop_monitor", this);
 
     for (int i = 0; i < OPQ_N_LANE; i++) begin
       ingress_agent[i] = opq_ingress_agent::type_id::create($sformatf("ingress_agent_%0d", i), this);
@@ -65,6 +71,7 @@ class opq_env extends uvm_env;
     egress_agent.mon.ap.connect(scoreboard.egress_imp);
     egress_agent.mon.ap.connect(coverage.egress_imp);
     egress_agent.drv.bp_ap.connect(coverage.bp_imp);
+    drop_monitor.ap.connect(scoreboard.drop_imp);
     vseqr.egress_seqr = egress_agent.seqr;
   endfunction
 endclass

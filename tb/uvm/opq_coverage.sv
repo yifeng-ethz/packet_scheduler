@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 // IP Name   : opq_coverage
 // Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
-// Revision  : 0.2 - add ticket FIFO depth to active configuration coverage
+// Revision  : 0.5 - ignore impossible CSR/config crosses and clarify exact-512 ticket bin
 // Description:
 //   Functional coverage model for the active OPQ UVM harness.
 //------------------------------------------------------------------------------
@@ -13,6 +13,7 @@ class opq_coverage extends uvm_component;
   localparam int CSR_REGION_FTABLE   = 2;
   localparam int CSR_REGION_LANE_CNT = 3;
   localparam int CSR_REGION_CREDIT   = 4;
+  localparam int CSR_REGION_DRR      = 5;
   localparam int DROP_DOMAIN_LANE    = 0;
   localparam int DROP_DOMAIN_FTABLE  = 1;
 
@@ -23,18 +24,32 @@ class opq_coverage extends uvm_component;
   opq_dut_cfg cfg;
 
   covergroup cg_cfg with function sample(int n_lane, int rd_width, int n_shd, int page_depth, int ticket_depth);
-    coverpoint n_lane { bins active_cfg = {OPQ_N_LANE}; }
-    coverpoint rd_width { bins active_cfg = {OPQ_PAGE_RAM_RD_WIDTH}; }
-    coverpoint n_shd { bins active_cfg = {OPQ_N_SHD}; }
+    coverpoint n_lane {
+      bins active_cfg = {OPQ_N_LANE};
+    }
+    coverpoint rd_width {
+      bins active_cfg = {OPQ_PAGE_RAM_RD_WIDTH};
+    }
+    coverpoint n_shd {
+      bins shd128 = {128};
+      bins shd256 = {256};
+      bins shd512 = {512};
+    }
     coverpoint page_depth {
       bins reduced_overflow = {[256:1024]};
       bins default_cfg = {65536};
     }
     coverpoint ticket_depth {
-      bins tight = {[2:255]};
       bins default_cfg = {256};
-      bins extended_cfg = {[257:2048]};
+      bins exact512 = {512};
+      bins extended_cfg = {[513:2048]};
     }
+    cross n_shd, ticket_depth {
+      ignore_bins illegal_nshd512_exact =
+        binsof(n_shd) intersect {512} &&
+        binsof(ticket_depth) intersect {512};
+    }
+    cross n_shd, page_depth;
   endgroup
 
   covergroup cg_frame with function sample(int lane, int subh_cnt, int hit_cnt, int pre_gap, bit [7:0] first_shd_ts);
@@ -120,20 +135,42 @@ class opq_coverage extends uvm_component;
       bins ftable = {CSR_REGION_FTABLE};
       bins lane_cnt = {CSR_REGION_LANE_CNT};
       bins credit = {CSR_REGION_CREDIT};
+      bins drr = {CSR_REGION_DRR};
     }
     coverpoint lane {
       bins none = {-1};
       bins lane0 = {0};
       bins lane1 = {1};
-      bins other = default;
+      illegal_bins other = default;
     }
     coverpoint word_idx {
       bins meta_words[] = {[0:5]};
       bins ft_words[] = {[0:8]};
-      bins lane_words[] = {[0:10]};
+      bins lane_words[] = {[0:8]};
+      bins credit_words[] = {[9:10]};
+      bins drr_words[] = {[11:15]};
     }
     cross is_write, region;
-    cross region, lane;
+    cross is_write, region {
+      ignore_bins read_only_region_writes =
+        binsof(is_write.write) &&
+        (binsof(region.identity) ||
+         binsof(region.ftable) ||
+         binsof(region.lane_cnt) ||
+         binsof(region.credit));
+    }
+    cross region, lane {
+      ignore_bins non_lane_regions =
+        (binsof(region.identity) ||
+         binsof(region.control) ||
+         binsof(region.ftable)) &&
+        (binsof(lane.lane0) || binsof(lane.lane1));
+      ignore_bins lane_regions_none =
+        (binsof(region.lane_cnt) ||
+         binsof(region.credit) ||
+         binsof(region.drr)) &&
+        binsof(lane.none);
+    }
   endgroup
 
   covergroup cg_credit with function sample(int lane, int lane_credit, int ticket_credit);
@@ -185,6 +222,49 @@ class opq_coverage extends uvm_component;
     cross domain, hdr_cnt, shd_cnt;
   endgroup
 
+  covergroup cg_drr with function sample(int lane, int allowance, int live_quantum, int grant_cnt, int beat_cnt, int defer_cnt);
+    coverpoint lane {
+      bins lane0 = {0};
+      bins lane1 = {1};
+    }
+    coverpoint allowance {
+      bins zero = {0};
+      bins tiny = {[1:4]};
+      bins short = {[5:31]};
+      bins default_cfg = {OPQ_DRR_DEFAULT_ALLOWANCE};
+      bins long = {[32:4095]};
+    }
+    coverpoint live_quantum {
+      bins zero = {0};
+      bins tiny = {[1:4]};
+      bins short = {[5:31]};
+      bins default_cfg = {OPQ_DRR_DEFAULT_ALLOWANCE};
+      bins long = {[32:4095]};
+    }
+    coverpoint grant_cnt {
+      bins zero = {0};
+      bins some = {[1:15]};
+      bins many = {[16:65535]};
+    }
+    coverpoint beat_cnt {
+      bins zero = {0};
+      bins some = {[1:31]};
+      bins many = {[32:65535]};
+    }
+    coverpoint defer_cnt {
+      bins zero = {0};
+      bins some = {[1:15]};
+      bins many = {[16:65535]};
+    }
+    defer_seen: coverpoint int'(defer_cnt > 0) {
+      bins no = {0};
+      bins yes = {1};
+    }
+    cross lane, allowance;
+    cross lane, defer_cnt;
+    cross lane, allowance, defer_seen;
+  endgroup
+
   covergroup cg_ingress with function sample(int lane, bit is_k, bit sop, bit eop, bit [7:0] low_byte);
     coverpoint lane { bins lane0 = {0}; bins lane1 = {1}; }
     coverpoint is_k { bins control = {1}; bins payload = {0}; }
@@ -224,6 +304,7 @@ class opq_coverage extends uvm_component;
     cg_csr = new();
     cg_credit = new();
     cg_drop = new();
+    cg_drr = new();
     cg_ingress = new();
     cg_egress = new();
   endfunction
@@ -284,7 +365,9 @@ class opq_coverage extends uvm_component;
     end else if (addr >= OPQ_CSR_LANE_REGION_BASE) begin
       lane = int'((addr - OPQ_CSR_LANE_REGION_BASE) / OPQ_CSR_LANE_REGION_STRIDE);
       word_idx = int'((addr - OPQ_CSR_LANE_REGION_BASE) % OPQ_CSR_LANE_REGION_STRIDE);
-      if (word_idx >= 9) begin
+      if (word_idx >= 11) begin
+        region = CSR_REGION_DRR;
+      end else if (word_idx >= 9) begin
         region = CSR_REGION_CREDIT;
       end else begin
         region = CSR_REGION_LANE_CNT;
@@ -302,9 +385,13 @@ class opq_coverage extends uvm_component;
     cg_drop.sample(domain, lane, hdr_cnt, shd_cnt, hit_cnt);
   endfunction
 
+  function void sample_drr_snapshot(int lane, int allowance, int live_quantum, int grant_cnt, int beat_cnt, int defer_cnt);
+    cg_drr.sample(lane, allowance, live_quantum, grant_cnt, beat_cnt, defer_cnt);
+  endfunction
+
   function void report_phase(uvm_phase phase);
     super.report_phase(phase);
-    `uvm_info(get_type_name(), $sformatf("Coverage cfg=%.2f frame=%.2f subh=%.2f bp=%.2f csr=%.2f credit=%.2f drop=%.2f ingress=%.2f egress=%.2f",
+    `uvm_info(get_type_name(), $sformatf("Coverage cfg=%.2f frame=%.2f subh=%.2f bp=%.2f csr=%.2f credit=%.2f drop=%.2f drr=%.2f ingress=%.2f egress=%.2f",
       cg_cfg.get_inst_coverage(),
       cg_frame.get_inst_coverage(),
       cg_subheader.get_inst_coverage(),
@@ -312,6 +399,7 @@ class opq_coverage extends uvm_component;
       cg_csr.get_inst_coverage(),
       cg_credit.get_inst_coverage(),
       cg_drop.get_inst_coverage(),
+      cg_drr.get_inst_coverage(),
       cg_ingress.get_inst_coverage(),
       cg_egress.get_inst_coverage()), UVM_LOW)
   endfunction
