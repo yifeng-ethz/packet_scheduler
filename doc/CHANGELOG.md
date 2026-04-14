@@ -1,5 +1,12 @@
 # Changelog
 
+## 26.3.1.0413
+
+- **RTL**: fixed the monolithic frame-table metadata width so whole-frame span tracking no longer reuses the per-block `MAX_PKT_LENGTH_BITS` path. The mapper and presenter now size packet-span bookkeeping with a dedicated full-frame span width, which prevents silent wrap in reduced-depth configurations.
+- **RTL**: fixed the reduced-depth overflow path for the active VHDL DUT by performing frame-span arithmetic in the whole-frame domain before spill detection. This restores real spill/overwrite behavior when `PAGE_RAM_DEPTH` is reduced for verification and unblocks the frame-table drop-counter path.
+- **Verification**: the promoted reduced-depth overflow bucket is now green again on the VHDL implementation: `opq_error_ftable_overflow_test` passes with `OPQ_PAGE_RAM_DEPTH=512`, and the default `N_SHD=256` regression checks `opq_basic_smoke_test`, `opq_edge_max_hits_test`, and `opq_basic_ts_boundary_test` remain passing after the fix.
+- **Verification / Parameter Sweep**: added explicit evidence for non-default `N_SHD` behavior during debug. `N_SHD=128` keeps `opq_basic_smoke_test` and `opq_basic_ts_boundary_test` passing but still fails `opq_edge_max_hits_test` with hit loss in the max-hit path. `N_SHD=512` keeps `opq_edge_max_hits_test` and `opq_basic_ts_boundary_test` passing but still fails `opq_basic_smoke_test` through subheader/drop-counter mismatches. These remaining parameterized bugs are intentionally left open for the next patch batches.
+
 ## 26.3.0.0413
 
 - **RTL**: tightened the monolithic frame-table/drop accounting around actual tile residency rather than derived broken-link symptoms. Frame-table overwrite/flush now pushes header/subheader/hit loss into the CSR counters at the overwrite point, and the tracker retires linked trail/body residency when the presenter drains or invalidates a packet.
