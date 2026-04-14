@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 // IP Name   : opq_pkg
 // Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
-// Revision  : 0.1 - align UVM frame header with full ts[15:0] ingress contract
+// Revision  : 0.2 - expose ticket FIFO depth in the active UVM configuration model
 // Description:
 //   Shared UVM types, helpers, and packet-format builders for the OPQ harness.
 //------------------------------------------------------------------------------
@@ -19,6 +19,9 @@ package opq_pkg;
 `ifndef OPQ_N_SHD
 `define OPQ_N_SHD 256
 `endif
+`ifndef OPQ_TICKET_FIFO_DEPTH
+`define OPQ_TICKET_FIFO_DEPTH 256
+`endif
 
   localparam int OPQ_N_LANE = 2;
   localparam int OPQ_INGRESS_WIDTH = 36;
@@ -26,7 +29,7 @@ package opq_pkg;
   localparam int OPQ_PAGE_RAM_RD_WIDTH = 36;
   localparam int OPQ_PAGE_RAM_DEPTH = `OPQ_PAGE_RAM_DEPTH;
   localparam int OPQ_LANE_FIFO_DEPTH = 1024;
-  localparam int OPQ_TICKET_FIFO_DEPTH = 256;
+  localparam int OPQ_TICKET_FIFO_DEPTH = `OPQ_TICKET_FIFO_DEPTH;
   localparam int OPQ_HANDLE_FIFO_DEPTH = 64;
   localparam int OPQ_LANE_FIFO_MAX_CREDIT = OPQ_LANE_FIFO_DEPTH - 2;
   localparam int OPQ_TICKET_FIFO_MAX_CREDIT = OPQ_TICKET_FIFO_DEPTH - 1;
@@ -255,12 +258,14 @@ package opq_pkg;
   class opq_dut_cfg extends uvm_object;
     int unsigned n_lane;
     int unsigned page_ram_depth;
+    int unsigned ticket_fifo_depth;
     int unsigned n_shd;
     int unsigned n_hit;
 
     `uvm_object_utils_begin(opq_dut_cfg)
       `uvm_field_int(n_lane, UVM_DEFAULT)
       `uvm_field_int(page_ram_depth, UVM_DEFAULT)
+      `uvm_field_int(ticket_fifo_depth, UVM_DEFAULT)
       `uvm_field_int(n_shd, UVM_DEFAULT)
       `uvm_field_int(n_hit, UVM_DEFAULT)
     `uvm_object_utils_end
@@ -269,6 +274,7 @@ package opq_pkg;
       super.new(name);
       n_lane = OPQ_N_LANE;
       page_ram_depth = OPQ_PAGE_RAM_DEPTH;
+      ticket_fifo_depth = OPQ_TICKET_FIFO_DEPTH;
       n_shd = OPQ_N_SHD;
       n_hit = OPQ_N_HIT;
     endfunction

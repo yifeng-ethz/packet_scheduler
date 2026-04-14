@@ -1,3 +1,10 @@
+//------------------------------------------------------------------------------
+// IP Name   : opq_coverage
+// Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
+// Revision  : 0.2 - add ticket FIFO depth to active configuration coverage
+// Description:
+//   Functional coverage model for the active OPQ UVM harness.
+//------------------------------------------------------------------------------
 class opq_coverage extends uvm_component;
   `uvm_component_utils(opq_coverage)
 
@@ -13,14 +20,20 @@ class opq_coverage extends uvm_component;
   uvm_analysis_imp_ingress #(opq_beat_item, opq_coverage) ingress_imp;
   uvm_analysis_imp_egress #(opq_beat_item, opq_coverage) egress_imp;
   uvm_analysis_imp_bp #(opq_bp_item, opq_coverage) bp_imp;
+  opq_dut_cfg cfg;
 
-  covergroup cg_cfg with function sample(int n_lane, int rd_width, int n_shd, int page_depth);
+  covergroup cg_cfg with function sample(int n_lane, int rd_width, int n_shd, int page_depth, int ticket_depth);
     coverpoint n_lane { bins active_cfg = {OPQ_N_LANE}; }
     coverpoint rd_width { bins active_cfg = {OPQ_PAGE_RAM_RD_WIDTH}; }
     coverpoint n_shd { bins active_cfg = {OPQ_N_SHD}; }
     coverpoint page_depth {
       bins reduced_overflow = {[256:1024]};
       bins default_cfg = {65536};
+    }
+    coverpoint ticket_depth {
+      bins tight = {[2:255]};
+      bins default_cfg = {256};
+      bins extended_cfg = {[257:2048]};
     }
   endgroup
 
@@ -217,7 +230,10 @@ class opq_coverage extends uvm_component;
 
   function void start_of_simulation_phase(uvm_phase phase);
     super.start_of_simulation_phase(phase);
-    cg_cfg.sample(OPQ_N_LANE, OPQ_PAGE_RAM_RD_WIDTH, OPQ_N_SHD, OPQ_PAGE_RAM_DEPTH);
+    if (!uvm_config_db#(opq_dut_cfg)::get(this, "", "dut_cfg", cfg)) begin
+      cfg = opq_dut_cfg::type_id::create("dut_cfg");
+    end
+    cg_cfg.sample(cfg.n_lane, OPQ_PAGE_RAM_RD_WIDTH, cfg.n_shd, cfg.page_ram_depth, cfg.ticket_fifo_depth);
   endfunction
 
   function void write_frame(opq_frame_item frame);

@@ -5,6 +5,7 @@
 -- Revision:            0.2 - preserve full frame-base timestamp in subheader tickets
 -- Revision:            0.3 - consume full ts[15:0] from ingress header word 1
 -- Revision:            0.4 - restore absolute ts[11:4] subheader contract with full frame ts[15:0]
+-- Revision:            0.5 - extend subheader timestamp epoch across low-byte wrap for N_SHD=512
 -- Description:         Parses per-lane ingress Avalon-ST words into lane FIFO hit data and ticket FIFO
 --                      descriptors. Trims hits beyond N_HIT to avoid downstream overflow.
 -- ------------------------------------------------------------------------------------------------------------
@@ -95,9 +96,24 @@ architecture rtl of opq_ingress_parser is
   constant LANE_FIFO_MAX_CREDIT  : natural := LANE_FIFO_DEPTH - 2;
   constant TICKET_FIFO_MAX_CREDIT : natural := TICKET_FIFO_DEPTH - 1;
 
-  function make_subheader_ticket_ts(frame_ts_base : unsigned(47 downto 0); shd_ts : std_logic_vector(7 downto 0)) return unsigned is
+  function extend_subheader_ts_hi(
+    curr_hi     : unsigned(35 downto 0);
+    last_shd_ts : std_logic_vector(7 downto 0);
+    last_valid  : std_logic;
+    shd_ts      : std_logic_vector(7 downto 0)
+  ) return unsigned is
+    variable hi_v : unsigned(35 downto 0);
   begin
-    return frame_ts_base(47 downto 12) & unsigned(shd_ts) & to_unsigned(0, 4);
+    hi_v := curr_hi;
+    if (last_valid = '1') and (unsigned(shd_ts) < unsigned(last_shd_ts)) then
+      hi_v := hi_v + 1;
+    end if;
+    return hi_v;
+  end function;
+
+  function make_subheader_ticket_ts(ts_hi : unsigned(35 downto 0); shd_ts : std_logic_vector(7 downto 0)) return unsigned is
+  begin
+    return ts_hi & unsigned(shd_ts) & to_unsigned(0, 4);
   end function;
 
   constant TICKET_TS_LO            : natural := 0;
@@ -136,6 +152,9 @@ architecture rtl of opq_ingress_parser is
     ticket_credit : ticket_addr_t;
 
     frame_ts_base     : unsigned(47 downto 0);
+    subheader_ts_hi   : unsigned(35 downto 0);
+    last_shd_ts       : std_logic_vector(7 downto 0);
+    last_shd_ts_valid : std_logic;
     running_ts        : unsigned(47 downto 0);
     pending_ticket_ts : unsigned(47 downto 0);
 
@@ -164,6 +183,9 @@ architecture rtl of opq_ingress_parser is
     ticket_wdata => (others => '0'),
     ticket_credit => to_unsigned(TICKET_FIFO_MAX_CREDIT, TICKET_FIFO_ADDR_W),
     frame_ts_base => (others => '0'),
+    subheader_ts_hi => (others => '0'),
+    last_shd_ts => (others => '0'),
+    last_shd_ts_valid => '0',
     running_ts => (others => '0'),
     pending_ticket_ts => (others => '0'),
     hdr_flow => 0,
@@ -322,10 +344,22 @@ begin
                 r(i).lane_start_addr <= r(i).lane_wptr;
 
                 -- Ticket timestamp uses the full frame ts[47:12] plus the absolute
-                -- subheader ts[11:4] carried in the ingress subheader word.
-                ts_v := make_subheader_ticket_ts(r(i).frame_ts_base, subh_shd_ts(i));
+                -- subheader ts[11:4] carried in the ingress subheader word, with
+                -- the upper epoch extended across low-byte wrap inside long frames.
+                ts_v := make_subheader_ticket_ts(
+                  extend_subheader_ts_hi(
+                    r(i).subheader_ts_hi,
+                    r(i).last_shd_ts,
+                    r(i).last_shd_ts_valid,
+                    subh_shd_ts(i)
+                  ),
+                  subh_shd_ts(i)
+                );
                 r(i).pending_ticket_ts <= ts_v;
                 r(i).running_ts <= ts_v;
+                r(i).subheader_ts_hi <= ts_v(47 downto 12);
+                r(i).last_shd_ts <= subh_shd_ts(i);
+                r(i).last_shd_ts_valid <= '1';
 
                 if shd_len_v = 0 then
                   -- Empty ticket: write immediately (no hit words will follow).
@@ -441,8 +475,12 @@ begin
                 when 1 =>
                   -- header word1: ts[15:0] + serial/pkg_cnt[15:0]
                   -- Consume the full frame-base low word directly from ingress so ticket
-                  -- timestamps remain unambiguous after long lane stalls.
+                  -- timestamps remain unambiguous after long lane stalls. Reset the
+                  -- subheader epoch here so later low-byte wrap can be extended.
                   r(i).frame_ts_base(15 downto 0) <= unsigned(i_ingress_data(i)(31 downto 16));
+                  r(i).subheader_ts_hi <= r(i).frame_ts_base(47 downto 16) & unsigned(i_ingress_data(i)(31 downto 28));
+                  r(i).last_shd_ts <= (others => '0');
+                  r(i).last_shd_ts_valid <= '0';
                   r(i).running_ts(15 downto 0) <= unsigned(i_ingress_data(i)(31 downto 16));
                   r(i).pkg_cnt <= unsigned(i_ingress_data(i)(15 downto 0));
                   r(i).hdr_flow <= 2;

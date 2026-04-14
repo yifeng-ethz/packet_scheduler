@@ -1,4 +1,5 @@
 # Verification Signoff
+Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 
 ## Scope
 
@@ -159,6 +160,17 @@ The review of the archived packet_scheduler collateral shows these open items:
   - the old template “non-default page RAM width” diagnostic was converted from
     a failing `assert` into a non-failing warning so the reduced-depth overflow
     bucket does not pollute the assertion failure count
+- Structural code-coverage plumbing is now verified on the active harness:
+  - `COV_ENABLE=1 packet_scheduler/tb/scripts/run_uvm.sh opq_basic_smoke_test`
+    produces a UCDB with non-empty code coverage
+  - smoke structural snapshot:
+    - statements: `48.75%`
+    - branches: `33.82%`
+    - conditions: `22.97%`
+    - toggles: `29.74%`
+    - FSM states: `92.30%`
+    - FSM transitions: `62.50%`
+    - filtered total: `52.15%`
 
 ## Remaining Gaps
 
@@ -168,8 +180,9 @@ The review of the archived packet_scheduler collateral shows these open items:
   current promoted default-config closure set.
 - Source-lint warnings in the monolithic VHDL still need final disposition for
   formal signoff.
-- Structural code-coverage numbers are produced by the merged UCDB flow, but
-  they are not yet summarized in this note with hole disposition.
+- Structural code-coverage numbers are now produced by the UCDB flow, but the
+  promoted merged regression still needs a summarized report with hole
+  disposition.
 - The current SV wrapper supports mixed-language SVA, but a full internal SV
   source translation remains a separate follow-up track rather than part of the
   present VHDL signoff claim.

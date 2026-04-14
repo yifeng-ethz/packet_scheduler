@@ -1,3 +1,10 @@
+//------------------------------------------------------------------------------
+// IP Name   : tb_top
+// Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
+// Revision  : 0.2 - enable absolute-ts hit contract SVA and publish dut_cfg
+// Description:
+//   Top-level mixed-language OPQ UVM harness wrapper.
+//------------------------------------------------------------------------------
 `timescale 1ns/1ps
 
 module tb_top;
@@ -99,12 +106,24 @@ module tb_top;
     .readdatavalid(csr_if.readdatavalid)
   );
 
+  opq_hit3_contract_sva hit3_contract_sva (
+    .clk(d_clk),
+    .reset(d_reset),
+    .data(egress_if.data),
+    .valid(egress_if.valid),
+    .ready(egress_if.ready)
+  );
+
   initial begin
+    opq_dut_cfg dut_cfg;
+
     csr_if.idle();
+    dut_cfg = opq_dut_cfg::type_id::create("dut_cfg");
     uvm_config_db#(virtual opq_ingress_if)::set(null, "*", "ingress_vif_0", ingress_if[0]);
     uvm_config_db#(virtual opq_ingress_if)::set(null, "*", "ingress_vif_1", ingress_if[1]);
     uvm_config_db#(virtual opq_egress_if)::set(null, "*", "egress_vif", egress_if);
     uvm_config_db#(virtual opq_csr_if)::set(null, "*", "csr_vif", csr_if);
+    uvm_config_db#(opq_dut_cfg)::set(null, "*", "dut_cfg", dut_cfg);
     run_test();
   end
 endmodule

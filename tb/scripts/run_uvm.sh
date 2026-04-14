@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+#------------------------------------------------------------------------------
+# IP Name   : run_uvm
+# Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
+# Revision  : 0.2 - derive ticket FIFO depth for non-default N_SHD sweeps
+# Description:
+#   Wrapper around the active OPQ UVM make targets.
+#------------------------------------------------------------------------------
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -15,10 +22,23 @@ Usage:
 
 Environment:
   COV_ENABLE        1 to use `make run_cov`
+  OPQ_N_SHD         Optional N_SHD override passed into the DUT wrapper generator and UVM package
+  OPQ_TICKET_FIFO_DEPTH Optional ticket FIFO depth override; if unset the script derives a safe power-of-two depth for N_SHD sweeps
   OPQ_PAGE_RAM_DEPTH Optional page RAM depth override passed into the DUT wrapper generator
   QUESTA_PREFER_FE  0 by default; set to 1 to force the FE executable
   RUN_DO            Optional override for the vsim `-do` script
 EOF
+}
+
+derive_ticket_fifo_depth() {
+  local n_shd="$1"
+  local depth=256
+
+  while (( depth <= n_shd )); do
+    depth=$((depth * 2))
+  done
+
+  printf '%d\n' "${depth}"
 }
 
 if [[ "${1-}" == "-h" || "${1-}" == "--help" ]]; then
@@ -41,6 +61,8 @@ run_one() {
   local test_name="$1"
   local log_file="${LOG_DIR}/${test_name}.log"
   local page_ram_depth="${OPQ_PAGE_RAM_DEPTH:-65536}"
+  local n_shd="${OPQ_N_SHD:-256}"
+  local ticket_fifo_depth="${OPQ_TICKET_FIFO_DEPTH:-}"
   local -a make_args=(
     "-C" "${UVM_DIR}"
     "QUESTA_PREFER_FE=${QUESTA_PREFER_FE:-0}"
@@ -54,9 +76,22 @@ run_one() {
   if [[ "${test_name}" == "opq_error_ftable_overflow_test" && -z "${OPQ_PAGE_RAM_DEPTH-}" ]]; then
     page_ram_depth=512
   fi
+  if [[ -z "${ticket_fifo_depth}" ]]; then
+    if (( n_shd > 256 )); then
+      ticket_fifo_depth="$(derive_ticket_fifo_depth "${n_shd}")"
+    else
+      ticket_fifo_depth=256
+    fi
+  fi
   make_args+=("OPQ_PAGE_RAM_DEPTH=${page_ram_depth}")
+  make_args+=("OPQ_N_SHD=${n_shd}")
+  make_args+=("OPQ_TICKET_FIFO_DEPTH=${ticket_fifo_depth}")
   if [[ "${COV_ENABLE:-0}" == "1" ]]; then
     target="run_cov"
+    make_args+=("COV=1")
+    if [[ -n "${COV_CODE-}" ]]; then
+      make_args+=("COV_CODE=${COV_CODE}")
+    fi
   fi
 
   printf '%s\n' "----------------------------------------------------------------"

@@ -1,6 +1,15 @@
 # Changelog
 Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 
+## 26.3.6.0414
+
+- **RTL / Timestamp Contract**: kept the full frame-base timestamp visible in the packet/header path and closed the `N_SHD=512` ambiguity by extending the subheader `ts[11:4]` low byte across wrap inside both the monolithic and split ingress parsers. Subheader tickets now keep an absolute `ts[47:0]` ordering basis even when a frame spans the second 256-subheader epoch or a lane stalls for a long time before resuming.
+- **RTL / Configuration Contract**: documented and enforced the real ticket-credit requirement for long frames. The packaged IP now rejects `N_SHD > 256` configurations unless `TICKET_FIFO_DEPTH > N_SHD`, because empty-subframe bursts otherwise consume ticket credit before the frame completes.
+- **Verification Harness Contract**: parameterized the active UVM wrapper and configuration model for `N_SHD` and `TICKET_FIFO_DEPTH`, and taught the regression launcher to derive a safe power-of-two ticket FIFO depth for non-default `N_SHD` sweeps. This keeps the default `N_SHD=256` resource point unchanged while allowing `N_SHD=512` validation without false credit starvation.
+- **Verification / SVA**: promoted the egress hit-contract checker from dead compiled code into an active `tb_top` assertion block. The checker now follows the same implicit 5-word-header / `K237` subheader / `K284` trailer contract as the scoreboard, and reconstructs absolute subheader timestamps from the full frame header so wrap at `N_SHD=512` does not create false assertion failures.
+- **Verification / Coverage Plumbing**: fixed the active `run_uvm.sh` coverage path so `COV_ENABLE=1` now propagates `COV=1` and optional `COV_CODE` into the UVM make targets. The generated UCDBs now contain real code-coverage data instead of functional-coverage-only runs mislabeled as closure.
+- **Verification**: reran the promoted basic parameter sweep on the VHDL DUT for `N_SHD=128`, `256`, and `512`. `opq_basic_smoke_test`, `opq_basic_ts_boundary_test`, and `opq_edge_max_hits_test` now pass across all three points, so the non-default frame-size debug path is closed at the active smoke level.
+
 ## 26.3.5.0414
 
 - **Verification Harness Contract**: fixed the active max-hit virtual sequence so non-default `N_SHD` runs derive second-frame subheader timestamps from the actual frame base (`frame_ts[11:4]`) instead of reusing a hard-coded low-byte slot value. This preserves the restored absolute `ts[11:4]` contract when `N_SHD=128`.

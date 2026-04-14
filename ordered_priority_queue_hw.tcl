@@ -8,7 +8,7 @@ package require -exact altera_terp 1.0
 
 set_module_property NAME                             ordered_priority_queue
 set_module_property DISPLAY_NAME                     "Ordered Priority Queue"
-set_module_property VERSION                          26.3.5.0414
+set_module_property VERSION                          26.3.6.0414
 set_module_property DESCRIPTION                      "Ordered Priority Queue Mu3e IP Core"
 set_module_property GROUP                            "Mu3e Data Plane/Modules"
 set_module_property AUTHOR                           "Yifeng Wang (yifenwan@phys.ethz.ch)"
@@ -37,13 +37,13 @@ proc is_power_of_two {value} {
 }
 
 # ────────────────────────────────────────────────────────────────────────────
-# Identity constants — packaged 2026-04-13
+# Identity constants — packaged 2026-04-14
 # ────────────────────────────────────────────────────────────────────────────
 # UID = ASCII "OPQM" (Ordered Priority Queue, Monolithic) = 0x4F50514D
 set IP_UID_DEFAULT_CONST        1330663757
 set VERSION_MAJOR_DEFAULT_CONST 26
 set VERSION_MINOR_DEFAULT_CONST 3
-set VERSION_PATCH_DEFAULT_CONST 5
+set VERSION_PATCH_DEFAULT_CONST 6
 set BUILD_DEFAULT_CONST         414
 set VERSION_DATE_DEFAULT_CONST  20260414
 # 0x630F1720 — current submodule HEAD baseline before the DV promotion tranche
@@ -137,10 +137,12 @@ proc validate {} {
     if {$lane_fifo_w < $min_lane_fifo_w} {
         send_message error "LANE_FIFO_WIDTH (${lane_fifo_w}) must be at least ${min_lane_fifo_w} = data+datak+sop+eop+err."
     }
-    if {$ticket_fifo_d < 2 || $ticket_fifo_d > 256} {
-        send_message error "TICKET_FIFO_DEPTH must stay in 2..256."
+    if {$ticket_fifo_d < 2 || $ticket_fifo_d > 1024} {
+        send_message error "TICKET_FIFO_DEPTH must stay in 2..1024."
     }
-    if {$ticket_fifo_d < $n_shd} {
+    if {$n_shd > 256 && $ticket_fifo_d <= $n_shd} {
+        send_message error "TICKET_FIFO_DEPTH (${ticket_fifo_d}) must be larger than N_SHD (${n_shd}) for N_SHD > 256, otherwise empty-subframe bursts will drop tickets."
+    } elseif {$ticket_fifo_d < $n_shd} {
         send_message info "TICKET_FIFO_DEPTH (${ticket_fifo_d}) is smaller than N_SHD (${n_shd}); empty-subframe bursts may starve credit."
     }
     if {$handle_fifo_d < 2 || $handle_fifo_d > 256} {
@@ -326,9 +328,9 @@ set_parameter_property LANE_FIFO_WIDTH DESCRIPTION "Lane FIFO data width. Minimu
 
 add_parameter TICKET_FIFO_DEPTH NATURAL 256
 set_parameter_property TICKET_FIFO_DEPTH DISPLAY_NAME "Ticket FIFO Depth"
-set_parameter_property TICKET_FIFO_DEPTH ALLOWED_RANGES 2:256
+set_parameter_property TICKET_FIFO_DEPTH ALLOWED_RANGES 2:1024
 set_parameter_property TICKET_FIFO_DEPTH HDL_PARAMETER true
-set_parameter_property TICKET_FIFO_DEPTH DESCRIPTION "Per-lane ticket FIFO depth between ingress parser and page allocator. Should be larger than N_SHD so empty-subframe bursts do not starve credit."
+set_parameter_property TICKET_FIFO_DEPTH DESCRIPTION "Per-lane ticket FIFO depth between ingress parser and page allocator. Should be larger than N_SHD so empty-subframe bursts do not starve credit; N_SHD=512 requires a depth above 512."
 
 add_parameter HANDLE_FIFO_DEPTH NATURAL 64
 set_parameter_property HANDLE_FIFO_DEPTH DISPLAY_NAME "Handle FIFO Depth"

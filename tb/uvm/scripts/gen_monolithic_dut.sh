@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+#------------------------------------------------------------------------------
+# IP Name   : gen_monolithic_dut
+# Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
+# Revision  : 0.2 - expose ticket FIFO depth for parameterized UVM builds
+# Description:
+#   Generate the mixed-language wrapper used by the active OPQ UVM harness.
+#------------------------------------------------------------------------------
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -9,6 +16,8 @@ OUT_DIR="${1:-${PKT_DIR}/tb/rtl_gen_monolithic}"
 QUARTUS_SH="${QUARTUS_SH:-/data1/intelFPGA_pro/23.1/quartus/bin/quartus_sh}"
 QUARTUS_ROOTDIR="${QUARTUS_ROOTDIR:-/data1/intelFPGA_pro/23.1/quartus}"
 OPQ_PAGE_RAM_DEPTH="${OPQ_PAGE_RAM_DEPTH:-65536}"
+OPQ_N_SHD="${OPQ_N_SHD:-256}"
+OPQ_TICKET_FIFO_DEPTH="${OPQ_TICKET_FIFO_DEPTH:-256}"
 
 mkdir -p "${OUT_DIR}"
 
@@ -82,11 +91,11 @@ begin
             CHANNEL_WIDTH       => 2,
             LANE_FIFO_DEPTH     => 1024,
             LANE_FIFO_WIDTH     => 40,
-            TICKET_FIFO_DEPTH   => 256,
+            TICKET_FIFO_DEPTH   => ${OPQ_TICKET_FIFO_DEPTH},
             HANDLE_FIFO_DEPTH   => 64,
             PAGE_RAM_DEPTH      => ${OPQ_PAGE_RAM_DEPTH},
             PAGE_RAM_RD_WIDTH   => 36,
-            N_SHD               => 128,
+            N_SHD               => ${OPQ_N_SHD},
             N_HIT               => 255,
             HDR_SIZE            => 5,
             SHD_SIZE            => 1,

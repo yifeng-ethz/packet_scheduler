@@ -1,3 +1,6 @@
+#
+# Author: Yifeng Wang (yifenwan@phys.ethz.ch)
+#
 TB_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 PKT_DIR := $(abspath $(TB_DIR)/../..)
 REPO_ROOT := $(abspath $(PKT_DIR)/..)
@@ -39,11 +42,15 @@ QUESTA_MODELSIM_INI ?= $(QUESTA_HOME)/modelsim.ini
 MODELSIM_INI := $(BUILD_DIR)/modelsim.ini
 DPI_CPP_PATH ?= /usr/bin/gcc
 OPQ_PAGE_RAM_DEPTH ?= 65536
+OPQ_N_SHD ?= 256
+OPQ_TICKET_FIFO_DEPTH ?= 256
 
 QUARTUS_SH ?= /data1/intelFPGA_pro/23.1/quartus/bin/quartus_sh
 QUARTUS_ROOTDIR := /data1/intelFPGA_pro/23.1/quartus
 UVM_DEFINES ?= +define+UVM_NO_DPI
 UVM_DEFINES += +define+OPQ_PAGE_RAM_DEPTH=$(OPQ_PAGE_RAM_DEPTH)
+UVM_DEFINES += +define+OPQ_N_SHD=$(OPQ_N_SHD)
+UVM_DEFINES += +define+OPQ_TICKET_FIFO_DEPTH=$(OPQ_TICKET_FIFO_DEPTH)
 TEST ?= opq_basic_smoke_test
 COV ?= 0
 COV_CODE ?= sbecft
@@ -83,6 +90,7 @@ SV_SRCS := \
 	$(TB_DIR)/opq_env_pkg.sv \
 	$(TB_DIR)/sva/opq_avst_ingress_sva.sv \
 	$(TB_DIR)/sva/opq_avst_egress_sva.sv \
+	$(TB_DIR)/sva/opq_hit3_contract_sva.sv \
 	$(TB_DIR)/sva/opq_csr_sva.sv \
 	$(TB_DIR)/tb_top.sv
 
@@ -108,7 +116,7 @@ endif
 all: run
 
 gen_dut:
-	QUARTUS_SH=$(QUARTUS_SH) QUARTUS_ROOTDIR=$(QUARTUS_ROOTDIR) $(TB_DIR)/scripts/gen_monolithic_dut.sh $(RTL_GEN_DIR)
+	QUARTUS_SH=$(QUARTUS_SH) QUARTUS_ROOTDIR=$(QUARTUS_ROOTDIR) OPQ_N_SHD=$(OPQ_N_SHD) OPQ_TICKET_FIFO_DEPTH=$(OPQ_TICKET_FIFO_DEPTH) $(TB_DIR)/scripts/gen_monolithic_dut.sh $(RTL_GEN_DIR)
 
 prepare:
 	rm -rf $(BUILD_DIR)

@@ -1,3 +1,10 @@
+//------------------------------------------------------------------------------
+// IP Name   : opq_ingress_agent
+// Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
+// Revision  : 0.2 - drive frame words through shared packet-format helpers
+// Description:
+//   Ingress sequencer/driver/monitor for the active OPQ UVM harness.
+//------------------------------------------------------------------------------
 class opq_ingress_sequencer extends uvm_sequencer #(opq_frame_item);
   `uvm_component_utils(opq_ingress_sequencer)
 
@@ -58,24 +65,15 @@ class opq_ingress_driver extends uvm_driver #(opq_frame_item);
   endtask
 
   task automatic drive_frame(opq_frame_item tr);
-    bit [31:0] word0;
-    bit [31:0] word1;
-    bit [31:0] word2;
-    bit [31:0] word3;
-
     wait_reset_release();
     wait_cycles(tr.pre_gap_cycles);
 
-    word0 = tr.frame_ts[47:16];
-    word1 = {tr.frame_ts[15:0], tr.pkg_cnt};
-    word2 = {tr.frame_subh_count_bits(), tr.frame_hit_count_bits()};
-    word3 = '0;
-
     drive_word(make_preamble(tr.dt_type, tr.feb_id), 4'b0001, 1'b1, 1'b0, 3'b000, tr.channel);
-    drive_word(word0, 4'b0000, 1'b0, 1'b0, 3'b000, tr.channel);
-    drive_word(word1, 4'b0000, 1'b0, 1'b0, 3'b000, tr.channel);
-    drive_word(word2, 4'b0000, 1'b0, 1'b0, 3'b000, tr.channel);
-    drive_word(word3, 4'b0000, 1'b0, 1'b1, 3'b000, tr.channel);
+    drive_word(make_frame_data_header0(tr.frame_ts), 4'b0000, 1'b0, 1'b0, 3'b000, tr.channel);
+    drive_word(make_frame_data_header1(tr.frame_ts, tr.pkg_cnt), 4'b0000, 1'b0, 1'b0, 3'b000, tr.channel);
+    drive_word(make_frame_debug_header0(tr.frame_subh_count_bits(), tr.frame_hit_count_bits()),
+      4'b0000, 1'b0, 1'b0, 3'b000, tr.channel);
+    drive_word(make_frame_debug_header1(tr.frame_ts), 4'b0000, 1'b0, 1'b1, 3'b000, tr.channel);
 
     foreach (tr.subheaders[i]) begin
       bit [7:0] hit_cnt;
