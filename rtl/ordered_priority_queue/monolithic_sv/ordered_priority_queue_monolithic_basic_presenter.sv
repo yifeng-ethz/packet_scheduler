@@ -1,8 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_basic_presenter
-// Version : 26.0.0
-// Date    : 20260413
-// Change  : Add non-spill native SV presenter for basic smoke validation
+// Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
+// Version : 26.3.10
+// Date    : 20260414
+// Change  : Carry presenter timing and default-contract fixes into the native SV staging path
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_basic_presenter #(
@@ -11,7 +12,7 @@ module ordered_priority_queue_monolithic_basic_presenter #(
   parameter int unsigned PAGE_RAM_RD_WIDTH = 36,
   parameter int unsigned PAGE_RAM_DATA_WIDTH = 40,
   parameter int unsigned PAGE_RAM_ADDR_WIDTH = $clog2(PAGE_RAM_DEPTH),
-  parameter int unsigned N_SHD = 128,
+  parameter int unsigned N_SHD = 256,
   parameter int unsigned N_HIT = 255,
   parameter int unsigned HDR_SIZE = 5,
   parameter int unsigned SHD_SIZE = 1,
@@ -100,7 +101,7 @@ module ordered_priority_queue_monolithic_basic_presenter #(
     if (new_frame_valid_i) begin
       meta_addr[meta_wptr] <= new_frame_raw_addr_i;
       meta_len[meta_wptr] <= page_ram_addr_t'(
-        ((frame_shr_cnt_this_i / N_LANE) * SHD_SIZE) +
+        (frame_shr_cnt_this_i * SHD_SIZE) +
         (frame_hit_cnt_this_i * HIT_SIZE) +
         HDR_SIZE + TRL_SIZE
       );

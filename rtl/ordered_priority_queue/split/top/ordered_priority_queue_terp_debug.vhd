@@ -2,6 +2,7 @@
 -- IP Name:             ordered_priority_queue_terp_debug (split wrapper)
 -- Author:              Yifeng Wang (original OPQ) / split wrapper by Codex
 -- Revision:            0.1 - split wrapper for VHDL-only sims
+-- Revision:            0.2 - align delivered default to 256 subheaders for split debug parity - Apr 14, 2026
 -- Description:         Fixed 2-lane wrapper exposing the monolithic OPQ interface and instantiating the
 --                      split implementation (`work.opq_top`). Used by legacy VHDL TBs.
 -- ------------------------------------------------------------------------------------------------------------
@@ -37,7 +38,7 @@ entity ordered_priority_queue_terp_debug is
     PAGE_RAM_DEPTH      : natural := 65536;
     PAGE_RAM_RD_WIDTH   : natural := 36;
     -- packet format
-    N_SHD               : natural := 128;
+    N_SHD               : natural := 256;
     N_HIT               : natural := 255;
     HDR_SIZE            : natural := 5;
     SHD_SIZE            : natural := 1;

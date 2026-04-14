@@ -1,8 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_page_allocator
-// Version : 26.0.0
-// Date    : 20260413
-// Change  : Extract monolithic page allocator from VHDL into standalone SV
+// Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
+// Version : 26.3.10
+// Date    : 20260414
+// Change  : Carry ticket-guard and 256-subheader default fixes into the native SV staging path
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_page_allocator #(
@@ -12,7 +13,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
   parameter int unsigned TICKET_FIFO_DEPTH = 256,
   parameter int unsigned HANDLE_FIFO_DEPTH = 64,
   parameter int unsigned PAGE_RAM_DEPTH = 65536,
-  parameter int unsigned N_SHD = 128,
+  parameter int unsigned N_SHD = 256,
   parameter int unsigned N_HIT = 255,
   parameter int unsigned HDR_SIZE = 5,
   parameter int unsigned SHD_SIZE = 1,
@@ -312,11 +313,14 @@ module ordered_priority_queue_monolithic_page_allocator #(
       total_subh_v += int'(ticket_fifos_rd_data_i[i][TICKET_N_SUBH_HI:TICKET_N_SUBH_LO]);
       total_hit_v += int'(ticket_fifos_rd_data_i[i][TICKET_N_HIT_HI:TICKET_N_HIT_LO]);
 
-      if (ticket_fifos_rd_data_i[i][TICKET_ALT_SOP_LOC]) begin
+      if (page_allocator_is_pending_ticket[i] && ticket_fifos_rd_data_i[i][TICKET_ALT_SOP_LOC]) begin
         page_allocator_is_tk_sop[i] = 1'b1;
       end
 
-      if (page_allocator_is_tk_sop[i]) begin
+      if (!page_allocator_is_pending_ticket[i]) begin
+        page_allocator_is_tk_future[i] = 1'b0;
+        page_allocator_is_tk_past[i] = 1'b0;
+      end else if (page_allocator_is_tk_sop[i]) begin
         if (ticket_fifos_rd_data_i[i][TICKET_SERIAL_HI:TICKET_SERIAL_LO] >= (page_allocator.frame_serial + 1'b1)) begin
           page_allocator_is_tk_future[i] = 1'b1;
         end
@@ -388,7 +392,11 @@ module ordered_priority_queue_monolithic_page_allocator #(
           page_allocator.ticket_credit_update[i] <= ticket_fifo_addr_t'(1);
           page_allocator.ticket_credit_update_valid[i] <= 1'b1;
 
-          if (&page_allocator_is_tk_sop) begin
+          if (!page_allocator_is_pending_ticket[i]) begin
+            page_allocator.ticket_rptr[i] <= page_allocator.ticket_rptr[i];
+            page_allocator.lane_masked[i] <= 1'b1;
+            page_allocator.ticket_credit_update_valid[i] <= 1'b0;
+          end else if (&page_allocator_is_tk_sop) begin
             page_allocator.frame_shr_cnt_this <= page_allocator_if_read_ticket_ticket_sop.n_subh;
             page_allocator.frame_hit_cnt_this <= page_allocator_if_read_ticket_ticket_sop.n_hit;
             page_allocator.frame_serial_this <= page_allocator_if_read_ticket_ticket_sop.serial;

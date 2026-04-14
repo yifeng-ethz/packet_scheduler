@@ -1,3 +1,15 @@
+//------------------------------------------------------------------------------
+// ordered_priority_queue_dut_sv
+// Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
+// Version : 26.3.10
+// Date    : 20260414
+// Change  : Align the native SV DUT wrapper with the packaged 256-subheader default
+//------------------------------------------------------------------------------
+
+`ifndef OPQ_N_SHD
+`define OPQ_N_SHD 256
+`endif
+
 module ordered_priority_queue_dut_sv (
   input  logic [35:0] asi_ingress_0_data,
   input  logic [0:0]  asi_ingress_0_valid,
@@ -49,7 +61,9 @@ module ordered_priority_queue_dut_sv (
   assign asi_ingress_error_bus[0] = asi_ingress_0_error;
   assign asi_ingress_error_bus[1] = asi_ingress_1_error;
 
-  ordered_priority_queue_monolithic_sv u_native (
+  ordered_priority_queue_monolithic_sv #(
+    .N_SHD(`OPQ_N_SHD)
+  ) u_native (
     .asi_ingress_data(asi_ingress_data_bus),
     .asi_ingress_valid(asi_ingress_valid_bus),
     .asi_ingress_channel(asi_ingress_channel_bus),

@@ -1,8 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_block_path
-// Version : 26.0.0
-// Date    : 20260413
-// Change  : Extract monolithic block mover plus B2P arbiter into standalone SV
+// Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
+// Version : 26.3.10
+// Date    : 20260414
+// Change  : Carry mover priming, beat accounting, and default-contract fixes into the native SV staging path
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_block_path #(
@@ -268,8 +269,10 @@ module ordered_priority_queue_monolithic_block_path #(
         end
 
         BLOCK_MOVER_PREP: begin
+          // Prime the lane-FIFO read path first; the first page-RAM write starts
+          // in WRITE_BLK on the following cycle once the source word is stable.
           block_mover[i].page_wptr <= block_mover[i].handle.dst;
-          block_mover[i].page_wreq <= 1'b1;
+          block_mover[i].page_wreq <= 1'b0;
           block_mover_state[i] <= BLOCK_MOVER_WRITE_BLK;
         end
 

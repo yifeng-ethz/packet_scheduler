@@ -2,6 +2,7 @@
 -- IP Name:             opq_page_allocator
 -- Author:              Yifeng Wang (original OPQ) / split+refactor by Codex
 -- Revision:            0.1 - split from ordered_priority_queue.terp.vhd
+-- Revision:            0.2 - align delivered default to 256 subheaders for split-contract parity - Apr 14, 2026
 -- Description:         Consumes per-lane tickets, allocates page RAM space for subheaders+hits, writes header/
 --                      tail/trailer words, and emits per-lane mover handles. Provides conservative drop-on-
 --                      contention behavior when write is blocked by presenter read-lock.
@@ -29,7 +30,7 @@ entity opq_page_allocator is
     MODE : string := "MERGING";
 
     N_LANE              : positive := 2;
-    N_SHD               : positive := 128;
+    N_SHD               : positive := 256;
     CHANNEL_WIDTH       : positive := 2;
 
     LANE_FIFO_DEPTH     : positive := 1024;

@@ -1,8 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_sv
-// Version : 26.1.0
-// Date    : 20260413
-// Change  : Stage standalone frame-table tracker/presenter SV blocks beside the basic path
+// Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
+// Version : 26.3.10
+// Date    : 20260414
+// Change  : Align native SV top defaults and staged blocks with the packaged OPQ release
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_sv #(
@@ -18,7 +19,7 @@ module ordered_priority_queue_monolithic_sv #(
   parameter int unsigned HANDLE_FIFO_DEPTH = 64,
   parameter int unsigned PAGE_RAM_DEPTH = 65536,
   parameter int unsigned PAGE_RAM_RD_WIDTH = 36,
-  parameter int unsigned N_SHD = 128,
+  parameter int unsigned N_SHD = 256,
   parameter int unsigned N_HIT = 255,
   parameter int unsigned HDR_SIZE = 5,
   parameter int unsigned SHD_SIZE = 1,

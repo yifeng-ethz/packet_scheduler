@@ -2,6 +2,7 @@
 -- IP Name:             ordered_priority_queue (split wrapper)
 -- Author:              Yifeng Wang (yifenwan@phys.ethz.ch) / split wrapper by Codex
 -- Revision:            0.1 - TERP wrapper for split OPQ (generated via `altera_terp`)
+-- Revision:            0.2 - align delivered default to 256 subheaders for split top-level parity - Apr 14, 2026
 -- Description:         TERP template that exposes the monolithic OPQ Avalon-ST interface (per-lane ports)
 --                      and instantiates the split implementation (`work.opq_top`).
 --
@@ -46,7 +47,7 @@ entity ${output_name} is
         PAGE_RAM_DEPTH          : natural := 65536;
         PAGE_RAM_RD_WIDTH       : natural := 36;
         -- packet format
-        N_SHD                   : natural := 128;
+        N_SHD                   : natural := 256;
         N_HIT                   : natural := 255;
         HDR_SIZE                : natural := 5;
         SHD_SIZE                : natural := 1;

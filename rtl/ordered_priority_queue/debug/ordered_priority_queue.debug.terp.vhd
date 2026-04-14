@@ -3,6 +3,7 @@
 -- Author:              Yifeng Wang (yifenwan@phys.ethz.ch)
 -- Revision:            1.0 - file created - July 2, 2025
 -- Revision:            2.0 - all modules before frame table fully verified - Dec 11, 2025
+-- Revision:            2.1 - align delivered default to 256 subheaders for the active DV/package contract - Apr 14, 2026
 -- Description:         Aggregate multiple ingress data flows into one single egress data flow
 --
 --                      - data structure is defined as:
@@ -185,7 +186,7 @@ entity ${output_name} is
         PAGE_RAM_DEPTH          : natural := 65536; -- size of the page RAM in unit of its WR data width, need to be larger than the full header packet, which is usually 65k max for each FEB flow
         PAGE_RAM_RD_WIDTH       : natural := 36; -- RD data width of the page RAM in unit of bits, write width = LANE_FIFO_WIDTH, read width can be larger to interface with PCIe DMA
         -- packet format (packet = subheader packet; w/o sop/eop; frame = header packet, w/ sop/eop)
-        N_SHD                   : natural := 128; -- number of subheader, e.g., 256, more than 256 will be dropped. each subframe is 16 cycles
+        N_SHD                   : natural := 256; -- number of subheader, e.g., 256, more than 256 will be dropped. each subframe is 16 cycles
         N_HIT                   : natural := 255; -- number of hits per subheader, e.g., 255, more than 255 will be dropped
         HDR_SIZE                : natural := 5; -- size of header in words, e.g., 5 words
         SHD_SIZE                : natural := 1; -- size of subheader in words, e.g., 1 word

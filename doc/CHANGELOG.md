@@ -1,6 +1,13 @@
 # Changelog
 Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 
+## 26.3.10.0414
+
+- **RTL / Monolithic VHDL**: committed the currently exercised DRR and presenter fixes into the packaged source tree. The monolithic OPQ now carries the block-level deficit scheduling state, per-lane DRR allowance and service/defer counters, frame-table actual-count side storage, and the presenter skid/hold tightening that the active DV probes have been running against.
+- **RTL / Default Contract**: propagated the active `N_SHD=256` default into the remaining maintained debug/split entry points and the native-SV staging wrapper so the checked-in source defaults match the live harness and package contract.
+- **Packaging**: advanced the packaged OPQ catalog revision to `26.3.10.0414` and aligned the `_hw.tcl` identity defaults, GUI register-map text, and DRR CSR description with the current RTL contract.
+- **RTL / Native SV Staging**: kept the native-SV rewrite in sync with the active default/basic contract by applying the same `N_SHD=256` default and the already-debugged basic-path fixes in the page allocator, block path, and basic presenter.
+
 ## 26.3.9.0414
 
 - **Verification / Bucket Promotion**: promoted additional still-relevant current-tree cases into the active bucket wrappers. `run_basic.sh` now includes `opq_basic_subheader_shape_test`; `run_edge.sh` adds `opq_edge_ready_medium_profile_test` and `opq_edge_stuck_low_backpressure_test`; `run_error.sh` adds `opq_error_lane_mask_single_hit_test` and `opq_error_lane_mask_burst_test`; `run_cross.sh` adds `opq_cross_drr_idle_lane_test`, `opq_cross_drr_zero_allowance_test`, and `opq_cross_drr_short_allowance_test`.

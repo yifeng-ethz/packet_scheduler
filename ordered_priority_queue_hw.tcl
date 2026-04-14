@@ -8,7 +8,7 @@ package require -exact altera_terp 1.0
 
 set_module_property NAME                             ordered_priority_queue
 set_module_property DISPLAY_NAME                     "Ordered Priority Queue"
-set_module_property VERSION                          26.3.6.0414
+set_module_property VERSION                          26.3.10.0414
 set_module_property DESCRIPTION                      "Ordered Priority Queue Mu3e IP Core"
 set_module_property GROUP                            "Mu3e Data Plane/Modules"
 set_module_property AUTHOR                           "Yifeng Wang (yifenwan@phys.ethz.ch)"
@@ -43,12 +43,96 @@ proc is_power_of_two {value} {
 set IP_UID_DEFAULT_CONST        1330663757
 set VERSION_MAJOR_DEFAULT_CONST 26
 set VERSION_MINOR_DEFAULT_CONST 3
-set VERSION_PATCH_DEFAULT_CONST 6
+set VERSION_PATCH_DEFAULT_CONST 10
 set BUILD_DEFAULT_CONST         414
 set VERSION_DATE_DEFAULT_CONST  20260414
-# 0x630F1720 — current submodule HEAD baseline before the DV promotion tranche
+# 32-bit packaged provenance stamp for this release family
 set VERSION_GIT_DEFAULT_CONST   1661933344
 set INSTANCE_ID_DEFAULT_CONST   0
+set OPQ_VERSION_STRING          [format "%d.%d.%d.%04d" \
+    $VERSION_MAJOR_DEFAULT_CONST \
+    $VERSION_MINOR_DEFAULT_CONST \
+    $VERSION_PATCH_DEFAULT_CONST \
+    $BUILD_DEFAULT_CONST]
+set OPQ_GIT_HEX_STRING          [format "0x%08X" $VERSION_GIT_DEFAULT_CONST]
+
+set OPQ_VERSIONING_HTML {<html><b>Common identity header</b><br/>CSR word <b>0x001</b> selects the META page on write and returns the selected payload on read.<br/><br/><b>Page 0</b>: VERSION word, encoded as YEAR[31:24], MINOR[23:16], PATCH[15:12], BUILD[11:0].<br/><b>Page 1</b>: VERSION_DATE (YYYYMMDD).<br/><b>Page 2</b>: VERSION_GIT (32-bit truncated git stamp).<br/><b>Page 3</b>: INSTANCE_ID.</html>}
+set OPQ_CSR_WINDOW_HTML {<html><table border="1" cellpadding="3" width="100%">
+<tr><th>Word</th><th>Name</th><th>Access</th><th>Description</th></tr>
+<tr><td>0x000</td><td>UID</td><td>RO</td><td>Immutable Mu3e IP identifier. Default ASCII "OPQM".</td></tr>
+<tr><td>0x001</td><td>META</td><td>RW/RO</td><td>Write page selector[1:0]. Read selected page: VERSION / DATE / GIT / INSTANCE_ID.</td></tr>
+<tr><td>0x002</td><td>LANE_MASK</td><td>RW</td><td>Bit <i>i</i> = 1 masks lane <i>i</i> at packet boundaries. In-flight packets drain; new packets on masked lanes are dropped and counted.</td></tr>
+<tr><td>0x003</td><td>CTRL</td><td>WO</td><td>Bit 0 = write-1 pulse to clear all software-visible counters.</td></tr>
+<tr><td>0x004</td><td>STATUS</td><td>RO</td><td>Lane-mask summary, busy flags, and effective-mask state.</td></tr>
+<tr><td>0x005</td><td>CAP</td><td>RO</td><td>Capability summary and per-lane counter-window geometry.</td></tr>
+<tr><td>0x008..0x010</td><td>FT_* Counters</td><td>RO</td><td>Frame-table write/read/drop counters for headers, subheaders, and hits.</td></tr>
+<tr><td>0x040 + lane*0x10 + 0..A</td><td>Lane Counters</td><td>RO</td><td>Per-lane write/read/drop counters plus live lane/ticket free-credit counters.</td></tr>
+<tr><td>0x040 + lane*0x10 + B</td><td>DRR_ALLOWANCE</td><td>RW</td><td>Per-lane deficit-round-robin refill allowance in page words per participating subheader. Write also reseeds the live quantum.</td></tr>
+<tr><td>0x040 + lane*0x10 + C..F</td><td>DRR Live / Stats</td><td>RO</td><td>Live DRR deficit budget plus per-lane block-grant / served-beat / defer-round counters.</td></tr>
+</table></html>}
+set OPQ_META_FIELDS_HTML {<html><table border="1" cellpadding="3" width="100%">
+<tr><th>Bits</th><th>Name</th><th>Description</th></tr>
+<tr><td><b>[1:0]</b> write-only selector</td><td>PAGE_SEL</td><td>Selects which identity payload is returned on the next read: 0=VERSION, 1=DATE, 2=GIT, 3=INSTANCE_ID.</td></tr>
+<tr><td><b>[31:0]</b> read data</td><td>META_PAYLOAD</td><td>Selected identity payload returned by the read-side mux.</td></tr>
+</table></html>}
+set OPQ_CTRL_FIELDS_HTML {<html><table border="1" cellpadding="3" width="100%">
+<tr><th>Bits</th><th>Name</th><th>Description</th></tr>
+<tr><td><b>[0]</b></td><td>CLEAR_COUNTERS</td><td>Write-1 pulse. Clears all per-lane and frame-table software-visible counters.</td></tr>
+<tr><td><b>[31:1]</b></td><td>RESERVED</td><td>Ignored; write zero for forward compatibility.</td></tr>
+</table></html>}
+set OPQ_STATUS_FIELDS_HTML {<html><table border="1" cellpadding="3" width="100%">
+<tr><th>Bits</th><th>Name</th><th>Description</th></tr>
+<tr><td><b>[N_LANE-1:0]</b></td><td>LANE_MASK_SHADOW</td><td>Software-programmed lane mask value.</td></tr>
+<tr><td><b>[16]</b></td><td>ALLOC_BUSY</td><td>High when <code>page_allocator_state != IDLE</code>.</td></tr>
+<tr><td><b>[17]</b></td><td>ARBITER_BUSY</td><td>High when the page-RAM write-port arbiter is not idle.</td></tr>
+<tr><td><b>[18]</b></td><td>PRESENTER_BUSY</td><td>High when the frame-table presenter is not idle.</td></tr>
+<tr><td><b>[19]</b></td><td>MASK_EFFECTIVE</td><td>High when any lane is currently blocked at the packet-boundary gate.</td></tr>
+<tr><td><b>[23:20]</b></td><td>N_LANE</td><td>Packaged lane count of the instantiated core.</td></tr>
+<tr><td><b>[31:24]</b></td><td>RESERVED</td><td>Reads zero.</td></tr>
+</table></html>}
+set OPQ_CAP_FIELDS_HTML {<html><table border="1" cellpadding="3" width="100%">
+<tr><th>Bits</th><th>Name</th><th>Description</th></tr>
+<tr><td><b>[0]</b></td><td>UID_META_HEADER</td><td>Common Mu3e UID + META header is implemented.</td></tr>
+<tr><td><b>[1]</b></td><td>LANE_MASK_CTRL</td><td>Software lane masking at packet boundaries is implemented.</td></tr>
+<tr><td><b>[2]</b></td><td>PER_LANE_CNTRS</td><td>Per-lane write/read/drop and credit counters are implemented.</td></tr>
+<tr><td><b>[3]</b></td><td>FT_CNTRS</td><td>Frame-table write/read/drop counters are implemented.</td></tr>
+<tr><td><b>[4]</b></td><td>DRR_CTRL</td><td>Per-lane DRR allowance programming and live observability are implemented.</td></tr>
+<tr><td><b>[7:5]</b></td><td>RESERVED</td><td>Reads zero.</td></tr>
+<tr><td><b>[15:8]</b></td><td>LANE_REGION_STRIDE</td><td>Per-lane CSR region stride in words (default 0x10).</td></tr>
+<tr><td><b>[23:16]</b></td><td>LANE_REGION_BASE</td><td>Base word address of the per-lane counter window (default 0x40).</td></tr>
+<tr><td><b>[31:24]</b></td><td>N_LANE</td><td>Number of instantiated ingress lanes.</td></tr>
+</table></html>}
+set OPQ_FTABLE_COUNTERS_HTML {<html><table border="1" cellpadding="3" width="100%">
+<tr><th>Word</th><th>Name</th><th>Description</th></tr>
+<tr><td>0x008</td><td>FT_WR_HDR</td><td>Headers committed into frame-table ownership.</td></tr>
+<tr><td>0x009</td><td>FT_WR_SHD</td><td>Subheaders committed into frame-table ownership.</td></tr>
+<tr><td>0x00A</td><td>FT_WR_HIT</td><td>Hits committed into frame-table ownership.</td></tr>
+<tr><td>0x00B</td><td>FT_RD_HDR</td><td>Headers retired through the egress presenter.</td></tr>
+<tr><td>0x00C</td><td>FT_RD_SHD</td><td>Subheaders retired through the egress presenter.</td></tr>
+<tr><td>0x00D</td><td>FT_RD_HIT</td><td>Hits retired through the egress presenter.</td></tr>
+<tr><td>0x00E</td><td>FT_DROP_HDR</td><td>Headers dropped by frame-table overwrite / overwrite recovery.</td></tr>
+<tr><td>0x00F</td><td>FT_DROP_SHD</td><td>Subheaders dropped by frame-table overwrite / overwrite recovery.</td></tr>
+<tr><td>0x010</td><td>FT_DROP_HIT</td><td>Hits dropped by frame-table overwrite / overwrite recovery.</td></tr>
+</table></html>}
+set OPQ_LANE_REGION_HTML {<html><table border="1" cellpadding="3" width="100%">
+<tr><th>Offset</th><th>Name</th><th>Description</th></tr>
+<tr><td>+0</td><td>WR_HDR_CNT</td><td>Per-lane header tickets accepted from ingress parsing.</td></tr>
+<tr><td>+1</td><td>WR_SHD_CNT</td><td>Per-lane subheader tickets accepted from ingress parsing.</td></tr>
+<tr><td>+2</td><td>WR_HIT_CNT</td><td>Per-lane hit words written into the lane FIFO.</td></tr>
+<tr><td>+3</td><td>RD_HDR_CNT</td><td>Per-lane header tickets consumed by the page allocator.</td></tr>
+<tr><td>+4</td><td>RD_SHD_CNT</td><td>Per-lane subheaders accepted into the merged page stream.</td></tr>
+<tr><td>+5</td><td>RD_HIT_CNT</td><td>Per-lane hits accepted into the merged page stream.</td></tr>
+<tr><td>+6</td><td>DROP_HDR_CNT</td><td>Per-lane dropped headers before frame-table ownership.</td></tr>
+<tr><td>+7</td><td>DROP_SHD_CNT</td><td>Per-lane dropped subheaders before frame-table ownership.</td></tr>
+<tr><td>+8</td><td>DROP_HIT_CNT</td><td>Per-lane dropped hits before frame-table ownership.</td></tr>
+<tr><td>+9</td><td>LANE_FREE_CREDIT</td><td>Current lane-FIFO free-credit counter for that lane.</td></tr>
+<tr><td>+A</td><td>TICKET_FREE_CREDIT</td><td>Current ticket-FIFO free-credit counter for that lane.</td></tr>
+<tr><td>+B</td><td>DRR_ALLOWANCE</td><td>Software-programmed DRR refill allowance for that lane. Lower values force more defer rounds before a whole block becomes eligible; write also reseeds the live budget.</td></tr>
+<tr><td>+C</td><td>DRR_QUANTUM_LIVE</td><td>Current live DRR quantum / deficit budget for that lane.</td></tr>
+<tr><td>+D</td><td>DRR_GRANT_CNT</td><td>Number of block-level arbiter lock windows granted to that lane.</td></tr>
+<tr><td>+E</td><td>DRR_BEAT_CNT</td><td>Number of page-RAM data beats actually served from that lane by the block mover.</td></tr>
+<tr><td>+F</td><td>DRR_DEFER_CNT</td><td>Number of defer rounds where that lane requested service but could not yet cover the whole block length.</td></tr>
+</table></html>}
 
 # ────────────────────────────────────────────────────────────────────────────
 # Derived-value / GUI-text helper
@@ -97,7 +181,10 @@ proc compute_derived_values {} {
         set_display_item_property packet_html TEXT "<html><b>Packet limits</b><br/>Subheaders per header packet: <b>${n_shd}</b><br/>Max hits per subheader: <b>${n_hit}</b><br/>Max hits per header packet: <b>${worst_case_hits_per_frame}</b> (worst case before <i>ingress parser</i> drop)</html>"
     }
     catch {
-        set_display_item_property throughput_html TEXT "<html><b>Expected throughput</b><br/>Aggregation mode: <b>${mode}</b><br/>Egress beat: <b>${page_ram_rd_w}</b> bits/cycle (${symbols_per_beat} ingress symbol(s) per egress beat)<br/>Per-lane ingress budget: <b>${ingress_beat_w}</b> bits/cycle at the shared data-path clock<br/>Backpressure: ingress lanes are <i>non-backlog</i> (drop-on-full inside the lane/ticket FIFOs); egress honours <code>ready</code>.</html>"
+        set_display_item_property throughput_html TEXT "<html><b>Expected throughput</b><br/>Aggregation mode: <b>${mode}</b><br/>Egress beat: <b>${page_ram_rd_w}</b> bits/cycle (${symbols_per_beat} ingress symbol(s) per egress beat)<br/>Per-lane ingress budget: <b>${ingress_beat_w}</b> bits/cycle at the shared data-path clock<br/>Block-mover scheduling: shared page-RAM write port is serviced by an <b>ordered block-level DRR arbiter</b> with software-tunable per-lane refill allowance.<br/>Backpressure: ingress lanes are <i>non-backlog</i> (drop-on-full inside the lane/ticket FIFOs); egress honours <code>ready</code>.</html>"
+    }
+    catch {
+        set_display_item_property profile_html TEXT "<html><b>Catalog revision</b><br/>This release is packaged as <b>${::OPQ_VERSION_STRING}</b> (git <b>${::OPQ_GIT_HEX_STRING}</b>).<br/><br/><b>Current instance</b><br/>MODE=<b>${mode}</b>, N_LANE=<b>${n_lane}</b>, N_SHD=<b>${n_shd}</b>, N_HIT=<b>${n_hit}</b>, PAGE_RAM_RD_WIDTH=<b>${page_ram_rd_w}</b>.<br/><br/><b>Runtime visibility</b><br/>The monolithic OPQ exposes a runtime <b>CSR Avalon-MM slave</b>. Software can read the common Mu3e <b>UID + META</b> header, inspect per-lane write/read/drop counters, inspect frame-table ownership counters, clear counter state, program a per-lane packet-boundary mask, and tune the per-lane <b>DRR allowance</b> used by the shared page-RAM arbiter.</html>"
     }
 }
 
@@ -500,7 +587,7 @@ add_display_item $TAB_CONFIGURATION "Packet Format"  GROUP
 add_display_item $TAB_CONFIGURATION "Throughput"     GROUP
 add_display_item $TAB_CONFIGURATION "Debug"          GROUP
 
-add_html_text "Overview" overview_html {<html><b>Function</b><br/>Aggregates <i>N_LANE</i> ingress Avalon-ST flows (one per FEB) into a single timestamp-ordered egress flow. The monolithic core owns the full datapath: per-lane <b>ingress parser</b> \u2192 <b>lane FIFO</b> + <b>ticket FIFO</b> \u2192 <b>page allocator</b> \u2192 <b>block mover</b> \u2192 <b>page RAM</b> (3-segment dynamic) \u2192 egress.<br/><br/><b>Clocking</b><br/>Single synchronous data-path domain (<code>d_clk</code> / <code>d_reset</code>) shared by all lanes and the egress path.<br/><br/><b>Flow control</b><br/>Ingress lanes are non-backlog (drop-on-full inside the lane/ticket FIFOs). The egress source honours Avalon-ST <code>ready</code>.</html>}
+add_html_text "Overview" overview_html {<html><b>Function</b><br/>Aggregates <i>N_LANE</i> ingress Avalon-ST flows (one per FEB) into a single timestamp-ordered egress flow. The monolithic core owns the full datapath: per-lane <b>ingress parser</b> \u2192 <b>lane FIFO</b> + <b>ticket FIFO</b> \u2192 <b>page allocator</b> \u2192 <b>block mover</b> \u2192 <b>ordered block-level DRR arbiter</b> \u2192 <b>page RAM</b> (3-segment dynamic) \u2192 egress.<br/><br/><b>Clocking</b><br/>Single synchronous data-path domain (<code>d_clk</code> / <code>d_reset</code>) shared by all lanes and the egress path.<br/><br/><b>Flow control</b><br/>Ingress lanes are non-backlog (drop-on-full inside the lane/ticket FIFOs). The egress source honours Avalon-ST <code>ready</code>.</html>}
 
 add_display_item "Aggregation" N_LANE       parameter
 add_display_item "Aggregation" MODE         parameter
@@ -537,9 +624,9 @@ add_display_item "Debug" DEBUG_LV parameter
 add_display_item $TAB_IDENTITY "Delivered Profile" GROUP
 add_display_item $TAB_IDENTITY "Versioning"        GROUP
 
-add_html_text "Delivered Profile" profile_html {<html><b>Catalog revision</b><br/>This release is packaged as <b>26.3.4.0414</b>.<br/><br/><b>Runtime visibility</b><br/>The monolithic OPQ exposes a runtime <b>CSR Avalon-MM slave</b>. Software can read the common Mu3e <b>UID + META</b> header, inspect per-lane write/read/drop counters, clear counter state, and program a per-lane packet-boundary mask.</html>}
+add_html_text "Delivered Profile" profile_html "<html><b>Catalog revision</b><br/>Loading packaged profile text...</html>"
 
-add_html_text "Versioning" versioning_html {<html><b>Common identity header</b><br/>CSR word <b>0x00</b> = UID. CSR word <b>0x01</b> = META with page selector[1:0] choosing VERSION / DATE / GIT / INSTANCE_ID.<br/><br/>VERSION encoding: MAJOR[31:24] = 2-digit year, MINOR[23:16], PATCH[15:12], BUILD[11:0] = MMDD.</html>}
+add_html_text "Versioning" versioning_html $OPQ_VERSIONING_HTML
 add_display_item "Versioning" IP_UID        parameter
 add_display_item "Versioning" VERSION_MAJOR parameter
 add_display_item "Versioning" VERSION_MINOR parameter
@@ -575,30 +662,23 @@ add_html_text "Egress" egress_html {<html><b>egress</b> — Avalon-ST <i>source<
 <tr><td>error[2:0]</td><td>out</td><td>3</td><td>{hit_err, shd_err, hdr_err} — propagated from ingress parser.</td></tr>
 </table></html>}
 
-add_html_text "CSR" csr_html {<html><b>csr</b> — Avalon-MM <i>slave</i>, 32-bit data, 9-bit word address.<br/>Implements the common Mu3e UID + META identity header plus OPQ-specific runtime control and counters. <b>LANE_MASK</b> applies at packet boundaries: in-flight packets drain, then new packets on masked lanes are dropped and accounted.</html>}
+add_html_text "CSR" csr_html {<html><b>csr</b> — Avalon-MM <i>slave</i>, 32-bit data, 9-bit word address.<br/>Implements the common Mu3e UID + META identity header plus OPQ-specific runtime control and counters. <b>LANE_MASK</b> applies at packet boundaries: in-flight packets drain, then new packets on masked lanes are dropped and accounted. The per-lane region also exposes a <b>DRR allowance</b> register and live arbiter observability for scheduler tuning under real traffic.</html>}
 
 # ---- Register Map ----------------------------------------------------------
-add_display_item $TAB_REGMAP "CSR Map" GROUP
-add_html_text "CSR Map" csr_map_html {<html><table border="1" cellpadding="3" width="100%">
-<tr><th>Word</th><th>Name</th><th>Access</th><th>Description</th></tr>
-<tr><td>0x000</td><td>UID</td><td>RO</td><td>Immutable Mu3e IP identifier. Default ASCII "OPQM".</td></tr>
-<tr><td>0x001</td><td>META</td><td>RW/RO</td><td>Write page selector[1:0]. Read selected page: VERSION / DATE / GIT / INSTANCE_ID.</td></tr>
-<tr><td>0x002</td><td>LANE_MASK</td><td>RW</td><td>Bit <i>i</i> = 1 masks lane <i>i</i> at packet boundaries. Masked packets are dropped and counted.</td></tr>
-<tr><td>0x003</td><td>CTRL</td><td>WO</td><td>Bit 0 = write-1 pulse to clear all software-visible counters.</td></tr>
-<tr><td>0x004</td><td>STATUS</td><td>RO</td><td>Mask summary plus allocator / arbiter / presenter busy flags.</td></tr>
-<tr><td>0x005</td><td>CAP</td><td>RO</td><td>Capability summary and per-lane region geometry.</td></tr>
-<tr><td>0x040 + lane*0x10 + 0</td><td>WR_HDR_CNT</td><td>RO</td><td>Per-lane header ticket commits accepted from ingress.</td></tr>
-<tr><td>0x040 + lane*0x10 + 1</td><td>WR_SHD_CNT</td><td>RO</td><td>Per-lane subheader ticket commits accepted from ingress.</td></tr>
-<tr><td>0x040 + lane*0x10 + 2</td><td>WR_HIT_CNT</td><td>RO</td><td>Per-lane hit words written into the lane FIFO.</td></tr>
-<tr><td>0x040 + lane*0x10 + 3</td><td>RD_HDR_CNT</td><td>RO</td><td>Per-lane SOP/header tickets consumed by the page allocator.</td></tr>
-<tr><td>0x040 + lane*0x10 + 4</td><td>RD_SHD_CNT</td><td>RO</td><td>Per-lane subheaders accepted into the merged page stream.</td></tr>
-<tr><td>0x040 + lane*0x10 + 5</td><td>RD_HIT_CNT</td><td>RO</td><td>Per-lane hits accepted into the merged page stream.</td></tr>
-<tr><td>0x040 + lane*0x10 + 6</td><td>DROP_HDR_CNT</td><td>RO</td><td>Per-lane dropped headers (mask, header error, or header-ticket rejection).</td></tr>
-<tr><td>0x040 + lane*0x10 + 7</td><td>DROP_SHD_CNT</td><td>RO</td><td>Per-lane dropped subheaders (mask, parser rejection, or late ticket skip).</td></tr>
-<tr><td>0x040 + lane*0x10 + 8</td><td>DROP_HIT_CNT</td><td>RO</td><td>Per-lane dropped hits associated with masked / rejected / late subheaders.</td></tr>
-<tr><td>0x040 + lane*0x10 + 9</td><td>LANE_FREE_CREDIT</td><td>RO</td><td>Current lane-FIFO free-credit counter for that lane.</td></tr>
-<tr><td>0x040 + lane*0x10 + A</td><td>TICKET_FREE_CREDIT</td><td>RO</td><td>Current ticket-FIFO free-credit counter for that lane.</td></tr>
-</table></html>}
+add_display_item $TAB_REGMAP "CSR Window" GROUP
+add_html_text "CSR Window" csr_window_html $OPQ_CSR_WINDOW_HTML
+add_display_item $TAB_REGMAP "META Fields (0x001)" GROUP
+add_html_text "META Fields (0x001)" meta_fields_html $OPQ_META_FIELDS_HTML
+add_display_item $TAB_REGMAP "CTRL Fields (0x003)" GROUP
+add_html_text "CTRL Fields (0x003)" ctrl_fields_html $OPQ_CTRL_FIELDS_HTML
+add_display_item $TAB_REGMAP "STATUS Fields (0x004)" GROUP
+add_html_text "STATUS Fields (0x004)" status_fields_html $OPQ_STATUS_FIELDS_HTML
+add_display_item $TAB_REGMAP "CAP Fields (0x005)" GROUP
+add_html_text "CAP Fields (0x005)" cap_fields_html $OPQ_CAP_FIELDS_HTML
+add_display_item $TAB_REGMAP "Frame-Table Counters (0x008..0x010)" GROUP
+add_html_text "Frame-Table Counters (0x008..0x010)" ftable_fields_html $OPQ_FTABLE_COUNTERS_HTML
+    add_display_item $TAB_REGMAP "Lane Region (0x040 + lane*0x10)" GROUP
+    add_html_text "Lane Region (0x040 + lane*0x10)" lane_region_html $OPQ_LANE_REGION_HTML
 
 # ────────────────────────────────────────────────────────────────────────────
 # Static interfaces — egress source + clock + reset
