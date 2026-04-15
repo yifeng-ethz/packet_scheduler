@@ -1,0 +1,13 @@
+# Questa / ModelSim build artefacts
+uvm/build/
+modelsim.ini
+transcript
+tr_db.log
+*.wlf
+
+# Generated RTL (recreated by scripts/gen_monolithic_dut_4lane.sh)
+# Keep the canonical sources committed; remove this entry if you want the
+# generated copy under version control.
+
+# Run logs
+sim_runs/logs/
