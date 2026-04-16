@@ -96,6 +96,14 @@ interface run_control_if (
     // takes ~131k cycles to flush its CAM/RAM in RUN_PREPARE — before
     // advancing to SYNC.
     logic       prep_done;
+    // TERMINATING done aggregate, sourced from the same datapath-wide
+    // asi_ctrl_ready reduction once every child IP has acknowledged drain
+    // completion for the current run.
+    logic       term_done;
+    // FEB datapath quiet indicator, asserted when no datapath is still
+    // driving the pre-gate FEB output stream. This keeps tb_int from
+    // forcing IDLE in the middle of a late draining frame.
+    logic       feb_quiet;
 endinterface
 
 interface opq_csr_if #(parameter int ADDR_W = 9) (
@@ -110,6 +118,27 @@ interface opq_csr_if #(parameter int ADDR_W = 9) (
     logic              readdatavalid;
     logic              waitrequest;
     logic              burstcount;
+endinterface
+
+interface emut_avmm_csr_if #(parameter int ADDR_W = 4) (
+    input logic clk,
+    input logic rst
+);
+    logic [ADDR_W-1:0] address;
+    logic              read;
+    logic              write;
+    logic [31:0]       writedata;
+    logic [31:0]       readdata;
+    logic              waitrequest;
+
+    modport drv (
+        output address, read, write, writedata,
+        input  readdata, waitrequest, clk, rst
+    );
+
+    modport mon (
+        input address, read, write, writedata, readdata, waitrequest, clk, rst
+    );
 endinterface
 
 // Stage A tap — one instance per datapath. Driven from tb_int_top with

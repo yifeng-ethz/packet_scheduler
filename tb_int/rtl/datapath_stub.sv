@@ -32,8 +32,9 @@
 `timescale 1ns/1ps
 
 module datapath_stub #(
-    parameter int FEB_ID      = 0,
-    parameter int DATAPATH_ID = 0
+    parameter int FEB_ID                    = 0,
+    parameter int DATAPATH_ID               = 0,
+    parameter int RBCAM_RING_BUFFER_N_ENTRY = 512
 ) (
     input  logic        i_clk,
     input  logic        i_rst,
@@ -41,6 +42,16 @@ module datapath_stub #(
     // 9-bit one-hot run control
     input  logic [8:0]  ctrl_data,
     input  logic        ctrl_valid,
+
+    // Build/pre-run emulator-only CSR path. This keeps datapath traffic at
+    // live RTL timing while still allowing the long-run matrix to vary the
+    // hit-source contract through the real Avalon-MM register interface.
+    input  logic [3:0]  emu_csr_address,
+    input  logic        emu_csr_read,
+    input  logic        emu_csr_write,
+    input  logic [31:0] emu_csr_writedata,
+    output logic [31:0] emu_csr_readdata,
+    output logic        emu_csr_waitrequest,
 
     // Lane output to the OPQ (matches opq_ingress_if, 36-bit)
     output logic [35:0] aso_lane_data,
@@ -118,12 +129,12 @@ module datapath_stub #(
         .asi_ctrl_valid      (ctrl_valid),
         .asi_ctrl_ready      (emu_ctrl_ready),
         .coe_inject_pulse    (1'b0),
-        .avs_csr_address     (zero4),
-        .avs_csr_read        (1'b0),
-        .avs_csr_write       (1'b0),
-        .avs_csr_writedata   (zero32),
-        .avs_csr_readdata    (/*unused*/),
-        .avs_csr_waitrequest (/*unused*/)
+        .avs_csr_address     (emu_csr_address),
+        .avs_csr_read        (emu_csr_read),
+        .avs_csr_write       (emu_csr_write),
+        .avs_csr_writedata   (emu_csr_writedata),
+        .avs_csr_readdata    (emu_csr_readdata),
+        .avs_csr_waitrequest (emu_csr_waitrequest)
     );
 
     // -----------------------------------------------------------------------
@@ -132,6 +143,7 @@ module datapath_stub #(
     logic [3:0]  h0_channel;
     logic        h0_sop;
     logic        h0_eop;
+    logic        h0_endofrun;
     logic [2:0]  h0_error;
     logic [44:0] h0_data;
     logic        h0_valid;
@@ -153,6 +165,7 @@ module datapath_stub #(
         .aso_hit_type0_channel      (h0_channel),
         .aso_hit_type0_startofpacket(h0_sop),
         .aso_hit_type0_endofpacket  (h0_eop),
+        .aso_hit_type0_endofrun     (h0_endofrun),
         .aso_hit_type0_error        (h0_error),
         .aso_hit_type0_data         (h0_data),
         .aso_hit_type0_valid        (h0_valid),
@@ -216,6 +229,7 @@ module datapath_stub #(
         .asi_hit_type0_channel      (h0_channel6),
         .asi_hit_type0_startofpacket(h0_sop),
         .asi_hit_type0_endofpacket  (h0_eop),
+        .asi_hit_type0_endofrun     (h0_endofrun),
         .asi_hit_type0_error        (h0_error),
         .asi_hit_type0_data         (h0_data),
         .asi_hit_type0_valid        (h0_valid),
@@ -269,7 +283,7 @@ module datapath_stub #(
         for (gi = 0; gi < 4; gi++) begin : g_rbcam
             ring_buffer_cam #(
                 .SEARCH_KEY_WIDTH    (8),
-                .RING_BUFFER_N_ENTRY (512),
+                .RING_BUFFER_N_ENTRY (RBCAM_RING_BUFFER_N_ENTRY),
                 .SIDE_DATA_BITS      (31),
                 .INTERLEAVING_FACTOR (4),
                 .INTERLEAVING_INDEX  (gi),

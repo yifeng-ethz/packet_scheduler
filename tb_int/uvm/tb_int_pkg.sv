@@ -31,17 +31,85 @@ package tb_int_pkg;
     // -----------------------------------------------------------------------
     // Config object
     // -----------------------------------------------------------------------
+    class tb_int_emut_cfg extends uvm_object;
+        `uvm_object_utils(tb_int_emut_cfg)
+
+        bit        enable                = 1'b1;
+        bit [1:0]  hit_mode              = 2'b00;
+        bit        short_mode            = 1'b0;
+        bit [15:0] hit_rate              = 16'h0800;
+        bit [15:0] noise_rate            = 16'h0100;
+        bit [4:0]  burst_size            = 5'd4;
+        bit [4:0]  burst_center          = 5'd16;
+        bit        cluster_cross_asic    = 1'b0;
+        bit [7:0]  cluster_center_global = 8'd16;
+        bit [3:0]  cluster_lane_index    = 4'd0;
+        bit [3:0]  cluster_lane_count    = 4'd1;
+        bit [31:0] seed                  = 32'hDEAD_BEEF;
+        bit [2:0]  tx_mode               = 3'b000;
+        bit        gen_idle              = 1'b1;
+        bit [3:0]  asic_id               = 4'd0;
+
+        function new(string name = "tb_int_emut_cfg");
+            super.new(name);
+        endfunction
+
+        function bit [31:0] control_reg();
+            return {28'b0, short_mode, hit_mode, enable};
+        endfunction
+
+        function bit [31:0] hit_rate_reg();
+            return {noise_rate, hit_rate};
+        endfunction
+
+        function bit [31:0] burst_cfg_reg();
+            return {2'b0, cluster_lane_count, cluster_lane_index,
+                    cluster_center_global, cluster_cross_asic,
+                    burst_center, 3'b0, burst_size};
+        endfunction
+
+        function bit [31:0] tx_mode_reg();
+            return {24'b0, asic_id, gen_idle, tx_mode};
+        endfunction
+
+        function string describe();
+            return $sformatf("en=%0b hit_mode=%0d short=%0b hit_rate=0x%04h noise_rate=0x%04h burst_size=%0d burst_center=%0d xasic=%0b gcenter=%0d lane=%0d/%0d seed=0x%08h tx_mode=0x%0h gen_idle=%0b asic_id=%0d",
+                             enable, hit_mode, short_mode, hit_rate, noise_rate,
+                             burst_size, burst_center, cluster_cross_asic,
+                             cluster_center_global, cluster_lane_index,
+                             cluster_lane_count, seed, tx_mode, gen_idle, asic_id);
+        endfunction
+    endclass
+
     class tb_int_cfg extends uvm_object;
         `uvm_object_utils(tb_int_cfg)
 
-        int unsigned num_feb         = 2;
-        int unsigned num_datapath    = 2;
-        int unsigned num_mutrig      = 4;  // per datapath
-        int unsigned opq_n_lane      = 4;
+        int unsigned num_feb          = 2;
+        int unsigned num_datapath     = 2;
+        int unsigned num_mutrig       = 4;  // logical target topology; current stub models 1 emulator/datapath
+        int unsigned opq_n_lane       = 4;
         int unsigned smoke_run_cycles = 2000;
+        bit          require_stage_e  = 1'b1;
+        bit          require_lossless_feb = 1'b0;
+        bit          program_emulators    = 1'b0;
+        int unsigned longrun_case_id      = 0;
+        string       longrun_case_name    = "";
+        tb_int_emut_cfg emu_cfg[4];
 
         function new(string name = "tb_int_cfg");
             super.new(name);
+            foreach (emu_cfg[i]) begin
+                emu_cfg[i] = tb_int_emut_cfg::type_id::create($sformatf("emu_cfg_%0d", i));
+                emu_cfg[i].asic_id = i[3:0];
+                emu_cfg[i].cluster_lane_index = i[3:0];
+            end
+        endfunction
+
+        function string describe_longrun();
+            return $sformatf("case_id=%0d case=%s require_stage_e=%0b require_lossless_feb=%0b run_cycles=%0d",
+                             longrun_case_id, longrun_case_name,
+                             require_stage_e, require_lossless_feb,
+                             smoke_run_cycles);
         endfunction
     endclass
 
@@ -1110,6 +1178,7 @@ package tb_int_pkg;
     class tb_int_scoreboard extends uvm_component;
         `uvm_component_utils(tb_int_scoreboard)
 
+        tb_int_cfg cfg;
         uvm_analysis_imp_stage_a#(tb_int_hit_event,     tb_int_scoreboard) stage_a_imp;
         uvm_analysis_imp_stage_h0#(tb_int_hit0_event,   tb_int_scoreboard) stage_h0_imp;
         uvm_analysis_imp_stage_h1#(tb_int_hit1_event,   tb_int_scoreboard) stage_h1_imp;
@@ -1416,6 +1485,8 @@ package tb_int_pkg;
 
         virtual function void build_phase(uvm_phase phase);
             super.build_phase(phase);
+            if (!uvm_config_db#(tb_int_cfg)::get(this, "", "cfg", cfg))
+                cfg = tb_int_cfg::type_id::create("cfg");
             stage_a_imp = new("stage_a_imp", this);
             stage_h0_imp = new("stage_h0_imp", this);
             stage_h1_imp = new("stage_h1_imp", this);
@@ -2088,11 +2159,20 @@ package tb_int_pkg;
             int unsigned    beat_lane;
             int unsigned    slot_id;
 
-            n_stage_h1_beats++;
             if (ev.lane_id >= 4)
                 return;
-            n_stage_h1_beats_per_lane[ev.lane_id]++;
             slot_id = int'(ev.channel[1:0]);
+            if (ev.empty) begin
+                if (!ev.eop) begin
+                    `uvm_error("TB_INT_SB",
+                               $sformatf("stage_h1 lane=%0d slot=%0d empty close marker without EOP",
+                                         ev.lane_id, slot_id))
+                end
+                return;
+            end
+
+            n_stage_h1_beats++;
+            n_stage_h1_beats_per_lane[ev.lane_id]++;
             if (slot_id < 4)
                 n_stage_h1_beats_per_slot[ev.lane_id][slot_id]++;
             if (ev.error) begin
@@ -3428,10 +3508,37 @@ package tb_int_pkg;
                 `uvm_error("TB_INT_SB", "no stage D beats observed")
             if (n_stage_d_frames == 0)
                 `uvm_error("TB_INT_SB", "no stage D frame heads observed")
-            if (n_stage_e_beats == 0)
-                `uvm_error("TB_INT_SB", "no stage E beats observed")
-            if (n_stage_e_frames == 0)
-                `uvm_error("TB_INT_SB", "no stage E frame heads observed")
+            if (cfg.require_stage_e) begin
+                if (n_stage_e_beats == 0)
+                    `uvm_error("TB_INT_SB", "no stage E beats observed")
+                if (n_stage_e_frames == 0)
+                    `uvm_error("TB_INT_SB", "no stage E frame heads observed")
+            end
+
+            if (cfg.require_lossless_feb) begin
+                foreach (rec_missing_h0_per_lane[i]) begin
+                    if (rec_missing_h0_per_lane[i] > 0 || rec_ghost_h0_per_lane[i] > 0)
+                        `uvm_error("TB_INT_SB",
+                                   $sformatf("lossless FEB signoff failed at A->H0 lane %0d: missing=%0d ghost=%0d",
+                                             i, rec_missing_h0_per_lane[i], rec_ghost_h0_per_lane[i]))
+                    if (rec_missing_h1_per_lane[i] > 0 || rec_ghost_h1_per_lane[i] > 0)
+                        `uvm_error("TB_INT_SB",
+                                   $sformatf("lossless FEB signoff failed at H0->H1 lane %0d: missing=%0d ghost=%0d",
+                                             i, rec_missing_h1_per_lane[i], rec_ghost_h1_per_lane[i]))
+                    if (rec_missing_b_eligible_per_lane[i] > 0 || rec_ghost_b_eligible_per_lane[i] > 0)
+                        `uvm_error("TB_INT_SB",
+                                   $sformatf("lossless FEB signoff failed at H1e->B lane %0d: missing=%0d ghost=%0d",
+                                             i, rec_missing_b_eligible_per_lane[i], rec_ghost_b_eligible_per_lane[i]))
+                    if (rec_missing_c_per_lane[i] > 0 || rec_ghost_c_per_lane[i] > 0)
+                        `uvm_error("TB_INT_SB",
+                                   $sformatf("lossless FEB signoff failed at B->C lane %0d: missing=%0d ghost=%0d",
+                                             i, rec_missing_c_per_lane[i], rec_ghost_c_per_lane[i]))
+                    if (rec_missing_d_per_lane[i] > 0 || rec_ghost_d_per_lane[i] > 0)
+                        `uvm_error("TB_INT_SB",
+                                   $sformatf("lossless FEB signoff failed at C->D lane %0d: missing=%0d ghost=%0d",
+                                             i, rec_missing_d_per_lane[i], rec_ghost_d_per_lane[i]))
+                end
+            end
 
             foreach (n_stage_a_per_lane[i]) begin
                 if (n_stage_a_per_lane[i] == 0)
@@ -3814,6 +3921,8 @@ package tb_int_pkg;
 
         int unsigned stable_start_guard_cycles = 128;
         int unsigned stable_end_guard_cycles   = 128;
+        int unsigned term_done_timeout_cycles  = 300000;
+        int unsigned term_quiet_cycles         = 64;
 
         function new(string name, uvm_component parent);
             super.new(name, parent);
@@ -3828,6 +3937,10 @@ package tb_int_pkg;
                 stable_start_guard_cycles = plusarg_cycles;
             if ($value$plusargs("TB_INT_STABLE_END_GUARD_CYCLES=%d", plusarg_cycles))
                 stable_end_guard_cycles = plusarg_cycles;
+            if ($value$plusargs("TB_INT_TERM_DONE_TIMEOUT_CYCLES=%d", plusarg_cycles))
+                term_done_timeout_cycles = plusarg_cycles;
+            if ($value$plusargs("TB_INT_TERM_QUIET_CYCLES=%d", plusarg_cycles))
+                term_quiet_cycles = plusarg_cycles;
             tb_int_run_window_db::configure_guards(stable_start_guard_cycles,
                                                    stable_end_guard_cycles);
             tb_int_run_window_db::reset();
@@ -3914,10 +4027,40 @@ package tb_int_pkg;
                     repeat (stable_suffix_cycles) @(posedge vif.clk);
                 end
                 RC_END: begin
+                    int unsigned waited;
+                    int unsigned quiet_seen;
+                    bit          term_done_seen;
+
                     tb_int_run_window_db::note_run_end($time);
                     vif.run_state  <= RC_STATE_TERMINATING;
                     vif.run_enable <= 1'b1;
                     repeat (it.hold_cycles) @(posedge vif.clk);
+
+                    waited         = 0;
+                    quiet_seen     = 0;
+                    term_done_seen = 1'b0;
+                    while (!term_done_seen || quiet_seen < term_quiet_cycles) begin
+                        @(posedge vif.clk);
+                        waited++;
+                        if (vif.term_done === 1'b1)
+                            term_done_seen = 1'b1;
+                        if (term_done_seen && vif.feb_quiet === 1'b1)
+                            quiet_seen++;
+                        else
+                            quiet_seen = 0;
+                        if (waited >= term_done_timeout_cycles) begin
+                            `uvm_fatal("RC_DRV",
+                                       $sformatf("terminate drain never completed after %0d cycles (term_done_seen=%0b feb_quiet=%0b quiet_seen=%0d)",
+                                                 term_done_timeout_cycles,
+                                                 term_done_seen,
+                                                 vif.feb_quiet,
+                                                 quiet_seen))
+                        end
+                    end
+                    `uvm_info("RC_DRV",
+                              $sformatf("TERMINATING done after %0d extra wait cycles (quiet_cycles=%0d)",
+                                        waited, term_quiet_cycles),
+                              UVM_LOW)
                     vif.run_state  <= RC_STATE_IDLE;
                     vif.run_enable <= 1'b0;
                 end
@@ -3972,6 +4115,7 @@ package tb_int_pkg;
             if (!uvm_config_db#(tb_int_cfg)::get(this, "", "cfg", cfg)) begin
                 cfg = tb_int_cfg::type_id::create("cfg");
             end
+            uvm_config_db#(tb_int_cfg)::set(this, "sb", "cfg", cfg);
             sb       = tb_int_scoreboard::type_id::create("sb", this);
             rc_agent = run_control_agent ::type_id::create("rc_agent", this);
             foreach (stage_a[i]) begin
@@ -4058,15 +4202,11 @@ package tb_int_pkg;
         run_control_sequencer rc_sqr;
         int unsigned prepare_cycles = 1024;
         int unsigned run_cycles     = 2000;
-        // Drain budget after the emulator stops generating new hits. During
-        // RC_END the run_state moves to TERMINATING but the SWB gate stays
-        // open so the already committed FIFO contents can reach stage D/E.
-        // The dominant term is rb_cam emptying: with a populated buffer it
-        // takes ~131k cycles for the last entry to reach ffa, far beyond
-        // the 910*2 single-hit latency. 140000 gives rb_cam + ffa +
-        // packet_scheduler + OPQ time to flush completely before we drop
-        // the gate back to IDLE.
-        int unsigned end_cycles     = 140000;
+        // Minimum TERMINATING grace before the run-control driver starts
+        // waiting for the real drain-complete handshake. The actual end of
+        // run is no longer a hard fixed window; tb_int now waits for the
+        // datapath ctrl-ready aggregate plus a quiet FEB output streak.
+        int unsigned end_cycles     = 4096;
 
         function new(string name = "tb_int_base_vseq");
             super.new(name);
@@ -4107,6 +4247,7 @@ package tb_int_pkg;
         `uvm_component_utils(tb_int_base_test)
         tb_int_env env;
         tb_int_cfg cfg;
+        virtual emut_avmm_csr_if.drv emu_csr_vif[4];
 
         function new(string name, uvm_component parent);
             super.new(name, parent);
@@ -4123,11 +4264,121 @@ package tb_int_pkg;
             cfg = make_cfg();
             uvm_config_db#(tb_int_cfg)::set(this, "env", "cfg", cfg);
             env = tb_int_env::type_id::create("env", this);
+            foreach (emu_csr_vif[i]) begin
+                if (!uvm_config_db#(virtual emut_avmm_csr_if.drv)::get(
+                        this, "", $sformatf("emu_csr_lane%0d_if", i), emu_csr_vif[i]))
+                    `uvm_fatal("TB_INT_CFG",
+                               $sformatf("emu_csr_lane%0d_if not found in config db", i))
+            end
         endfunction
+
+        task automatic wait_for_reset_release();
+            if (emu_csr_vif[0] == null)
+                `uvm_fatal("TB_INT_CFG", "emu_csr_lane0_if is null")
+            while (emu_csr_vif[0].rst === 1'b1)
+                @(posedge emu_csr_vif[0].clk);
+            repeat (2) @(posedge emu_csr_vif[0].clk);
+        endtask
+
+        task automatic emu_csr_write(int unsigned lane,
+                                     bit [3:0] address,
+                                     bit [31:0] writedata,
+                                     input string what = "");
+            if (lane >= 4)
+                `uvm_fatal("TB_INT_CFG", $sformatf("invalid emulator lane %0d", lane))
+            @(posedge emu_csr_vif[lane].clk);
+            emu_csr_vif[lane].address   <= address;
+            emu_csr_vif[lane].writedata <= writedata;
+            emu_csr_vif[lane].write     <= 1'b1;
+            emu_csr_vif[lane].read      <= 1'b0;
+            @(posedge emu_csr_vif[lane].clk);
+            while (emu_csr_vif[lane].waitrequest === 1'b1)
+                @(posedge emu_csr_vif[lane].clk);
+            emu_csr_vif[lane].write     <= 1'b0;
+            emu_csr_vif[lane].address   <= '0;
+            emu_csr_vif[lane].writedata <= '0;
+            if (what != "")
+                `uvm_info("TB_INT_EMU_CFG",
+                          $sformatf("lane%0d write %s addr=0x%0h data=0x%08h",
+                                    lane, what, address, writedata),
+                          UVM_LOW)
+        endtask
+
+        task automatic emu_csr_read(int unsigned lane,
+                                    bit [3:0] address,
+                                    output bit [31:0] readdata,
+                                    input string what = "");
+            if (lane >= 4)
+                `uvm_fatal("TB_INT_CFG", $sformatf("invalid emulator lane %0d", lane))
+            @(posedge emu_csr_vif[lane].clk);
+            emu_csr_vif[lane].address <= address;
+            emu_csr_vif[lane].read    <= 1'b1;
+            emu_csr_vif[lane].write   <= 1'b0;
+            @(posedge emu_csr_vif[lane].clk);
+            while (emu_csr_vif[lane].waitrequest === 1'b1)
+                @(posedge emu_csr_vif[lane].clk);
+            #1step;
+            readdata = emu_csr_vif[lane].readdata;
+            emu_csr_vif[lane].read    <= 1'b0;
+            emu_csr_vif[lane].address <= '0;
+            if (what != "")
+                `uvm_info("TB_INT_EMU_CFG",
+                          $sformatf("lane%0d read %s addr=0x%0h data=0x%08h",
+                                    lane, what, address, readdata),
+                          UVM_LOW)
+        endtask
+
+        task automatic program_emulator_lane(int unsigned lane,
+                                             tb_int_emut_cfg lane_cfg,
+                                             bit verify_readback = 1'b1);
+            bit [31:0] rd;
+            if (lane_cfg == null)
+                `uvm_fatal("TB_INT_CFG", $sformatf("emu_cfg[%0d] is null", lane))
+            `uvm_info("TB_INT_EMU_CFG",
+                      $sformatf("lane%0d profile: %s", lane, lane_cfg.describe()),
+                      UVM_LOW)
+            emu_csr_write(lane, 4'h0, lane_cfg.control_reg(), "CONTROL");
+            emu_csr_write(lane, 4'h1, lane_cfg.hit_rate_reg(), "HIT_RATE");
+            emu_csr_write(lane, 4'h2, lane_cfg.burst_cfg_reg(), "BURST_CFG");
+            emu_csr_write(lane, 4'h3, lane_cfg.seed, "PRNG_SEED");
+            emu_csr_write(lane, 4'h4, lane_cfg.tx_mode_reg(), "TX_MODE");
+            if (verify_readback) begin
+                emu_csr_read(lane, 4'h0, rd, "CONTROL");
+                if (rd !== lane_cfg.control_reg())
+                    `uvm_fatal("TB_INT_CFG",
+                               $sformatf("lane%0d CONTROL readback mismatch exp=0x%08h got=0x%08h",
+                                         lane, lane_cfg.control_reg(), rd))
+                emu_csr_read(lane, 4'h1, rd, "HIT_RATE");
+                if (rd !== lane_cfg.hit_rate_reg())
+                    `uvm_fatal("TB_INT_CFG",
+                               $sformatf("lane%0d HIT_RATE readback mismatch exp=0x%08h got=0x%08h",
+                                         lane, lane_cfg.hit_rate_reg(), rd))
+                emu_csr_read(lane, 4'h2, rd, "BURST_CFG");
+                if (rd !== lane_cfg.burst_cfg_reg())
+                    `uvm_fatal("TB_INT_CFG",
+                               $sformatf("lane%0d BURST_CFG readback mismatch exp=0x%08h got=0x%08h",
+                                         lane, lane_cfg.burst_cfg_reg(), rd))
+                emu_csr_read(lane, 4'h3, rd, "PRNG_SEED");
+                if (rd !== lane_cfg.seed)
+                    `uvm_fatal("TB_INT_CFG",
+                               $sformatf("lane%0d PRNG_SEED readback mismatch exp=0x%08h got=0x%08h",
+                                         lane, lane_cfg.seed, rd))
+                emu_csr_read(lane, 4'h4, rd, "TX_MODE");
+                if (rd !== lane_cfg.tx_mode_reg())
+                    `uvm_fatal("TB_INT_CFG",
+                               $sformatf("lane%0d TX_MODE readback mismatch exp=0x%08h got=0x%08h",
+                                         lane, lane_cfg.tx_mode_reg(), rd))
+            end
+        endtask
+
+        virtual task configure_before_run();
+        endtask
 
         virtual task run_phase(uvm_phase phase);
             tb_int_base_vseq vseq;
             phase.raise_objection(this);
+            wait_for_reset_release();
+            configure_before_run();
             vseq = tb_int_base_vseq::type_id::create("vseq");
             vseq.run_cycles = cfg.smoke_run_cycles;
             vseq.start(env.rc_agent.sqr);
@@ -4177,6 +4428,271 @@ package tb_int_pkg;
             c.smoke_run_cycles = 40000;
             return c;
         endfunction
+    endclass
+
+    // -----------------------------------------------------------------------
+    // Terminate-marker E2E test — same datapath budget as the basic test, but
+    // called out separately so the upgraded terminate-drain contract has an
+    // explicit integration regression target. The RC_END path now waits on
+    // term_done + feb_quiet instead of cutting back to IDLE on a fixed timer.
+    // -----------------------------------------------------------------------
+    class tb_int_terminate_marker_e2e_test extends tb_int_base_test;
+        `uvm_component_utils(tb_int_terminate_marker_e2e_test)
+
+        function new(string name, uvm_component parent);
+            super.new(name, parent);
+        endfunction
+
+        virtual function tb_int_cfg make_cfg();
+            tb_int_cfg c;
+            c = tb_int_cfg::type_id::create("cfg");
+            c.smoke_run_cycles = 40000;
+            return c;
+        endfunction
+    endclass
+
+    // -----------------------------------------------------------------------
+    // Long-run sanity test — generated emulator-profile matrix for FEB-side
+    // datapath signoff. This keeps stage E optional while requiring lossless
+    // closure through stage D.
+    // -----------------------------------------------------------------------
+    class tb_int_longrun_sanity_test extends tb_int_base_test;
+        `uvm_component_utils(tb_int_longrun_sanity_test)
+
+        localparam bit [1:0] HIT_MODE_POISSON = 2'b00;
+        localparam bit [1:0] HIT_MODE_BURST   = 2'b01;
+        localparam bit [1:0] HIT_MODE_NOISE   = 2'b10;
+        localparam bit [1:0] HIT_MODE_MIXED   = 2'b11;
+        localparam bit [2:0] TX_MODE_LONG     = 3'b000;
+        localparam bit [2:0] TX_MODE_SHORT    = 3'b100;
+
+        function new(string name, uvm_component parent);
+            super.new(name, parent);
+        endfunction
+
+        function automatic bit [15:0] base_hit_rate(bit short_mode, int unsigned load_idx);
+            if (short_mode) begin
+                case (load_idx)
+                    0: return 16'h0200;
+                    1: return 16'h0500;
+                    2: return 16'h0800;
+                    default: return 16'h0C00;
+                endcase
+            end
+            case (load_idx)
+                0: return 16'h0100;
+                1: return 16'h0400;
+                2: return 16'h0600;
+                default: return 16'h0900;
+            endcase
+        endfunction
+
+        function automatic bit [15:0] base_noise_rate(bit short_mode, int unsigned load_idx);
+            if (short_mode) begin
+                case (load_idx)
+                    0: return 16'h0040;
+                    1: return 16'h0100;
+                    2: return 16'h0180;
+                    default: return 16'h0200;
+                endcase
+            end
+            case (load_idx)
+                0: return 16'h0020;
+                1: return 16'h0080;
+                2: return 16'h0100;
+                default: return 16'h0180;
+            endcase
+        endfunction
+
+        function automatic bit [4:0] burst_size_for(int unsigned traffic_idx,
+                                                    int unsigned load_idx);
+            case (traffic_idx)
+                1: return 5'(2 + load_idx);
+                3: return 5'(2 + (load_idx >> 1));
+                default: return 5'd1;
+            endcase
+        endfunction
+
+        function automatic int unsigned run_cycles_for(int unsigned load_idx);
+            // Keep each long-run case inside the 1s-180s wall-clock target on the
+            // current mixed-language tb_int build. Empirically, 12k run cycles are
+            // already ~48s for the lightest profile, so the high-load tier must stay
+            // well below 96k cycles.
+            case (load_idx)
+                0: return 8000;
+                1: return 12000;
+                2: return 20000;
+                default: return 32000;
+            endcase
+        endfunction
+
+        function automatic bit [31:0] case_seed_root(int unsigned case_id,
+                                                     int unsigned frame_idx,
+                                                     int unsigned family_idx,
+                                                     int unsigned traffic_idx,
+                                                     int unsigned load_idx);
+            return 32'h6A09_E667 ^ (case_id * 32'h0001_0001)
+                   ^ (frame_idx << 28) ^ (family_idx << 24)
+                   ^ (traffic_idx << 20) ^ (load_idx << 16);
+        endfunction
+
+        function automatic string case_name_for(int unsigned case_id,
+                                                int unsigned frame_idx,
+                                                int unsigned family_idx,
+                                                int unsigned traffic_idx,
+                                                int unsigned load_idx);
+            string frame_code;
+            string family_code;
+            string traffic_code;
+            frame_code = (frame_idx == 0) ? "L" : "S";
+            case (family_idx)
+                0: family_code = "U";
+                1: family_code = "F";
+                2: family_code = "H";
+                default: family_code = "C";
+            endcase
+            case (traffic_idx)
+                0: traffic_code = "P";
+                1: traffic_code = "B";
+                2: traffic_code = "N";
+                default: traffic_code = "M";
+            endcase
+            return $sformatf("PROF_TBINT_%03d_%s%s%s%0d",
+                             case_id, frame_code, family_code, traffic_code, load_idx);
+        endfunction
+
+        virtual function tb_int_cfg make_cfg();
+            tb_int_cfg c;
+            int unsigned case_id;
+            int unsigned idx;
+            int unsigned frame_idx;
+            int unsigned family_idx;
+            int unsigned traffic_idx;
+            int unsigned load_idx;
+            bit          short_mode;
+            bit [15:0]   hit_rate_base;
+            bit [15:0]   noise_rate_base;
+            bit [4:0]    burst_size_base;
+            bit [31:0]   seed_root;
+
+            c = tb_int_cfg::type_id::create("cfg");
+            case_id = 1;
+            void'($value$plusargs("TB_INT_LONGRUN_CASE_ID=%d", case_id));
+            if (case_id < 1 || case_id > 128) begin
+                `uvm_warning("TB_INT_LONGRUN",
+                             $sformatf("invalid TB_INT_LONGRUN_CASE_ID=%0d, falling back to 1", case_id))
+                case_id = 1;
+            end
+
+            idx         = case_id - 1;
+            frame_idx   = idx / 64;
+            family_idx  = (idx / 16) % 4;
+            traffic_idx = (idx / 4) % 4;
+            load_idx    = idx % 4;
+            short_mode  = (frame_idx != 0);
+
+            c.program_emulators   = 1'b1;
+            c.require_stage_e     = 1'b0;
+            c.require_lossless_feb = 1'b1;
+            c.longrun_case_id     = case_id;
+            c.longrun_case_name   = case_name_for(case_id, frame_idx, family_idx, traffic_idx, load_idx);
+            c.smoke_run_cycles    = run_cycles_for(load_idx);
+            void'($value$plusargs("TB_INT_LONGRUN_RUN_CYCLES=%d", c.smoke_run_cycles));
+
+            hit_rate_base   = base_hit_rate(short_mode, load_idx);
+            noise_rate_base = base_noise_rate(short_mode, load_idx);
+            burst_size_base = burst_size_for(traffic_idx, load_idx);
+            seed_root       = case_seed_root(case_id, frame_idx, family_idx, traffic_idx, load_idx);
+
+            foreach (c.emu_cfg[lane]) begin
+                c.emu_cfg[lane].enable                = 1'b1;
+                c.emu_cfg[lane].short_mode            = short_mode;
+                c.emu_cfg[lane].tx_mode               = short_mode ? TX_MODE_SHORT : TX_MODE_LONG;
+                c.emu_cfg[lane].gen_idle              = 1'b1;
+                c.emu_cfg[lane].asic_id               = 4'(lane);
+                c.emu_cfg[lane].cluster_lane_index    = 4'(lane);
+                c.emu_cfg[lane].cluster_lane_count    = 4'd1;
+                c.emu_cfg[lane].cluster_cross_asic    = 1'b0;
+                c.emu_cfg[lane].cluster_center_global = 8'(16 + ((case_id * 7) % 64));
+                c.emu_cfg[lane].burst_center          = 5'(4 + ((lane * 6 + case_id) % 24));
+                c.emu_cfg[lane].burst_size            = burst_size_base;
+                c.emu_cfg[lane].seed                  = seed_root ^ (32'h9E37_79B9 * (lane + 1));
+                c.emu_cfg[lane].hit_rate              = hit_rate_base;
+                c.emu_cfg[lane].noise_rate            = noise_rate_base;
+
+                case (traffic_idx)
+                    0: begin
+                        c.emu_cfg[lane].hit_mode   = HIT_MODE_POISSON;
+                        c.emu_cfg[lane].noise_rate = 16'h0000;
+                        c.emu_cfg[lane].burst_size = 5'd1;
+                    end
+                    1: begin
+                        c.emu_cfg[lane].hit_mode   = HIT_MODE_BURST;
+                        c.emu_cfg[lane].hit_rate   = 16'h0000;
+                        c.emu_cfg[lane].noise_rate = 16'h0000;
+                    end
+                    2: begin
+                        c.emu_cfg[lane].hit_mode   = HIT_MODE_NOISE;
+                        c.emu_cfg[lane].hit_rate   = 16'h0000;
+                        c.emu_cfg[lane].burst_size = 5'd1;
+                    end
+                    default: begin
+                        c.emu_cfg[lane].hit_mode   = HIT_MODE_MIXED;
+                        c.emu_cfg[lane].hit_rate   = hit_rate_base;
+                        c.emu_cfg[lane].noise_rate = noise_rate_base >> 1;
+                    end
+                endcase
+
+                case (family_idx)
+                    0: begin
+                        // Uniform
+                    end
+                    1: begin
+                        // FEB-skew: FEB0 cooler, FEB1 exact case load.
+                        if (lane < 2) begin
+                            c.emu_cfg[lane].hit_rate   = c.emu_cfg[lane].hit_rate >> 1;
+                            c.emu_cfg[lane].noise_rate = c.emu_cfg[lane].noise_rate >> 1;
+                        end
+                    end
+                    2: begin
+                        // Hotspot: one datapath hot, others cooler.
+                        if (lane == (case_id % 4)) begin
+                            c.emu_cfg[lane].hit_rate   = hit_rate_base;
+                            c.emu_cfg[lane].noise_rate = noise_rate_base;
+                        end else begin
+                            c.emu_cfg[lane].hit_rate   = c.emu_cfg[lane].hit_rate >> 1;
+                            c.emu_cfg[lane].noise_rate = c.emu_cfg[lane].noise_rate >> 1;
+                            if (traffic_idx == 1 || traffic_idx == 3)
+                                c.emu_cfg[lane].burst_size = (burst_size_base > 2) ? (burst_size_base - 1) : 5'd1;
+                        end
+                    end
+                    default: begin
+                        // Cross-ASIC cluster-domain replay across the 4 tb_int lanes.
+                        c.emu_cfg[lane].cluster_cross_asic = 1'b1;
+                        c.emu_cfg[lane].cluster_lane_count = 4'd4;
+                        c.emu_cfg[lane].seed               = seed_root;
+                        c.emu_cfg[lane].burst_center       = 5'd16;
+                        if (traffic_idx == 0)
+                            c.emu_cfg[lane].burst_size = (burst_size_base > 1) ? burst_size_base : 5'd2;
+                    end
+                endcase
+
+                if ((traffic_idx == 1) || (traffic_idx == 2)) begin
+                    // Burst-only and noise-only cases carry one active source.
+                    if (traffic_idx == 1)
+                        c.emu_cfg[lane].noise_rate = 16'h0000;
+                    if (traffic_idx == 2)
+                        c.emu_cfg[lane].hit_rate = 16'h0000;
+                end
+            end
+            return c;
+        endfunction
+
+        virtual task configure_before_run();
+            `uvm_info("TB_INT_LONGRUN", cfg.describe_longrun(), UVM_NONE)
+            foreach (cfg.emu_cfg[i])
+                program_emulator_lane(i, cfg.emu_cfg[i], 1'b1);
+        endtask
     endclass
 
 endpackage : tb_int_pkg

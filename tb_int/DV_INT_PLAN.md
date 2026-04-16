@@ -5,6 +5,8 @@
 **Date:** 2026-04-15
 **Status:** Observability and run-control hardening are active in tree: H0/H1/B/C/D/E taps, parser/SVA coverage across the live datapath, SWB run-gate alignment, and unmatched-hit candidate dumps are implemented.
 
+**Long-run addendum:** `DV_INT_LONGRUN_PLAN.md` defines the 128-case emulator-profile sanity matrix for cached-compile long runs.
+
 ---
 
 ## 1. Purpose

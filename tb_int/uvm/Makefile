@@ -48,9 +48,11 @@ OPQ_N_SHD          ?= 256
 OPQ_TICKET_FIFO_DEPTH ?= 256
 
 UVM_DEFINES ?= +define+UVM_NO_DPI
+TB_INT_EXTRA_DEFINES ?=
 UVM_DEFINES += +define+OPQ_PAGE_RAM_DEPTH=$(OPQ_PAGE_RAM_DEPTH)
 UVM_DEFINES += +define+OPQ_N_SHD=$(OPQ_N_SHD)
 UVM_DEFINES += +define+OPQ_TICKET_FIFO_DEPTH=$(OPQ_TICKET_FIFO_DEPTH)
+UVM_DEFINES += $(TB_INT_EXTRA_DEFINES)
 
 TEST ?= tb_int_smoke_test
 RUN_DO ?= run -all; quit -f
@@ -149,7 +151,7 @@ VCOM_FLAGS := -modelsimini $(MODELSIM_INI) -2008 -work $(BUILD_DIR)/work
 VCOM_LPM_FLAGS := -modelsimini $(MODELSIM_INI) -2008 -work $(BUILD_DIR)/lpm
 VSIM_FLAGS := -modelsimini $(MODELSIM_INI) -L altera_mf -L lpm -voptargs=+acc -nodpiexports -suppress 19 -suppress 3009
 
-.PHONY: all gen_dut prepare compile run clean
+.PHONY: all gen_dut prepare compile run run_cached clean
 
 all: run
 
@@ -204,7 +206,9 @@ compile: prepare gen_dut
 	$(VCOM) $(VCOM_FLAGS) $(VHDL_SRCS)
 	$(VLOG) $(VLOG_FLAGS) $(SV_SRCS)
 
-run: compile
+run: compile run_cached
+
+run_cached:
 	cd $(BUILD_DIR) && $(VSIM) $(VSIM_FLAGS) -c work.tb_int_top +UVM_TESTNAME=$(TEST) \
 		$(PLUSARGS) -do "$(RUN_DO)"
 

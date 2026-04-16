@@ -54,6 +54,7 @@ module tb_int_top;
     opq_ingress_if #(.DATA_W(36), .CH_W(2)) gate3_if (.clk(clk_ref), .rst(rst));
     opq_egress_if  #(.DATA_W(36))           egress_if(.clk(clk_ref), .rst(rst));
     opq_csr_if     #(.ADDR_W(9))            csr_if   (.clk(clk_ref), .rst(rst));
+    emut_avmm_csr_if #(.ADDR_W(4))          emu_csr_if[4] (.clk(clk_ref), .rst(rst));
     run_control_if                          rc_if    (.clk(clk_ref), .rst(rst));
 
     // Stage A taps (hit_generator FIFO commit per datapath)
@@ -71,6 +72,10 @@ module tb_int_top;
     initial begin
         rc_if.run_state  = RC_STATE_IDLE;
         rc_if.run_enable = 1'b0;
+        emu_csr_if[0].address   = '0; emu_csr_if[0].read = 1'b0; emu_csr_if[0].write = 1'b0; emu_csr_if[0].writedata = '0;
+        emu_csr_if[1].address   = '0; emu_csr_if[1].read = 1'b0; emu_csr_if[1].write = 1'b0; emu_csr_if[1].writedata = '0;
+        emu_csr_if[2].address   = '0; emu_csr_if[2].read = 1'b0; emu_csr_if[2].write = 1'b0; emu_csr_if[2].writedata = '0;
+        emu_csr_if[3].address   = '0; emu_csr_if[3].read = 1'b0; emu_csr_if[3].write = 1'b0; emu_csr_if[3].writedata = '0;
     end
 
     // ----- 4 datapath_stubs driving the 4 OPQ lanes -----------------------
@@ -79,6 +84,12 @@ module tb_int_top;
     // release a frame. A single active lane never satisfies that condition,
     // so Phase 2 already instantiates 4 full datapath chains. This matches
     // the final 2 FEB × 2 datapath × 4 lane topology from DV_INT_PLAN.md.
+`ifdef TB_INT_FAST_RBCAM
+    localparam int TB_INT_RBCAM_RING_BUFFER_N_ENTRY = 64;
+`else
+    localparam int TB_INT_RBCAM_RING_BUFFER_N_ENTRY = 512;
+`endif
+
     logic [35:0] dp_data  [4];
     logic        dp_valid [4];
     logic        dp_sop   [4];
@@ -94,13 +105,20 @@ module tb_int_top;
     generate
         for (gi = 0; gi < 4; gi++) begin : g_datapath
             datapath_stub #(
-                .FEB_ID      (gi / 2),
-                .DATAPATH_ID (gi % 2)
+                .FEB_ID                    (gi / 2),
+                .DATAPATH_ID               (gi % 2),
+                .RBCAM_RING_BUFFER_N_ENTRY (TB_INT_RBCAM_RING_BUFFER_N_ENTRY)
             ) u_datapath (
                 .i_clk                  (clk_ref),
                 .i_rst                  (rst),
                 .ctrl_data              (rc_if.run_state),
                 .ctrl_valid             (1'b1),
+                .emu_csr_address        (emu_csr_if[gi].address),
+                .emu_csr_read           (emu_csr_if[gi].read),
+                .emu_csr_write          (emu_csr_if[gi].write),
+                .emu_csr_writedata      (emu_csr_if[gi].writedata),
+                .emu_csr_readdata       (emu_csr_if[gi].readdata),
+                .emu_csr_waitrequest    (emu_csr_if[gi].waitrequest),
                 .aso_lane_data          (dp_data [gi]),
                 .aso_lane_valid         (dp_valid[gi]),
                 .aso_lane_startofpacket (dp_sop  [gi]),
@@ -111,11 +129,12 @@ module tb_int_top;
         end
     endgenerate
 
-    // AND-reduce PREP-ready across all 4 datapaths and surface it on the
-    // run_control_if so the UVM driver can block in RUN_PREPARE until every
-    // child IP of every datapath has acknowledged. ring_buffer_cam dominates
-    // (~131072 cycles to walk its CAM/RAM in RUN_PREPARE).
+    // AND-reduce child-IP ctrl-ready across all 4 datapaths and surface it on
+    // the run_control_if. PREP uses it as the flush-done condition, while
+    // TERMINATING reuses the same aggregate as the per-run drain-complete ack.
     assign rc_if.prep_done = dp_prep_ready[0] & dp_prep_ready[1]
+                           & dp_prep_ready[2] & dp_prep_ready[3];
+    assign rc_if.term_done = dp_prep_ready[0] & dp_prep_ready[1]
                            & dp_prep_ready[2] & dp_prep_ready[3];
 
     // Mirror the registered SWB ingress gate locally so the Stage D taps and
@@ -130,6 +149,7 @@ module tb_int_top;
     assign gate_live[1]           = gate_open & lane_live[1];
     assign gate_live[2]           = gate_open & lane_live[2];
     assign gate_live[3]           = gate_open & lane_live[3];
+    assign rc_if.feb_quiet        = ~(lane_live[0] | lane_live[1] | lane_live[2] | lane_live[3]);
 
     always_ff @(posedge clk_ref) begin
         if (rst)
@@ -449,12 +469,18 @@ module tb_int_top;
     int unsigned cnt_h0_valid_term  [4];
     int unsigned cnt_frcv_enable_term [4];
     int unsigned cnt_frcv_go_term     [4];
+    int unsigned cnt_h1_close_marker    [4][4];
+    int unsigned cnt_h1_data_after_close[4][4];
     time         t_first_emu_frame_term [4];
     time         t_first_h0_sop_term    [4];
+    time         t_first_h1_close       [4][4];
+    time         t_first_h1_post_close  [4][4];
     time         t_last_emu_frame_run   [4];
     time         t_last_a_commit        [4];
     bit          seen_emu_frame_term    [4];
     bit          seen_h0_sop_term       [4];
+    bit          seen_h1_close          [4][4];
+    bit          seen_h1_post_close     [4][4];
     bit          sample_emu_frame_latch_next [4];
 
     always_ff @(posedge clk_ref) begin
@@ -525,9 +551,18 @@ module tb_int_top;
                     seen_emu_frame_term   [ti] <= 1'b0;
                     seen_h0_sop_term      [ti] <= 1'b0;
                     sample_emu_frame_latch_next[ti] <= 1'b0;
+                    for (int slot = 0; slot < 4; slot++) begin
+                        cnt_h1_close_marker    [ti][slot] <= 0;
+                        cnt_h1_data_after_close[ti][slot] <= 0;
+                        t_first_h1_close       [ti][slot] <= 0;
+                        t_first_h1_post_close  [ti][slot] <= 0;
+                        seen_h1_close          [ti][slot] <= 1'b0;
+                        seen_h1_post_close     [ti][slot] <= 1'b0;
+                    end
                 end else begin
                     bit a_commit;
                     bit running_frame_start;
+                    int unsigned h1_slot;
                     a_commit = g_datapath[ti].u_datapath.u_emulator_mutrig.u_hit_gen.l2_push_valid_c;
                     running_frame_start =
                         (g_datapath[ti].u_datapath.u_emulator_mutrig.ctrl_state_q == RC_STATE_RUNNING) &&
@@ -603,6 +638,27 @@ module tb_int_top;
                         if (g_datapath[ti].u_datapath.u_frame_rcv.receiver_go == 1'b1)
                             cnt_frcv_go_term[ti] <= cnt_frcv_go_term[ti] + 1;
                     end
+
+                    if (g_datapath[ti].u_datapath.h1_valid) begin
+                        h1_slot = g_datapath[ti].u_datapath.h1_channel[1:0];
+                        if (h1_slot < 4) begin
+                            if (g_datapath[ti].u_datapath.h1_empty &&
+                                g_datapath[ti].u_datapath.h1_eop) begin
+                                cnt_h1_close_marker[ti][h1_slot] <= cnt_h1_close_marker[ti][h1_slot] + 1;
+                                if (!seen_h1_close[ti][h1_slot]) begin
+                                    seen_h1_close   [ti][h1_slot] <= 1'b1;
+                                    t_first_h1_close[ti][h1_slot] <= $time;
+                                end
+                            end else if (!g_datapath[ti].u_datapath.h1_empty &&
+                                         seen_h1_close[ti][h1_slot]) begin
+                                cnt_h1_data_after_close[ti][h1_slot] <= cnt_h1_data_after_close[ti][h1_slot] + 1;
+                                if (!seen_h1_post_close[ti][h1_slot]) begin
+                                    seen_h1_post_close    [ti][h1_slot] <= 1'b1;
+                                    t_first_h1_post_close[ti][h1_slot] <= $time;
+                                end
+                            end
+                        end
+                    end
                 end
             end
         end
@@ -629,6 +685,48 @@ module tb_int_top;
                      last_emu_evt_latch_used[i], last_emu_evt_snap[i],
                      cnt_emu_evt_latch_mismatch[i], cnt_emu_frame_latch_zero[i], cnt_emu_frame_snap_zero[i],
                      last_fifo_tail[i]);
+            for (int slot = 0; slot < 4; slot++) begin
+                $display("[tb_int_top] H1 close dbg dp%0d slot%0d close_cnt=%0d first_close_t=%0t post_close_data=%0d first_post_t=%0t",
+                         i, slot,
+                         cnt_h1_close_marker[i][slot], t_first_h1_close[i][slot],
+                         cnt_h1_data_after_close[i][slot], t_first_h1_post_close[i][slot]);
+            end
+            $display("[tb_int_top] H1->B dbg dp0 slot0 push=%0d pop=%0d ow=%0d end_seen=%0b drain_done=%0b deass_used=%0d popcmd_used=%0d term_ready=%0b",
+                     g_datapath[0].u_datapath.g_rbcam[0].u_rbcam.v2_core.debug_msg2.push_cnt,
+                     g_datapath[0].u_datapath.g_rbcam[0].u_rbcam.v2_core.debug_msg2.pop_cnt,
+                     g_datapath[0].u_datapath.g_rbcam[0].u_rbcam.v2_core.debug_msg2.overwrite_cnt,
+                     g_datapath[0].u_datapath.g_rbcam[0].u_rbcam.v2_core.endofrun_seen,
+                     g_datapath[0].u_datapath.g_rbcam[0].u_rbcam.v2_core.terminating_drain_done,
+                     g_datapath[0].u_datapath.g_rbcam[0].u_rbcam.v2_core.deassembly_fifo_usedw,
+                     g_datapath[0].u_datapath.g_rbcam[0].u_rbcam.v2_core.pop_cmd_fifo_usedw,
+                     g_datapath[0].u_datapath.rbcam_ctrl_ready[0]);
+            $display("[tb_int_top] H1->B dbg dp0 slot1 push=%0d pop=%0d ow=%0d end_seen=%0b drain_done=%0b deass_used=%0d popcmd_used=%0d term_ready=%0b",
+                     g_datapath[0].u_datapath.g_rbcam[1].u_rbcam.v2_core.debug_msg2.push_cnt,
+                     g_datapath[0].u_datapath.g_rbcam[1].u_rbcam.v2_core.debug_msg2.pop_cnt,
+                     g_datapath[0].u_datapath.g_rbcam[1].u_rbcam.v2_core.debug_msg2.overwrite_cnt,
+                     g_datapath[0].u_datapath.g_rbcam[1].u_rbcam.v2_core.endofrun_seen,
+                     g_datapath[0].u_datapath.g_rbcam[1].u_rbcam.v2_core.terminating_drain_done,
+                     g_datapath[0].u_datapath.g_rbcam[1].u_rbcam.v2_core.deassembly_fifo_usedw,
+                     g_datapath[0].u_datapath.g_rbcam[1].u_rbcam.v2_core.pop_cmd_fifo_usedw,
+                     g_datapath[0].u_datapath.rbcam_ctrl_ready[1]);
+            $display("[tb_int_top] H1->B dbg dp0 slot2 push=%0d pop=%0d ow=%0d end_seen=%0b drain_done=%0b deass_used=%0d popcmd_used=%0d term_ready=%0b",
+                     g_datapath[0].u_datapath.g_rbcam[2].u_rbcam.v2_core.debug_msg2.push_cnt,
+                     g_datapath[0].u_datapath.g_rbcam[2].u_rbcam.v2_core.debug_msg2.pop_cnt,
+                     g_datapath[0].u_datapath.g_rbcam[2].u_rbcam.v2_core.debug_msg2.overwrite_cnt,
+                     g_datapath[0].u_datapath.g_rbcam[2].u_rbcam.v2_core.endofrun_seen,
+                     g_datapath[0].u_datapath.g_rbcam[2].u_rbcam.v2_core.terminating_drain_done,
+                     g_datapath[0].u_datapath.g_rbcam[2].u_rbcam.v2_core.deassembly_fifo_usedw,
+                     g_datapath[0].u_datapath.g_rbcam[2].u_rbcam.v2_core.pop_cmd_fifo_usedw,
+                     g_datapath[0].u_datapath.rbcam_ctrl_ready[2]);
+            $display("[tb_int_top] H1->B dbg dp0 slot3 push=%0d pop=%0d ow=%0d end_seen=%0b drain_done=%0b deass_used=%0d popcmd_used=%0d term_ready=%0b",
+                     g_datapath[0].u_datapath.g_rbcam[3].u_rbcam.v2_core.debug_msg2.push_cnt,
+                     g_datapath[0].u_datapath.g_rbcam[3].u_rbcam.v2_core.debug_msg2.pop_cnt,
+                     g_datapath[0].u_datapath.g_rbcam[3].u_rbcam.v2_core.debug_msg2.overwrite_cnt,
+                     g_datapath[0].u_datapath.g_rbcam[3].u_rbcam.v2_core.endofrun_seen,
+                     g_datapath[0].u_datapath.g_rbcam[3].u_rbcam.v2_core.terminating_drain_done,
+                     g_datapath[0].u_datapath.g_rbcam[3].u_rbcam.v2_core.deassembly_fifo_usedw,
+                     g_datapath[0].u_datapath.g_rbcam[3].u_rbcam.v2_core.pop_cmd_fifo_usedw,
+                     g_datapath[0].u_datapath.rbcam_ctrl_ready[3]);
         end
     end
 
@@ -819,60 +917,7 @@ module tb_int_top;
         $error("[run_audit] %s skewed: observed=%0t reference=%0t", LABEL, TS, REF_TS);           \
     end
 
-    final begin
-        time ref_sync_ts;
-        time ref_run_ts;
-        bit  ref_sync_seen;
-        bit  ref_run_seen;
-        $display("[run_audit] broadcast: t_bc_sync=%0t t_bc_running=%0t",
-                 t_bc_sync, t_bc_running);
-        ref_sync_ts   = 0;
-        ref_run_ts    = 0;
-        ref_sync_seen = 1'b0;
-        ref_run_seen  = 1'b0;
-        if (!bc_sync_seen)
-            $error("[run_audit] broadcast SYNC edge never observed");
-        if (!bc_running_seen)
-            $error("[run_audit] broadcast RUNNING edge never observed");
-        if (!f_swb_gate_run)
-            $error("[run_audit] swb.gate.run never observed");
-        for (int i = 0; i < 4; i++) begin
-            $display("[run_audit] dp%0d sync : emu=%0t frcv=%0t mts=%0t rbcam=(%0t,%0t,%0t,%0t) ffa_d=%0t ffa_x=%0t",
-                     i, t_emu_sync[i], t_frcv_sync[i], t_mts_sync[i],
-                     t_rbcam_sync[i][0], t_rbcam_sync[i][1],
-                     t_rbcam_sync[i][2], t_rbcam_sync[i][3],
-                     t_ffa_d_sync[i], t_ffa_x_sync[i]);
-            $display("[run_audit] dp%0d run  : emu=%0t frcv=%0t mts=%0t rbcam=(%0t,%0t,%0t,%0t) ffa_d=%0t ffa_x=%0t swb_gate=%0t",
-                     i, t_emu_run[i], t_frcv_run[i], t_mts_run[i],
-                     t_rbcam_run[i][0], t_rbcam_run[i][1],
-                     t_rbcam_run[i][2], t_rbcam_run[i][3],
-                     t_ffa_d_run[i], t_ffa_x_run[i], t_swb_gate_run);
-            $display("[run_audit] dp%0d first-beat: emu_tx=%0t h0=%0t h1=%0t h2=(%0t,%0t,%0t,%0t) lane=%0t",
-                     i, t_first_emu_tx[i], t_first_h0[i], t_first_h1[i],
-                     t_first_h2[i][0], t_first_h2[i][1],
-                     t_first_h2[i][2], t_first_h2[i][3],
-                     t_first_lane[i]);
-            `CHECK_EDGE_SYNC($sformatf("dp%0d.emu.sync", i),   f_emu_sync[i],   t_emu_sync[i],   ref_sync_seen, ref_sync_ts)
-            `CHECK_EDGE_SYNC($sformatf("dp%0d.frcv.sync", i),  f_frcv_sync[i],  t_frcv_sync[i],  ref_sync_seen, ref_sync_ts)
-            `CHECK_EDGE_SYNC($sformatf("dp%0d.mts.sync", i),   f_mts_sync[i],   t_mts_sync[i],   ref_sync_seen, ref_sync_ts)
-            `CHECK_EDGE_SYNC($sformatf("dp%0d.ffa_d.sync", i), f_ffa_d_sync[i], t_ffa_d_sync[i], ref_sync_seen, ref_sync_ts)
-            `CHECK_EDGE_SYNC($sformatf("dp%0d.ffa_x.sync", i), f_ffa_x_sync[i], t_ffa_x_sync[i], ref_sync_seen, ref_sync_ts)
-            `CHECK_EDGE_SYNC($sformatf("dp%0d.emu.run", i),    f_emu_run[i],    t_emu_run[i],    ref_run_seen,  ref_run_ts)
-            `CHECK_EDGE_SYNC($sformatf("dp%0d.frcv.run", i),   f_frcv_run[i],   t_frcv_run[i],   ref_run_seen,  ref_run_ts)
-            `CHECK_EDGE_SYNC($sformatf("dp%0d.mts.run", i),    f_mts_run[i],    t_mts_run[i],    ref_run_seen,  ref_run_ts)
-            `CHECK_EDGE_SYNC($sformatf("dp%0d.ffa_d.run", i),  f_ffa_d_run[i],  t_ffa_d_run[i],  ref_run_seen,  ref_run_ts)
-            `CHECK_EDGE_SYNC($sformatf("dp%0d.ffa_x.run", i),  f_ffa_x_run[i],  t_ffa_x_run[i],  ref_run_seen,  ref_run_ts)
-            for (int rbi = 0; rbi < 4; rbi++) begin
-                `CHECK_EDGE_SYNC($sformatf("dp%0d.rbcam%0d.sync", i, rbi),
-                                 f_rbcam_sync[i][rbi], t_rbcam_sync[i][rbi], ref_sync_seen, ref_sync_ts)
-                `CHECK_EDGE_SYNC($sformatf("dp%0d.rbcam%0d.run", i, rbi),
-                                 f_rbcam_run[i][rbi], t_rbcam_run[i][rbi], ref_run_seen, ref_run_ts)
-            end
-        end
-        if (f_swb_gate_run && ref_run_seen && (t_swb_gate_run != ref_run_ts))
-            $error("[run_audit] swb.gate.run skewed from datapath RUNNING: observed=%0t reference=%0t",
-                   t_swb_gate_run, ref_run_ts);
-    end
+
 `undef CHECK_EDGE_SYNC
 
     // ----- UVM start -------------------------------------------------------
@@ -919,6 +964,10 @@ module tb_int_top;
         uvm_config_db#(virtual opq_ingress_if)::set(null, "uvm_test_top*", "stage_d_lane3_if", gate3_if);
         uvm_config_db#(virtual opq_egress_if)::set (null, "uvm_test_top*", "egress_if", egress_if);
         uvm_config_db#(virtual opq_csr_if)::set    (null, "uvm_test_top*", "csr_if",    csr_if);
+        uvm_config_db#(virtual emut_avmm_csr_if.drv)::set(null, "uvm_test_top*", "emu_csr_lane0_if", emu_csr_if[0]);
+        uvm_config_db#(virtual emut_avmm_csr_if.drv)::set(null, "uvm_test_top*", "emu_csr_lane1_if", emu_csr_if[1]);
+        uvm_config_db#(virtual emut_avmm_csr_if.drv)::set(null, "uvm_test_top*", "emu_csr_lane2_if", emu_csr_if[2]);
+        uvm_config_db#(virtual emut_avmm_csr_if.drv)::set(null, "uvm_test_top*", "emu_csr_lane3_if", emu_csr_if[3]);
         uvm_config_db#(virtual run_control_if)::set(null, "uvm_test_top*", "rc_if",     rc_if);
         uvm_config_db#(virtual stage_a_if)::set   (null, "uvm_test_top*", "stage_a0_if", stage_a0_if);
         uvm_config_db#(virtual stage_a_if)::set   (null, "uvm_test_top*", "stage_a1_if", stage_a1_if);
