@@ -54,6 +54,7 @@ UVM_DEFINES += +define+OPQ_TICKET_FIFO_DEPTH=$(OPQ_TICKET_FIFO_DEPTH)
 
 TEST ?= tb_int_smoke_test
 RUN_DO ?= run -all; quit -f
+PLUSARGS ?=
 
 LM_LICENSE_FILE := $(TB_LICENSE_CHAIN)
 export LM_LICENSE_FILE
@@ -128,6 +129,12 @@ VHDL_SRCS := \
 SV_SRCS := \
 	$(UVM_SRC)/uvm_pkg.sv \
 	$(TB_INT_UVM_DIR)/tb_int_if.sv \
+	$(TB_INT_UVM_DIR)/tb_int_hit0_contract_sva.sv \
+	$(TB_INT_UVM_DIR)/tb_int_hit2_contract_sva.sv \
+	$(TB_INT_UVM_DIR)/tb_int_frame_contract_sva.sv \
+	$(TB_INT_UVM_DIR)/tb_int_egress_contract_sva.sv \
+	$(TB_INT_UVM_DIR)/tb_int_run_contract_sva.sv \
+	$(TB_INT_UVM_DIR)/tb_int_run_enable_contract_sva.sv \
 	$(TB_INT_UVM_DIR)/tb_int_pkg.sv \
 	$(EMU_SV_SRCS) \
 	$(TB_INT_DIR)/rtl/datapath_stub.sv \
@@ -199,7 +206,7 @@ compile: prepare gen_dut
 
 run: compile
 	cd $(BUILD_DIR) && $(VSIM) $(VSIM_FLAGS) -c work.tb_int_top +UVM_TESTNAME=$(TEST) \
-		-do "$(RUN_DO)"
+		$(PLUSARGS) -do "$(RUN_DO)"
 
 clean:
 	@echo "Leaving $(BUILD_DIR) and $(RTL_GEN_DIR) for manual cleanup (see CLAUDE.md hard safety rules)."

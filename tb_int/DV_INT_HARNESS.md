@@ -2,8 +2,8 @@
 
 **Companion to:** `DV_INT_PLAN.md`
 **Author:** Yifeng Wang (yifenwan@phys.ethz.ch)
-**Date:** 2026-04-14
-**Status:** Phase 0 description. Phase 1 scaffold under construction.
+**Date:** 2026-04-15
+**Status:** Parser/SVA coverage across H0/B/C/D/E, MuTRiG drain-safe run control, SWB gate alignment, and unmatched-hit candidate dumps are in tree.
 
 ---
 
@@ -22,51 +22,56 @@ each link to model xcvr latency it stays inside the same domain.
 
 ## 2. RTL skeleton
 
-`rtl/tb_int_top.sv` is the top:
+`rtl/tb_int_top.sv` is the top-level wrapper currently in tree:
 
 ```
 tb_int_top
- ├─ clk_reset_gen
- ├─ feb_stub #(.FEB_ID(0)) u_feb0
- │    ├─ datapath_stub #(.DATAPATH_ID(0)) u_up
- │    │    ├─ emulator_mutrig
- │    │    ├─ ring_buffer_cam
- │    │    └─ feb_frame_assembly
- │    └─ datapath_stub #(.DATAPATH_ID(1)) u_dn
+ ├─ clk / reset generation
+ ├─ g_datapath[0..3]
+ │    └─ datapath_stub #(.FEB_ID(i/2), .DATAPATH_ID(i%2))
  │         ├─ emulator_mutrig
- │         ├─ ring_buffer_cam
+ │         ├─ frame_rcv_ip
+ │         ├─ mts_processor
+ │         ├─ ring_buffer_cam x 4
  │         └─ feb_frame_assembly
- ├─ feb_stub #(.FEB_ID(1)) u_feb1     (same internal structure)
  ├─ swb_ingress_stub u_swb
- │    ├─ 4 × run_enable qualifier
- │    └─ ordered_priority_queue (OPQ_N_LANE = 4)
- └─ tb_int_if                         (interfaces handed to UVM)
+ │    ├─ pre-gate datapath links `dp_*`
+ │    ├─ post-gate OPQ ingress links `v0..v3`
+ │    └─ ordered_priority_queue_dut4
+ └─ tb_int_if
+      ├─ Stage A taps
+      ├─ pre-gate / post-gate lane taps
+      ├─ egress tap
+      ├─ CSR tap
+      └─ run-control tap
 ```
 
-`feb_stub` is a thin wrapper — its only purpose is to carry the
-`FEB_ID`/`DATAPATH_ID` hierarchical parameters so that the bind-only
-stage-A monitor can tag each hit with its origin without us touching any
-source file. `datapath_stub` is equally thin and maps the three IPs into
-their AvST contract exactly as `feb_system_v2_data_path_subsystem.vhd`
-does in the generated Qsys.
+`tb_int_top.sv` groups the 4 datapath chains into 2 FEBs logically through
+`FEB_ID` / `DATAPATH_ID`; it does not currently instantiate separate
+`feb_stub` wrappers. `datapath_stub` is the thin integration shell that maps
+the live emulator → frame_rcv → mts_processor → ring_buffer_cam →
+feb_frame_assembly chain into the same AvST contract used by the generated
+Qsys subsystem.
 
-The OPQ itself is the monolithic VHDL core, instantiated with
-`OPQ_N_LANE=4` and the default `N_SHD=256`.
+The OPQ itself is the monolithic VHDL core, instantiated as
+`ordered_priority_queue_dut4` with the default `N_SHD=256`.
 
 ---
 
-## 3. Stage taps (bind-only monitors)
+## 3. Stage taps (bind-only monitors and passive interfaces)
 
-All five stage monitors are **bind-only**. No source file of any shipping
-IP is modified.
+All promoted stage monitors are passive observers. No source file of any
+shipping datapath IP is modified.
 
-| Stage | Bind target | File | What it snoops |
-|-------|-------------|------|----------------|
-| A | `hit_generator` | `uvm/agents/stage_a_mutrig_monitor.sv` | FIFO-write cycle, payload, per-channel origin |
-| B | `ring_buffer_cam_v2_core` | `uvm/agents/stage_b_rbcam_monitor.sv` | cam output valid beat, payload shadow |
-| C | `feb_frame_assembly` | `uvm/agents/stage_c_febtx_monitor.sv` | tx AvST beat at the FEB tx boundary |
-| D | `opq_ingress_if` (interface) | `uvm/agents/stage_d_opq_ingress_monitor.sv` | per-lane ingress beat into OPQ |
-| E | `opq_egress_if` (interface) | `uvm/agents/stage_e_opq_egress_monitor.sv` | egress beat |
+| Stage | Tap point | Contract family | Current status |
+|-------|-----------|-----------------|----------------|
+| A | `hit_generator` FIFO write | raw-hit commit monitor | implemented in `uvm/tb_int_pkg.sv` |
+| H0 | `frame_rcv_ip` `aso_hit_type0_*` | recovery-aware hit-stream parser + SVA | implemented in `uvm/tb_int_pkg.sv` + `uvm/tb_int_hit0_contract_sva.sv` |
+| H1 | `mts_processor` `aso_hit_type1_*` | passive hit monitor + slot-aware matcher | implemented in `uvm/tb_int_pkg.sv` |
+| B | `ring_buffer_cam_v2_core` `aso_hit_type2_*` | hit-stream parser + SVA | implemented in `uvm/tb_int_pkg.sv` + `uvm/tb_int_hit2_contract_sva.sv` |
+| C | datapath pre-gate `feb_frame_assembly` tx stream | framed parser + SVA | implemented in `uvm/tb_int_pkg.sv` + `uvm/tb_int_frame_contract_sva.sv` |
+| D | SWB post-gate `v0..v3` stream into OPQ | framed parser + SVA | implemented in `uvm/tb_int_pkg.sv` + `uvm/tb_int_frame_contract_sva.sv` |
+| E | `opq_egress_if` accepted beat | framed parser + SVA | implemented in `uvm/tb_int_pkg.sv` + `uvm/tb_int_frame_contract_sva.sv` |
 
 Binding example (A):
 
@@ -80,58 +85,91 @@ bind hit_generator tb_int_stage_a_mutrig_monitor u_mon (
 );
 ```
 
-Each bound monitor raises a SystemVerilog event or analysis-port-like
-`write()` into the scoreboard (`tb_int_scoreboard`). Nothing goes through
-TLM / analysis fifos between FEB and SWB: the RTL signals are wired
-directly. The monitors are passive observers of the same wires.
+Each monitor raises a SystemVerilog event or analysis-port-like `write()`
+into the scoreboard (`tb_int_scoreboard`). Nothing goes through TLM or
+analysis FIFOs between FEB and SWB: the RTL signals are wired directly and
+the monitors only observe real accepted beats or commit points.
+
+In the current tree the monitor, parser, agent, and env classes all live in
+`uvm/tb_int_pkg.sv`. A later split into `uvm/agents/*` and `uvm/sva/*` is
+cleanup, not a functional requirement.
 
 ### Tag transport
 
 Stage A assigns a monotonic 64-bit `hit_id` at the FIFO-write moment and
-publishes `{hit_id, abs_ts, mutrig_origin, payload}` into a global
-scoreboard map keyed by `{mutrig_origin, payload}`. Downstream monitors
-(B..E) look up the hit by that key; there is no tag bus transported in
-RTL.
+publishes `{hit_id, abs_ts, mutrig_origin, payload}` into the scoreboard.
+There is no tag bus transported in RTL.
 
-Collision handling: if two hits ever collide on
-`{mutrig_origin, payload}`, the scoreboard enqueues them in a per-key
-FIFO and consumes them in order at each downstream stage. The
-`hit_generator`'s PRNG rarely produces exact-payload collisions but the
-code path must exist.
+The promoted architecture does **not** rely on one global downstream key:
+
+- Stage A owns the canonical `hit_id`.
+- Stage H0 uses a recovery-aware parser because `frame_rcv_ip` in
+  `MODE_HALT=0` can legally emit `sop ... sop eop` recovery patterns.
+- Stage H1 uses `mts_processor` `channel[1:0]` as the expected rb-cam slot.
+- Stage B uses a stage-local matcher on `hit_type2` observations.
+- Stages C/D/E use a shared framed parser that emits canonical
+  `{abs_hit_ts, hit_word, lane_ctx}` observations.
+
+Stage-pair reconciliation remains FIFO-ordered within a key bucket so
+collisions are consumed deterministically. The scoreboard also propagates a
+candidate Stage-A lineage id downstream using that same FIFO order. This is
+exact at `A->H0`; later stages keep the lineage only while earlier
+boundaries stayed aligned. When earlier loss or ghost events already broke
+that alignment, the residual dump prints `id=?` instead of pretending the
+mapping is known.
 
 ---
 
-## 4. Scoreboard
+## 4. Contract parser, assertions, and scoreboard
 
-`uvm/env/tb_int_scoreboard.sv` owns:
+`tb_int` promotes one passive contract stack per stage boundary:
 
-- `hit_db[hit_id] -> hit_record`
-  - `stage_ts[5]` — timestamps captured at each stage
-  - `stage_seen[5]` — observed bitmask
-  - `origin.feb_id, datapath_id, mutrig_ch`
-  - `payload`
-  - `expected_subheader_slot`
-  - `expected_lane`
-- `key_lookup[{mutrig_origin, payload}] -> queue of hit_id` for downstream
-  lookups
-- per-stage latency histograms (cycle-bucketed)
-- per-lane drop counters
+- Stage H0: one recovery-aware `hit_type0` parser/SVA pair that enforces only
+  the sideband guarantees actually made by `frame_rcv_ip` and reports
+  `restart_sop` / `orphan_eop` as recovery statistics.
+- Stage H1: one passive `hit_type1` monitor whose slot sideband is preserved
+  into the scoreboard so `H1->B` loss can be localized per rb-cam slot.
+- Stage B: `hit_type2` hit-stream monitor plus SVA at the ring-buffer CAM
+  boundary.
+- Stages C/D/E: one shared data-framed parser and one shared SVA family,
+  derived from the standalone OPQ harness, that reconstruct absolute
+  subheader timestamps, track pending hit counts, and reject malformed
+  framing.
+
+The parser/SVA layer is responsible for local contract correctness. The
+scoreboard is responsible for cross-stage identity continuity.
+
+The scoreboard owns:
+
+- per-stage ledgers keyed by `(lane, channel, t_fine)`
+- slot-local H1/B ledgers for rb-cam localization
+- raw observation snapshots per stage
+- candidate Stage-A lineage ids propagated downstream by FIFO-order matching
+- per-stage parser / contract-error counters
+- per-lane and per-slot reconciliation summaries
+- residual-bucket dumps with the first unmatched observations at each failing
+  boundary
 
 At end-of-test:
 
 1. Every `hit_id` whose stage-A timestamp is within the run-enabled window
-   must have `stage_seen == 5'b11111`. Any other state = missing hit.
-2. Every downstream-stage observation must match a known `hit_id`. Unknown
-   = ghost hit.
-3. For every `hit_id`, the subheader slot observed at stage C and stage D
-   must equal `abs_ts[11:4]` per the OPQ contract. Otherwise slot
-   violation.
-4. Dump latency CSV: `tb_int_latency_{stage}_{lane}.csv`. One row per hit,
-   columns `hit_id,lane,channel,stage_ts,latency_from_prev_stage`.
+   must reach every required downstream stage. Any first missing boundary is
+   reported explicitly as `A->H0`, `H0->H1`, `H1->B`, `B->C`, `C->D`, or `D->E`.
+2. Every downstream-stage observation must reconcile to a known upstream
+   `hit_id`. Unknown = ghost hit.
+3. Framed-stage contract errors are promoted independently of hit-integrity
+   mismatches, so malformed subheaders / trailers do not get hidden inside a
+   generic "missing hit" bucket.
+4. Dump the first unmatched observations at any failing boundary so debug can
+   start from concrete items rather than bucket counts alone. Current output
+   includes exact Stage-A `hit_id`s where the lineage is still known.
 
 ---
 
 ## 5. Latency histogram format
+
+This section is the planned follow-on shape, not the current promoted
+implementation. The live tree does not yet dump latency CSVs.
 
 One CSV per `(stage_pair, lane)`. Header:
 
@@ -156,12 +194,11 @@ reads CSVs with the stdlib.
 
 ## 6. Run-control agent
 
-`uvm/agents/run_control_agent.sv` drives:
+The run-control agent, currently implemented in `uvm/tb_int_pkg.sv`, drives:
 
 - `run_state` broadcast to each FEB's `runctl_mgmt_host` input
 - `run_enable` to `swb_ingress_stub`
-- `emulator_mutrig.csr_enable` via the CSR AvMM (or a tb-side backdoor to
-  keep bring-up simple)
+- `emulator_mutrig.csr_enable` via the current tb-side control path
 
 Sequence item `run_control_item`:
 
@@ -175,10 +212,31 @@ endclass
 ```
 
 The driver sequences `RC_PREPARE` → wait → `RC_START` → wait → `RC_END`.
-Stage-A monitor observes every hit regardless of run_state. Stage-E
-expects to see only the hits whose stage-A timestamp fell inside the
-run-enabled window; the scoreboard's missing-hit check is gated by that
+Stage A remains a passive raw-commit observer, but the promoted contract
+expects no new Stage-A commits outside `RUNNING`. Stage C observes the
+ungated FEB tx stream. Stage D observes the post-gate stream that actually
+reaches OPQ. The scoreboard's missing-hit check is gated by the run-enabled
 window.
+
+Most promoted runs rely on the child IP default CSR configuration. Full
+Avalon/MM programming of every datapath IP is deferred until an upgraded IP
+actually requires non-default configuration.
+
+For the MuTRiG emulator specifically, the promoted run-control contract is:
+
+- commit new hits into the internal FIFO only while `RUNNING`
+- stop committing new hits when leaving `RUNNING`
+- keep already committed FIFO contents alive long enough to drain through the
+  frame assembler during `RUN_END` / `TERMINATING`
+
+The live tree now meets that contract by:
+
+- keeping MuTRiG internal state alive through `TERMINATING`
+- suppressing new hit commits outside `RUNNING`
+- keeping the SWB ingress gate open through the explicit `RC_END` drain hold
+  before returning to `IDLE`
+- registering the SWB ingress gate so Stage D opens on the same internal
+  datapath-side `RUNNING` edge seen by the FEB chain
 
 ---
 
@@ -202,15 +260,19 @@ contract.
 
 ---
 
-## 8. Known harness gaps (phase 1 baseline)
+## 8. Known harness gaps
 
 - No xcvr FIFO on the FEB→SWB links.
 - No CSR-driven rate randomisation inside the mutrig emulator; the
   emulator is driven at fixed rates from the scoreboard config object.
-- Stage-A monitor assumes payload uniqueness for the scoreboard key.
-  Collision FIFO handling lands in phase 3, not phase 2.
+- Full end-to-end latency CSV dumping and off-sim histogram generation are
+  still planned, not implemented in the live tree.
+- Stage-pair association is still contract-aware FIFO matching within
+  `(lane, channel, t_fine)` buckets. Candidate Stage-A lineage ids are
+  propagated downstream, but once an earlier boundary diverges a later
+  boundary may legitimately report `id=?`.
 - OPQ backpressure (from egress) is not exercised until phase 5.
-- `run-control_mgmt` IP integration is phase 6; phase 1..5 use the tb-side
-  run_enable broadcast directly.
+- Full Avalon/MM child-IP configuration is deferred; phase 1..5 use default
+  CSR settings unless a specific upgrade requires more.
 
 These gaps are explicit here so they do not become surprises later.

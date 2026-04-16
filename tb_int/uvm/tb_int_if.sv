@@ -32,6 +32,56 @@ interface opq_egress_if #(parameter int DATA_W = 36) (
     logic [2:0]        error;
 endinterface
 
+interface hit_type2_if #(
+    parameter int DATA_W = 36,
+    parameter int CH_W   = 4,
+    parameter int ERR_W  = 1
+) (
+    input logic clk,
+    input logic rst
+);
+    logic [DATA_W-1:0] data;
+    logic              valid;
+    logic              ready;
+    logic [CH_W-1:0]   channel;
+    logic              startofpacket;
+    logic              endofpacket;
+    logic [ERR_W-1:0]  error;
+endinterface
+
+interface hit_type0_if #(
+    parameter int DATA_W = 45,
+    parameter int CH_W   = 4,
+    parameter int ERR_W  = 3
+) (
+    input logic clk,
+    input logic rst
+);
+    logic [DATA_W-1:0] data;
+    logic              valid;
+    logic [CH_W-1:0]   channel;
+    logic              startofpacket;
+    logic              endofpacket;
+    logic [ERR_W-1:0]  error;
+endinterface
+
+interface hit_type1_if #(
+    parameter int DATA_W = 39,
+    parameter int CH_W   = 4
+) (
+    input logic clk,
+    input logic rst
+);
+    logic [DATA_W-1:0] data;
+    logic              valid;
+    logic              ready;
+    logic [CH_W-1:0]   channel;
+    logic              startofpacket;
+    logic              endofpacket;
+    logic              empty;
+    logic              error;
+endinterface
+
 interface run_control_if (
     input logic clk,
     input logic rst
@@ -63,9 +113,10 @@ interface opq_csr_if #(parameter int ADDR_W = 9) (
 endinterface
 
 // Stage A tap — one instance per datapath. Driven from tb_int_top with
-// hierarchical references into hit_generator. `valid` is 1-cycle pulse the
-// moment a hit is committed to the hit_generator FIFO; `payload` is the
-// 48-bit raw hit word; {feb_id, datapath_id, mutrig_ch} are tied constants
+// hierarchical references into hit_generator. `valid` is the 1-cycle pulse
+// for the shared-L2 enqueue inside the emulator (the earliest durable point
+// that can still reach the frame assembler); `payload` is the 48-bit raw
+// L2-style hit word; {feb_id, datapath_id, mutrig_ch} are tied constants
 // identifying which FEB.datapath.chip emitted the hit.
 interface stage_a_if (
     input logic clk,

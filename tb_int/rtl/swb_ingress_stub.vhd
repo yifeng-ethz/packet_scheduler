@@ -24,6 +24,7 @@ entity swb_ingress_stub is
 
         -- run gate from the run_control_agent (PCIe side)
         run_enable  : in  std_logic;
+        run_gate_mon : out std_logic;
 
         -- lane 0 ingress (feb0 / up)
         asi_ingress_0_data          : in  std_logic_vector(35 downto 0);
@@ -79,9 +80,22 @@ end entity swb_ingress_stub;
 
 architecture rtl of swb_ingress_stub is
     signal gate : std_logic_vector(0 downto 0);
+    signal run_enable_q : std_logic := '0';
     signal v0, v1, v2, v3 : std_logic_vector(0 downto 0);
 begin
-    gate(0) <= run_enable;
+    proc_run_gate : process (d_clk)
+    begin
+        if rising_edge(d_clk) then
+            if (d_reset = '1') then
+                run_enable_q <= '0';
+            else
+                run_enable_q <= run_enable;
+            end if;
+        end if;
+    end process;
+
+    gate(0) <= run_enable_q;
+    run_gate_mon <= gate(0);
     v0 <= asi_ingress_0_valid and gate;
     v1 <= asi_ingress_1_valid and gate;
     v2 <= asi_ingress_2_valid and gate;

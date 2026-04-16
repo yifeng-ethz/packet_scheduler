@@ -24,6 +24,9 @@ module tb_int_top;
     logic clk_ref;
     logic rst_n;
     logic rst;  // active-high, fed to VHDL cores
+    localparam bit [8:0] RC_STATE_IDLE        = 9'b0_0000_0001;
+    localparam bit [8:0] RC_STATE_RUNNING     = 9'b0_0000_1000;
+    localparam bit [8:0] RC_STATE_TERMINATING = 9'b0_0001_0000;
 
     initial begin
         clk_ref = 1'b0;
@@ -39,10 +42,16 @@ module tb_int_top;
     end
 
     // ----- interfaces ------------------------------------------------------
+    // Stage C taps: pre-gate FEB tx stream into the SWB stub.
     opq_ingress_if #(.DATA_W(36), .CH_W(2)) lane0_if (.clk(clk_ref), .rst(rst));
     opq_ingress_if #(.DATA_W(36), .CH_W(2)) lane1_if (.clk(clk_ref), .rst(rst));
     opq_ingress_if #(.DATA_W(36), .CH_W(2)) lane2_if (.clk(clk_ref), .rst(rst));
     opq_ingress_if #(.DATA_W(36), .CH_W(2)) lane3_if (.clk(clk_ref), .rst(rst));
+    // Stage D taps: post-gate stream actually presented to OPQ.
+    opq_ingress_if #(.DATA_W(36), .CH_W(2)) gate0_if (.clk(clk_ref), .rst(rst));
+    opq_ingress_if #(.DATA_W(36), .CH_W(2)) gate1_if (.clk(clk_ref), .rst(rst));
+    opq_ingress_if #(.DATA_W(36), .CH_W(2)) gate2_if (.clk(clk_ref), .rst(rst));
+    opq_ingress_if #(.DATA_W(36), .CH_W(2)) gate3_if (.clk(clk_ref), .rst(rst));
     opq_egress_if  #(.DATA_W(36))           egress_if(.clk(clk_ref), .rst(rst));
     opq_csr_if     #(.ADDR_W(9))            csr_if   (.clk(clk_ref), .rst(rst));
     run_control_if                          rc_if    (.clk(clk_ref), .rst(rst));
@@ -52,6 +61,17 @@ module tb_int_top;
     stage_a_if stage_a1_if (.clk(clk_ref), .rst(rst));
     stage_a_if stage_a2_if (.clk(clk_ref), .rst(rst));
     stage_a_if stage_a3_if (.clk(clk_ref), .rst(rst));
+    // Intermediate tap: frame_rcv hit_type0 stream before mts.
+    hit_type0_if stage_h0_if [4] (.clk(clk_ref), .rst(rst));
+    // Intermediate tap: mts hit_type1 stream before rb_cam fanout.
+    hit_type1_if stage_h1_if [4] (.clk(clk_ref), .rst(rst));
+    // Stage B taps (ring_buffer_cam hit_type2 packets per datapath/slot)
+    hit_type2_if stage_b_if [4][4] (.clk(clk_ref), .rst(rst));
+
+    initial begin
+        rc_if.run_state  = RC_STATE_IDLE;
+        rc_if.run_enable = 1'b0;
+    end
 
     // ----- 4 datapath_stubs driving the 4 OPQ lanes -----------------------
     // The OPQ runs in MERGING mode: its page allocator requires every lane to
@@ -64,6 +84,11 @@ module tb_int_top;
     logic        dp_sop   [4];
     logic        dp_eop   [4];
     logic        dp_prep_ready [4];
+    logic        gate_open;
+    logic        gate_open_q;
+    logic        swb_gate_mon;
+    logic [3:0]  lane_live;
+    logic [3:0]  gate_live;
 
     genvar gi;
     generate
@@ -93,62 +118,139 @@ module tb_int_top;
     assign rc_if.prep_done = dp_prep_ready[0] & dp_prep_ready[1]
                            & dp_prep_ready[2] & dp_prep_ready[3];
 
-    assign lane0_if.data          = dp_data [0];
-    assign lane0_if.valid         = dp_valid[0];
+    // Mirror the registered SWB ingress gate locally so the Stage D taps and
+    // run audit observe the same one-cycle-delayed gate behavior that OPQ
+    // sees, without depending on a mixed-language internal signal tap.
+    assign gate_open              = gate_open_q;
+    assign lane_live[0]           = (rst === 1'b0) && (dp_valid[0] === 1'b1);
+    assign lane_live[1]           = (rst === 1'b0) && (dp_valid[1] === 1'b1);
+    assign lane_live[2]           = (rst === 1'b0) && (dp_valid[2] === 1'b1);
+    assign lane_live[3]           = (rst === 1'b0) && (dp_valid[3] === 1'b1);
+    assign gate_live[0]           = gate_open & lane_live[0];
+    assign gate_live[1]           = gate_open & lane_live[1];
+    assign gate_live[2]           = gate_open & lane_live[2];
+    assign gate_live[3]           = gate_open & lane_live[3];
+
+    always_ff @(posedge clk_ref) begin
+        if (rst)
+            gate_open_q <= 1'b0;
+        else
+            gate_open_q <= rc_if.run_enable;
+    end
+
+    generate
+        for (genvar hi = 0; hi < 4; hi++) begin : g_stage_h0_tap
+            assign stage_h0_if[hi].data          = g_datapath[hi].u_datapath.h0_data;
+            assign stage_h0_if[hi].valid         = g_datapath[hi].u_datapath.h0_valid;
+            assign stage_h0_if[hi].channel       = g_datapath[hi].u_datapath.h0_channel;
+            assign stage_h0_if[hi].startofpacket = g_datapath[hi].u_datapath.h0_sop;
+            assign stage_h0_if[hi].endofpacket   = g_datapath[hi].u_datapath.h0_eop;
+            assign stage_h0_if[hi].error         = g_datapath[hi].u_datapath.h0_error;
+        end
+        for (genvar hi = 0; hi < 4; hi++) begin : g_stage_h1_tap
+            assign stage_h1_if[hi].data          = g_datapath[hi].u_datapath.h1_data;
+            assign stage_h1_if[hi].valid         = g_datapath[hi].u_datapath.h1_valid;
+            assign stage_h1_if[hi].ready         = g_datapath[hi].u_datapath.h1_ready;
+            assign stage_h1_if[hi].channel       = g_datapath[hi].u_datapath.h1_channel;
+            assign stage_h1_if[hi].startofpacket = g_datapath[hi].u_datapath.h1_sop;
+            assign stage_h1_if[hi].endofpacket   = g_datapath[hi].u_datapath.h1_eop;
+            assign stage_h1_if[hi].empty         = g_datapath[hi].u_datapath.h1_empty;
+            assign stage_h1_if[hi].error         = g_datapath[hi].u_datapath.h1_error;
+        end
+        for (genvar bi = 0; bi < 4; bi++) begin : g_stage_b_tap
+            for (genvar bs = 0; bs < 4; bs++) begin : g_stage_b_slot
+                assign stage_b_if[bi][bs].data          = g_datapath[bi].u_datapath.h2_data   [bs];
+                assign stage_b_if[bi][bs].valid         = g_datapath[bi].u_datapath.h2_valid  [bs];
+                assign stage_b_if[bi][bs].ready         = g_datapath[bi].u_datapath.h2_ready  [bs];
+                assign stage_b_if[bi][bs].channel       = g_datapath[bi].u_datapath.h2_channel[bs];
+                assign stage_b_if[bi][bs].startofpacket = g_datapath[bi].u_datapath.h2_sop    [bs];
+                assign stage_b_if[bi][bs].endofpacket   = g_datapath[bi].u_datapath.h2_eop    [bs];
+                assign stage_b_if[bi][bs].error         = g_datapath[bi].u_datapath.h2_error  [bs];
+            end
+        end
+    endgenerate
+
+    assign lane0_if.data          = lane_live[0] ? dp_data [0] : '0;
+    assign lane0_if.valid         = lane_live[0];
     assign lane0_if.channel       = 2'b00;
-    assign lane0_if.startofpacket = dp_sop  [0];
-    assign lane0_if.endofpacket   = dp_eop  [0];
+    assign lane0_if.startofpacket = lane_live[0] ? dp_sop  [0] : 1'b0;
+    assign lane0_if.endofpacket   = lane_live[0] ? dp_eop  [0] : 1'b0;
     assign lane0_if.error         = 3'b000;
 
-    assign lane1_if.data          = dp_data [1];
-    assign lane1_if.valid         = dp_valid[1];
+    assign lane1_if.data          = lane_live[1] ? dp_data [1] : '0;
+    assign lane1_if.valid         = lane_live[1];
     assign lane1_if.channel       = 2'b01;
-    assign lane1_if.startofpacket = dp_sop  [1];
-    assign lane1_if.endofpacket   = dp_eop  [1];
+    assign lane1_if.startofpacket = lane_live[1] ? dp_sop  [1] : 1'b0;
+    assign lane1_if.endofpacket   = lane_live[1] ? dp_eop  [1] : 1'b0;
     assign lane1_if.error         = 3'b000;
 
-    assign lane2_if.data          = dp_data [2];
-    assign lane2_if.valid         = dp_valid[2];
+    assign lane2_if.data          = lane_live[2] ? dp_data [2] : '0;
+    assign lane2_if.valid         = lane_live[2];
     assign lane2_if.channel       = 2'b10;
-    assign lane2_if.startofpacket = dp_sop  [2];
-    assign lane2_if.endofpacket   = dp_eop  [2];
+    assign lane2_if.startofpacket = lane_live[2] ? dp_sop  [2] : 1'b0;
+    assign lane2_if.endofpacket   = lane_live[2] ? dp_eop  [2] : 1'b0;
     assign lane2_if.error         = 3'b000;
 
-    assign lane3_if.data          = dp_data [3];
-    assign lane3_if.valid         = dp_valid[3];
+    assign lane3_if.data          = lane_live[3] ? dp_data [3] : '0;
+    assign lane3_if.valid         = lane_live[3];
     assign lane3_if.channel       = 2'b11;
-    assign lane3_if.startofpacket = dp_sop  [3];
-    assign lane3_if.endofpacket   = dp_eop  [3];
+    assign lane3_if.startofpacket = lane_live[3] ? dp_sop  [3] : 1'b0;
+    assign lane3_if.endofpacket   = lane_live[3] ? dp_eop  [3] : 1'b0;
     assign lane3_if.error         = 3'b000;
 
-    // Stage A drivers — reach into hit_generator commit edge for each
-    // datapath. The `valid` pulse fires on posedge clk whenever the
-    // hit_generator latches a new hit into its FIFO (hit_wr_en is the
-    // registered commit strobe, qualified by fifo_full).
-    assign stage_a0_if.valid   = g_datapath[0].u_datapath.u_emulator_mutrig.u_hit_gen.hit_wr_en &&
-                                 !g_datapath[0].u_datapath.u_emulator_mutrig.u_hit_gen.fifo_full;
-    assign stage_a0_if.payload = g_datapath[0].u_datapath.u_emulator_mutrig.u_hit_gen.hit_wr_data;
+    assign gate0_if.data          = gate_live[0] ? lane0_if.data : '0;
+    assign gate0_if.valid         = gate_live[0];
+    assign gate0_if.channel       = lane0_if.channel;
+    assign gate0_if.startofpacket = gate_live[0] ? lane0_if.startofpacket : 1'b0;
+    assign gate0_if.endofpacket   = gate_live[0] ? lane0_if.endofpacket   : 1'b0;
+    assign gate0_if.error         = lane0_if.error;
+
+    assign gate1_if.data          = gate_live[1] ? lane1_if.data : '0;
+    assign gate1_if.valid         = gate_live[1];
+    assign gate1_if.channel       = lane1_if.channel;
+    assign gate1_if.startofpacket = gate_live[1] ? lane1_if.startofpacket : 1'b0;
+    assign gate1_if.endofpacket   = gate_live[1] ? lane1_if.endofpacket   : 1'b0;
+    assign gate1_if.error         = lane1_if.error;
+
+    assign gate2_if.data          = gate_live[2] ? lane2_if.data : '0;
+    assign gate2_if.valid         = gate_live[2];
+    assign gate2_if.channel       = lane2_if.channel;
+    assign gate2_if.startofpacket = gate_live[2] ? lane2_if.startofpacket : 1'b0;
+    assign gate2_if.endofpacket   = gate_live[2] ? lane2_if.endofpacket   : 1'b0;
+    assign gate2_if.error         = lane2_if.error;
+
+    assign gate3_if.data          = gate_live[3] ? lane3_if.data : '0;
+    assign gate3_if.valid         = gate_live[3];
+    assign gate3_if.channel       = lane3_if.channel;
+    assign gate3_if.startofpacket = gate_live[3] ? lane3_if.startofpacket : 1'b0;
+    assign gate3_if.endofpacket   = gate_live[3] ? lane3_if.endofpacket   : 1'b0;
+    assign gate3_if.error         = lane3_if.error;
+
+    // Stage A drivers — observe the durable L2 enqueue point inside the
+    // emulator, not the earlier per-channel source-slot acceptance event.
+    // That keeps Stage A aligned with what can actually reach the frame
+    // assembler and avoids counting hits that are still upstream of the
+    // four L1 FIFOs / shared L2 FIFO boundary.
+    assign stage_a0_if.valid   = g_datapath[0].u_datapath.u_emulator_mutrig.u_hit_gen.l2_push_valid_c;
+    assign stage_a0_if.payload = g_datapath[0].u_datapath.u_emulator_mutrig.u_hit_gen.l2_push_word_c;
     assign stage_a0_if.feb_id      = 2'd0;
     assign stage_a0_if.datapath_id = 1'd0;
     assign stage_a0_if.mutrig_ch   = 3'd0;
 
-    assign stage_a1_if.valid   = g_datapath[1].u_datapath.u_emulator_mutrig.u_hit_gen.hit_wr_en &&
-                                 !g_datapath[1].u_datapath.u_emulator_mutrig.u_hit_gen.fifo_full;
-    assign stage_a1_if.payload = g_datapath[1].u_datapath.u_emulator_mutrig.u_hit_gen.hit_wr_data;
+    assign stage_a1_if.valid   = g_datapath[1].u_datapath.u_emulator_mutrig.u_hit_gen.l2_push_valid_c;
+    assign stage_a1_if.payload = g_datapath[1].u_datapath.u_emulator_mutrig.u_hit_gen.l2_push_word_c;
     assign stage_a1_if.feb_id      = 2'd0;
     assign stage_a1_if.datapath_id = 1'd1;
     assign stage_a1_if.mutrig_ch   = 3'd0;
 
-    assign stage_a2_if.valid   = g_datapath[2].u_datapath.u_emulator_mutrig.u_hit_gen.hit_wr_en &&
-                                 !g_datapath[2].u_datapath.u_emulator_mutrig.u_hit_gen.fifo_full;
-    assign stage_a2_if.payload = g_datapath[2].u_datapath.u_emulator_mutrig.u_hit_gen.hit_wr_data;
+    assign stage_a2_if.valid   = g_datapath[2].u_datapath.u_emulator_mutrig.u_hit_gen.l2_push_valid_c;
+    assign stage_a2_if.payload = g_datapath[2].u_datapath.u_emulator_mutrig.u_hit_gen.l2_push_word_c;
     assign stage_a2_if.feb_id      = 2'd1;
     assign stage_a2_if.datapath_id = 1'd0;
     assign stage_a2_if.mutrig_ch   = 3'd0;
 
-    assign stage_a3_if.valid   = g_datapath[3].u_datapath.u_emulator_mutrig.u_hit_gen.hit_wr_en &&
-                                 !g_datapath[3].u_datapath.u_emulator_mutrig.u_hit_gen.fifo_full;
-    assign stage_a3_if.payload = g_datapath[3].u_datapath.u_emulator_mutrig.u_hit_gen.hit_wr_data;
+    assign stage_a3_if.valid   = g_datapath[3].u_datapath.u_emulator_mutrig.u_hit_gen.l2_push_valid_c;
+    assign stage_a3_if.payload = g_datapath[3].u_datapath.u_emulator_mutrig.u_hit_gen.l2_push_word_c;
     assign stage_a3_if.feb_id      = 2'd1;
     assign stage_a3_if.datapath_id = 1'd1;
     assign stage_a3_if.mutrig_ch   = 3'd0;
@@ -162,8 +264,105 @@ module tb_int_top;
     assign csr_if.burstcount = 1'b0;
 
     // rc_if.run_state / run_enable are driven by run_control_driver in
-    // tb_int_pkg. No default assign here — the driver initializes both on
-    // its run_phase start.
+    // tb_int_pkg. They also get deterministic IDLE defaults above so the OPQ
+    // never sees X-valued gate control during UVM bring-up.
+
+    // Contract SVA on the framed streams. C observes the pre-gate FEB tx
+    // boundary, D observes the run_enable-qualified stream that actually
+    // enters OPQ, and E observes accepted OPQ egress beats.
+    generate
+        for (genvar hi = 0; hi < 4; hi++) begin : g_stage_h0_sva
+            tb_int_hit0_contract_sva u_stage_h0_contract_sva (
+                .clk  (clk_ref),
+                .reset(rst),
+                .valid(stage_h0_if[hi].valid),
+                .hit_error(stage_h0_if[hi].error[0]),
+                .crc_error(stage_h0_if[hi].error[1]),
+                .sop  (stage_h0_if[hi].startofpacket),
+                .eop  (stage_h0_if[hi].endofpacket)
+            );
+            tb_int_run_contract_sva #(.ALLOW_TERMINATING(1'b1))
+                u_stage_h0_run_sva (
+                    .clk      (clk_ref),
+                    .reset    (rst),
+                    .run_state(rc_if.run_state),
+                    .valid    (stage_h0_if[hi].valid)
+                );
+            tb_int_run_contract_sva #(.ALLOW_TERMINATING(1'b1))
+                u_stage_h1_run_sva (
+                    .clk      (clk_ref),
+                    .reset    (rst),
+                    .run_state(rc_if.run_state),
+                    .valid    (stage_h1_if[hi].valid && stage_h1_if[hi].ready)
+                );
+        end
+        for (genvar bi = 0; bi < 4; bi++) begin : g_stage_b_sva_lane
+            for (genvar bs = 0; bs < 4; bs++) begin : g_stage_b_sva_slot
+                tb_int_hit2_contract_sva u_stage_b_sva (
+                    .clk  (clk_ref),
+                    .reset(rst),
+                    .data (stage_b_if[bi][bs].data),
+                    .valid(stage_b_if[bi][bs].valid),
+                    .ready(stage_b_if[bi][bs].ready),
+                    .sop  (stage_b_if[bi][bs].startofpacket),
+                    .eop  (stage_b_if[bi][bs].endofpacket)
+                );
+                tb_int_run_contract_sva #(.ALLOW_TERMINATING(1'b1))
+                    u_stage_b_run_sva (
+                        .clk      (clk_ref),
+                        .reset    (rst),
+                        .run_state(rc_if.run_state),
+                        .valid    (stage_b_if[bi][bs].valid && stage_b_if[bi][bs].ready)
+                    );
+            end
+        end
+    endgenerate
+    tb_int_run_contract_sva #(.ALLOW_TERMINATING(1'b1))
+        u_stage_c0_run_sva (.clk(clk_ref), .reset(rst), .run_state(rc_if.run_state), .valid(lane0_if.valid));
+    tb_int_run_contract_sva #(.ALLOW_TERMINATING(1'b1))
+        u_stage_c1_run_sva (.clk(clk_ref), .reset(rst), .run_state(rc_if.run_state), .valid(lane1_if.valid));
+    tb_int_run_contract_sva #(.ALLOW_TERMINATING(1'b1))
+        u_stage_c2_run_sva (.clk(clk_ref), .reset(rst), .run_state(rc_if.run_state), .valid(lane2_if.valid));
+    tb_int_run_contract_sva #(.ALLOW_TERMINATING(1'b1))
+        u_stage_c3_run_sva (.clk(clk_ref), .reset(rst), .run_state(rc_if.run_state), .valid(lane3_if.valid));
+    tb_int_frame_contract_sva u_stage_c0_sva (.clk(clk_ref), .reset(rst), .data(lane0_if.data), .valid(lane0_if.valid), .ready(1'b1));
+    tb_int_frame_contract_sva u_stage_c1_sva (.clk(clk_ref), .reset(rst), .data(lane1_if.data), .valid(lane1_if.valid), .ready(1'b1));
+    tb_int_frame_contract_sva u_stage_c2_sva (.clk(clk_ref), .reset(rst), .data(lane2_if.data), .valid(lane2_if.valid), .ready(1'b1));
+    tb_int_frame_contract_sva u_stage_c3_sva (.clk(clk_ref), .reset(rst), .data(lane3_if.data), .valid(lane3_if.valid), .ready(1'b1));
+    tb_int_frame_contract_sva u_stage_d0_sva (.clk(clk_ref), .reset(rst), .data(gate0_if.data), .valid(gate0_if.valid), .ready(1'b1));
+    tb_int_frame_contract_sva u_stage_d1_sva (.clk(clk_ref), .reset(rst), .data(gate1_if.data), .valid(gate1_if.valid), .ready(1'b1));
+    tb_int_frame_contract_sva u_stage_d2_sva (.clk(clk_ref), .reset(rst), .data(gate2_if.data), .valid(gate2_if.valid), .ready(1'b1));
+    tb_int_frame_contract_sva u_stage_d3_sva (.clk(clk_ref), .reset(rst), .data(gate3_if.data), .valid(gate3_if.valid), .ready(1'b1));
+    tb_int_egress_contract_sva u_stage_e_sva (
+        .clk  (clk_ref),
+        .reset(rst),
+        .data (egress_if.data),
+        .valid(egress_if.valid),
+        .ready(egress_if.ready),
+        .sop  (egress_if.startofpacket),
+        .eop  (egress_if.endofpacket)
+    );
+    tb_int_run_contract_sva u_stage_a0_run_sva (.clk(clk_ref), .reset(rst), .run_state(rc_if.run_state), .valid(stage_a0_if.valid));
+    tb_int_run_contract_sva u_stage_a1_run_sva (.clk(clk_ref), .reset(rst), .run_state(rc_if.run_state), .valid(stage_a1_if.valid));
+    tb_int_run_contract_sva u_stage_a2_run_sva (.clk(clk_ref), .reset(rst), .run_state(rc_if.run_state), .valid(stage_a2_if.valid));
+    tb_int_run_contract_sva u_stage_a3_run_sva (.clk(clk_ref), .reset(rst), .run_state(rc_if.run_state), .valid(stage_a3_if.valid));
+    tb_int_run_contract_sva #(.ALLOW_TERMINATING(1'b1))
+        u_stage_d0_run_sva (.clk(clk_ref), .reset(rst), .run_state(rc_if.run_state), .valid(gate0_if.valid));
+    tb_int_run_contract_sva #(.ALLOW_TERMINATING(1'b1))
+        u_stage_d1_run_sva (.clk(clk_ref), .reset(rst), .run_state(rc_if.run_state), .valid(gate1_if.valid));
+    tb_int_run_contract_sva #(.ALLOW_TERMINATING(1'b1))
+        u_stage_d2_run_sva (.clk(clk_ref), .reset(rst), .run_state(rc_if.run_state), .valid(gate2_if.valid));
+    tb_int_run_contract_sva #(.ALLOW_TERMINATING(1'b1))
+        u_stage_d3_run_sva (.clk(clk_ref), .reset(rst), .run_state(rc_if.run_state), .valid(gate3_if.valid));
+    tb_int_run_contract_sva #(.ALLOW_TERMINATING(1'b1))
+        u_stage_e_run_sva  (.clk(clk_ref), .reset(rst), .run_state(rc_if.run_state), .valid(egress_if.valid && egress_if.ready));
+    tb_int_run_enable_contract_sva
+        u_swb_gate_contract_sva (
+            .clk       (clk_ref),
+            .reset     (rst),
+            .run_state (rc_if.run_state),
+            .run_enable(rc_if.run_enable)
+        );
 
     // ----- DUT instance ----------------------------------------------------
     logic [0:0] v0, v1, v2, v3;
@@ -176,6 +375,7 @@ module tb_int_top;
         .d_clk       (clk_ref),
         .d_reset     (rst),
         .run_enable  (rc_if.run_enable),
+        .run_gate_mon(run_gate_mon),
 
         .asi_ingress_0_data          (lane0_if.data),
         .asi_ingress_0_valid         (v0),
@@ -230,6 +430,32 @@ module tb_int_top;
     int unsigned cnt_h1     [4];
     int unsigned cnt_lane   [4];
     int unsigned cnt_egress;
+    int unsigned cnt_emu_frame_run  [4];
+    int unsigned cnt_emu_frame_term [4];
+    int unsigned sum_emu_evt_run    [4];
+    int unsigned sum_emu_evt_term   [4];
+    int unsigned first_emu_evt_term [4];
+    int unsigned cnt_emu_evt_latch_mismatch [4];
+    int unsigned cnt_emu_frame_latch_zero   [4];
+    int unsigned cnt_emu_frame_snap_zero    [4];
+    int unsigned last_emu_evt_latch_used    [4];
+    int unsigned last_emu_evt_snap          [4];
+    int unsigned last_fifo_tail             [4];
+    int unsigned cnt_a_since_last_frame     [4];
+    int unsigned last_a_window_closed       [4];
+    int unsigned max_a_window_closed        [4];
+    int unsigned cnt_h0_sop_run     [4];
+    int unsigned cnt_h0_sop_term    [4];
+    int unsigned cnt_h0_valid_term  [4];
+    int unsigned cnt_frcv_enable_term [4];
+    int unsigned cnt_frcv_go_term     [4];
+    time         t_first_emu_frame_term [4];
+    time         t_first_h0_sop_term    [4];
+    time         t_last_emu_frame_run   [4];
+    time         t_last_a_commit        [4];
+    bit          seen_emu_frame_term    [4];
+    bit          seen_h0_sop_term       [4];
+    bit          sample_emu_frame_latch_next [4];
 
     always_ff @(posedge clk_ref) begin
         if (rst) begin
@@ -256,14 +482,131 @@ module tb_int_top;
             if (g_datapath[2].u_datapath.h1_valid) cnt_h1[2] <= cnt_h1[2] + 1;
             if (g_datapath[3].u_datapath.h1_valid) cnt_h1[3] <= cnt_h1[3] + 1;
 
-            if (dp_valid[0]) cnt_lane[0] <= cnt_lane[0] + 1;
-            if (dp_valid[1]) cnt_lane[1] <= cnt_lane[1] + 1;
-            if (dp_valid[2]) cnt_lane[2] <= cnt_lane[2] + 1;
-            if (dp_valid[3]) cnt_lane[3] <= cnt_lane[3] + 1;
+            if (lane_live[0]) cnt_lane[0] <= cnt_lane[0] + 1;
+            if (lane_live[1]) cnt_lane[1] <= cnt_lane[1] + 1;
+            if (lane_live[2]) cnt_lane[2] <= cnt_lane[2] + 1;
+            if (lane_live[3]) cnt_lane[3] <= cnt_lane[3] + 1;
 
             if (egress_if.valid && egress_if.ready) cnt_egress <= cnt_egress + 1;
         end
     end
+
+    localparam int RC_ENUM_SYNC        = 2;
+    localparam int RC_ENUM_RUNNING     = 3;
+    localparam int RC_ENUM_TERMINATING = 4;
+
+    generate
+        for (genvar ti = 0; ti < 4; ti++) begin : g_term_counters
+            always_ff @(posedge clk_ref) begin
+                if (rst) begin
+                    cnt_emu_frame_run [ti] <= 0;
+                    cnt_emu_frame_term[ti] <= 0;
+                    sum_emu_evt_run   [ti] <= 0;
+                    sum_emu_evt_term  [ti] <= 0;
+                    first_emu_evt_term[ti] <= 0;
+                    cnt_emu_evt_latch_mismatch[ti] <= 0;
+                    cnt_emu_frame_latch_zero  [ti] <= 0;
+                    cnt_emu_frame_snap_zero   [ti] <= 0;
+                    last_emu_evt_latch_used   [ti] <= 0;
+                    last_emu_evt_snap         [ti] <= 0;
+                    last_fifo_tail            [ti] <= 0;
+                    cnt_a_since_last_frame    [ti] <= 0;
+                    last_a_window_closed      [ti] <= 0;
+                    max_a_window_closed       [ti] <= 0;
+                    cnt_h0_sop_run    [ti] <= 0;
+                    cnt_h0_sop_term   [ti] <= 0;
+                    cnt_h0_valid_term [ti] <= 0;
+                    cnt_frcv_enable_term[ti] <= 0;
+                    cnt_frcv_go_term    [ti] <= 0;
+                    t_first_emu_frame_term[ti] <= 0;
+                    t_first_h0_sop_term   [ti] <= 0;
+                    t_last_emu_frame_run  [ti] <= 0;
+                    t_last_a_commit       [ti] <= 0;
+                    seen_emu_frame_term   [ti] <= 1'b0;
+                    seen_h0_sop_term      [ti] <= 1'b0;
+                    sample_emu_frame_latch_next[ti] <= 1'b0;
+                end else begin
+                    bit a_commit;
+                    bit running_frame_start;
+                    a_commit = g_datapath[ti].u_datapath.u_emulator_mutrig.u_hit_gen.l2_push_valid_c;
+                    running_frame_start =
+                        (g_datapath[ti].u_datapath.u_emulator_mutrig.ctrl_state_q == RC_STATE_RUNNING) &&
+                        g_datapath[ti].u_datapath.u_emulator_mutrig.frame_start;
+                    last_fifo_tail[ti] <= g_datapath[ti].u_datapath.u_emulator_mutrig.u_hit_gen.fifo_count;
+
+                    if (sample_emu_frame_latch_next[ti]) begin
+                        int unsigned evt_used;
+                        int unsigned evt_snap;
+                        evt_used = g_datapath[ti].u_datapath.u_emulator_mutrig.u_frame_asm.evt_cnt_latch;
+                        evt_snap = g_datapath[ti].u_datapath.u_emulator_mutrig.u_hit_gen.event_count;
+                        last_emu_evt_latch_used[ti] <= evt_used;
+                        last_emu_evt_snap      [ti] <= evt_snap;
+                        if (evt_used == 0)
+                            cnt_emu_frame_latch_zero[ti] <= cnt_emu_frame_latch_zero[ti] + 1;
+                        if (evt_snap == 0)
+                            cnt_emu_frame_snap_zero[ti] <= cnt_emu_frame_snap_zero[ti] + 1;
+                        if (evt_used != evt_snap)
+                            cnt_emu_evt_latch_mismatch[ti] <= cnt_emu_evt_latch_mismatch[ti] + 1;
+                        sample_emu_frame_latch_next[ti] <= 1'b0;
+                    end
+
+                    if (a_commit) begin
+                        t_last_a_commit[ti] <= $time;
+                    end
+
+                    if (running_frame_start) begin
+                        if (cnt_a_since_last_frame[ti] > max_a_window_closed[ti])
+                            max_a_window_closed[ti] <= cnt_a_since_last_frame[ti];
+                        last_a_window_closed[ti] <= cnt_a_since_last_frame[ti];
+                        cnt_a_since_last_frame[ti] <= a_commit ? 1 : 0;
+                        t_last_emu_frame_run[ti] <= $time;
+                        sample_emu_frame_latch_next[ti] <= 1'b1;
+                    end else if (a_commit) begin
+                        cnt_a_since_last_frame[ti] <= cnt_a_since_last_frame[ti] + 1;
+                    end
+
+                    if (g_datapath[ti].u_datapath.u_emulator_mutrig.ctrl_state_q == RC_STATE_RUNNING &&
+                        g_datapath[ti].u_datapath.u_emulator_mutrig.frame_start) begin
+                        cnt_emu_frame_run[ti] <= cnt_emu_frame_run[ti] + 1;
+                        sum_emu_evt_run  [ti] <= sum_emu_evt_run  [ti]
+                                               + g_datapath[ti].u_datapath.u_emulator_mutrig.event_count;
+                    end
+                    if (g_datapath[ti].u_datapath.u_emulator_mutrig.ctrl_state_q == RC_STATE_TERMINATING &&
+                        g_datapath[ti].u_datapath.u_emulator_mutrig.frame_start) begin
+                        cnt_emu_frame_term[ti] <= cnt_emu_frame_term[ti] + 1;
+                        sum_emu_evt_term  [ti] <= sum_emu_evt_term  [ti]
+                                                + g_datapath[ti].u_datapath.u_emulator_mutrig.event_count;
+                        if (!seen_emu_frame_term[ti]) begin
+                            seen_emu_frame_term   [ti] <= 1'b1;
+                            t_first_emu_frame_term[ti] <= $time;
+                            first_emu_evt_term    [ti] <= g_datapath[ti].u_datapath.u_emulator_mutrig.event_count;
+                        end
+                    end
+                    if (int'(g_datapath[ti].u_datapath.u_frame_rcv.run_state_cmd) == RC_ENUM_RUNNING &&
+                        g_datapath[ti].u_datapath.h0_valid &&
+                        g_datapath[ti].u_datapath.h0_sop) begin
+                        cnt_h0_sop_run[ti] <= cnt_h0_sop_run[ti] + 1;
+                    end
+                    if (int'(g_datapath[ti].u_datapath.u_frame_rcv.run_state_cmd) == RC_ENUM_TERMINATING) begin
+                        if (g_datapath[ti].u_datapath.h0_valid)
+                            cnt_h0_valid_term[ti] <= cnt_h0_valid_term[ti] + 1;
+                        if (g_datapath[ti].u_datapath.h0_valid &&
+                            g_datapath[ti].u_datapath.h0_sop) begin
+                            cnt_h0_sop_term[ti] <= cnt_h0_sop_term[ti] + 1;
+                            if (!seen_h0_sop_term[ti]) begin
+                                seen_h0_sop_term   [ti] <= 1'b1;
+                                t_first_h0_sop_term[ti] <= $time;
+                            end
+                        end
+                        if (g_datapath[ti].u_datapath.u_frame_rcv.enable == 1'b1)
+                            cnt_frcv_enable_term[ti] <= cnt_frcv_enable_term[ti] + 1;
+                        if (g_datapath[ti].u_datapath.u_frame_rcv.receiver_go == 1'b1)
+                            cnt_frcv_go_term[ti] <= cnt_frcv_go_term[ti] + 1;
+                    end
+                end
+            end
+        end
+    endgenerate
 
     final begin
         $display("[tb_int_top] emu=(%0d,%0d,%0d,%0d) h0=(%0d,%0d,%0d,%0d) h1=(%0d,%0d,%0d,%0d) lane=(%0d,%0d,%0d,%0d) egress=%0d",
@@ -272,6 +615,21 @@ module tb_int_top;
                  cnt_h1[0],     cnt_h1[1],     cnt_h1[2],     cnt_h1[3],
                  cnt_lane[0],   cnt_lane[1],   cnt_lane[2],   cnt_lane[3],
                  cnt_egress);
+        for (int i = 0; i < 4; i++) begin
+            $display("[tb_int_top] A->H0 term dp%0d emu_frame_run=%0d emu_evt_run=%0d emu_frame_term=%0d emu_evt_term=%0d first_emu_evt_term=%0d t_first_emu_term=%0t h0_sop_run=%0d h0_sop_term=%0d t_first_h0_term=%0t h0_valid_term=%0d frcv_enable_term=%0d frcv_go_term=%0d",
+                     i,
+                     cnt_emu_frame_run[i], sum_emu_evt_run[i],
+                     cnt_emu_frame_term[i], sum_emu_evt_term[i], first_emu_evt_term[i], t_first_emu_frame_term[i],
+                     cnt_h0_sop_run[i], cnt_h0_sop_term[i], t_first_h0_sop_term[i],
+                     cnt_h0_valid_term[i], cnt_frcv_enable_term[i], cnt_frcv_go_term[i]);
+            $display("[tb_int_top] A->H0 emu dbg dp%0d last_fs_t=%0t last_a_t=%0t tail_a=%0d last_a_window=%0d max_a_window=%0d evt_latch_used=%0d evt_snap=%0d evt_mismatch=%0d zero_used=%0d zero_snap=%0d fifo_tail=%0d",
+                     i,
+                     t_last_emu_frame_run[i], t_last_a_commit[i],
+                     cnt_a_since_last_frame[i], last_a_window_closed[i], max_a_window_closed[i],
+                     last_emu_evt_latch_used[i], last_emu_evt_snap[i],
+                     cnt_emu_evt_latch_mismatch[i], cnt_emu_frame_latch_zero[i], cnt_emu_frame_snap_zero[i],
+                     last_fifo_tail[i]);
+        end
     end
 
     // -----------------------------------------------------------------------
@@ -328,23 +686,25 @@ module tb_int_top;
     bit  seen_h2          [4][4];
     bit  seen_lane        [4];
 
-    // Per-IP run_state_cmd shadow: reads the VHDL enum register of each IP
+    // Per-IP run-state shadow: reads the internal state register of each IP
     // via hierarchical reference and watches for the cycle on which it
     // transitions to SYNC and to RUNNING. If the broadcast is wired
-    // identically, every IP should fire on the same cycle.
+    // identically, every datapath IP should fire on the same cycle.
     //
     // Probed IPs per datapath:
-    //   [0] frame_rcv    : g_datapath[i].u_datapath.u_frame_rcv.run_state_cmd
-    //   [1] mts          : g_datapath[i].u_datapath.u_mts.run_state_cmd
-    //   [2] rbcam[0..3]  : g_datapath[i].u_datapath.g_rbcam[k].u_rbcam.v2_core.run_state_cmd
-    //   [3] ffa datapath : g_datapath[i].u_datapath.u_ffa.d_run_state_cmd
-    //   [4] ffa xcvr     : g_datapath[i].u_datapath.u_ffa.x_run_state_cmd
+    //   [0] emulator     : g_datapath[i].u_datapath.u_emulator_mutrig.ctrl_state_q
+    //   [1] frame_rcv    : g_datapath[i].u_datapath.u_frame_rcv.run_state_cmd
+    //   [2] mts          : g_datapath[i].u_datapath.u_mts.run_state_cmd
+    //   [3] rbcam[0..3]  : g_datapath[i].u_datapath.g_rbcam[k].u_rbcam.v2_core.run_state_cmd
+    //   [4] ffa datapath : g_datapath[i].u_datapath.u_ffa.d_run_state_cmd
+    //   [5] ffa xcvr     : g_datapath[i].u_datapath.u_ffa.x_run_state_cmd
+    //   swb gate         : registered ingress gate inside swb_ingress_stub
     //
     // VHDL enum literal positions (from feb_frame_assembly.vhd line 551):
     //   IDLE=0, RUN_PREPARE=1, SYNC=2, RUNNING=3, TERMINATING=4, ...
-    localparam int RC_ENUM_SYNC    = 2;
-    localparam int RC_ENUM_RUNNING = 3;
 
+    time t_emu_sync   [4]; bit f_emu_sync   [4];
+    time t_emu_run    [4]; bit f_emu_run    [4];
     time t_frcv_sync  [4]; bit f_frcv_sync  [4];
     time t_frcv_run   [4]; bit f_frcv_run   [4];
     time t_mts_sync   [4]; bit f_mts_sync   [4];
@@ -355,6 +715,7 @@ module tb_int_top;
     time t_ffa_d_run  [4]; bit f_ffa_d_run  [4];
     time t_ffa_x_sync [4]; bit f_ffa_x_sync [4];
     time t_ffa_x_run  [4]; bit f_ffa_x_run  [4];
+    time t_swb_gate_run; bit f_swb_gate_run;
 
     // Helper macros for the stage-1 register edge capture. Each IP stores its
     // run_state_cmd as a VHDL enum; the integer position is what we compare.
@@ -379,7 +740,7 @@ module tb_int_top;
                         seen_h1[dpi] <= 1'b1;
                         t_first_h1[dpi] <= $time;
                     end
-                    if (!seen_lane[dpi] && dp_valid[dpi]) begin
+                    if (!seen_lane[dpi] && lane_live[dpi]) begin
                         seen_lane[dpi] <= 1'b1;
                         t_first_lane[dpi] <= $time;
                     end
@@ -404,6 +765,16 @@ module tb_int_top;
         for (dpi = 0; dpi < 4; dpi++) begin : g_state_audit
             always_ff @(posedge clk_ref) begin
                 if (!rst) begin
+                    if (!f_emu_sync[dpi] &&
+                        g_datapath[dpi].u_datapath.u_emulator_mutrig.ctrl_state_q == AUDIT_RC_SYNC) begin
+                        f_emu_sync[dpi] <= 1'b1;
+                        t_emu_sync[dpi] <= $time;
+                    end
+                    if (!f_emu_run[dpi] &&
+                        g_datapath[dpi].u_datapath.u_emulator_mutrig.ctrl_state_q == AUDIT_RC_RUNNING) begin
+                        f_emu_run[dpi] <= 1'b1;
+                        t_emu_run[dpi] <= $time;
+                    end
                     `WATCH_ENUM("frcv",  g_datapath[dpi].u_datapath.u_frame_rcv.run_state_cmd,
                                 f_frcv_sync[dpi],  t_frcv_sync[dpi],
                                 f_frcv_run[dpi],   t_frcv_run[dpi])
@@ -431,27 +802,78 @@ module tb_int_top;
         end
     endgenerate
 
+    always_ff @(posedge clk_ref) begin
+        if (!rst && !f_swb_gate_run && gate_open) begin
+            f_swb_gate_run <= 1'b1;
+            t_swb_gate_run <= $time;
+        end
+    end
+
+`define CHECK_EDGE_SYNC(LABEL, SEEN, TS, REF_SEEN, REF_TS)                                        \
+    if (!(SEEN)) begin                                                                             \
+        $error("[run_audit] %s never observed", LABEL);                                            \
+    end else if (!(REF_SEEN)) begin                                                                \
+        REF_SEEN = 1'b1;                                                                           \
+        REF_TS   = TS;                                                                             \
+    end else if ((TS) != (REF_TS)) begin                                                           \
+        $error("[run_audit] %s skewed: observed=%0t reference=%0t", LABEL, TS, REF_TS);           \
+    end
+
     final begin
+        time ref_sync_ts;
+        time ref_run_ts;
+        bit  ref_sync_seen;
+        bit  ref_run_seen;
         $display("[run_audit] broadcast: t_bc_sync=%0t t_bc_running=%0t",
                  t_bc_sync, t_bc_running);
+        ref_sync_ts   = 0;
+        ref_run_ts    = 0;
+        ref_sync_seen = 1'b0;
+        ref_run_seen  = 1'b0;
+        if (!bc_sync_seen)
+            $error("[run_audit] broadcast SYNC edge never observed");
+        if (!bc_running_seen)
+            $error("[run_audit] broadcast RUNNING edge never observed");
+        if (!f_swb_gate_run)
+            $error("[run_audit] swb.gate.run never observed");
         for (int i = 0; i < 4; i++) begin
-            $display("[run_audit] dp%0d sync : frcv=%0t mts=%0t rbcam=(%0t,%0t,%0t,%0t) ffa_d=%0t ffa_x=%0t",
-                     i, t_frcv_sync[i], t_mts_sync[i],
+            $display("[run_audit] dp%0d sync : emu=%0t frcv=%0t mts=%0t rbcam=(%0t,%0t,%0t,%0t) ffa_d=%0t ffa_x=%0t",
+                     i, t_emu_sync[i], t_frcv_sync[i], t_mts_sync[i],
                      t_rbcam_sync[i][0], t_rbcam_sync[i][1],
                      t_rbcam_sync[i][2], t_rbcam_sync[i][3],
                      t_ffa_d_sync[i], t_ffa_x_sync[i]);
-            $display("[run_audit] dp%0d run  : frcv=%0t mts=%0t rbcam=(%0t,%0t,%0t,%0t) ffa_d=%0t ffa_x=%0t",
-                     i, t_frcv_run[i], t_mts_run[i],
+            $display("[run_audit] dp%0d run  : emu=%0t frcv=%0t mts=%0t rbcam=(%0t,%0t,%0t,%0t) ffa_d=%0t ffa_x=%0t swb_gate=%0t",
+                     i, t_emu_run[i], t_frcv_run[i], t_mts_run[i],
                      t_rbcam_run[i][0], t_rbcam_run[i][1],
                      t_rbcam_run[i][2], t_rbcam_run[i][3],
-                     t_ffa_d_run[i], t_ffa_x_run[i]);
+                     t_ffa_d_run[i], t_ffa_x_run[i], t_swb_gate_run);
             $display("[run_audit] dp%0d first-beat: emu_tx=%0t h0=%0t h1=%0t h2=(%0t,%0t,%0t,%0t) lane=%0t",
                      i, t_first_emu_tx[i], t_first_h0[i], t_first_h1[i],
                      t_first_h2[i][0], t_first_h2[i][1],
                      t_first_h2[i][2], t_first_h2[i][3],
                      t_first_lane[i]);
+            `CHECK_EDGE_SYNC($sformatf("dp%0d.emu.sync", i),   f_emu_sync[i],   t_emu_sync[i],   ref_sync_seen, ref_sync_ts)
+            `CHECK_EDGE_SYNC($sformatf("dp%0d.frcv.sync", i),  f_frcv_sync[i],  t_frcv_sync[i],  ref_sync_seen, ref_sync_ts)
+            `CHECK_EDGE_SYNC($sformatf("dp%0d.mts.sync", i),   f_mts_sync[i],   t_mts_sync[i],   ref_sync_seen, ref_sync_ts)
+            `CHECK_EDGE_SYNC($sformatf("dp%0d.ffa_d.sync", i), f_ffa_d_sync[i], t_ffa_d_sync[i], ref_sync_seen, ref_sync_ts)
+            `CHECK_EDGE_SYNC($sformatf("dp%0d.ffa_x.sync", i), f_ffa_x_sync[i], t_ffa_x_sync[i], ref_sync_seen, ref_sync_ts)
+            `CHECK_EDGE_SYNC($sformatf("dp%0d.emu.run", i),    f_emu_run[i],    t_emu_run[i],    ref_run_seen,  ref_run_ts)
+            `CHECK_EDGE_SYNC($sformatf("dp%0d.frcv.run", i),   f_frcv_run[i],   t_frcv_run[i],   ref_run_seen,  ref_run_ts)
+            `CHECK_EDGE_SYNC($sformatf("dp%0d.mts.run", i),    f_mts_run[i],    t_mts_run[i],    ref_run_seen,  ref_run_ts)
+            `CHECK_EDGE_SYNC($sformatf("dp%0d.ffa_d.run", i),  f_ffa_d_run[i],  t_ffa_d_run[i],  ref_run_seen,  ref_run_ts)
+            `CHECK_EDGE_SYNC($sformatf("dp%0d.ffa_x.run", i),  f_ffa_x_run[i],  t_ffa_x_run[i],  ref_run_seen,  ref_run_ts)
+            for (int rbi = 0; rbi < 4; rbi++) begin
+                `CHECK_EDGE_SYNC($sformatf("dp%0d.rbcam%0d.sync", i, rbi),
+                                 f_rbcam_sync[i][rbi], t_rbcam_sync[i][rbi], ref_sync_seen, ref_sync_ts)
+                `CHECK_EDGE_SYNC($sformatf("dp%0d.rbcam%0d.run", i, rbi),
+                                 f_rbcam_run[i][rbi], t_rbcam_run[i][rbi], ref_run_seen, ref_run_ts)
+            end
         end
+        if (f_swb_gate_run && ref_run_seen && (t_swb_gate_run != ref_run_ts))
+            $error("[run_audit] swb.gate.run skewed from datapath RUNNING: observed=%0t reference=%0t",
+                   t_swb_gate_run, ref_run_ts);
     end
+`undef CHECK_EDGE_SYNC
 
     // ----- UVM start -------------------------------------------------------
     import uvm_pkg::*;
@@ -459,10 +881,42 @@ module tb_int_top;
     `include "uvm_macros.svh"
 
     initial begin
+        uvm_config_db#(virtual hit_type0_if)::set(null, "uvm_test_top*", "stage_h0_lane0_if", stage_h0_if[0]);
+        uvm_config_db#(virtual hit_type0_if)::set(null, "uvm_test_top*", "stage_h0_lane1_if", stage_h0_if[1]);
+        uvm_config_db#(virtual hit_type0_if)::set(null, "uvm_test_top*", "stage_h0_lane2_if", stage_h0_if[2]);
+        uvm_config_db#(virtual hit_type0_if)::set(null, "uvm_test_top*", "stage_h0_lane3_if", stage_h0_if[3]);
+        uvm_config_db#(virtual hit_type1_if)::set(null, "uvm_test_top*", "stage_h1_lane0_if", stage_h1_if[0]);
+        uvm_config_db#(virtual hit_type1_if)::set(null, "uvm_test_top*", "stage_h1_lane1_if", stage_h1_if[1]);
+        uvm_config_db#(virtual hit_type1_if)::set(null, "uvm_test_top*", "stage_h1_lane2_if", stage_h1_if[2]);
+        uvm_config_db#(virtual hit_type1_if)::set(null, "uvm_test_top*", "stage_h1_lane3_if", stage_h1_if[3]);
+        uvm_config_db#(virtual hit_type2_if)::set(null, "uvm_test_top*", "stage_b_lane0_slot0_if", stage_b_if[0][0]);
+        uvm_config_db#(virtual hit_type2_if)::set(null, "uvm_test_top*", "stage_b_lane0_slot1_if", stage_b_if[0][1]);
+        uvm_config_db#(virtual hit_type2_if)::set(null, "uvm_test_top*", "stage_b_lane0_slot2_if", stage_b_if[0][2]);
+        uvm_config_db#(virtual hit_type2_if)::set(null, "uvm_test_top*", "stage_b_lane0_slot3_if", stage_b_if[0][3]);
+        uvm_config_db#(virtual hit_type2_if)::set(null, "uvm_test_top*", "stage_b_lane1_slot0_if", stage_b_if[1][0]);
+        uvm_config_db#(virtual hit_type2_if)::set(null, "uvm_test_top*", "stage_b_lane1_slot1_if", stage_b_if[1][1]);
+        uvm_config_db#(virtual hit_type2_if)::set(null, "uvm_test_top*", "stage_b_lane1_slot2_if", stage_b_if[1][2]);
+        uvm_config_db#(virtual hit_type2_if)::set(null, "uvm_test_top*", "stage_b_lane1_slot3_if", stage_b_if[1][3]);
+        uvm_config_db#(virtual hit_type2_if)::set(null, "uvm_test_top*", "stage_b_lane2_slot0_if", stage_b_if[2][0]);
+        uvm_config_db#(virtual hit_type2_if)::set(null, "uvm_test_top*", "stage_b_lane2_slot1_if", stage_b_if[2][1]);
+        uvm_config_db#(virtual hit_type2_if)::set(null, "uvm_test_top*", "stage_b_lane2_slot2_if", stage_b_if[2][2]);
+        uvm_config_db#(virtual hit_type2_if)::set(null, "uvm_test_top*", "stage_b_lane2_slot3_if", stage_b_if[2][3]);
+        uvm_config_db#(virtual hit_type2_if)::set(null, "uvm_test_top*", "stage_b_lane3_slot0_if", stage_b_if[3][0]);
+        uvm_config_db#(virtual hit_type2_if)::set(null, "uvm_test_top*", "stage_b_lane3_slot1_if", stage_b_if[3][1]);
+        uvm_config_db#(virtual hit_type2_if)::set(null, "uvm_test_top*", "stage_b_lane3_slot2_if", stage_b_if[3][2]);
+        uvm_config_db#(virtual hit_type2_if)::set(null, "uvm_test_top*", "stage_b_lane3_slot3_if", stage_b_if[3][3]);
         uvm_config_db#(virtual opq_ingress_if)::set(null, "uvm_test_top*", "lane0_if", lane0_if);
         uvm_config_db#(virtual opq_ingress_if)::set(null, "uvm_test_top*", "lane1_if", lane1_if);
         uvm_config_db#(virtual opq_ingress_if)::set(null, "uvm_test_top*", "lane2_if", lane2_if);
         uvm_config_db#(virtual opq_ingress_if)::set(null, "uvm_test_top*", "lane3_if", lane3_if);
+        uvm_config_db#(virtual opq_ingress_if)::set(null, "uvm_test_top*", "stage_c_lane0_if", lane0_if);
+        uvm_config_db#(virtual opq_ingress_if)::set(null, "uvm_test_top*", "stage_c_lane1_if", lane1_if);
+        uvm_config_db#(virtual opq_ingress_if)::set(null, "uvm_test_top*", "stage_c_lane2_if", lane2_if);
+        uvm_config_db#(virtual opq_ingress_if)::set(null, "uvm_test_top*", "stage_c_lane3_if", lane3_if);
+        uvm_config_db#(virtual opq_ingress_if)::set(null, "uvm_test_top*", "stage_d_lane0_if", gate0_if);
+        uvm_config_db#(virtual opq_ingress_if)::set(null, "uvm_test_top*", "stage_d_lane1_if", gate1_if);
+        uvm_config_db#(virtual opq_ingress_if)::set(null, "uvm_test_top*", "stage_d_lane2_if", gate2_if);
+        uvm_config_db#(virtual opq_ingress_if)::set(null, "uvm_test_top*", "stage_d_lane3_if", gate3_if);
         uvm_config_db#(virtual opq_egress_if)::set (null, "uvm_test_top*", "egress_if", egress_if);
         uvm_config_db#(virtual opq_csr_if)::set    (null, "uvm_test_top*", "csr_if",    csr_if);
         uvm_config_db#(virtual run_control_if)::set(null, "uvm_test_top*", "rc_if",     rc_if);

@@ -95,9 +95,18 @@ module datapath_stub #(
     logic [3:0] emu_tx_channel;
     logic [2:0] emu_tx_error;
 
+    // Stamp a unique lane identifier into csr_asic_id so the downstream
+    // frame_rcv -> mts -> rb_cam -> ffa chain embeds the source lane in
+    // every hit_type2 body beat ([25:22] = asic field). The scoreboard's
+    // content ledger uses this to recover the source lane at stage E,
+    // which otherwise sees hits from all 4 datapaths interleaved on a
+    // single OPQ egress stream.
+    localparam logic [3:0] LANE_ASIC_ID = 4'(FEB_ID * 2 + DATAPATH_ID);
+
     emulator_mutrig #(
-        .FIFO_DEPTH     (64),
-        .CSR_ADDR_WIDTH (4)
+        .FIFO_DEPTH      (emulator_mutrig_pkg::RAW_FIFO_DEPTH),
+        .CSR_ADDR_WIDTH  (4),
+        .ASIC_ID_DEFAULT (LANE_ASIC_ID)
     ) u_emulator_mutrig (
         .i_clk               (i_clk),
         .i_rst               (i_rst),
@@ -195,7 +204,7 @@ module datapath_stub #(
         .PADDING_EOP_WAIT_CYCLE (512),
         .LPM_DIV_PIPELINE     (4),
         .MUTRIG_BUFFER_EXPECTED_LATENCY_8N (2000),
-        .DEBUG                (1)
+        .DEBUG                (0)
     ) u_mts (
         .avs_csr_readdata           (/*unused*/),
         .avs_csr_read               (1'b0),
@@ -267,7 +276,7 @@ module datapath_stub #(
                 .N_PARTITIONS        (4),
                 .ENCODER_LEAF_WIDTH  (16),
                 .ENCODER_PIPE_STAGES (4),
-                .DEBUG               (1)
+                .DEBUG               (0)
             ) u_rbcam (
                 .avs_csr_readdata           (/*unused*/),
                 .avs_csr_read               (1'b0),
@@ -279,6 +288,7 @@ module datapath_stub #(
                 .asi_hit_type1_channel      (h1_channel),
                 .asi_hit_type1_startofpacket(h1_sop),
                 .asi_hit_type1_endofpacket  (h1_eop),
+                .asi_hit_type1_empty        (h1_empty),
                 .asi_hit_type1_data         (h1_data),
                 .asi_hit_type1_valid        (h1_valid),
                 .asi_hit_type1_ready        (h1_ready_v[gi]),
@@ -311,7 +321,7 @@ module datapath_stub #(
     feb_frame_assembly #(
         .INTERLEAVING_FACTOR (4),
         .N_SHD               (256),
-        .DEBUG               (1)
+        .DEBUG               (0)
     ) u_ffa (
         .asi_hit_type2_0_channel      (h2_channel[0]),
         .asi_hit_type2_0_startofpacket(h2_sop[0]),

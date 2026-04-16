@@ -2,8 +2,8 @@
 
 **DUT chain:** `emulator_mutrig` → `ring_buffer_cam` → `feb_frame_assembly` → `ordered_priority_queue`
 **Author:** Yifeng Wang (yifenwan@phys.ethz.ch)
-**Date:** 2026-04-14
-**Status:** Phase 0 — plan committed, scaffold in progress.
+**Date:** 2026-04-15
+**Status:** Observability and run-control hardening are active in tree: H0/H1/B/C/D/E taps, parser/SVA coverage across the live datapath, SWB run-gate alignment, and unmatched-hit candidate dumps are implemented.
 
 ---
 
@@ -26,6 +26,12 @@ The integration testbench is **not** a replacement for `tb/`. Signoff
 coverage for the OPQ itself continues to come from `tb/`. `tb_int/` adds
 end-to-end hit tracking, per-stage latency modeling, and run-control gating
 that the synthetic harness cannot express.
+
+Because the legacy FEB→SWB RTL chain was already formatted in-system and
+verified at testbeam with real physics data, the promoted purpose of
+`tb_int/` is not to re-prove the old chain from first principles. It is to
+localize any regression introduced by upgrades by answering, for every
+missing hit, which exact stage boundary first failed to reproduce it.
 
 ---
 
@@ -74,58 +80,122 @@ that the synthetic harness cannot express.
 
 | # | Decision | Resolution |
 |---|----------|------------|
-| 1 | Debug hit tagging | **bind-only** SV monitors. No RTL edit to `emulator_mutrig`. A tag monitor snoops the hit FIFO write inside each `hit_generator` instance and publishes `{hit_id, abs_ts}` to the scoreboard. Downstream monitors identify the same hit by its payload shadow; the scoreboard transports the tag across stages. |
-| 2 | SWB datapath stub | Build a minimal `swb_ingress_stub.vhd` that exposes 4 raw 36-bit AvST ingress ports and wires them straight into `ordered_priority_queue`. The xcvr/PHY is zero-latency pass-through. |
-| 3 | FEB / link math | 2 FEB × 2 datapath × 4 MuTRiG-per-datapath = 16 MuTRiG total. 4 link outputs → 4 OPQ lanes. `OPQ_N_LANE=4`. |
-| 4 | Run control | `run_control_agent` (UVM sequencer + driver) issued from the "PCIe side". It broadcasts `run_state` to each FEB's `runctl_mgmt_host` input **and** to the SWB stub's ingress gating logic in the same cycle. The real `run-control_mgmt` IP is instantiated on each FEB; the SWB side uses an explicit `run_enable` qualifier on the ingress mask (OPQ itself has no run gate). |
-| 5 | Latency histogram | Python-side plotting only. Per-stage histograms are dumped as CSV at end-of-sim. The user will validate the shape per stage. The 910×2 cycle short-mode bound is treated as an **exact upper bound before the hit preprocessor**; after the ring-buffer CAM the jitter is resequenced, so latency grows but spread shrinks. No golden histogram baked into the test; the test passes on integrity (zero missing / ghost / mis-slotted hits). |
+| 1 | Debug hit tagging | **bind-only** SV monitors remain the only promoted way to observe the live datapath. Stage A owns the canonical `hit_id` assignment. Downstream stages do not rely on one global payload-shadow key; each stage pair uses a contract-aware matcher while the scoreboard transports hit identity out-of-band. |
+| 2 | SWB datapath stub | Keep a minimal `swb_ingress_stub.vhd` that exposes 4 raw 36-bit AvST ingress ports and wires them straight into `ordered_priority_queue`. The xcvr/PHY remains a zero-latency pass-through. The promoted Stage D observation point is the **post-run-enable gated** `v0..v3` stream that actually enters OPQ, while the pre-gate datapath output remains Stage C. |
+| 3 | FEB / link math | 2 FEB × 2 datapath × 4 MuTRiG-per-datapath = 16 MuTRiG total in the promoted topology. `tb_int_top.sv` already instantiates 4 datapath chains and groups them into FEBs through `FEB_ID` / `DATAPATH_ID` parameters. `OPQ_N_LANE=4`. |
+| 4 | Contract parser and SVA | H0 uses a recovery-aware `hit_type0` parser/SVA that matches `frame_rcv_ip` `MODE_HALT=0` recovery semantics. H1 stays passive but preserves the rb-cam slot sideband for matching. Stage B gets a dedicated hit-stream monitor/SVA at the `hit_type2` boundary. Stages C/D/E use one shared data-framed parser plus one shared SVA family derived from the standalone OPQ harness. Sidebands stay useful for debug, but they are not the primary framing oracle. |
+| 5 | Run control | `run_control_agent` is issued from the "PCIe side" and broadcasts `run_state` to each datapath IP together with the SWB ingress gate in the same cycle. Full per-IP CSR sequencing is deferred for now; most promoted runs rely on reset defaults. A narrow build/pre-run Avalon hook is kept available for future upgrades. |
+| 6 | Latency histogram | Planned follow-on work. The intended end state is Python-side plotting from CSV keyed by stage-pair reconciliation, but the current promoted harness closes on integrity, run-control correctness, and per-boundary residual tracing first. The 910×2 short-mode bound is still the reference expectation before the hit preprocessor. |
 
 ---
 
-## 4. Contract: hit identity and tracking
+## 4. Contract: hit identity, parsing, and stage-by-stage tracking
 
 Every hit produced by any `hit_generator` is assigned a 64-bit `hit_id` at
-the moment it is written into the hit FIFO. The id is globally unique
-across the whole simulation.
+the moment it is written into the hit FIFO. The id is globally unique across
+the whole simulation and remains the scoreboard's canonical identity token.
 
 | Field | Width | Source |
 |-------|-------|--------|
-| `hit_id`  | 64 | monotonic counter in the tag monitor, unique across all hit_generators |
-| `abs_ts`  | 64 | `$time` (or `global_cycle`) captured at the FIFO-write moment |
+| `hit_id`  | 64 | monotonic counter in the Stage-A monitor, unique across all hit_generators |
+| `abs_ts`  | 64 | `$time` or cycle count captured at the FIFO-write moment |
 | `mutrig`  | 8  | `{feb_id[1:0], datapath[0:0], mutrig_ch[2:0]}` derived from the bind path |
-| `payload` | 48 | the 48-bit hit word that `hit_generator` wrote into its FIFO |
-
-The tuple `{mutrig, payload}` uniquely identifies the hit within any stage
-observation because all downstream stages preserve the payload bits. The
-scoreboard uses this tuple as its association key.
+| `payload` | 48 | the raw hit word written into the Stage-A FIFO |
 
 ### Stages observed (A..E)
 
-| Stage | Tap point | Binds onto | Observed moment |
-|-------|-----------|-----------|-----------------|
-| A | hit_generator FIFO write | `hit_generator` | cycle the hit enters the per-channel FIFO |
-| B | ring_buffer_cam egress | `ring_buffer_cam_v2_core` | cycle the resequenced hit leaves the CAM |
-| C | feb_frame_assembly tx | `feb_frame_assembly` | cycle the hit becomes a beat on the FEB tx AvST |
-| D | OPQ ingress | OPQ ingress AvST per lane | cycle the hit is accepted into the OPQ page ram |
-| E | OPQ egress | OPQ egress AvST | cycle the hit beat is accepted downstream |
+| Stage | Tap point | Observed moment | Promoted contract family |
+|-------|-----------|-----------------|--------------------------|
+| A | `hit_generator` FIFO write | cycle the hit enters the per-channel FIFO | raw-hit commit monitor |
+| H0 | `frame_rcv_ip` `aso_hit_type0_*` | cycle a decoded MuTRiG hit leaves frame_rcv | recovery-aware hit-stream parser + SVA |
+| H1 | `mts_processor` `aso_hit_type1_*` | cycle a timestamp-processed hit is offered to rb-cam | passive hit monitor + slot-aware matcher |
+| B | `ring_buffer_cam_v2_core` egress (`hit_type2`) | cycle the resequenced hit leaves the CAM | hit-stream parser + SVA |
+| C | `feb_frame_assembly` tx / datapath pre-gate AvST | cycle the framed beat leaves the FEB chain | framed parser + SVA |
+| D | SWB post-gate ingress (`run_enable`-qualified `v0..v3`) | cycle the beat is actually presented to OPQ | framed parser + SVA |
+| E | OPQ egress AvST | cycle the beat is accepted downstream | framed parser + SVA |
+
+The live scaffold now observes A/H0/H1/B/C/D/E and reports the first
+failing boundary directly.
+
+### Parser strategy
+
+Not every stage uses the same parser, and that is intentional.
+
+- Stage H0 is not a strictly balanced framed stream in the presence of
+  frame_rcv recovery. Its parser treats `restart_sop` and `orphan_eop` as
+  recovery markers, not fatal protocol errors.
+- Stage H1 is not framed yet, but it carries the rb-cam destination slot in
+  `channel[1:0]`. The scoreboard keeps that slot so `H1->B` loss is
+  localized per rb-cam instance.
+- Stage B is not framed yet. It gets a dedicated `hit_type2` monitor/SVA
+  family at the ring-buffer CAM boundary.
+- Stages C/D/E are all framed `hit_type3` streams. They share one
+  contract-faithful data-framed parser derived from the standalone OPQ
+  harness. That parser reconstructs absolute subheader timestamps, tracks
+  pending hit count per subheader, enforces frame close rules, and emits
+  canonical hit observations of the form `{abs_hit_ts, hit_word, lane_ctx}`.
+- Sidebands such as SOP/EOP remain recorded for debug, but the promoted
+  contract is data-framed rather than sideband-framed.
 
 ### Integrity checks
 
-The scoreboard maintains, per `hit_id`:
+The scoreboard maintains:
 
-- set of stages that observed it (must be `{A,B,C,D,E}` at end of sim, subject
-  to run-gate masking)
-- per-stage absolute timestamps
-- expected subheader slot at stage C and stage D/E
-- lane / channel identity
+- per-stage ledgers keyed by `(lane, channel, t_fine)` and consumed in FIFO
+  order within each key bucket
+- raw observation snapshots at each stage
+- per-lane and per-slot reconciliation summaries
+- first failing boundary, if any
+- candidate stage-A lineage ids propagated downstream while bucket order
+  stays aligned
+
+The stage-A `hit_id` is exact at the source. Downstream lineage is a
+candidate mapping reconstructed by passive FIFO-order matching. That means
+`A->H0` always reports concrete Stage-A ids, while later boundaries such as
+`B->C` report a propagated candidate id when no earlier divergence has
+already broken the lineage; otherwise the dump prints `id=?` explicitly.
 
 It flags:
 
-- **missing hit** — a hit observed at stage A but not at some later stage
-- **ghost hit** — a hit observed at a stage whose `{mutrig, payload}` tuple
-  is unknown at stage A
-- **slot violation** — a hit whose stage-C subheader slot does not match its
-  `abs_ts[11:4]` (frame-ts low byte), per the OPQ subheader-slot contract
+- **missing hit** — a hit observed at an upstream stage but absent at the
+  next required downstream stage
+- **ghost hit** — a downstream observation that cannot be reconciled to a
+  known upstream `hit_id`
+- **slot violation** — a framed-stage hit whose reconstructed subheader slot
+  does not match the hit's absolute timestamp contract
+- **parser / contract violation** — malformed frame, orphan beat, mid-frame
+  restart, non-monotonic non-empty subheader timestamp, trailer with pending
+  hits, or hit outside an open non-empty subheader
+
+## 4a. Current debug evidence
+
+The current integrated smoke evidence is stable enough to guide the next
+debug steps:
+
+- run-control synchronization is aligned across all 4 datapath chains and the
+  SWB ingress gate; the SWB gate now opens on the same internal `RUNNING`
+  edge observed by the datapath IPs, not one cycle early on the broadcast
+  command edge
+- `A->H0` remains the first real failing boundary:
+  `matched=1124 missing=36 ghost=11` per lane in the current basic run
+- `H0->H1` is lossless
+- `H1->B` is lossless after applying the known `ring_buffer_cam`
+  `filter_inerr='1'` contract. The raw `H1->B` mismatch is expected and is
+  fully explained by filtered timestamp-error beats:
+  - slot0 `276 raw / 63 eligible -> 63 B`
+  - slot1 `282 raw / 62 eligible -> 62 B`
+  - slot2 `286 raw / 78 eligible -> 78 B`
+  - slot3 `291 raw / 96 eligible -> 96 B`
+- `B->C` remains a small real loss: `11` hits per lane in the current basic
+  run
+- `C->D` and `D->E` are content-lossless
+- Stage E no longer reports a hard parser failure; the external OPQ boundary
+  now closes with `contract_err=0`, while a lone accepted hit fragment
+  without a visible subheader is counted as one recoverable orphan
+- residual bucket dumps now print the exact unmatched observations at each
+  failing boundary. `A->H0` missing candidates include concrete Stage-A
+  `hit_id`s, and downstream boundaries print propagated candidate lineage ids
+  when earlier boundaries stayed aligned
 
 ### Latency and jitter
 
@@ -133,7 +203,7 @@ For each hit the scoreboard records:
 
 - `lat_AB` = `t_B - t_A` — FEB hit preprocessor + rb-cam latency
 - `lat_BC` = `t_C - t_B` — feb frame assembly latency
-- `lat_CD` = `t_D - t_C` — SWB xcvr stub latency (expected ~0 in this tb)
+- `lat_CD` = `t_D - t_C` — SWB gate / xcvr stub latency
 - `lat_DE` = `t_E - t_D` — OPQ residency time
 
 Jitter per stage is the spread of the per-hit latency at that stage.
@@ -147,7 +217,7 @@ The user's expectation as stated in the brief:
 - **OPQ (D→E)**: small jitter added on top, bounded by the OPQ frame-table
   depth × N_LANE
 
-`lat_*` series are dumped to CSV and plotted off-sim by `plot_latency_hists.py`.
+`lat_*` CSV dumping is still planned work, not yet part of the promoted tree.
 
 ---
 
@@ -168,18 +238,48 @@ On each transition the driver updates:
 
 Because the OPQ itself does not honour a run_state, the run gate on the SWB
 side is applied by the ingress stub: when `run_enable=0` it drops ingress
-`valid` to 0 and holds it there until `run_enable` rises. The FEB tx side is
-gated by `emulator_mutrig.csr_enable` under the same run_state.
+`valid` to 0 and holds it there until `run_enable` rises. In the promoted
+run-end sequence the gate stays high through `TERMINATING` and only drops
+once the explicit drain window completes. The FEB tx side is gated by the
+MuTRiG run-state split under the same broadcast control. The promoted
+Stage-D monitor therefore observes the post-gate stream, while Stage C keeps
+the ungated FEB tx stream for localization.
+
+Most promoted runs continue to rely on power-up/default CSR settings for the
+child datapath IPs. Full run-phase CSR programming is intentionally deferred;
+only a narrow build/pre-run Avalon hook is reserved for future upgraded IP
+configurations that truly need it.
+
+Promoted emulator semantics for `tb_int` are stricter than the current
+bring-up RTL:
+
+- new Stage-A hit commits are allowed only while the run state is `RUNNING`
+- leaving `RUNNING` stops new hit generation into the MuTRiG FIFO
+- already committed FIFO contents must survive `RUN_END` / `TERMINATING` long
+  enough to drain through the frame assembler and downstream chain
+
+The live `tb_int` implementation now honours that contract by splitting
+MuTRiG control into:
+
+- `RUNNING`: generate new hits and drain frames
+- `TERMINATING`: suppress new hit commits but keep the buffered FIFO contents
+  alive and draining
+
+The `run_control_driver` mirrors that at the SWB boundary by keeping
+`run_enable=1` through the `RC_END` drain hold and only dropping back to
+`IDLE` after the hold completes.
 
 ### Run-gate test
 
 `tb_int_run_control_gate_test` drives:
 
-1. `RUN_PREPARE` — hits generated but held at emulator tx, FEB tx idle, SWB
-   ingress quiet
+1. `RUN_PREPARE` / `SYNC` — no new Stage-A commits, FEB tx idle, SWB ingress
+   quiet, downstream state machines prepare for the next run
 2. `RUN_START` — hits flow end-to-end
-3. mid-run forced `RUN_END` — FEB tx drops to idle, SWB ingress mask asserts,
-   remaining in-flight hits must drain through the OPQ cleanly
+3. mid-run forced `RUN_END` — no new Stage-A commits after the transition out
+   of `RUNNING`, the SWB ingress gate remains open through `TERMINATING`, and
+   already committed emulator/FEB FIFO contents must drain through the OPQ
+   cleanly before the gate finally drops at `IDLE`
 
 Post-check: zero missing hits for all hits whose stage-A timestamp is inside
 the run-enabled window, zero ghost hits, zero slot violations.
@@ -197,8 +297,8 @@ the run-enabled window, zero ghost hits, zero slot violations.
 | `tb_int_run_control_gate_test` | run_prepare/start/end sequence, clean drain at run_end |
 | `tb_int_backpressure_stress_test` | egress backpressure applied to OPQ, verify stage D→E jitter stays bounded and no hits are lost |
 
-Only `tb_int_basic_e2e_test` is in scope for phase 2. The rest populate in
-phases 3-5.
+`tb_int_basic_e2e_test` is the promoted evidence run today. The remaining
+tests stay on the planned path below.
 
 ---
 
@@ -207,12 +307,12 @@ phases 3-5.
 | Phase | Deliverable | Status |
 |-------|-------------|--------|
 | 0 | `DV_INT_PLAN.md`, `DV_INT_HARNESS.md`, locked decisions | done |
-| 1 | Directory scaffold, 4-lane OPQ DUT generator, `swb_ingress_stub`, `tb_int_top.sv`, UVM pkg with `run_control_agent`, smoke test, Makefile | done (smoke test green on 2026-04-14) |
-| 2 | `feb_stub` + `datapath_stub` with real emulator_mutrig → frame_rcv → mts_processor → ring_buffer_cam → feb_frame_assembly chain; stage-A/E monitor binds; 1 FEB × 1 lane walking e2e | next |
-| 3 | Scale to 4 lanes, full stage A..E scoreboard, missing/ghost/slot checks | |
-| 4 | Per-stage latency collection, CSV dump, Python plotter | |
-| 5 | Short/long mode latency tests, RR-stall stage analysis | |
-| 6 | run-control_mgmt integration and gate test | |
+| 1 | Directory scaffold, 4-lane OPQ DUT generator, `swb_ingress_stub`, `tb_int_top.sv`, UVM pkg with `run_control_agent`, smoke test, Makefile | done |
+| 2 | Repair observation boundaries: split C pre-gate from D post-gate, promote shared framed parser/SVA at C/D/E, fix RUNNING-vs-TERMINATING drain contract | done |
+| 3 | Add Stage-B monitor/SVA, emit first-failing-boundary diagnostics, localize H1->B slot behavior | done |
+| 4 | Residual trace dumps with candidate Stage-A lineage ids; latency CSV/plot follow-on still pending | partial |
+| 5 | Full 4-lane short/long mode latency tests, run-control gate test, OPQ backpressure / RR-stall stage analysis | next |
+| 6 | Optional build/pre-run Avalon config hooks for future upgraded IP settings | deferred |
 
 ---
 

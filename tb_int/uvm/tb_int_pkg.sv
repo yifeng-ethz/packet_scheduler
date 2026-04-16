@@ -21,6 +21,10 @@ package tb_int_pkg;
     // Analysis port tag declarations for the scoreboard
     // -----------------------------------------------------------------------
     `uvm_analysis_imp_decl(_stage_a)
+    `uvm_analysis_imp_decl(_stage_h0)
+    `uvm_analysis_imp_decl(_stage_h1)
+    `uvm_analysis_imp_decl(_stage_b)
+    `uvm_analysis_imp_decl(_stage_c)
     `uvm_analysis_imp_decl(_stage_d)
     `uvm_analysis_imp_decl(_stage_e)
 
@@ -38,6 +42,92 @@ package tb_int_pkg;
 
         function new(string name = "tb_int_cfg");
             super.new(name);
+        endfunction
+    endclass
+
+    // -----------------------------------------------------------------------
+    // Shared stable-RUNNING window database.
+    //
+    // Stable-run loss accounting should follow hits born well inside RUNNING,
+    // not those created right on the START/END edges. The run-control driver
+    // arms this window in absolute simulation time and stage A tags each hit
+    // at its true origin.
+    // -----------------------------------------------------------------------
+    class tb_int_run_window_db;
+        static int unsigned start_guard_cycles = 128;
+        static int unsigned end_guard_cycles   = 128;
+        static time         run_start_ts       = 0;
+        static time         run_end_ts         = 0;
+        static time         stable_start_ts    = 0;
+        static time         stable_end_ts      = 0;
+        static bit          stable_window_open = 1'b0;
+        static bit          stable_window_seen = 1'b0;
+
+        static function void configure_guards(int unsigned start_cycles,
+                                              int unsigned end_cycles);
+            start_guard_cycles = start_cycles;
+            end_guard_cycles   = end_cycles;
+        endfunction
+
+        static function void reset();
+            run_start_ts       = 0;
+            run_end_ts         = 0;
+            stable_start_ts    = 0;
+            stable_end_ts      = 0;
+            stable_window_open = 1'b0;
+            stable_window_seen = 1'b0;
+        endfunction
+
+        static function void note_run_start(time t);
+            run_start_ts = t;
+            run_end_ts   = 0;
+        endfunction
+
+        static function void note_run_end(time t);
+            run_end_ts = t;
+        endfunction
+
+        static function time get_run_end_ts();
+            return run_end_ts;
+        endfunction
+
+        static function bit run_end_seen();
+            return (run_end_ts != 0);
+        endfunction
+
+        static function void note_stable_start(time t);
+            stable_start_ts    = t;
+            stable_end_ts      = 0;
+            stable_window_open = 1'b1;
+            stable_window_seen = 1'b1;
+        endfunction
+
+        static function void note_stable_end(time t);
+            stable_end_ts      = t;
+            stable_window_open = 1'b0;
+            stable_window_seen = 1'b1;
+        endfunction
+
+        static function bit is_stable_origin(time t);
+            if (!stable_window_seen)
+                return 1'b0;
+            if (stable_window_open)
+                return (t >= stable_start_ts);
+            return (t >= stable_start_ts) && (t < stable_end_ts);
+        endfunction
+
+        static function string describe();
+            if (!stable_window_seen) begin
+                return $sformatf("stable window not armed (guards start=%0d end=%0d cycles)",
+                                 start_guard_cycles, end_guard_cycles);
+            end
+            if (stable_window_open) begin
+                return $sformatf("stable_start=%0t stable_end=open (guards start=%0d end=%0d cycles)",
+                                 stable_start_ts, start_guard_cycles, end_guard_cycles);
+            end
+            return $sformatf("stable_start=%0t stable_end=%0t (guards start=%0d end=%0d cycles)",
+                             stable_start_ts, stable_end_ts,
+                             start_guard_cycles, end_guard_cycles);
         endfunction
     endclass
 
@@ -60,7 +150,46 @@ package tb_int_pkg;
     endclass
 
     // -----------------------------------------------------------------------
-    // Analysis transaction: stage D OPQ ingress beat (per lane)
+    // Analysis transaction: frame_rcv hit_type0 beat before mts.
+    // -----------------------------------------------------------------------
+    class tb_int_hit0_event extends uvm_object;
+        `uvm_object_utils(tb_int_hit0_event)
+
+        int unsigned lane_id;
+        time         abs_ts;
+        bit [44:0]   data;
+        bit [3:0]    channel;
+        bit          sop;
+        bit          eop;
+        bit [2:0]    error;
+
+        function new(string name = "tb_int_hit0_event");
+            super.new(name);
+        endfunction
+    endclass
+
+    // -----------------------------------------------------------------------
+    // Analysis transaction: mts hit_type1 beat before rb_cam fanout.
+    // -----------------------------------------------------------------------
+    class tb_int_hit1_event extends uvm_object;
+        `uvm_object_utils(tb_int_hit1_event)
+
+        int unsigned lane_id;
+        time         abs_ts;
+        bit [38:0]   data;
+        bit [3:0]    channel;
+        bit          sop;
+        bit          eop;
+        bit          empty;
+        bit          error;
+
+        function new(string name = "tb_int_hit1_event");
+            super.new(name);
+        endfunction
+    endclass
+
+    // -----------------------------------------------------------------------
+    // Analysis transaction: framed per-lane beat at stage C or D
     // -----------------------------------------------------------------------
     class tb_int_ingress_event extends uvm_object;
         `uvm_object_utils(tb_int_ingress_event)
@@ -87,6 +216,7 @@ package tb_int_pkg;
         bit [35:0] data;
         bit        sop;
         bit        eop;
+        bit [2:0]  error;
 
         function new(string name = "tb_int_egress_event");
             super.new(name);
@@ -94,22 +224,34 @@ package tb_int_pkg;
     endclass
 
     // -----------------------------------------------------------------------
-    // Stateful frame parser — one instance per AvST sink (4 lanes at stage D,
-    // 1 at stage E). Tracks the feb_frame_assembly AvST layout:
-    //
-    //   sop  : beat 0 — preamble                   (tag="0001", K285)
-    //          beats 1..4 — 4 header words         (data hdr 0/1 + dbg hdr 0/1)
-    //          beats 5..N-1 — subheaders and hits
-    //   eop  : beat N    — trailer                 (tag="0001", K284)
-    //
-    // Within the body, a beat is a subheader when tag=="0001" && byte0==K237,
-    // a trailer when tag=="0001" && byte0==K284, otherwise a hit.
-    //
-    // Stage E snoops the OPQ egress; Phase 2 empirical result was 15 frames
-    // for 1400 ingress frames, which is what this parser exists to explain.
+    // Analysis transaction: stage B ring_buffer_cam hit_type2 beat.
+    // lane_id is the datapath lane 0..3, slot_id is the rb_cam interleaving
+    // slot 0..3 inside that datapath.
     // -----------------------------------------------------------------------
-    typedef enum bit [1:0] { FP_IDLE, FP_HEADER, FP_BODY } frame_parser_state_e;
+    class tb_int_hit2_event extends uvm_object;
+        `uvm_object_utils(tb_int_hit2_event)
 
+        int unsigned lane_id;
+        int unsigned slot_id;
+        time         abs_ts;
+        bit [35:0]   data;
+        bit [3:0]    channel;
+        bit          sop;
+        bit          eop;
+        bit          error;
+
+        function new(string name = "tb_int_hit2_event");
+            super.new(name);
+        endfunction
+    endclass
+
+    // -----------------------------------------------------------------------
+    // Stateful data-framed parser shared by stages C/D/E. Mirrors the live
+    // OPQ harness contract: after an implicit first accepted beat, consume
+    // four frame-header aux words, then parse K237 subheaders, hit words, and
+    // the K284 trailer while tracking the absolute subheader timestamp and the
+    // remaining hit count under the active subheader.
+    // -----------------------------------------------------------------------
     class tb_int_frame_parser extends uvm_object;
         `uvm_object_utils(tb_int_frame_parser)
 
@@ -117,23 +259,43 @@ package tb_int_pkg;
         localparam bit [7:0] K285        = 8'hBC; // preamble
         localparam bit [7:0] K237        = 8'hF7; // subheader
         localparam bit [7:0] K284        = 8'h9C; // trailer
+        localparam int unsigned FRAME_HDR_AUX_WORDS = 4;
 
-        frame_parser_state_e st;
-        int unsigned hdr_cnt;
+        bit          frame_open;
+        bit [7:0]    hit_words_left;
+        bit [2:0]    frame_hdr_aux_words_left;
+        bit          saw_nonempty_subhdr;
+        bit [31:0]   frame_ts_hi32;
+        bit [15:0]   frame_ts_lo16;
+        bit [35:0]   subheader_ts_hi;
+        bit [7:0]    last_subhdr_byte;
+        bit          last_subhdr_valid;
+        bit [47:0]   last_nonempty_subhdr_abs_ts;
+        bit [47:0]   curr_subhdr_abs_ts;
+        bit [47:0]   last_hit_abs_ts;
         int unsigned n_frames;
         int unsigned n_preambles;
-        int unsigned n_headers;   // data + debug header words (4 per frame)
+        int unsigned n_headers;
         int unsigned n_subheaders;
         int unsigned n_hits;
         int unsigned n_trailers;
-        int unsigned n_orphan;    // beats seen in FP_IDLE (no sop yet) — ghost
-        int unsigned n_missing_eop;
-        int unsigned n_mid_sop;   // sop without prior eop
+        int unsigned n_orphan;
+        int unsigned n_contract_err;
 
         function new(string name = "tb_int_frame_parser");
             super.new(name);
-            st            = FP_IDLE;
-            hdr_cnt       = 0;
+            frame_open                  = 1'b0;
+            hit_words_left              = '0;
+            frame_hdr_aux_words_left    = '0;
+            saw_nonempty_subhdr         = 1'b0;
+            frame_ts_hi32               = '0;
+            frame_ts_lo16               = '0;
+            subheader_ts_hi             = '0;
+            last_subhdr_byte            = '0;
+            last_subhdr_valid           = 1'b0;
+            last_nonempty_subhdr_abs_ts = '0;
+            curr_subhdr_abs_ts          = '0;
+            last_hit_abs_ts             = '0;
             n_frames      = 0;
             n_preambles   = 0;
             n_headers     = 0;
@@ -141,214 +303,2871 @@ package tb_int_pkg;
             n_hits        = 0;
             n_trailers    = 0;
             n_orphan      = 0;
-            n_missing_eop = 0;
-            n_mid_sop     = 0;
+            n_contract_err = 0;
         endfunction
 
-        virtual function void step(bit sop, bit eop, bit [35:0] data);
-            bit is_subheader;
-            bit is_trailer;
-            if (sop) begin
-                if (st != FP_IDLE) n_mid_sop++;
-                st          = FP_HEADER;
-                hdr_cnt     = 1;
+        function automatic bit pkt_is_frame_trl(bit [35:0] word);
+            return (word[35:32] == FRAMING_TAG) && (word[7:0] == K284);
+        endfunction
+
+        function automatic bit pkt_is_subhdr(bit [35:0] word);
+            return (word[35:32] == FRAMING_TAG) && (word[7:0] == K237);
+        endfunction
+
+        function automatic bit pkt_is_preamble(bit [35:0] word);
+            return (word[35:32] == FRAMING_TAG) && (word[7:0] == K285);
+        endfunction
+
+        function automatic bit pkt_is_hit(bit [35:0] word);
+            return (word[35:32] == 4'b0000);
+        endfunction
+
+        function automatic bit [35:0] extend_subheader_ts_hi(
+            bit [35:0] curr_hi,
+            bit        last_valid,
+            bit [7:0]  last_byte,
+            bit [7:0]  curr_byte
+        );
+            bit [35:0] hi_v;
+            hi_v = curr_hi;
+            if (last_valid && (curr_byte < last_byte))
+                hi_v = hi_v + 36'd1;
+            return hi_v;
+        endfunction
+
+        function automatic bit [47:0] make_subheader_abs_ts(
+            bit [35:0] ts_hi,
+            bit [7:0]  shd_byte
+        );
+            return {ts_hi, shd_byte, 4'h0};
+        endfunction
+
+        function automatic void note_contract_error();
+            n_contract_err++;
+        endfunction
+
+        // Consumes one accepted beat and returns 1 when that beat is a hit
+        // payload word under the active subheader.
+        virtual function bit step(bit [35:0] data);
+            bit          is_hit;
+            bit [35:0]   subheader_ts_hi_v;
+            bit [47:0]   subheader_abs_ts_v;
+
+            is_hit = 1'b0;
+
+            if (!frame_open) begin
+                frame_open                  = 1'b1;
+                frame_hdr_aux_words_left    = FRAME_HDR_AUX_WORDS[2:0];
+                hit_words_left              = '0;
+                saw_nonempty_subhdr         = 1'b0;
+                frame_ts_hi32               = '0;
+                frame_ts_lo16               = '0;
+                subheader_ts_hi             = '0;
+                last_subhdr_byte            = '0;
+                last_subhdr_valid           = 1'b0;
+                last_nonempty_subhdr_abs_ts = '0;
+                curr_subhdr_abs_ts          = '0;
+                last_hit_abs_ts             = '0;
                 n_frames++;
+                if (pkt_is_preamble(data))
+                    n_preambles++;
+                else
+                    n_orphan++;
+                return 1'b0;
+            end
+
+            if (frame_hdr_aux_words_left != 0) begin
+                case (frame_hdr_aux_words_left)
+                    3'd4: frame_ts_hi32 = data[31:0];
+                    3'd3: begin
+                        frame_ts_lo16   = data[31:16];
+                        subheader_ts_hi = {frame_ts_hi32, data[31:28]};
+                    end
+                    default: begin
+                    end
+                endcase
+                frame_hdr_aux_words_left--;
+                n_headers++;
+                return 1'b0;
+            end
+
+            if (pkt_is_frame_trl(data)) begin
+                if (hit_words_left != 0)
+                    note_contract_error();
+                n_trailers++;
+                frame_open = 1'b0;
+                return 1'b0;
+            end
+
+            if (pkt_is_subhdr(data)) begin
+                if (hit_words_left != 0)
+                    note_contract_error();
+                subheader_ts_hi_v = extend_subheader_ts_hi(
+                    subheader_ts_hi,
+                    last_subhdr_valid,
+                    last_subhdr_byte,
+                    data[31:24]
+                );
+                subheader_abs_ts_v = make_subheader_abs_ts(subheader_ts_hi_v, data[31:24]);
+                subheader_ts_hi    = subheader_ts_hi_v;
+                last_subhdr_byte   = data[31:24];
+                last_subhdr_valid  = 1'b1;
+                curr_subhdr_abs_ts = subheader_abs_ts_v;
+                n_subheaders++;
+                if (data[15:8] != 8'h00) begin
+                    if (saw_nonempty_subhdr && !(subheader_abs_ts_v > last_nonempty_subhdr_abs_ts))
+                        note_contract_error();
+                    saw_nonempty_subhdr         = 1'b1;
+                    last_nonempty_subhdr_abs_ts = subheader_abs_ts_v;
+                    hit_words_left              = data[15:8];
+                end
+                return 1'b0;
+            end
+
+            if (pkt_is_hit(data)) begin
+                if (hit_words_left == 0) begin
+                    note_contract_error();
+                    return 1'b0;
+                end
+                hit_words_left--;
+                n_hits++;
+                is_hit         = 1'b1;
+                last_hit_abs_ts = {curr_subhdr_abs_ts[47:4], data[31:28]};
+                return is_hit;
+            end
+
+            n_orphan++;
+            return 1'b0;
+        endfunction
+    endclass
+
+    // -----------------------------------------------------------------------
+    // Stateful parser for the Stage-E OPQ egress stream. This shares the
+    // same framed data layout as stages C/D, but OPQ also provides explicit
+    // SOP/EOP on the K28.5/K28.4 beats. Use those sidebands as recovery
+    // hints so a local framing glitch does not cascade into hundreds of
+    // secondary parser errors.
+    // -----------------------------------------------------------------------
+    class tb_int_egress_frame_parser extends uvm_object;
+        `uvm_object_utils(tb_int_egress_frame_parser)
+
+        localparam bit [3:0] FRAMING_TAG = 4'b0001;
+        localparam bit [7:0] K285        = 8'hBC;
+        localparam bit [7:0] K237        = 8'hF7;
+        localparam bit [7:0] K284        = 8'h9C;
+        localparam int unsigned FRAME_HDR_AUX_WORDS = 4;
+
+        bit          frame_open;
+        bit [7:0]    hit_words_left;
+        bit [2:0]    frame_hdr_aux_words_left;
+        bit          saw_nonempty_subhdr;
+        bit [31:0]   frame_ts_hi32;
+        bit [15:0]   frame_ts_lo16;
+        bit [35:0]   subheader_ts_hi;
+        bit [7:0]    last_subhdr_byte;
+        bit          last_subhdr_valid;
+        bit [47:0]   last_nonempty_subhdr_abs_ts;
+        bit [47:0]   curr_subhdr_abs_ts;
+        bit [47:0]   last_hit_abs_ts;
+        int unsigned n_frames;
+        int unsigned n_preambles;
+        int unsigned n_headers;
+        int unsigned n_subheaders;
+        int unsigned n_hits;
+        int unsigned n_trailers;
+        int unsigned n_orphan;
+        int unsigned n_restart_sop;
+        int unsigned n_contract_err;
+
+        function new(string name = "tb_int_egress_frame_parser");
+            super.new(name);
+            frame_open                  = 1'b0;
+            hit_words_left              = '0;
+            frame_hdr_aux_words_left    = '0;
+            saw_nonempty_subhdr         = 1'b0;
+            frame_ts_hi32               = '0;
+            frame_ts_lo16               = '0;
+            subheader_ts_hi             = '0;
+            last_subhdr_byte            = '0;
+            last_subhdr_valid           = 1'b0;
+            last_nonempty_subhdr_abs_ts = '0;
+            curr_subhdr_abs_ts          = '0;
+            last_hit_abs_ts             = '0;
+            n_frames       = 0;
+            n_preambles    = 0;
+            n_headers      = 0;
+            n_subheaders   = 0;
+            n_hits         = 0;
+            n_trailers     = 0;
+            n_orphan       = 0;
+            n_restart_sop  = 0;
+            n_contract_err = 0;
+        endfunction
+
+        function automatic bit pkt_is_frame_trl(bit [35:0] word);
+            return (word[35:32] == FRAMING_TAG) && (word[7:0] == K284);
+        endfunction
+
+        function automatic bit pkt_is_subhdr(bit [35:0] word);
+            return (word[35:32] == FRAMING_TAG) && (word[7:0] == K237);
+        endfunction
+
+        function automatic bit pkt_is_preamble(bit [35:0] word);
+            return (word[35:32] == FRAMING_TAG) && (word[7:0] == K285);
+        endfunction
+
+        function automatic bit pkt_is_hit(bit [35:0] word);
+            return (word[35:32] == 4'b0000);
+        endfunction
+
+        function automatic bit [35:0] extend_subheader_ts_hi(
+            bit [35:0] curr_hi,
+            bit        last_valid,
+            bit [7:0]  last_byte,
+            bit [7:0]  curr_byte
+        );
+            bit [35:0] hi_v;
+            hi_v = curr_hi;
+            if (last_valid && (curr_byte < last_byte))
+                hi_v = hi_v + 36'd1;
+            return hi_v;
+        endfunction
+
+        function automatic bit [47:0] make_subheader_abs_ts(
+            bit [35:0] ts_hi,
+            bit [7:0]  shd_byte
+        );
+            return {ts_hi, shd_byte, 4'h0};
+        endfunction
+
+        function automatic void note_contract_error();
+            n_contract_err++;
+        endfunction
+
+        function automatic void start_new_frame();
+            frame_open                  = 1'b1;
+            frame_hdr_aux_words_left    = FRAME_HDR_AUX_WORDS[2:0];
+            hit_words_left              = '0;
+            saw_nonempty_subhdr         = 1'b0;
+            frame_ts_hi32               = '0;
+            frame_ts_lo16               = '0;
+            subheader_ts_hi             = '0;
+            last_subhdr_byte            = '0;
+            last_subhdr_valid           = 1'b0;
+            last_nonempty_subhdr_abs_ts = '0;
+            curr_subhdr_abs_ts          = '0;
+            last_hit_abs_ts             = '0;
+            n_frames++;
+        endfunction
+
+        virtual function bit step(bit [35:0] data, bit sop, bit eop);
+            bit          is_hit;
+            bit [35:0]   subheader_ts_hi_v;
+            bit [47:0]   subheader_abs_ts_v;
+
+            is_hit = 1'b0;
+
+            if (sop) begin
+                if (frame_open)
+                    n_restart_sop++;
+                start_new_frame();
+                if (pkt_is_preamble(data))
+                    n_preambles++;
+                else
+                    note_contract_error();
+                if (eop) begin
+                    note_contract_error();
+                    frame_open = 1'b0;
+                end
+                return 1'b0;
+            end
+
+            if (!frame_open) begin
+                start_new_frame();
+                if (pkt_is_preamble(data)) begin
+                    n_preambles++;
+                    if (eop) begin
+                        note_contract_error();
+                        frame_open = 1'b0;
+                    end
+                    return 1'b0;
+                end
+                // OPQ can suppress the visible K28.5 beat while refilling the
+                // presenter. When that happens the first accepted beat at the
+                // egress is already the first header aux word, so fall through
+                // and let the header parser consume this beat.
+            end
+
+            if (pkt_is_preamble(data)) begin
+                n_restart_sop++;
+                start_new_frame();
                 n_preambles++;
                 if (eop) begin
-                    // degenerate single-beat frame
-                    n_trailers++;
-                    st = FP_IDLE;
+                    note_contract_error();
+                    frame_open = 1'b0;
                 end
-                return;
+                return 1'b0;
             end
-            case (st)
-                FP_IDLE: begin
+
+            if (frame_hdr_aux_words_left != 0) begin
+                case (frame_hdr_aux_words_left)
+                    3'd4: frame_ts_hi32 = data[31:0];
+                    3'd3: begin
+                        frame_ts_lo16   = data[31:16];
+                        subheader_ts_hi = {frame_ts_hi32, data[31:28]};
+                    end
+                    default: begin
+                    end
+                endcase
+                frame_hdr_aux_words_left--;
+                n_headers++;
+                if (eop) begin
+                    note_contract_error();
+                    frame_open = 1'b0;
+                    frame_hdr_aux_words_left = '0;
+                    hit_words_left = '0;
+                end
+                return 1'b0;
+            end
+
+            if (pkt_is_frame_trl(data)) begin
+                if (hit_words_left != 0)
+                    note_contract_error();
+                if (!eop)
+                    note_contract_error();
+                n_trailers++;
+                frame_open = 1'b0;
+                return 1'b0;
+            end
+
+            if (pkt_is_subhdr(data)) begin
+                if (hit_words_left != 0)
+                    note_contract_error();
+                subheader_ts_hi_v = extend_subheader_ts_hi(
+                    subheader_ts_hi,
+                    last_subhdr_valid,
+                    last_subhdr_byte,
+                    data[31:24]
+                );
+                subheader_abs_ts_v = make_subheader_abs_ts(subheader_ts_hi_v, data[31:24]);
+                subheader_ts_hi    = subheader_ts_hi_v;
+                last_subhdr_byte   = data[31:24];
+                last_subhdr_valid  = 1'b1;
+                curr_subhdr_abs_ts = subheader_abs_ts_v;
+                n_subheaders++;
+                if (data[15:8] != 8'h00) begin
+                    if (saw_nonempty_subhdr && !(subheader_abs_ts_v > last_nonempty_subhdr_abs_ts))
+                        note_contract_error();
+                    saw_nonempty_subhdr         = 1'b1;
+                    last_nonempty_subhdr_abs_ts = subheader_abs_ts_v;
+                    hit_words_left              = data[15:8];
+                end
+                if (eop) begin
+                    note_contract_error();
+                    frame_open = 1'b0;
+                    hit_words_left = '0;
+                end
+                return 1'b0;
+            end
+
+            if (pkt_is_hit(data)) begin
+                if (hit_words_left == 0) begin
+                    // OPQ can hide a presenter restart breakpoint word at the
+                    // external egress. When that happens the next accepted beat
+                    // can be a lone hit fragment whose visible subheader was
+                    // masked. Record it as a recoverable orphan instead of a
+                    // hard contract failure.
                     n_orphan++;
+                end else begin
+                    hit_words_left--;
+                    n_hits++;
+                    is_hit          = 1'b1;
+                    last_hit_abs_ts = {curr_subhdr_abs_ts[47:4], data[31:28]};
                 end
-                FP_HEADER: begin
-                    hdr_cnt++;
-                    n_headers++;
-                    if (hdr_cnt >= 5) st = FP_BODY;
-                    if (eop) begin
-                        n_missing_eop++; // eop mid-header is a protocol break
-                        st = FP_IDLE;
-                    end
+                if (eop) begin
+                    note_contract_error();
+                    frame_open = 1'b0;
+                    hit_words_left = '0;
                 end
-                FP_BODY: begin
-                    is_subheader = (data[35:32] == FRAMING_TAG) &&
-                                   (data[7:0]   == K237);
-                    is_trailer   = (data[35:32] == FRAMING_TAG) &&
-                                   (data[7:0]   == K284);
-                    if (is_trailer) begin
-                        n_trailers++;
-                        if (!eop) n_missing_eop++;
-                        st = FP_IDLE;
-                    end else if (is_subheader) begin
-                        n_subheaders++;
-                        if (eop) begin
-                            n_missing_eop++;
-                            st = FP_IDLE;
-                        end
-                    end else begin
-                        n_hits++;
-                        if (eop) begin
-                            n_missing_eop++;
-                            st = FP_IDLE;
-                        end
-                    end
-                end
-            endcase
+                return is_hit;
+            end
+
+            n_orphan++;
+            if (eop) begin
+                note_contract_error();
+                frame_open = 1'b0;
+                hit_words_left = '0;
+            end
+            return 1'b0;
         endfunction
     endclass
 
     // -----------------------------------------------------------------------
-    // Hit record (scoreboard entry)
+    // Stateful parser for the Stage-B hit_type2 stream. Each packet is one
+    // K237 subheader plus the declared number of hit words, with EOP on the
+    // last beat or on the subheader itself for an empty packet.
+    // -----------------------------------------------------------------------
+    class tb_int_hit2_parser extends uvm_object;
+        `uvm_object_utils(tb_int_hit2_parser)
+
+        localparam bit [7:0] K237 = 8'hF7;
+
+        bit          packet_open;
+        bit [7:0]    hit_words_left;
+        bit          saw_nonempty_subhdr;
+        bit [35:0]   subheader_ts_hi;
+        bit [7:0]    last_subhdr_byte;
+        bit          last_subhdr_valid;
+        bit [47:0]   last_nonempty_subhdr_abs_ts;
+        bit [47:0]   curr_subhdr_abs_ts;
+        bit [47:0]   last_hit_abs_ts;
+        int unsigned n_packets;
+        int unsigned n_subheaders;
+        int unsigned n_hits;
+        int unsigned n_empty_packets;
+        int unsigned n_orphan;
+        int unsigned n_contract_err;
+
+        function new(string name = "tb_int_hit2_parser");
+            super.new(name);
+            packet_open               = 1'b0;
+            hit_words_left            = '0;
+            saw_nonempty_subhdr       = 1'b0;
+            subheader_ts_hi           = '0;
+            last_subhdr_byte          = '0;
+            last_subhdr_valid         = 1'b0;
+            last_nonempty_subhdr_abs_ts = '0;
+            curr_subhdr_abs_ts        = '0;
+            last_hit_abs_ts           = '0;
+            n_packets      = 0;
+            n_subheaders   = 0;
+            n_hits         = 0;
+            n_empty_packets = 0;
+            n_orphan       = 0;
+            n_contract_err = 0;
+        endfunction
+
+        function automatic bit pkt_is_subhdr(bit [35:0] word);
+            return (word[35:32] == 4'b0001) && (word[7:0] == K237);
+        endfunction
+
+        function automatic bit pkt_is_hit(bit [35:0] word);
+            return (word[35:32] == 4'b0000);
+        endfunction
+
+        function automatic bit [35:0] extend_subheader_ts_hi(
+            bit [35:0] curr_hi,
+            bit        last_valid,
+            bit [7:0]  last_byte,
+            bit [7:0]  curr_byte
+        );
+            bit [35:0] hi_v;
+            hi_v = curr_hi;
+            if (last_valid && (curr_byte < last_byte))
+                hi_v = hi_v + 36'd1;
+            return hi_v;
+        endfunction
+
+        function automatic bit [47:0] make_subheader_abs_ts(
+            bit [35:0] ts_hi,
+            bit [7:0]  shd_byte
+        );
+            return {ts_hi, shd_byte, 4'h0};
+        endfunction
+
+        function automatic void note_contract_error();
+            n_contract_err++;
+        endfunction
+
+        virtual function bit step(bit [35:0] data, bit sop, bit eop);
+            bit        is_hit;
+            bit [35:0] subheader_ts_hi_v;
+            bit [47:0] subheader_abs_ts_v;
+            bit [7:0]  hit_words_left_v;
+
+            is_hit          = 1'b0;
+            hit_words_left_v = hit_words_left;
+
+            if (sop) begin
+                n_packets++;
+                n_subheaders++;
+                if (packet_open)
+                    note_contract_error();
+                if (!pkt_is_subhdr(data))
+                    note_contract_error();
+                subheader_ts_hi_v = extend_subheader_ts_hi(
+                    subheader_ts_hi,
+                    last_subhdr_valid,
+                    last_subhdr_byte,
+                    data[31:24]
+                );
+                subheader_abs_ts_v = make_subheader_abs_ts(subheader_ts_hi_v, data[31:24]);
+                subheader_ts_hi    = subheader_ts_hi_v;
+                last_subhdr_byte   = data[31:24];
+                last_subhdr_valid  = 1'b1;
+                curr_subhdr_abs_ts = subheader_abs_ts_v;
+                if (data[15:8] != 8'h00) begin
+                    if (saw_nonempty_subhdr && !(subheader_abs_ts_v > last_nonempty_subhdr_abs_ts))
+                        note_contract_error();
+                    saw_nonempty_subhdr         = 1'b1;
+                    last_nonempty_subhdr_abs_ts = subheader_abs_ts_v;
+                end else begin
+                    n_empty_packets++;
+                end
+                hit_words_left_v = data[15:8];
+                if (eop) begin
+                    if (hit_words_left_v != 0)
+                        note_contract_error();
+                    packet_open    = 1'b0;
+                    hit_words_left = '0;
+                end else begin
+                    packet_open    = 1'b1;
+                    hit_words_left = hit_words_left_v;
+                end
+                return 1'b0;
+            end
+
+            if (!packet_open)
+                note_contract_error();
+            if (pkt_is_subhdr(data))
+                note_contract_error();
+            if (!pkt_is_hit(data)) begin
+                n_orphan++;
+                if (eop) begin
+                    packet_open    = 1'b0;
+                    hit_words_left = '0;
+                end
+                return 1'b0;
+            end
+            if (hit_words_left == 0) begin
+                note_contract_error();
+                if (eop) begin
+                    packet_open = 1'b0;
+                end
+                return 1'b0;
+            end
+            hit_words_left_v = hit_words_left - 1'b1;
+            hit_words_left   = hit_words_left_v;
+            n_hits++;
+            is_hit          = 1'b1;
+            last_hit_abs_ts = {curr_subhdr_abs_ts[47:4], data[31:28]};
+            if (eop) begin
+                if (hit_words_left_v != 0)
+                    note_contract_error();
+                packet_open    = 1'b0;
+                hit_words_left = '0;
+            end else if (hit_words_left_v == 0) begin
+                note_contract_error();
+            end
+            return is_hit;
+        endfunction
+    endclass
+
+    // -----------------------------------------------------------------------
+    // Stateful parser for the Stage-H0 hit_type0 stream. Every valid beat is
+    // one hit. In frame_rcv_ip MODE_HALT=0 the producer intentionally allows
+    // recovery patterns such as `sop ... sop eop` and `... eop sop eop`, so
+    // this parser tracks those events as recovery markers instead of protocol
+    // violations.
+    // -----------------------------------------------------------------------
+    class tb_int_hit0_parser extends uvm_object;
+        `uvm_object_utils(tb_int_hit0_parser)
+
+        bit          frame_open;
+        int unsigned n_frames;
+        int unsigned n_hits;
+        int unsigned n_orphan;
+        int unsigned n_restart_sop;
+        int unsigned n_orphan_eop;
+        int unsigned n_contract_err;
+
+        function new(string name = "tb_int_hit0_parser");
+            super.new(name);
+            frame_open     = 1'b0;
+            n_frames       = 0;
+            n_hits         = 0;
+            n_orphan       = 0;
+            n_restart_sop  = 0;
+            n_orphan_eop   = 0;
+            n_contract_err = 0;
+        endfunction
+
+        function automatic void note_contract_error();
+            n_contract_err++;
+        endfunction
+
+        virtual function bit step(bit sop, bit eop);
+            n_hits++;
+            if (sop) begin
+                if (frame_open)
+                    n_restart_sop++;
+                n_frames++;
+                frame_open = !eop;
+                return 1'b1;
+            end
+
+            if (!frame_open)
+                n_orphan++;
+            if (eop && !frame_open)
+                n_orphan_eop++;
+            if (eop)
+                frame_open = 1'b0;
+            return 1'b1;
+        endfunction
+    endclass
+
+    // -----------------------------------------------------------------------
+    // Content-aware hit identity tuple.
+    //
+    // Identity bits that survive the entire datapath unchanged:
+    //   - channel : 5-bit SiPM channel 0..31
+    //   - t_fine  : 5-bit 50ps fine time (T_Fine)
+    //
+    // Everything else moves: T_CC is LUT-decoded and gts-folded in
+    // mts_processor between stages A and B, and the hit_type2 layout drops
+    // the error / badhit bits entirely. For per-lane FIFO matching against a
+    // common key this 10-bit tuple is adequate — each of 1024 buckets holds
+    // ~6 hits per lane in a 200k-cycle run, and order within a bucket is
+    // preserved end-to-end because the datapath is point-to-point FIFO.
+    //
+    // The source lane is recovered from the 4-bit asic field at stages
+    // B..E. Lane identification at stage A comes from (feb_id, datapath_id)
+    // in the stage_a_if tap. Both numbering systems are aligned via
+    // datapath_stub's LANE_ASIC_ID = FEB_ID*2 + DATAPATH_ID tie-off.
     // -----------------------------------------------------------------------
     typedef struct packed {
-        bit [7:0]  feb_id;
-        bit [7:0]  datapath_id;
-        bit [7:0]  mutrig_ch;
-    } mutrig_origin_t;
+        bit [4:0] channel;
+        bit [4:0] t_fine;
+    } hit_key_t;
 
-    class tb_int_hit_record extends uvm_object;
-        `uvm_object_utils(tb_int_hit_record)
+    // Extract the identity tuple from a raw 48-bit hit_generator word.
+    // Layout (both long and short modes, short pads the lower bits with 0):
+    //   [47:43] channel, [42] T_BadHit, [41:27] T_CC, [26:22] T_Fine, ...
+    function automatic hit_key_t extract_key_stage_a(bit [47:0] p);
+        hit_key_t k;
+        k.channel = p[47:43];
+        k.t_fine  = p[26:22];
+        return k;
+    endfunction
 
-        bit [63:0] hit_id;
-        bit [63:0] abs_ts;
-        mutrig_origin_t origin;
-        bit [47:0] payload;
-        bit [63:0] stage_ts [5];
-        bit [4:0]  stage_seen;
-        bit [7:0]  expected_subheader_slot;
-        bit [1:0]  expected_lane;
+    // Extract the identity tuple from a 45-bit hit_type0 word.
+    // Layout (frame_rcv_ip aso_hit_type0_data):
+    //   [44:41]=asic, [40:36]=channel, [35:21]=t_cc, [20:16]=t_fine,
+    //   [15:1]=e_cc, [0]=e_flag
+    function automatic hit_key_t extract_key_hit0(bit [44:0] d);
+        hit_key_t k;
+        k.channel = d[40:36];
+        k.t_fine  = d[20:16];
+        return k;
+    endfunction
 
-        function new(string name = "tb_int_hit_record");
+    // Recover the source lane from the asic field of a hit_type0 beat.
+    function automatic int unsigned extract_lane_hit0(bit [44:0] d);
+        return int'(d[44:41]);
+    endfunction
+
+    // Extract the identity tuple from a 39-bit hit_type1 word.
+    // Layout (mts_processor aso_hit_type1_data):
+    //   [38:35]=asic, [34:30]=channel, [29:17]=tcc_8n, [16:14]=tcc_1n6,
+    //   [13:9]=t_fine, [8:0]=et_1n6
+    function automatic hit_key_t extract_key_hit1(bit [38:0] d);
+        hit_key_t k;
+        k.channel = d[34:30];
+        k.t_fine  = d[13:9];
+        return k;
+    endfunction
+
+    // Recover the source lane from the asic field of a hit_type1 beat.
+    function automatic int unsigned extract_lane_hit1(bit [38:0] d);
+        return int'(d[38:35]);
+    endfunction
+
+    // Extract the identity tuple from a 36-bit hit_type2 body word.
+    // Layout (rb_cam aso_hit_type2_data for a hit beat, byte_is_k == "0000"):
+    //   [35:32]=0000, [31:28]=ts[3:0], [27:26]="00", [25:22]=asic,
+    //   [21:17]=channel, [16:14]=tcc_1n6, [13:9]=t_fine, [8:0]=et_1n6
+    function automatic hit_key_t extract_key_hit2(bit [35:0] d);
+        hit_key_t k;
+        k.channel = d[21:17];
+        k.t_fine  = d[13:9];
+        return k;
+    endfunction
+
+    // Recover the source lane from the asic field of a hit_type2 beat.
+    // datapath_stub ties asic = FEB_ID*2 + DATAPATH_ID, so the value is
+    // already the 0..3 lane index.
+    function automatic int unsigned extract_lane_hit2(bit [35:0] d);
+        return int'(d[25:22]);
+    endfunction
+
+    // Exact A->H0 identity preserved across frame_rcv_ip. This keeps the
+    // full set of fields that survive the raw MuTRiG word -> hit_type0
+    // conversion instead of collapsing onto the generic (channel, t_fine)
+    // bucket used for the later stage-pair ledgers.
+    typedef bit [40:0] hit_ah0_key_t;
+
+    function automatic hit_ah0_key_t extract_key_stage_a_h0(bit [47:0] p);
+        return {p[47:43], p[41:27], p[26:22], p[19:5], p[20]};
+    endfunction
+
+    function automatic hit_ah0_key_t extract_key_hit0_ah0(bit [44:0] d);
+        return {d[40:36], d[35:21], d[20:16], d[15:1], d[0]};
+    endfunction
+
+    // The hit_type2 body beat is forwarded unchanged from stage B through
+    // stage E, so the raw 36-bit word itself is the exact downstream key.
+    typedef bit [35:0] hit_raw36_key_t;
+
+    function automatic hit_raw36_key_t extract_key_hit2_exact(bit [35:0] d);
+        return d;
+    endfunction
+
+    // A single hit observation recorded at one stage. The ledger keeps one
+    // per-lane-per-key queue of these, and reconciliation pops in FIFO order.
+    class tb_int_hit_obs extends uvm_object;
+        `uvm_object_utils(tb_int_hit_obs)
+
+        hit_key_t    key;
+        int unsigned lane_id;
+        int unsigned seq_in_bucket;   // ordinal within (lane, key) queue
+        time         abs_ts;
+        bit [47:0]   hit_abs_ts;
+        bit          root_hit_id_valid;
+        bit [63:0]   root_hit_id;
+        bit          run_origin;
+        bit [35:0]   raw_data;        // stage B..E raw beat
+        bit [47:0]   raw_payload_a;   // stage A raw hit (unused for B..E)
+
+        function new(string name = "tb_int_hit_obs");
             super.new(name);
+        endfunction
+
+        function string describe();
+            string id_desc;
+            if (root_hit_id_valid)
+                id_desc = $sformatf("0x%016h", root_hit_id);
+            else
+                id_desc = "?";
+            return $sformatf("{lane=%0d ch=%0d tfine=%0d seq=%0d t=%0t hit_ts=0x%012h id=%s}",
+                             lane_id, key.channel, key.t_fine,
+                             seq_in_bucket, abs_ts, hit_abs_ts, id_desc);
+        endfunction
+    endclass
+
+    typedef enum int unsigned {
+        TRACE_STAGE_B,
+        TRACE_STAGE_C,
+        TRACE_STAGE_D,
+        TRACE_STAGE_E
+    } tb_int_trace_stage_e;
+
+    class tb_int_beat_trace extends uvm_object;
+        `uvm_object_utils(tb_int_beat_trace)
+
+        tb_int_trace_stage_e stage_id;
+        int unsigned         lane_id;
+        int unsigned         slot_id;
+        time                 abs_ts;
+        bit [35:0]           data;
+        bit [3:0]            channel;
+        bit                  sop;
+        bit                  eop;
+        bit                  ready;
+
+        function new(string name = "tb_int_beat_trace");
+            super.new(name);
+        endfunction
+
+        function string stage_name();
+            case (stage_id)
+                TRACE_STAGE_B: return "B";
+                TRACE_STAGE_C: return "C";
+                TRACE_STAGE_D: return "D";
+                default:      return "E";
+            endcase
+        endfunction
+
+        function string describe();
+            return $sformatf("%s lane=%0d slot=%0d t=%0t sop=%0b eop=%0b ready=%0b ch=0x%0h data=0x%09h",
+                             stage_name(), lane_id, slot_id, abs_ts,
+                             sop, eop, ready, channel, data);
         endfunction
     endclass
 
     // -----------------------------------------------------------------------
-    // Scoreboard. Phase 2 walking skeleton: receive stage A and stage E
-    // analysis events, count them, and flag a hard error if either end is
-    // silent. Phase 3 extends this with per-hit identity matching across
-    // all stages.
+    // Content-aware scoreboard.
+    //
+    // Per-lane, per-key FIFO ledger. Each stage classifies beats through the
+    // frame parser and pushes hit-body beats into its ledger keyed by
+    // (lane, hit_key_t). Reconciliation in report_phase pops matched pairs in
+    // FIFO order and reports residuals (missing at the downstream stage,
+    // ghost beats the upstream stage never produced). Anomalies 1 and 2 are
+    // expected to fall out as specific (lane, key) bucket imbalances.
     // -----------------------------------------------------------------------
+    typedef tb_int_hit_obs obs_q_t [$];
+    typedef tb_int_hit_obs root_obs_by_id_t [bit [63:0]];
+
     class tb_int_scoreboard extends uvm_component;
         `uvm_component_utils(tb_int_scoreboard)
 
         uvm_analysis_imp_stage_a#(tb_int_hit_event,     tb_int_scoreboard) stage_a_imp;
+        uvm_analysis_imp_stage_h0#(tb_int_hit0_event,   tb_int_scoreboard) stage_h0_imp;
+        uvm_analysis_imp_stage_h1#(tb_int_hit1_event,   tb_int_scoreboard) stage_h1_imp;
+        uvm_analysis_imp_stage_b#(tb_int_hit2_event,    tb_int_scoreboard) stage_b_imp;
+        uvm_analysis_imp_stage_c#(tb_int_ingress_event, tb_int_scoreboard) stage_c_imp;
         uvm_analysis_imp_stage_d#(tb_int_ingress_event, tb_int_scoreboard) stage_d_imp;
         uvm_analysis_imp_stage_e#(tb_int_egress_event,  tb_int_scoreboard) stage_e_imp;
 
-        tb_int_hit_record hit_db [bit [63:0]];
+        // Aggregate counters (still useful as sanity markers alongside the
+        // ledger).
         int unsigned n_stage_a;
         int unsigned n_stage_a_per_lane    [4];
+        int unsigned n_stage_h0_beats_per_lane [4];
+        int unsigned n_stage_h0_frames_per_lane[4];
+        int unsigned n_stage_h0_beats;
+        int unsigned n_stage_h0_frames;
+        int unsigned n_stage_h1_beats_per_lane [4];
+        int unsigned n_stage_h1_beats_per_slot [4][4];
+        int unsigned n_stage_h1_error_per_lane [4];
+        int unsigned n_stage_h1_error_per_slot [4][4];
+        int unsigned n_stage_h1_beats;
+        int unsigned n_stage_b_beats_per_lane  [4];
+        int unsigned n_stage_b_packets_per_lane[4];
+        int unsigned n_stage_b_beats_per_slot  [4][4];
+        int unsigned n_stage_b_packets_per_slot[4][4];
+        int unsigned n_stage_b_beats;
+        int unsigned n_stage_b_packets;
+        int unsigned n_stage_c_beats_per_lane  [4];
+        int unsigned n_stage_c_frames_per_lane [4];
+        int unsigned n_stage_c_beats;
+        int unsigned n_stage_c_frames;
         int unsigned n_stage_d_beats_per_lane  [4];
         int unsigned n_stage_d_frames_per_lane [4];
         int unsigned n_stage_d_beats;
         int unsigned n_stage_d_frames;
         int unsigned n_stage_e_beats;
         int unsigned n_stage_e_frames;
-        int unsigned n_missing;
-        int unsigned n_ghost;
-        int unsigned n_slot_violation;
 
-        // Stateful frame parsers — 4 per stage D lane, 1 for stage E.
+        // Per-lane content ledgers: [lane][key] -> FIFO of observations.
+        // At stage A the lane is known from the stage_a_if tap.
+        // At stage H0 the lane is the frame_rcv datapath index 0..3.
+        // At stage B the lane is the datapath index 0..3; slot_id stays in
+        // the beat history for first-fail debug but the hit identity ledger
+        // is aggregated per datapath lane because feb_frame_assembly merges
+        // the 4 slot streams back into one lane.
+        // At stages C and D the lane is the ingress interface index 0..3.
+        // At stage E the lane is recovered from the hit-body asic field,
+        //   which datapath_stub ties to FEB_ID*2 + DATAPATH_ID.
+        obs_q_t stage_a_ledger [4][bit [9:0]];
+        obs_q_t stage_h0_ledger[4][bit [9:0]];
+        obs_q_t stage_h1_ledger[4][bit [9:0]];
+        obs_q_t stage_h1_slot_ledger[4][4][bit [9:0]];
+        obs_q_t stage_h1_eligible_ledger[4][bit [9:0]];
+        obs_q_t stage_h1_eligible_slot_ledger[4][4][bit [9:0]];
+        obs_q_t stage_b_ledger [4][bit [9:0]];
+        obs_q_t stage_b_slot_ledger [4][4][bit [9:0]];
+        obs_q_t stage_c_ledger [4][bit [9:0]];
+        obs_q_t stage_d_ledger [4][bit [9:0]];
+        obs_q_t stage_e_ledger [4][bit [9:0]];
+
+        // Boundary-specific ledgers used where the generic (channel, t_fine)
+        // bucket is too lossy to diagnose the true first failing stage.
+        obs_q_t stage_a_ah0_ledger [4][hit_ah0_key_t];
+        obs_q_t stage_h0_ah0_ledger[4][hit_ah0_key_t];
+        obs_q_t stage_b_exact_ledger[4][hit_raw36_key_t];
+        obs_q_t stage_c_exact_ledger[4][hit_raw36_key_t];
+        obs_q_t stage_d_exact_ledger[4][hit_raw36_key_t];
+        obs_q_t stage_e_exact_ledger[4][hit_raw36_key_t];
+
+        // Stable-RUNNING origin ledger keyed by the globally unique stage-A
+        // hit_id. This follows source-origin identity, so a hit born during
+        // stable RUNNING is still counted even if it emerges downstream in
+        // TERMINATING.
+        root_obs_by_id_t stage_a_run_root_obs [4];
+        root_obs_by_id_t stage_h0_run_root_obs[4];
+        root_obs_by_id_t stage_h1_run_root_obs[4];
+        root_obs_by_id_t stage_h1e_run_root_obs[4];
+        root_obs_by_id_t stage_b_run_root_obs [4];
+        root_obs_by_id_t stage_c_run_root_obs [4];
+        root_obs_by_id_t stage_d_run_root_obs [4];
+        root_obs_by_id_t stage_e_run_root_obs [4];
+
+        // Stage-E beats we couldn't attribute to a lane (asic field out of
+        // range 0..3). Would mean a frame leaked into stage E from a lane
+        // that isn't part of the 4-datapath topology.
+        int unsigned n_stage_e_lane_unknown;
+
+        // Stateful parsers — 4 hit_type0 streams at stage H0, 4x4 hit_type2
+        // packets at stage B, 4 framed
+        // lanes at C and D, and 1 framed egress stream at E.
+        tb_int_hit0_parser  h0_parser[4];
+        tb_int_hit2_parser  b_parser [4][4];
+        tb_int_frame_parser c_parser [4];
         tb_int_frame_parser d_parser [4];
-        tb_int_frame_parser e_parser;
+        tb_int_egress_frame_parser e_parser;
+
+        // Rolling windows of the most recent accepted beats at each stage.
+        // These are dumped when the first local contract error appears so the
+        // first failing boundary is visible immediately instead of only as a
+        // final bucket imbalance.
+        tb_int_beat_trace b_history [4][4][$];
+        tb_int_beat_trace c_history [4][$];
+        tb_int_beat_trace d_history [4][$];
+        tb_int_beat_trace e_history [$];
+        bit              b_contract_dumped [4][4];
+        bit              c_contract_dumped [4];
+        bit              d_contract_dumped [4];
+        bit              e_contract_dumped;
+        bit              rbcam_filter_inerr_enabled;
+
+        // Reconciliation summary produced in report_phase. One row per lane,
+        // per stage pair (A->H0, H0->H1, H1->B, B->C, C->D, D->E).
+        int unsigned rec_a_total_per_lane   [4];
+        int unsigned rec_h0_total_per_lane  [4];
+        int unsigned rec_h1_total_per_lane  [4];
+        int unsigned rec_h1_eligible_total_per_lane [4];
+        int unsigned rec_h1_filtered_per_lane[4];
+        int unsigned rec_b_total_per_lane   [4];
+        int unsigned rec_c_total_per_lane   [4];
+        int unsigned rec_d_total_per_lane   [4];
+        int unsigned rec_e_total_per_lane   [4];
+        int unsigned rec_matched_ah0_per_lane[4];
+        int unsigned rec_missing_h0_per_lane [4];
+        int unsigned rec_ghost_h0_per_lane   [4];
+        int unsigned rec_matched_ah1_per_lane[4];
+        int unsigned rec_missing_h1_per_lane [4];
+        int unsigned rec_ghost_h1_per_lane   [4];
+        int unsigned rec_matched_ab_per_lane [4];
+        int unsigned rec_missing_b_per_lane [4];
+        int unsigned rec_ghost_b_per_lane   [4];
+        int unsigned rec_matched_ab_eligible_per_lane [4];
+        int unsigned rec_missing_b_eligible_per_lane [4];
+        int unsigned rec_ghost_b_eligible_per_lane   [4];
+        int unsigned rec_h1_total_per_slot  [4][4];
+        int unsigned rec_h1_eligible_total_per_slot [4][4];
+        int unsigned rec_h1_filtered_per_slot [4][4];
+        int unsigned rec_b_total_per_slot   [4][4];
+        int unsigned rec_matched_h1b_per_slot[4][4];
+        int unsigned rec_missing_b_per_slot [4][4];
+        int unsigned rec_ghost_b_per_slot   [4][4];
+        int unsigned rec_matched_h1b_eligible_per_slot[4][4];
+        int unsigned rec_missing_b_eligible_per_slot [4][4];
+        int unsigned rec_ghost_b_eligible_per_slot   [4][4];
+        int unsigned rec_matched_bc_per_lane[4];
+        int unsigned rec_missing_c_per_lane [4];
+        int unsigned rec_ghost_c_per_lane   [4];
+        int unsigned rec_matched_cd_per_lane[4];
+        int unsigned rec_missing_d_per_lane [4];
+        int unsigned rec_ghost_d_per_lane   [4];
+        int unsigned rec_matched_de_per_lane[4];
+        int unsigned rec_missing_e_per_lane [4];
+        int unsigned rec_ghost_e_per_lane   [4];
+        int unsigned rec_run_a_total_per_lane   [4];
+        int unsigned rec_run_h0_total_per_lane  [4];
+        int unsigned rec_run_h1_total_per_lane  [4];
+        int unsigned rec_run_h1e_total_per_lane [4];
+        int unsigned rec_run_b_total_per_lane   [4];
+        int unsigned rec_run_c_total_per_lane   [4];
+        int unsigned rec_run_d_total_per_lane   [4];
+        int unsigned rec_run_e_total_per_lane   [4];
+        int unsigned rec_run_matched_ah0_per_lane[4];
+        int unsigned rec_run_missing_h0_per_lane [4];
+        int unsigned rec_run_ghost_h0_per_lane   [4];
+        int unsigned rec_run_matched_ah1_per_lane[4];
+        int unsigned rec_run_missing_h1_per_lane [4];
+        int unsigned rec_run_ghost_h1_per_lane   [4];
+        int unsigned rec_run_matched_ab_per_lane [4];
+        int unsigned rec_run_missing_b_per_lane  [4];
+        int unsigned rec_run_ghost_b_per_lane    [4];
+        int unsigned rec_run_matched_bc_per_lane [4];
+        int unsigned rec_run_missing_c_per_lane  [4];
+        int unsigned rec_run_ghost_c_per_lane    [4];
+        int unsigned rec_run_matched_cd_per_lane [4];
+        int unsigned rec_run_missing_d_per_lane  [4];
+        int unsigned rec_run_ghost_d_per_lane    [4];
+        int unsigned rec_run_matched_de_per_lane [4];
+        int unsigned rec_run_missing_e_per_lane  [4];
+        int unsigned rec_run_ghost_e_per_lane    [4];
+        int unsigned rec_run_active_h1e_total_per_lane[4];
+        int unsigned rec_run_active_h1e_matched_b_per_lane[4];
+        int unsigned rec_run_active_h1e_missing_b_per_lane[4];
+        int unsigned rec_run_active_b_total_per_lane[4];
+        int unsigned rec_run_active_b_matched_c_per_lane[4];
+        int unsigned rec_run_active_b_missing_c_per_lane[4];
 
         function new(string name, uvm_component parent);
             super.new(name, parent);
             n_stage_a = 0;
+            n_stage_h0_beats = 0;
+            n_stage_h0_frames = 0;
+            n_stage_h1_beats = 0;
+            n_stage_b_beats = 0;
+            n_stage_b_packets = 0;
+            n_stage_c_beats = 0;
+            n_stage_c_frames = 0;
             n_stage_d_beats = 0;
             n_stage_d_frames = 0;
             n_stage_e_beats = 0;
             n_stage_e_frames = 0;
-            n_missing = 0;
-            n_ghost = 0;
-            n_slot_violation = 0;
+            n_stage_e_lane_unknown = 0;
+            rbcam_filter_inerr_enabled = 1'b1;
             foreach (n_stage_a_per_lane[i])        n_stage_a_per_lane[i]        = 0;
+            foreach (n_stage_h0_beats_per_lane[i]) n_stage_h0_beats_per_lane[i] = 0;
+            foreach (n_stage_h0_frames_per_lane[i]) n_stage_h0_frames_per_lane[i] = 0;
+            foreach (n_stage_h1_beats_per_lane[i]) begin
+                n_stage_h1_beats_per_lane[i] = 0;
+                n_stage_h1_error_per_lane[i] = 0;
+            end
+            foreach (n_stage_h1_beats_per_slot[i,j]) begin
+                n_stage_h1_beats_per_slot[i][j] = 0;
+                n_stage_h1_error_per_slot[i][j] = 0;
+            end
+            foreach (n_stage_b_beats_per_lane[i])  n_stage_b_beats_per_lane[i]  = 0;
+            foreach (n_stage_b_packets_per_lane[i]) n_stage_b_packets_per_lane[i] = 0;
+            foreach (n_stage_b_beats_per_slot[i,j]) begin
+                n_stage_b_beats_per_slot[i][j]   = 0;
+                n_stage_b_packets_per_slot[i][j] = 0;
+                b_contract_dumped[i][j]          = 1'b0;
+            end
+            foreach (n_stage_c_beats_per_lane[i])  n_stage_c_beats_per_lane[i]  = 0;
+            foreach (n_stage_c_frames_per_lane[i]) n_stage_c_frames_per_lane[i] = 0;
             foreach (n_stage_d_beats_per_lane[i])  n_stage_d_beats_per_lane[i]  = 0;
             foreach (n_stage_d_frames_per_lane[i]) n_stage_d_frames_per_lane[i] = 0;
+            foreach (rec_a_total_per_lane[i]) begin
+                rec_a_total_per_lane[i]    = 0;
+                rec_h0_total_per_lane[i]   = 0;
+                rec_h1_total_per_lane[i]   = 0;
+                rec_h1_eligible_total_per_lane[i] = 0;
+                rec_h1_filtered_per_lane[i] = 0;
+                rec_b_total_per_lane[i]    = 0;
+                rec_c_total_per_lane[i]    = 0;
+                rec_d_total_per_lane[i]    = 0;
+                rec_e_total_per_lane[i]    = 0;
+                rec_matched_ah0_per_lane[i] = 0;
+                rec_missing_h0_per_lane[i]  = 0;
+                rec_ghost_h0_per_lane[i]    = 0;
+                rec_matched_ah1_per_lane[i] = 0;
+                rec_missing_h1_per_lane[i]  = 0;
+                rec_ghost_h1_per_lane[i]    = 0;
+                rec_matched_ab_per_lane[i]  = 0;
+                rec_missing_b_per_lane[i]  = 0;
+                rec_ghost_b_per_lane[i]    = 0;
+                rec_matched_ab_eligible_per_lane[i] = 0;
+                rec_missing_b_eligible_per_lane[i]  = 0;
+                rec_ghost_b_eligible_per_lane[i]    = 0;
+                foreach (rec_h1_total_per_slot[i,j]) begin
+                    rec_h1_total_per_slot[i][j]    = 0;
+                    rec_h1_eligible_total_per_slot[i][j] = 0;
+                    rec_h1_filtered_per_slot[i][j] = 0;
+                    rec_b_total_per_slot[i][j]     = 0;
+                    rec_matched_h1b_per_slot[i][j] = 0;
+                    rec_missing_b_per_slot[i][j]   = 0;
+                    rec_ghost_b_per_slot[i][j]     = 0;
+                    rec_matched_h1b_eligible_per_slot[i][j] = 0;
+                    rec_missing_b_eligible_per_slot[i][j]   = 0;
+                    rec_ghost_b_eligible_per_slot[i][j]     = 0;
+                end
+                rec_matched_bc_per_lane[i] = 0;
+                rec_missing_c_per_lane[i]  = 0;
+                rec_ghost_c_per_lane[i]    = 0;
+                rec_matched_cd_per_lane[i] = 0;
+                rec_missing_d_per_lane[i]  = 0;
+                rec_ghost_d_per_lane[i]    = 0;
+                rec_matched_de_per_lane[i] = 0;
+                rec_missing_e_per_lane[i]  = 0;
+                rec_ghost_e_per_lane[i]    = 0;
+                rec_run_a_total_per_lane[i]    = 0;
+                rec_run_h0_total_per_lane[i]   = 0;
+                rec_run_h1_total_per_lane[i]   = 0;
+                rec_run_h1e_total_per_lane[i]  = 0;
+                rec_run_b_total_per_lane[i]    = 0;
+                rec_run_c_total_per_lane[i]    = 0;
+                rec_run_d_total_per_lane[i]    = 0;
+                rec_run_e_total_per_lane[i]    = 0;
+                rec_run_matched_ah0_per_lane[i] = 0;
+                rec_run_missing_h0_per_lane[i]  = 0;
+                rec_run_ghost_h0_per_lane[i]    = 0;
+                rec_run_matched_ah1_per_lane[i] = 0;
+                rec_run_missing_h1_per_lane[i]  = 0;
+                rec_run_ghost_h1_per_lane[i]    = 0;
+                rec_run_matched_ab_per_lane[i]  = 0;
+                rec_run_missing_b_per_lane[i]   = 0;
+                rec_run_ghost_b_per_lane[i]     = 0;
+                rec_run_matched_bc_per_lane[i]  = 0;
+                rec_run_missing_c_per_lane[i]   = 0;
+                rec_run_ghost_c_per_lane[i]     = 0;
+                rec_run_matched_cd_per_lane[i]  = 0;
+                rec_run_missing_d_per_lane[i]   = 0;
+                rec_run_ghost_d_per_lane[i]     = 0;
+                rec_run_matched_de_per_lane[i]  = 0;
+                rec_run_missing_e_per_lane[i]   = 0;
+                rec_run_ghost_e_per_lane[i]     = 0;
+                rec_run_active_h1e_total_per_lane[i]      = 0;
+                rec_run_active_h1e_matched_b_per_lane[i]  = 0;
+                rec_run_active_h1e_missing_b_per_lane[i]  = 0;
+                rec_run_active_b_total_per_lane[i]        = 0;
+                rec_run_active_b_matched_c_per_lane[i]    = 0;
+                rec_run_active_b_missing_c_per_lane[i]    = 0;
+                c_contract_dumped[i]       = 1'b0;
+                d_contract_dumped[i]       = 1'b0;
+            end
+            e_contract_dumped = 1'b0;
         endfunction
 
         virtual function void build_phase(uvm_phase phase);
             super.build_phase(phase);
             stage_a_imp = new("stage_a_imp", this);
+            stage_h0_imp = new("stage_h0_imp", this);
+            stage_h1_imp = new("stage_h1_imp", this);
+            stage_b_imp = new("stage_b_imp", this);
+            stage_c_imp = new("stage_c_imp", this);
             stage_d_imp = new("stage_d_imp", this);
             stage_e_imp = new("stage_e_imp", this);
+            foreach (h0_parser[i])
+                h0_parser[i] = tb_int_hit0_parser::type_id::create(
+                                   $sformatf("h0_parser_%0d", i));
+            foreach (b_parser[i,j])
+                b_parser[i][j] = tb_int_hit2_parser::type_id::create(
+                                     $sformatf("b_parser_%0d_%0d", i, j));
+            foreach (c_parser[i])
+                c_parser[i] = tb_int_frame_parser::type_id::create(
+                                  $sformatf("c_parser_%0d", i));
             foreach (d_parser[i])
                 d_parser[i] = tb_int_frame_parser::type_id::create(
                                   $sformatf("d_parser_%0d", i));
-            e_parser = tb_int_frame_parser::type_id::create("e_parser");
+            e_parser = tb_int_egress_frame_parser::type_id::create("e_parser");
+            void'(uvm_config_db#(bit)::get(this, "", "rbcam_filter_inerr_enabled",
+                                           rbcam_filter_inerr_enabled));
         endfunction
 
-        // Stage A analysis write: a hit_generator committed a new hit to
-        // its FIFO. The tag monitor has already assigned a monotonic
-        // hit_id; we record it in hit_db and bump counters.
+        function automatic void push_trace(ref tb_int_beat_trace q[$], tb_int_beat_trace tr);
+            if (q.size() >= 16)
+                void'(q.pop_front());
+            q.push_back(tr);
+        endfunction
+
+        function automatic void dump_trace_queue(string title, input tb_int_beat_trace q[$]);
+            `uvm_info("TB_INT_TRACE", title, UVM_LOW)
+            foreach (q[i]) begin
+                `uvm_info("TB_INT_TRACE", $sformatf("  %s", q[i].describe()), UVM_LOW)
+            end
+        endfunction
+
+        function automatic string first_fail_desc(int unsigned lane);
+            if (rec_missing_h0_per_lane[lane] > 0 || rec_ghost_h0_per_lane[lane] > 0)
+                return "A->H0";
+            if (rec_missing_h1_per_lane[lane] > 0 || rec_ghost_h1_per_lane[lane] > 0)
+                return "H0->H1";
+            if (rec_missing_b_eligible_per_lane[lane] > 0 ||
+                rec_ghost_b_eligible_per_lane[lane] > 0)
+                return "H1->B(eligible)";
+            if (rec_missing_c_per_lane[lane] > 0 || rec_ghost_c_per_lane[lane] > 0)
+                return "B->C";
+            if (rec_missing_d_per_lane[lane] > 0 || rec_ghost_d_per_lane[lane] > 0)
+                return "C->D";
+            if (rec_missing_e_per_lane[lane] > 0 || rec_ghost_e_per_lane[lane] > 0)
+                return "D->E";
+            return "none";
+        endfunction
+
+        function automatic string largest_loss_desc(int unsigned lane);
+            string       desc;
+            int unsigned best_score;
+            int unsigned score;
+
+            desc       = "none";
+            best_score = 0;
+
+            score = rec_missing_h0_per_lane[lane] + rec_ghost_h0_per_lane[lane];
+            if (score > best_score) begin
+                best_score = score;
+                desc = "A->H0";
+            end
+
+            score = rec_missing_h1_per_lane[lane] + rec_ghost_h1_per_lane[lane];
+            if (score > best_score) begin
+                best_score = score;
+                desc = "H0->H1";
+            end
+
+            score = rec_missing_b_eligible_per_lane[lane] +
+                    rec_ghost_b_eligible_per_lane[lane];
+            if (score > best_score) begin
+                best_score = score;
+                desc = "H1->B(eligible)";
+            end
+
+            score = rec_missing_c_per_lane[lane] + rec_ghost_c_per_lane[lane];
+            if (score > best_score) begin
+                best_score = score;
+                desc = "B->C";
+            end
+
+            score = rec_missing_d_per_lane[lane] + rec_ghost_d_per_lane[lane];
+            if (score > best_score) begin
+                best_score = score;
+                desc = "C->D";
+            end
+
+            score = rec_missing_e_per_lane[lane] + rec_ghost_e_per_lane[lane];
+            if (score > best_score) begin
+                best_score = score;
+                desc = "D->E";
+            end
+
+            return desc;
+        endfunction
+
+        function automatic string obs_head_desc(input obs_q_t q);
+            if (q.size() == 0 || q[0] == null)
+                return "-";
+            return q[0].describe();
+        endfunction
+
+        function automatic void copy_root_hit_id(tb_int_hit_obs dst, tb_int_hit_obs src);
+            if (dst == null || src == null)
+                return;
+            dst.run_origin = src.run_origin;
+            if (!src.root_hit_id_valid)
+                return;
+            dst.root_hit_id_valid = 1'b1;
+            dst.root_hit_id       = src.root_hit_id;
+        endfunction
+
+        function automatic void record_run_origin(ref root_obs_by_id_t map,
+                                                  input tb_int_hit_obs obs);
+            if (obs == null || !obs.root_hit_id_valid || !obs.run_origin)
+                return;
+            map[obs.root_hit_id] = obs;
+        endfunction
+
+        function automatic int unsigned count_root_obs(ref root_obs_by_id_t map);
+            bit [63:0] root_id;
+            bit        ok;
+            int unsigned total;
+
+            total = 0;
+            if (map.first(root_id)) begin
+                ok = 1'b1;
+                while (ok) begin
+                    total++;
+                    ok = map.next(root_id);
+                end
+            end
+            return total;
+        endfunction
+
+        function automatic void reconcile_root_boundary(
+            ref root_obs_by_id_t up_map,
+            ref root_obs_by_id_t dn_map,
+            output int unsigned matched,
+            output int unsigned missing,
+            output int unsigned ghost
+        );
+            bit [63:0] root_id;
+            bit        ok;
+
+            matched = 0;
+            missing = 0;
+            ghost   = 0;
+
+            if (up_map.first(root_id)) begin
+                ok = 1'b1;
+                while (ok) begin
+                    if (dn_map.exists(root_id))
+                        matched++;
+                    else
+                        missing++;
+                    ok = up_map.next(root_id);
+                end
+            end
+
+            if (dn_map.first(root_id)) begin
+                ok = 1'b1;
+                while (ok) begin
+                    if (!up_map.exists(root_id))
+                        ghost++;
+                    ok = dn_map.next(root_id);
+                end
+            end
+        endfunction
+
+        function automatic void reconcile_root_boundary_before(
+            ref root_obs_by_id_t up_map,
+            ref root_obs_by_id_t dn_map,
+            input time cutoff_ts,
+            output int unsigned total,
+            output int unsigned matched,
+            output int unsigned missing
+        );
+            bit [63:0] root_id;
+            bit        ok;
+
+            total   = 0;
+            matched = 0;
+            missing = 0;
+
+            if (cutoff_ts == 0)
+                return;
+
+            if (up_map.first(root_id)) begin
+                ok = 1'b1;
+                while (ok) begin
+                    if (up_map[root_id] != null && up_map[root_id].abs_ts < cutoff_ts) begin
+                        total++;
+                        if (dn_map.exists(root_id))
+                            matched++;
+                        else
+                            missing++;
+                    end
+                    ok = up_map.next(root_id);
+                end
+            end
+        endfunction
+
+        function automatic void dump_root_boundary_candidates(
+            input string boundary,
+            input string up_name,
+            ref root_obs_by_id_t up_map,
+            input string dn_name,
+            ref root_obs_by_id_t dn_map,
+            input int unsigned n_max
+        );
+            bit [63:0] root_id;
+            bit        ok;
+            int unsigned dumped;
+
+            dumped = 0;
+            if (up_map.first(root_id)) begin
+                ok = 1'b1;
+                while (ok && dumped < n_max) begin
+                    if (!dn_map.exists(root_id)) begin
+                        `uvm_info("TB_INT_SB",
+                                  $sformatf("%s missing %s root=0x%016h %s",
+                                            boundary, dn_name, root_id,
+                                            up_map[root_id].describe()),
+                                  UVM_MEDIUM)
+                        dumped++;
+                    end
+                    ok = up_map.next(root_id);
+                end
+            end
+
+            dumped = 0;
+            if (dn_map.first(root_id)) begin
+                ok = 1'b1;
+                while (ok && dumped < n_max) begin
+                    if (!up_map.exists(root_id)) begin
+                        `uvm_info("TB_INT_SB",
+                                  $sformatf("%s ghost %s root=0x%016h %s",
+                                            boundary, dn_name, root_id,
+                                            dn_map[root_id].describe()),
+                                  UVM_MEDIUM)
+                        dumped++;
+                    end
+                    ok = dn_map.next(root_id);
+                end
+            end
+        endfunction
+
+        function automatic string obs_desc_at(input obs_q_t q, int unsigned idx);
+            if (idx >= q.size() || q[idx] == null)
+                return "-";
+            return q[idx].describe();
+        endfunction
+
+        function automatic void dump_boundary_candidates(
+            string boundary,
+            string prefix,
+            string up_name,
+            input obs_q_t up_q,
+            int unsigned up_n,
+            string dn_name,
+            input obs_q_t dn_q,
+            int unsigned dn_n,
+            int unsigned n_max
+        );
+            int unsigned idx;
+            int unsigned n_dump;
+
+            if (up_n > dn_n) begin
+                n_dump = ((up_n - dn_n) < n_max) ? (up_n - dn_n) : n_max;
+                for (int unsigned off = 0; off < n_dump; off++) begin
+                    idx = dn_n + off;
+                    `uvm_info("TB_INT_SB",
+                              $sformatf("%s %s missing %s[%0d]=%s",
+                                        prefix, boundary, up_name, idx,
+                                        obs_desc_at(up_q, idx)),
+                              UVM_MEDIUM)
+                end
+            end
+
+            if (dn_n > up_n) begin
+                n_dump = ((dn_n - up_n) < n_max) ? (dn_n - up_n) : n_max;
+                for (int unsigned off = 0; off < n_dump; off++) begin
+                    idx = up_n + off;
+                    `uvm_info("TB_INT_SB",
+                              $sformatf("%s %s ghost %s[%0d]=%s",
+                                        prefix, boundary, dn_name, idx,
+                                        obs_desc_at(dn_q, idx)),
+                              UVM_MEDIUM)
+                end
+            end
+        endfunction
+
+        function automatic void reconcile_ah0_boundary(
+            int unsigned lane,
+            output int unsigned matched,
+            output int unsigned missing,
+            output int unsigned ghost
+        );
+            hit_ah0_key_t kb;
+            bit           ok;
+
+            matched = 0;
+            missing = 0;
+            ghost   = 0;
+
+            if (stage_a_ah0_ledger[lane].first(kb)) begin
+                ok = 1'b1;
+                while (ok) begin
+                    int a_n, h0_n;
+                    a_n  = stage_a_ah0_ledger[lane][kb].size();
+                    h0_n = stage_h0_ah0_ledger[lane].exists(kb)
+                           ? stage_h0_ah0_ledger[lane][kb].size() : 0;
+                    if (a_n <= h0_n) matched += a_n;
+                    else begin
+                        matched += h0_n;
+                        missing += (a_n - h0_n);
+                    end
+                    ok = stage_a_ah0_ledger[lane].next(kb);
+                end
+            end
+
+            if (stage_h0_ah0_ledger[lane].first(kb)) begin
+                ok = 1'b1;
+                while (ok) begin
+                    int a_n, h0_n;
+                    h0_n = stage_h0_ah0_ledger[lane][kb].size();
+                    a_n  = stage_a_ah0_ledger[lane].exists(kb)
+                           ? stage_a_ah0_ledger[lane][kb].size() : 0;
+                    if (h0_n > a_n)
+                        ghost += (h0_n - a_n);
+                    ok = stage_h0_ah0_ledger[lane].next(kb);
+                end
+            end
+        endfunction
+
+        function automatic void reconcile_hit2_boundary(
+            ref obs_q_t up_ledger[hit_raw36_key_t],
+            ref obs_q_t dn_ledger[hit_raw36_key_t],
+            output int unsigned matched,
+            output int unsigned missing,
+            output int unsigned ghost
+        );
+            hit_raw36_key_t kb;
+            bit             ok;
+
+            matched = 0;
+            missing = 0;
+            ghost   = 0;
+
+            if (up_ledger.first(kb)) begin
+                ok = 1'b1;
+                while (ok) begin
+                    int up_n, dn_n;
+                    up_n = up_ledger[kb].size();
+                    dn_n = dn_ledger.exists(kb) ? dn_ledger[kb].size() : 0;
+                    if (up_n <= dn_n) matched += up_n;
+                    else begin
+                        matched += dn_n;
+                        missing += (up_n - dn_n);
+                    end
+                    ok = up_ledger.next(kb);
+                end
+            end
+
+            if (dn_ledger.first(kb)) begin
+                ok = 1'b1;
+                while (ok) begin
+                    int up_n, dn_n;
+                    dn_n = dn_ledger[kb].size();
+                    up_n = up_ledger.exists(kb) ? up_ledger[kb].size() : 0;
+                    if (dn_n > up_n)
+                        ghost += (dn_n - up_n);
+                    ok = dn_ledger.next(kb);
+                end
+            end
+        endfunction
+
+        function automatic void dump_ah0_bucket_if_residual(
+            input int unsigned lane,
+            input hit_ah0_key_t kb,
+            ref int unsigned dumped,
+            input int unsigned n_max
+        );
+            int    a_n, h0_n;
+            obs_q_t empty_q;
+
+            if (dumped >= n_max)
+                return;
+
+            a_n  = stage_a_ah0_ledger[lane].exists(kb) ? stage_a_ah0_ledger[lane][kb].size() : 0;
+            h0_n = stage_h0_ah0_ledger[lane].exists(kb) ? stage_h0_ah0_ledger[lane][kb].size() : 0;
+            if (a_n == h0_n)
+                return;
+
+            `uvm_info("TB_INT_SB",
+                      $sformatf("lane=%0d A->H0 exact ch=%0d tcc=0x%0h tfine=%0d ecc=0x%0h eflag=%0b A=%0d H0=%0d",
+                                lane, kb[40:36], kb[35:21], kb[20:16], kb[15:1], kb[0], a_n, h0_n),
+                      UVM_MEDIUM)
+            dump_boundary_candidates(
+                "A->H0(exact)",
+                $sformatf("lane=%0d ch=%0d tcc=0x%0h tfine=%0d ecc=0x%0h eflag=%0b",
+                          lane, kb[40:36], kb[35:21], kb[20:16], kb[15:1], kb[0]),
+                "A",
+                stage_a_ah0_ledger[lane].exists(kb) ? stage_a_ah0_ledger[lane][kb] : empty_q,
+                a_n,
+                "H0",
+                stage_h0_ah0_ledger[lane].exists(kb) ? stage_h0_ah0_ledger[lane][kb] : empty_q,
+                h0_n,
+                2
+            );
+            dumped++;
+        endfunction
+
+        function automatic void dump_ah0_residual_buckets(input int unsigned lane, input int unsigned n_max);
+            int unsigned dumped;
+            hit_ah0_key_t kb;
+            bit           ok;
+
+            dumped = 0;
+            if (stage_a_ah0_ledger[lane].first(kb)) begin
+                ok = 1'b1;
+                while (ok && dumped < n_max) begin
+                    dump_ah0_bucket_if_residual(lane, kb, dumped, n_max);
+                    ok = stage_a_ah0_ledger[lane].next(kb);
+                end
+            end
+            if (stage_h0_ah0_ledger[lane].first(kb)) begin
+                ok = 1'b1;
+                while (ok && dumped < n_max) begin
+                    dump_ah0_bucket_if_residual(lane, kb, dumped, n_max);
+                    ok = stage_h0_ah0_ledger[lane].next(kb);
+                end
+            end
+        endfunction
+
+        function automatic void dump_hit2_bucket_if_residual(
+            input string boundary,
+            input int unsigned lane,
+            ref obs_q_t up_ledger[hit_raw36_key_t],
+            input string up_name,
+            ref obs_q_t dn_ledger[hit_raw36_key_t],
+            input string dn_name,
+            input hit_raw36_key_t kb,
+            ref int unsigned dumped,
+            input int unsigned n_max
+        );
+            int       up_n, dn_n;
+            hit_key_t hk;
+            obs_q_t   empty_q;
+
+            if (dumped >= n_max)
+                return;
+
+            up_n = up_ledger.exists(kb) ? up_ledger[kb].size() : 0;
+            dn_n = dn_ledger.exists(kb) ? dn_ledger[kb].size() : 0;
+            if (up_n == dn_n)
+                return;
+
+            hk = extract_key_hit2(kb);
+            `uvm_info("TB_INT_SB",
+                      $sformatf("lane=%0d %s exact asic=%0d ch=%0d tfine=%0d raw=0x%09h %s=%0d %s=%0d",
+                                lane, boundary, extract_lane_hit2(kb), hk.channel, hk.t_fine, kb,
+                                up_name, up_n, dn_name, dn_n),
+                      UVM_MEDIUM)
+            dump_boundary_candidates(
+                {boundary, "(exact)"},
+                $sformatf("lane=%0d asic=%0d ch=%0d tfine=%0d raw=0x%09h",
+                          lane, extract_lane_hit2(kb), hk.channel, hk.t_fine, kb),
+                up_name,
+                up_ledger.exists(kb) ? up_ledger[kb] : empty_q,
+                up_n,
+                dn_name,
+                dn_ledger.exists(kb) ? dn_ledger[kb] : empty_q,
+                dn_n,
+                2
+            );
+            dumped++;
+        endfunction
+
+        function automatic void dump_hit2_residual_buckets(
+            input string boundary,
+            input int unsigned lane,
+            ref obs_q_t up_ledger[hit_raw36_key_t],
+            input string up_name,
+            ref obs_q_t dn_ledger[hit_raw36_key_t],
+            input string dn_name,
+            input int unsigned n_max
+        );
+            int unsigned   dumped;
+            hit_raw36_key_t kb;
+            bit            ok;
+
+            dumped = 0;
+            if (up_ledger.first(kb)) begin
+                ok = 1'b1;
+                while (ok && dumped < n_max) begin
+                    dump_hit2_bucket_if_residual(boundary, lane, up_ledger, up_name,
+                                                 dn_ledger, dn_name, kb, dumped, n_max);
+                    ok = up_ledger.next(kb);
+                end
+            end
+            if (dn_ledger.first(kb)) begin
+                ok = 1'b1;
+                while (ok && dumped < n_max) begin
+                    dump_hit2_bucket_if_residual(boundary, lane, up_ledger, up_name,
+                                                 dn_ledger, dn_name, kb, dumped, n_max);
+                    ok = dn_ledger.next(kb);
+                end
+            end
+        endfunction
+
+        virtual function void dump_stage_b_contract_context(int unsigned lane, int unsigned slot, string why);
+            if (lane >= 4 || slot >= 4 || b_contract_dumped[lane][slot])
+                return;
+            b_contract_dumped[lane][slot] = 1'b1;
+            `uvm_error("TB_INT_TRACE",
+                       $sformatf("first stage-B contract failure at lane=%0d slot=%0d: %s",
+                                 lane, slot, why))
+            dump_trace_queue($sformatf("recent Stage-B lane=%0d slot=%0d beats", lane, slot),
+                             b_history[lane][slot]);
+        endfunction
+
+        virtual function void dump_stage_framed_contract_context(
+            tb_int_trace_stage_e stage_id,
+            int unsigned lane,
+            string why
+        );
+            case (stage_id)
+                TRACE_STAGE_C: begin
+                    if (lane >= 4 || c_contract_dumped[lane])
+                        return;
+                    c_contract_dumped[lane] = 1'b1;
+                    `uvm_error("TB_INT_TRACE",
+                               $sformatf("first stage-C contract failure at lane=%0d: %s",
+                                         lane, why))
+                    dump_trace_queue($sformatf("recent Stage-C lane=%0d beats", lane), c_history[lane]);
+                    for (int slot = 0; slot < 4; slot++) begin
+                        dump_trace_queue($sformatf("recent Stage-B lane=%0d slot=%0d beats", lane, slot),
+                                         b_history[lane][slot]);
+                    end
+                end
+                TRACE_STAGE_D: begin
+                    if (lane >= 4 || d_contract_dumped[lane])
+                        return;
+                    d_contract_dumped[lane] = 1'b1;
+                    `uvm_error("TB_INT_TRACE",
+                               $sformatf("first stage-D contract failure at lane=%0d: %s",
+                                         lane, why))
+                    dump_trace_queue($sformatf("recent Stage-D lane=%0d beats", lane), d_history[lane]);
+                    dump_trace_queue($sformatf("recent Stage-C lane=%0d beats", lane), c_history[lane]);
+                end
+                default: begin
+                    if (e_contract_dumped)
+                        return;
+                    e_contract_dumped = 1'b1;
+                    `uvm_error("TB_INT_TRACE",
+                               $sformatf("first stage-E contract failure: %s", why))
+                    dump_trace_queue("recent Stage-E accepted beats", e_history);
+                    for (int ln = 0; ln < 4; ln++) begin
+                        dump_trace_queue($sformatf("recent Stage-D lane=%0d beats", ln), d_history[ln]);
+                    end
+                    if (lane < 4) begin
+                        dump_trace_queue($sformatf("recent Stage-C lane=%0d beats", lane), c_history[lane]);
+                        for (int slot = 0; slot < 4; slot++) begin
+                            dump_trace_queue($sformatf("recent Stage-B lane=%0d slot=%0d beats", lane, slot),
+                                             b_history[lane][slot]);
+                        end
+                    end
+                end
+            endcase
+        endfunction
+
+        // Stage A: a hit_generator committed a new raw 48-bit hit to its
+        // FIFO. Extract the identity tuple and push into the per-lane
+        // content ledger keyed on (channel, t_fine).
         virtual function void write_stage_a(tb_int_hit_event ev);
-            int unsigned lane_idx;
-            tb_int_hit_record rec;
-            rec = tb_int_hit_record::type_id::create("rec");
-            rec.hit_id = ev.hit_id;
-            rec.abs_ts = ev.abs_ts;
-            rec.origin.feb_id      = {6'b0, ev.feb_id};
-            rec.origin.datapath_id = {7'b0, ev.datapath_id};
-            rec.origin.mutrig_ch   = {5'b0, ev.mutrig_ch};
-            rec.payload    = ev.payload;
-            rec.stage_ts[0] = ev.abs_ts;
-            rec.stage_seen  = rec.stage_seen | 5'b0_0001;
-            hit_db[ev.hit_id] = rec;
+            int unsigned     lane_idx;
+            hit_key_t        k;
+            bit [9:0]        kb;
+            hit_ah0_key_t    ah0_kb;
+            tb_int_hit_obs   obs;
             n_stage_a++;
-            lane_idx = {ev.feb_id, ev.datapath_id};
-            if (lane_idx < 4) n_stage_a_per_lane[lane_idx]++;
+            lane_idx = {ev.feb_id[0], ev.datapath_id};
+            if (lane_idx >= 4) return;
+            n_stage_a_per_lane[lane_idx]++;
+            k      = extract_key_stage_a(ev.payload);
+            kb     = {k.channel, k.t_fine};
+            ah0_kb = extract_key_stage_a_h0(ev.payload);
+            obs = tb_int_hit_obs::type_id::create("a_obs");
+            obs.key            = k;
+            obs.lane_id        = lane_idx;
+            obs.abs_ts         = ev.abs_ts;
+            obs.hit_abs_ts     = '0;
+            obs.root_hit_id_valid = 1'b1;
+            obs.root_hit_id    = ev.hit_id;
+            obs.run_origin     = tb_int_run_window_db::is_stable_origin(ev.abs_ts);
+            obs.raw_payload_a  = ev.payload;
+            obs.seq_in_bucket  = stage_a_ledger[lane_idx].exists(kb)
+                                 ? stage_a_ledger[lane_idx][kb].size() : 0;
+            stage_a_ledger[lane_idx][kb].push_back(obs);
+            stage_a_ah0_ledger[lane_idx][ah0_kb].push_back(obs);
+            record_run_origin(stage_a_run_root_obs[lane_idx], obs);
         endfunction
 
-        // Stage D analysis write: one beat on a single OPQ ingress lane.
-        // Phase 2 walking-skeleton: count beats and frame heads (sop) per
-        // lane. The {hit, subheader, header, debug-header, trailer} tag
-        // classification is non-trivial because feb_frame_assembly leaves
-        // [35:32] inheriting prior values across the 5-cycle SOF state,
-        // so a flat data[35:32] decode is not a reliable hit predicate.
-        // Phase 3 will add a stateful per-lane frame parser.
-        virtual function void write_stage_d(tb_int_ingress_event ev);
-            n_stage_d_beats++;
-            if (ev.lane_id < 4) begin
-                n_stage_d_beats_per_lane[ev.lane_id]++;
-                d_parser[ev.lane_id].step(ev.sop, ev.eop, ev.data);
+        // Stage H0: one frame_rcv hit_type0 beat before mts. Every valid beat
+        // is one hit; SOP/EOP delimit the parent MuTRiG frame.
+        virtual function void write_stage_h0(tb_int_hit0_event ev);
+            hit_key_t        k;
+            bit [9:0]        kb;
+            hit_ah0_key_t    ah0_kb;
+            tb_int_hit_obs   obs;
+            int unsigned     beat_lane;
+            int unsigned     match_seq;
+
+            n_stage_h0_beats++;
+            if (ev.lane_id >= 4)
+                return;
+            if (ev.sop)
+                n_stage_h0_frames++;
+            n_stage_h0_beats_per_lane[ev.lane_id]++;
+            if (ev.sop)
+                n_stage_h0_frames_per_lane[ev.lane_id]++;
+
+            void'(h0_parser[ev.lane_id].step(ev.sop, ev.eop));
+
+            k      = extract_key_hit0(ev.data);
+            kb     = {k.channel, k.t_fine};
+            ah0_kb = extract_key_hit0_ah0(ev.data);
+            obs = tb_int_hit_obs::type_id::create("h0_obs");
+            obs.key            = k;
+            obs.lane_id        = ev.lane_id;
+            obs.abs_ts         = ev.abs_ts;
+            obs.hit_abs_ts     = '0;
+            obs.raw_data       = ev.data[35:0];
+            beat_lane = extract_lane_hit0(ev.data);
+            if (beat_lane != ev.lane_id) begin
+                `uvm_info("TB_INT_SB",
+                          $sformatf("stage_h0 lane=%0d beat asic=%0d mismatch at ch=%0d tfine=%0d",
+                                    ev.lane_id, beat_lane, k.channel, k.t_fine),
+                          UVM_HIGH)
             end
+            obs.seq_in_bucket  = stage_h0_ledger[ev.lane_id].exists(kb)
+                                 ? stage_h0_ledger[ev.lane_id][kb].size() : 0;
+            match_seq          = stage_h0_ah0_ledger[ev.lane_id].exists(ah0_kb)
+                                 ? stage_h0_ah0_ledger[ev.lane_id][ah0_kb].size() : 0;
+            if (stage_a_ah0_ledger[ev.lane_id].exists(ah0_kb) &&
+                stage_a_ah0_ledger[ev.lane_id][ah0_kb].size() > match_seq)
+                copy_root_hit_id(obs, stage_a_ah0_ledger[ev.lane_id][ah0_kb][match_seq]);
+            stage_h0_ledger[ev.lane_id][kb].push_back(obs);
+            stage_h0_ah0_ledger[ev.lane_id][ah0_kb].push_back(obs);
+            record_run_origin(stage_h0_run_root_obs[ev.lane_id], obs);
+        endfunction
+
+        // Stage H1: one accepted mts hit_type1 beat before the rb_cam fanout.
+        // The mts sideband channel carries the downstream interleaving slot,
+        // while the true datapath lane still comes from the asic field in the
+        // data payload.
+        virtual function void write_stage_h1(tb_int_hit1_event ev);
+            hit_key_t       k;
+            bit [9:0]       kb;
+            tb_int_hit_obs  obs;
+            tb_int_hit_obs  eligible_obs;
+            int unsigned    beat_lane;
+            int unsigned    slot_id;
+
+            n_stage_h1_beats++;
+            if (ev.lane_id >= 4)
+                return;
+            n_stage_h1_beats_per_lane[ev.lane_id]++;
+            slot_id = int'(ev.channel[1:0]);
+            if (slot_id < 4)
+                n_stage_h1_beats_per_slot[ev.lane_id][slot_id]++;
+            if (ev.error) begin
+                n_stage_h1_error_per_lane[ev.lane_id]++;
+                if (slot_id < 4)
+                    n_stage_h1_error_per_slot[ev.lane_id][slot_id]++;
+            end
+
+            k  = extract_key_hit1(ev.data);
+            kb = {k.channel, k.t_fine};
+            obs = tb_int_hit_obs::type_id::create("h1_obs");
+            obs.key            = k;
+            obs.lane_id        = ev.lane_id;
+            obs.abs_ts         = ev.abs_ts;
+            obs.hit_abs_ts     = '0;
+            obs.raw_data       = ev.data[35:0];
+            beat_lane = extract_lane_hit1(ev.data);
+            if (beat_lane != ev.lane_id) begin
+                `uvm_info("TB_INT_SB",
+                          $sformatf("stage_h1 lane=%0d beat asic=%0d mismatch at ch=%0d tfine=%0d",
+                                    ev.lane_id, beat_lane, k.channel, k.t_fine),
+                          UVM_HIGH)
+            end
+            obs.seq_in_bucket  = stage_h1_ledger[ev.lane_id].exists(kb)
+                                 ? stage_h1_ledger[ev.lane_id][kb].size() : 0;
+            if (stage_h0_ledger[ev.lane_id].exists(kb) &&
+                stage_h0_ledger[ev.lane_id][kb].size() > obs.seq_in_bucket)
+                copy_root_hit_id(obs, stage_h0_ledger[ev.lane_id][kb][obs.seq_in_bucket]);
+            stage_h1_ledger[ev.lane_id][kb].push_back(obs);
+            if (slot_id < 4)
+                stage_h1_slot_ledger[ev.lane_id][slot_id][kb].push_back(obs);
+            record_run_origin(stage_h1_run_root_obs[ev.lane_id], obs);
+
+            if (rbcam_filter_inerr_enabled && ev.error)
+                return;
+
+            eligible_obs = tb_int_hit_obs::type_id::create("h1_eligible_obs");
+            eligible_obs.key           = k;
+            eligible_obs.lane_id       = ev.lane_id;
+            eligible_obs.abs_ts        = ev.abs_ts;
+            eligible_obs.hit_abs_ts    = '0;
+            eligible_obs.raw_data      = ev.data[35:0];
+            eligible_obs.seq_in_bucket = stage_h1_eligible_ledger[ev.lane_id].exists(kb)
+                                         ? stage_h1_eligible_ledger[ev.lane_id][kb].size() : 0;
+            copy_root_hit_id(eligible_obs, obs);
+            stage_h1_eligible_ledger[ev.lane_id][kb].push_back(eligible_obs);
+            if (slot_id < 4)
+                stage_h1_eligible_slot_ledger[ev.lane_id][slot_id][kb].push_back(eligible_obs);
+            record_run_origin(stage_h1e_run_root_obs[ev.lane_id], eligible_obs);
+        endfunction
+
+        // Stage B: one accepted hit_type2 beat from one rb_cam slot. The
+        // parser enforces the subheader-packet contract and only hit-body
+        // beats enter the per-lane ledger.
+        virtual function void write_stage_b(tb_int_hit2_event ev);
+            int unsigned       prev_err;
+            bit                is_hit;
+            hit_key_t          k;
+            bit [9:0]          kb;
+            hit_raw36_key_t    raw_k;
+            tb_int_hit_obs     obs;
+            int unsigned       beat_lane;
+            tb_int_beat_trace  tr;
+
+            n_stage_b_beats++;
+            if (ev.sop) n_stage_b_packets++;
+            if (ev.lane_id >= 4 || ev.slot_id >= 4) return;
+            n_stage_b_beats_per_lane[ev.lane_id]++;
+            n_stage_b_beats_per_slot[ev.lane_id][ev.slot_id]++;
             if (ev.sop) begin
-                n_stage_d_frames++;
-                if (ev.lane_id < 4) n_stage_d_frames_per_lane[ev.lane_id]++;
+                n_stage_b_packets_per_lane[ev.lane_id]++;
+                n_stage_b_packets_per_slot[ev.lane_id][ev.slot_id]++;
             end
+
+            tr = tb_int_beat_trace::type_id::create("b_trace");
+            tr.stage_id = TRACE_STAGE_B;
+            tr.lane_id  = ev.lane_id;
+            tr.slot_id  = ev.slot_id;
+            tr.abs_ts   = ev.abs_ts;
+            tr.data     = ev.data;
+            tr.channel  = ev.channel;
+            tr.sop      = ev.sop;
+            tr.eop      = ev.eop;
+            tr.ready    = 1'b1;
+            push_trace(b_history[ev.lane_id][ev.slot_id], tr);
+
+            prev_err = b_parser[ev.lane_id][ev.slot_id].n_contract_err;
+            is_hit   = b_parser[ev.lane_id][ev.slot_id].step(ev.data, ev.sop, ev.eop);
+            if (b_parser[ev.lane_id][ev.slot_id].n_contract_err != prev_err) begin
+                dump_stage_b_contract_context(
+                    ev.lane_id,
+                    ev.slot_id,
+                    $sformatf("data=0x%09h sop=%0b eop=%0b", ev.data, ev.sop, ev.eop)
+                );
+            end
+            if (!is_hit) return;
+
+            k     = extract_key_hit2(ev.data);
+            kb    = {k.channel, k.t_fine};
+            raw_k = extract_key_hit2_exact(ev.data);
+            obs = tb_int_hit_obs::type_id::create("b_obs");
+            obs.key            = k;
+            obs.lane_id        = ev.lane_id;
+            obs.abs_ts         = ev.abs_ts;
+            obs.hit_abs_ts     = b_parser[ev.lane_id][ev.slot_id].last_hit_abs_ts;
+            obs.raw_data       = ev.data;
+            beat_lane = extract_lane_hit2(ev.data);
+            if (beat_lane != ev.lane_id) begin
+                `uvm_info("TB_INT_SB",
+                          $sformatf("stage_b lane=%0d slot=%0d beat asic=%0d mismatch at ch=%0d tfine=%0d",
+                                    ev.lane_id, ev.slot_id, beat_lane, k.channel, k.t_fine),
+                          UVM_HIGH)
+            end
+            obs.seq_in_bucket  = stage_b_ledger[ev.lane_id].exists(kb)
+                                 ? stage_b_ledger[ev.lane_id][kb].size() : 0;
+            if (stage_h1_eligible_ledger[ev.lane_id].exists(kb) &&
+                stage_h1_eligible_ledger[ev.lane_id][kb].size() > obs.seq_in_bucket)
+                copy_root_hit_id(obs, stage_h1_eligible_ledger[ev.lane_id][kb][obs.seq_in_bucket]);
+            stage_b_ledger[ev.lane_id][kb].push_back(obs);
+            stage_b_slot_ledger[ev.lane_id][ev.slot_id][kb].push_back(obs);
+            stage_b_exact_ledger[ev.lane_id][raw_k].push_back(obs);
+            record_run_origin(stage_b_run_root_obs[ev.lane_id], obs);
         endfunction
 
-        // Stage E analysis write: one accepted beat on the OPQ egress
-        // AvST. Same Phase-2 simplification as stage D: count beats and
-        // frame heads (sop). The hit-extracting decoder is Phase 3.
+        // Stage C: one framed beat on a pre-gate FEB tx lane. The shared
+        // parser extracts only hit-body words into the content ledger.
+        virtual function void write_stage_c(tb_int_ingress_event ev);
+            int unsigned      prev_err;
+            bit               is_hit;
+            hit_key_t         k;
+            bit [9:0]         kb;
+            hit_raw36_key_t   raw_k;
+            tb_int_hit_obs    obs;
+            int unsigned      beat_lane;
+            int unsigned      match_seq;
+            tb_int_beat_trace tr;
+
+            n_stage_c_beats++;
+            if (ev.sop) n_stage_c_frames++;
+            if (ev.lane_id >= 4) return;
+            n_stage_c_beats_per_lane[ev.lane_id]++;
+            if (ev.sop) n_stage_c_frames_per_lane[ev.lane_id]++;
+
+            tr = tb_int_beat_trace::type_id::create("c_trace");
+            tr.stage_id = TRACE_STAGE_C;
+            tr.lane_id  = ev.lane_id;
+            tr.slot_id  = '1;
+            tr.abs_ts   = ev.abs_ts;
+            tr.data     = ev.data;
+            tr.channel  = {2'b00, ev.channel};
+            tr.sop      = ev.sop;
+            tr.eop      = ev.eop;
+            tr.ready    = 1'b1;
+            push_trace(c_history[ev.lane_id], tr);
+
+            prev_err = c_parser[ev.lane_id].n_contract_err;
+            is_hit   = c_parser[ev.lane_id].step(ev.data);
+            if (c_parser[ev.lane_id].n_contract_err != prev_err) begin
+                dump_stage_framed_contract_context(
+                    TRACE_STAGE_C,
+                    ev.lane_id,
+                    $sformatf("data=0x%09h sop=%0b eop=%0b", ev.data, ev.sop, ev.eop)
+                );
+            end
+            if (!is_hit) return;
+
+            k     = extract_key_hit2(ev.data);
+            kb    = {k.channel, k.t_fine};
+            raw_k = extract_key_hit2_exact(ev.data);
+            obs = tb_int_hit_obs::type_id::create("c_obs");
+            obs.key            = k;
+            obs.lane_id        = ev.lane_id;
+            obs.abs_ts         = ev.abs_ts;
+            obs.hit_abs_ts     = c_parser[ev.lane_id].last_hit_abs_ts;
+            obs.raw_data       = ev.data;
+            beat_lane = extract_lane_hit2(ev.data);
+            if (beat_lane != ev.lane_id) begin
+                `uvm_info("TB_INT_SB",
+                          $sformatf("stage_c lane=%0d beat asic=%0d mismatch at ch=%0d tfine=%0d",
+                                    ev.lane_id, beat_lane, k.channel, k.t_fine),
+                          UVM_HIGH)
+            end
+            obs.seq_in_bucket  = stage_c_ledger[ev.lane_id].exists(kb)
+                                 ? stage_c_ledger[ev.lane_id][kb].size() : 0;
+            match_seq          = stage_c_exact_ledger[ev.lane_id].exists(raw_k)
+                                 ? stage_c_exact_ledger[ev.lane_id][raw_k].size() : 0;
+            if (stage_b_exact_ledger[ev.lane_id].exists(raw_k) &&
+                stage_b_exact_ledger[ev.lane_id][raw_k].size() > match_seq)
+                copy_root_hit_id(obs, stage_b_exact_ledger[ev.lane_id][raw_k][match_seq]);
+            else if (stage_b_ledger[ev.lane_id].exists(kb) &&
+                     stage_b_ledger[ev.lane_id][kb].size() > obs.seq_in_bucket)
+                copy_root_hit_id(obs, stage_b_ledger[ev.lane_id][kb][obs.seq_in_bucket]);
+            stage_c_ledger[ev.lane_id][kb].push_back(obs);
+            stage_c_exact_ledger[ev.lane_id][raw_k].push_back(obs);
+            record_run_origin(stage_c_run_root_obs[ev.lane_id], obs);
+        endfunction
+
+        // Stage D: one beat on a single OPQ ingress lane. The frame parser
+        // tells us whether this beat is a 36-bit hit-body word; only those
+        // enter the ledger. Framing beats still update the parser counters.
+        virtual function void write_stage_d(tb_int_ingress_event ev);
+            int unsigned      prev_err;
+            bit               is_hit;
+            hit_key_t         k;
+            bit [9:0]         kb;
+            hit_raw36_key_t   raw_k;
+            tb_int_hit_obs    obs;
+            int unsigned      beat_lane;
+            int unsigned      match_seq;
+            tb_int_beat_trace tr;
+
+            n_stage_d_beats++;
+            if (ev.sop) n_stage_d_frames++;
+            if (ev.lane_id >= 4) return;
+            n_stage_d_beats_per_lane[ev.lane_id]++;
+            if (ev.sop) n_stage_d_frames_per_lane[ev.lane_id]++;
+
+            tr = tb_int_beat_trace::type_id::create("d_trace");
+            tr.stage_id = TRACE_STAGE_D;
+            tr.lane_id  = ev.lane_id;
+            tr.slot_id  = '1;
+            tr.abs_ts   = ev.abs_ts;
+            tr.data     = ev.data;
+            tr.channel  = {2'b00, ev.channel};
+            tr.sop      = ev.sop;
+            tr.eop      = ev.eop;
+            tr.ready    = 1'b1;
+            push_trace(d_history[ev.lane_id], tr);
+
+            prev_err = d_parser[ev.lane_id].n_contract_err;
+            is_hit   = d_parser[ev.lane_id].step(ev.data);
+            if (d_parser[ev.lane_id].n_contract_err != prev_err) begin
+                dump_stage_framed_contract_context(
+                    TRACE_STAGE_D,
+                    ev.lane_id,
+                    $sformatf("data=0x%09h sop=%0b eop=%0b", ev.data, ev.sop, ev.eop)
+                );
+            end
+            if (!is_hit) return;
+
+            k     = extract_key_hit2(ev.data);
+            kb    = {k.channel, k.t_fine};
+            raw_k = extract_key_hit2_exact(ev.data);
+            obs = tb_int_hit_obs::type_id::create("d_obs");
+            obs.key            = k;
+            obs.lane_id        = ev.lane_id;
+            obs.abs_ts         = ev.abs_ts;
+            obs.hit_abs_ts     = d_parser[ev.lane_id].last_hit_abs_ts;
+            obs.raw_data       = ev.data;
+            beat_lane = extract_lane_hit2(ev.data);
+            if (beat_lane != ev.lane_id) begin
+                `uvm_info("TB_INT_SB",
+                          $sformatf("stage_d lane=%0d beat asic=%0d mismatch at ch=%0d tfine=%0d",
+                                    ev.lane_id, beat_lane, k.channel, k.t_fine),
+                          UVM_HIGH)
+            end
+            obs.seq_in_bucket  = stage_d_ledger[ev.lane_id].exists(kb)
+                                 ? stage_d_ledger[ev.lane_id][kb].size() : 0;
+            match_seq          = stage_d_exact_ledger[ev.lane_id].exists(raw_k)
+                                 ? stage_d_exact_ledger[ev.lane_id][raw_k].size() : 0;
+            if (stage_c_exact_ledger[ev.lane_id].exists(raw_k) &&
+                stage_c_exact_ledger[ev.lane_id][raw_k].size() > match_seq)
+                copy_root_hit_id(obs, stage_c_exact_ledger[ev.lane_id][raw_k][match_seq]);
+            else if (stage_c_ledger[ev.lane_id].exists(kb) &&
+                     stage_c_ledger[ev.lane_id][kb].size() > obs.seq_in_bucket)
+                copy_root_hit_id(obs, stage_c_ledger[ev.lane_id][kb][obs.seq_in_bucket]);
+            stage_d_ledger[ev.lane_id][kb].push_back(obs);
+            stage_d_exact_ledger[ev.lane_id][raw_k].push_back(obs);
+            record_run_origin(stage_d_run_root_obs[ev.lane_id], obs);
+        endfunction
+
+        // Stage E: one accepted beat on the OPQ egress AvST. Aggregates
+        // all 4 lanes onto a single stream, so we recover the source lane
+        // from the hit-body asic field ([25:22]).
         virtual function void write_stage_e(tb_int_egress_event ev);
+            int unsigned      prev_err;
+            bit               is_hit;
+            hit_key_t         k;
+            bit [9:0]         kb;
+            hit_raw36_key_t   raw_k;
+            int unsigned      lane;
+            int unsigned      match_seq;
+            tb_int_hit_obs    obs;
+            tb_int_beat_trace tr;
+            int unsigned      hint_lane;
+
             n_stage_e_beats++;
             if (ev.sop) n_stage_e_frames++;
-            e_parser.step(ev.sop, ev.eop, ev.data);
+
+            tr = tb_int_beat_trace::type_id::create("e_trace");
+            tr.stage_id = TRACE_STAGE_E;
+            tr.lane_id  = '1;
+            tr.slot_id  = '1;
+            tr.abs_ts   = ev.abs_ts;
+            tr.data     = ev.data;
+            tr.channel  = '0;
+            tr.sop      = ev.sop;
+            tr.eop      = ev.eop;
+            tr.ready    = 1'b1;
+            push_trace(e_history, tr);
+
+            prev_err = e_parser.n_contract_err;
+            is_hit   = e_parser.step(ev.data, ev.sop, ev.eop);
+            if (ev.data[35:32] == 4'b0000)
+                hint_lane = extract_lane_hit2(ev.data);
+            else
+                hint_lane = 32'hffff_ffff;
+            if (e_parser.n_contract_err != prev_err) begin
+                dump_stage_framed_contract_context(
+                    TRACE_STAGE_E,
+                    hint_lane,
+                    $sformatf("data=0x%09h sop=%0b eop=%0b", ev.data, ev.sop, ev.eop)
+                );
+            end
+            if (!is_hit) return;
+
+            k     = extract_key_hit2(ev.data);
+            lane  = extract_lane_hit2(ev.data);
+            if (lane >= 4) begin
+                n_stage_e_lane_unknown++;
+                return;
+            end
+            kb    = {k.channel, k.t_fine};
+            raw_k = extract_key_hit2_exact(ev.data);
+            obs = tb_int_hit_obs::type_id::create("e_obs");
+            obs.key            = k;
+            obs.lane_id        = lane;
+            obs.abs_ts         = ev.abs_ts;
+            obs.hit_abs_ts     = e_parser.last_hit_abs_ts;
+            obs.raw_data       = ev.data;
+            obs.seq_in_bucket  = stage_e_ledger[lane].exists(kb)
+                                 ? stage_e_ledger[lane][kb].size() : 0;
+            match_seq          = stage_e_exact_ledger[lane].exists(raw_k)
+                                 ? stage_e_exact_ledger[lane][raw_k].size() : 0;
+            if (stage_d_exact_ledger[lane].exists(raw_k) &&
+                stage_d_exact_ledger[lane][raw_k].size() > match_seq)
+                copy_root_hit_id(obs, stage_d_exact_ledger[lane][raw_k][match_seq]);
+            else if (stage_d_ledger[lane].exists(kb) &&
+                     stage_d_ledger[lane][kb].size() > obs.seq_in_bucket)
+                copy_root_hit_id(obs, stage_d_ledger[lane][kb][obs.seq_in_bucket]);
+            stage_e_ledger[lane][kb].push_back(obs);
+            stage_e_exact_ledger[lane][raw_k].push_back(obs);
+            record_run_origin(stage_e_run_root_obs[lane], obs);
+        endfunction
+
+        // Reconcile stage pairs per lane using FIFO counts in each
+        // (channel, t_fine) bucket. This exposes the first failing boundary
+        // directly: A->H0, H0->H1, H1->B, B->C, C->D, D->E.
+        virtual function void reconcile();
+            for (int ln = 0; ln < 4; ln++) begin
+                int unsigned a_total, h0_total, h1_total, h1_eligible_total;
+                int unsigned b_total, c_total, d_total, e_total;
+                int unsigned matched_ah0, missing_h0, ghost_h0;
+                int unsigned matched_h0h1, missing_h1, ghost_h1;
+                int unsigned matched_h1b, missing_b, ghost_b;
+                int unsigned matched_h1b_eligible, missing_b_eligible, ghost_b_eligible;
+                int unsigned matched_bc, missing_c, ghost_c;
+                int unsigned matched_cd, missing_d, ghost_d;
+                int unsigned matched_de, missing_e, ghost_e;
+                bit [9:0] kb;
+                bit       ok;
+
+                a_total = 0; h0_total = 0; h1_total = 0; h1_eligible_total = 0;
+                b_total = 0; c_total = 0; d_total = 0; e_total = 0;
+                matched_ah0 = 0; missing_h0 = 0; ghost_h0 = 0;
+                matched_h0h1 = 0; missing_h1 = 0; ghost_h1 = 0;
+                matched_h1b = 0; missing_b = 0; ghost_b = 0;
+                matched_h1b_eligible = 0; missing_b_eligible = 0; ghost_b_eligible = 0;
+                matched_bc = 0; missing_c = 0; ghost_c = 0;
+                matched_cd = 0; missing_d = 0; ghost_d = 0;
+                matched_de = 0; missing_e = 0; ghost_e = 0;
+
+                if (stage_a_ledger[ln].first(kb)) begin
+                    ok = 1'b1;
+                    while (ok) begin
+                        int a_n, h0_n;
+                        a_n = stage_a_ledger[ln][kb].size();
+                        h0_n = stage_h0_ledger[ln].exists(kb)
+                               ? stage_h0_ledger[ln][kb].size() : 0;
+                        a_total += a_n;
+                        if (a_n <= h0_n) matched_ah0 += a_n;
+                        else begin
+                            matched_ah0 += h0_n;
+                            missing_h0 += (a_n - h0_n);
+                        end
+                        ok = stage_a_ledger[ln].next(kb);
+                    end
+                end
+
+                if (stage_h0_ledger[ln].first(kb)) begin
+                    ok = 1'b1;
+                    while (ok) begin
+                        int a_n, h0_n, h1_n;
+                        h0_n = stage_h0_ledger[ln][kb].size();
+                        a_n = stage_a_ledger[ln].exists(kb)
+                              ? stage_a_ledger[ln][kb].size() : 0;
+                        h1_n = stage_h1_ledger[ln].exists(kb)
+                               ? stage_h1_ledger[ln][kb].size() : 0;
+                        h0_total += h0_n;
+                        if (h0_n > a_n) ghost_h0 += (h0_n - a_n);
+                        if (h0_n <= h1_n) matched_h0h1 += h0_n;
+                        else begin
+                            matched_h0h1 += h1_n;
+                            missing_h1 += (h0_n - h1_n);
+                        end
+                        ok = stage_h0_ledger[ln].next(kb);
+                    end
+                end
+
+                if (stage_h1_ledger[ln].first(kb)) begin
+                    ok = 1'b1;
+                    while (ok) begin
+                        int h0_n, h1_n, b_n;
+                        h1_n = stage_h1_ledger[ln][kb].size();
+                        h0_n = stage_h0_ledger[ln].exists(kb)
+                               ? stage_h0_ledger[ln][kb].size() : 0;
+                        b_n = stage_b_ledger[ln].exists(kb)
+                              ? stage_b_ledger[ln][kb].size() : 0;
+                        h1_total += h1_n;
+                        if (h1_n > h0_n) ghost_h1 += (h1_n - h0_n);
+                        if (h1_n <= b_n) matched_h1b += h1_n;
+                        else begin
+                            matched_h1b += b_n;
+                            missing_b += (h1_n - b_n);
+                        end
+                        ok = stage_h1_ledger[ln].next(kb);
+                    end
+                end
+
+                if (stage_h1_eligible_ledger[ln].first(kb)) begin
+                    ok = 1'b1;
+                    while (ok) begin
+                        int h1_n, b_n;
+                        h1_n = stage_h1_eligible_ledger[ln][kb].size();
+                        b_n = stage_b_ledger[ln].exists(kb)
+                              ? stage_b_ledger[ln][kb].size() : 0;
+                        h1_eligible_total += h1_n;
+                        if (h1_n <= b_n) matched_h1b_eligible += h1_n;
+                        else begin
+                            matched_h1b_eligible += b_n;
+                            missing_b_eligible += (h1_n - b_n);
+                        end
+                        ok = stage_h1_eligible_ledger[ln].next(kb);
+                    end
+                end
+
+                if (stage_b_ledger[ln].first(kb)) begin
+                    ok = 1'b1;
+                    while (ok) begin
+                        int h1_n, h1e_n, b_n, c_n;
+                        b_n = stage_b_ledger[ln][kb].size();
+                        h1_n = stage_h1_ledger[ln].exists(kb)
+                               ? stage_h1_ledger[ln][kb].size() : 0;
+                        h1e_n = stage_h1_eligible_ledger[ln].exists(kb)
+                                ? stage_h1_eligible_ledger[ln][kb].size() : 0;
+                        c_n = stage_c_ledger[ln].exists(kb)
+                              ? stage_c_ledger[ln][kb].size() : 0;
+                        b_total += b_n;
+                        if (b_n > h1_n) ghost_b += (b_n - h1_n);
+                        if (b_n > h1e_n) ghost_b_eligible += (b_n - h1e_n);
+                        if (b_n <= c_n) matched_bc += b_n;
+                        else begin
+                            matched_bc += c_n;
+                            missing_c += (b_n - c_n);
+                        end
+                        ok = stage_b_ledger[ln].next(kb);
+                    end
+                end
+
+                if (stage_c_ledger[ln].first(kb)) begin
+                    ok = 1'b1;
+                    while (ok) begin
+                        int b_n, c_n, d_n;
+                        c_n = stage_c_ledger[ln][kb].size();
+                        b_n = stage_b_ledger[ln].exists(kb)
+                              ? stage_b_ledger[ln][kb].size() : 0;
+                        d_n = stage_d_ledger[ln].exists(kb)
+                              ? stage_d_ledger[ln][kb].size() : 0;
+                        c_total += c_n;
+                        if (c_n > b_n) ghost_c += (c_n - b_n);
+                        if (c_n <= d_n) matched_cd += c_n;
+                        else begin
+                            matched_cd += d_n;
+                            missing_d += (c_n - d_n);
+                        end
+                        ok = stage_c_ledger[ln].next(kb);
+                    end
+                end
+
+                if (stage_d_ledger[ln].first(kb)) begin
+                    ok = 1'b1;
+                    while (ok) begin
+                        int c_n, d_n, e_n;
+                        d_n = stage_d_ledger[ln][kb].size();
+                        c_n = stage_c_ledger[ln].exists(kb)
+                              ? stage_c_ledger[ln][kb].size() : 0;
+                        e_n = stage_e_ledger[ln].exists(kb)
+                              ? stage_e_ledger[ln][kb].size() : 0;
+                        d_total += d_n;
+                        if (d_n > c_n) ghost_d += (d_n - c_n);
+                        if (d_n <= e_n) matched_de += d_n;
+                        else begin
+                            matched_de += e_n;
+                            missing_e += (d_n - e_n);
+                        end
+                        ok = stage_d_ledger[ln].next(kb);
+                    end
+                end
+
+                if (stage_e_ledger[ln].first(kb)) begin
+                    ok = 1'b1;
+                    while (ok) begin
+                        int d_n, e_n;
+                        e_n = stage_e_ledger[ln][kb].size();
+                        d_n = stage_d_ledger[ln].exists(kb)
+                              ? stage_d_ledger[ln][kb].size() : 0;
+                        e_total += e_n;
+                        if (e_n > d_n) ghost_e += (e_n - d_n);
+                        ok = stage_e_ledger[ln].next(kb);
+                    end
+                end
+
+                reconcile_ah0_boundary(ln, matched_ah0, missing_h0, ghost_h0);
+                reconcile_hit2_boundary(stage_b_exact_ledger[ln], stage_c_exact_ledger[ln],
+                                        matched_bc, missing_c, ghost_c);
+                reconcile_hit2_boundary(stage_c_exact_ledger[ln], stage_d_exact_ledger[ln],
+                                        matched_cd, missing_d, ghost_d);
+                reconcile_hit2_boundary(stage_d_exact_ledger[ln], stage_e_exact_ledger[ln],
+                                        matched_de, missing_e, ghost_e);
+
+                rec_a_total_per_lane[ln]    = a_total;
+                rec_h0_total_per_lane[ln]   = h0_total;
+                rec_h1_total_per_lane[ln]   = h1_total;
+                rec_h1_eligible_total_per_lane[ln] = h1_eligible_total;
+                rec_h1_filtered_per_lane[ln] = h1_total - h1_eligible_total;
+                rec_b_total_per_lane[ln]    = b_total;
+                rec_c_total_per_lane[ln]    = c_total;
+                rec_d_total_per_lane[ln]    = d_total;
+                rec_e_total_per_lane[ln]    = e_total;
+                rec_matched_ah0_per_lane[ln] = matched_ah0;
+                rec_missing_h0_per_lane[ln]  = missing_h0;
+                rec_ghost_h0_per_lane[ln]    = ghost_h0;
+                rec_matched_ah1_per_lane[ln] = matched_h0h1;
+                rec_missing_h1_per_lane[ln]  = missing_h1;
+                rec_ghost_h1_per_lane[ln]    = ghost_h1;
+                rec_matched_ab_per_lane[ln] = matched_h1b;
+                rec_missing_b_per_lane[ln]  = missing_b;
+                rec_ghost_b_per_lane[ln]    = ghost_b;
+                rec_matched_ab_eligible_per_lane[ln] = matched_h1b_eligible;
+                rec_missing_b_eligible_per_lane[ln]  = missing_b_eligible;
+                rec_ghost_b_eligible_per_lane[ln]    = ghost_b_eligible;
+                rec_matched_bc_per_lane[ln] = matched_bc;
+                rec_missing_c_per_lane[ln]  = missing_c;
+                rec_ghost_c_per_lane[ln]    = ghost_c;
+                rec_matched_cd_per_lane[ln] = matched_cd;
+                rec_missing_d_per_lane[ln]  = missing_d;
+                rec_ghost_d_per_lane[ln]    = ghost_d;
+                rec_matched_de_per_lane[ln] = matched_de;
+                rec_missing_e_per_lane[ln]  = missing_e;
+                rec_ghost_e_per_lane[ln]    = ghost_e;
+
+                for (int slot = 0; slot < 4; slot++) begin
+                    int unsigned h1_slot_total, h1_eligible_slot_total, b_slot_total;
+                    int unsigned h1_filtered_slot_total;
+                    int unsigned matched_h1b_slot, missing_b_slot, ghost_b_slot;
+                    int unsigned matched_h1b_eligible_slot, missing_b_eligible_slot, ghost_b_eligible_slot;
+
+                    h1_slot_total             = 0;
+                    h1_eligible_slot_total    = 0;
+                    h1_filtered_slot_total    = 0;
+                    b_slot_total              = 0;
+                    matched_h1b_slot          = 0;
+                    missing_b_slot            = 0;
+                    ghost_b_slot              = 0;
+                    matched_h1b_eligible_slot = 0;
+                    missing_b_eligible_slot   = 0;
+                    ghost_b_eligible_slot     = 0;
+
+                    if (stage_h1_slot_ledger[ln][slot].first(kb)) begin
+                        ok = 1'b1;
+                        while (ok) begin
+                            int h1_n, b_n;
+                            h1_n = stage_h1_slot_ledger[ln][slot][kb].size();
+                            b_n = stage_b_slot_ledger[ln][slot].exists(kb)
+                                  ? stage_b_slot_ledger[ln][slot][kb].size() : 0;
+                            h1_slot_total += h1_n;
+                            if (h1_n <= b_n) matched_h1b_slot += h1_n;
+                            else begin
+                                matched_h1b_slot += b_n;
+                                missing_b_slot += (h1_n - b_n);
+                            end
+                            ok = stage_h1_slot_ledger[ln][slot].next(kb);
+                        end
+                    end
+
+                    if (stage_h1_eligible_slot_ledger[ln][slot].first(kb)) begin
+                        ok = 1'b1;
+                        while (ok) begin
+                            int h1_n, b_n;
+                            h1_n = stage_h1_eligible_slot_ledger[ln][slot][kb].size();
+                            b_n = stage_b_slot_ledger[ln][slot].exists(kb)
+                                  ? stage_b_slot_ledger[ln][slot][kb].size() : 0;
+                            h1_eligible_slot_total += h1_n;
+                            if (h1_n <= b_n) matched_h1b_eligible_slot += h1_n;
+                            else begin
+                                matched_h1b_eligible_slot += b_n;
+                                missing_b_eligible_slot += (h1_n - b_n);
+                            end
+                            ok = stage_h1_eligible_slot_ledger[ln][slot].next(kb);
+                        end
+                    end
+
+                    if (stage_b_slot_ledger[ln][slot].first(kb)) begin
+                        ok = 1'b1;
+                        while (ok) begin
+                            int h1_n, h1e_n, b_n;
+                            b_n = stage_b_slot_ledger[ln][slot][kb].size();
+                            h1_n = stage_h1_slot_ledger[ln][slot].exists(kb)
+                                   ? stage_h1_slot_ledger[ln][slot][kb].size() : 0;
+                            h1e_n = stage_h1_eligible_slot_ledger[ln][slot].exists(kb)
+                                    ? stage_h1_eligible_slot_ledger[ln][slot][kb].size() : 0;
+                            b_slot_total += b_n;
+                            if (b_n > h1_n) ghost_b_slot += (b_n - h1_n);
+                            if (b_n > h1e_n) ghost_b_eligible_slot += (b_n - h1e_n);
+                            ok = stage_b_slot_ledger[ln][slot].next(kb);
+                        end
+                    end
+
+                    h1_filtered_slot_total = h1_slot_total - h1_eligible_slot_total;
+                    rec_h1_total_per_slot[ln][slot]    = h1_slot_total;
+                    rec_h1_eligible_total_per_slot[ln][slot] = h1_eligible_slot_total;
+                    rec_h1_filtered_per_slot[ln][slot] = h1_filtered_slot_total;
+                    rec_b_total_per_slot[ln][slot]     = b_slot_total;
+                    rec_matched_h1b_per_slot[ln][slot] = matched_h1b_slot;
+                    rec_missing_b_per_slot[ln][slot]   = missing_b_slot;
+                    rec_ghost_b_per_slot[ln][slot]     = ghost_b_slot;
+                    rec_matched_h1b_eligible_per_slot[ln][slot] = matched_h1b_eligible_slot;
+                    rec_missing_b_eligible_per_slot[ln][slot]   = missing_b_eligible_slot;
+                    rec_ghost_b_eligible_per_slot[ln][slot]     = ghost_b_eligible_slot;
+                end
+            end
+        endfunction
+
+        virtual function void reconcile_running_origin();
+            for (int ln = 0; ln < 4; ln++) begin
+                rec_run_a_total_per_lane[ln]   = count_root_obs(stage_a_run_root_obs[ln]);
+                rec_run_h0_total_per_lane[ln]  = count_root_obs(stage_h0_run_root_obs[ln]);
+                rec_run_h1_total_per_lane[ln]  = count_root_obs(stage_h1_run_root_obs[ln]);
+                rec_run_h1e_total_per_lane[ln] = count_root_obs(stage_h1e_run_root_obs[ln]);
+                rec_run_b_total_per_lane[ln]   = count_root_obs(stage_b_run_root_obs[ln]);
+                rec_run_c_total_per_lane[ln]   = count_root_obs(stage_c_run_root_obs[ln]);
+                rec_run_d_total_per_lane[ln]   = count_root_obs(stage_d_run_root_obs[ln]);
+                rec_run_e_total_per_lane[ln]   = count_root_obs(stage_e_run_root_obs[ln]);
+
+                reconcile_root_boundary(stage_a_run_root_obs[ln], stage_h0_run_root_obs[ln],
+                                        rec_run_matched_ah0_per_lane[ln],
+                                        rec_run_missing_h0_per_lane[ln],
+                                        rec_run_ghost_h0_per_lane[ln]);
+                reconcile_root_boundary(stage_h0_run_root_obs[ln], stage_h1_run_root_obs[ln],
+                                        rec_run_matched_ah1_per_lane[ln],
+                                        rec_run_missing_h1_per_lane[ln],
+                                        rec_run_ghost_h1_per_lane[ln]);
+                reconcile_root_boundary(stage_h1e_run_root_obs[ln], stage_b_run_root_obs[ln],
+                                        rec_run_matched_ab_per_lane[ln],
+                                        rec_run_missing_b_per_lane[ln],
+                                        rec_run_ghost_b_per_lane[ln]);
+                reconcile_root_boundary(stage_b_run_root_obs[ln], stage_c_run_root_obs[ln],
+                                        rec_run_matched_bc_per_lane[ln],
+                                        rec_run_missing_c_per_lane[ln],
+                                        rec_run_ghost_c_per_lane[ln]);
+                reconcile_root_boundary(stage_c_run_root_obs[ln], stage_d_run_root_obs[ln],
+                                        rec_run_matched_cd_per_lane[ln],
+                                        rec_run_missing_d_per_lane[ln],
+                                        rec_run_ghost_d_per_lane[ln]);
+                reconcile_root_boundary(stage_d_run_root_obs[ln], stage_e_run_root_obs[ln],
+                                        rec_run_matched_de_per_lane[ln],
+                                        rec_run_missing_e_per_lane[ln],
+                                        rec_run_ghost_e_per_lane[ln]);
+                reconcile_root_boundary_before(stage_h1e_run_root_obs[ln], stage_b_run_root_obs[ln],
+                                               tb_int_run_window_db::get_run_end_ts(),
+                                               rec_run_active_h1e_total_per_lane[ln],
+                                               rec_run_active_h1e_matched_b_per_lane[ln],
+                                               rec_run_active_h1e_missing_b_per_lane[ln]);
+                reconcile_root_boundary_before(stage_b_run_root_obs[ln], stage_c_run_root_obs[ln],
+                                               tb_int_run_window_db::get_run_end_ts(),
+                                               rec_run_active_b_total_per_lane[ln],
+                                               rec_run_active_b_matched_c_per_lane[ln],
+                                               rec_run_active_b_missing_c_per_lane[ln]);
+            end
+        endfunction
+
+        function automatic void dump_bucket_if_residual(
+            int unsigned lane,
+            bit [9:0] kb,
+            ref int unsigned dumped,
+            int unsigned n_max
+        );
+            int a_n, h0_n, h1_n, h1e_n, b_n, c_n, d_n, e_n;
+            obs_q_t empty_q;
+            if (dumped >= n_max)
+                return;
+            a_n = stage_a_ledger[lane].exists(kb) ? stage_a_ledger[lane][kb].size() : 0;
+            h0_n = stage_h0_ledger[lane].exists(kb) ? stage_h0_ledger[lane][kb].size() : 0;
+            h1_n = stage_h1_ledger[lane].exists(kb) ? stage_h1_ledger[lane][kb].size() : 0;
+            h1e_n = stage_h1_eligible_ledger[lane].exists(kb)
+                    ? stage_h1_eligible_ledger[lane][kb].size() : 0;
+            b_n = stage_b_ledger[lane].exists(kb) ? stage_b_ledger[lane][kb].size() : 0;
+            c_n = stage_c_ledger[lane].exists(kb) ? stage_c_ledger[lane][kb].size() : 0;
+            d_n = stage_d_ledger[lane].exists(kb) ? stage_d_ledger[lane][kb].size() : 0;
+            e_n = stage_e_ledger[lane].exists(kb) ? stage_e_ledger[lane][kb].size() : 0;
+            if (a_n != h0_n || h0_n != h1_n || h1e_n != b_n || b_n != c_n || c_n != d_n || d_n != e_n) begin
+                `uvm_info("TB_INT_SB",
+                          $sformatf("lane=%0d ch=%0d tfine=%0d   A=%0d H0=%0d H1=%0d H1e=%0d B=%0d C=%0d D=%0d E=%0d",
+                                    lane, kb[9:5], kb[4:0],
+                                    a_n, h0_n, h1_n, h1e_n, b_n, c_n, d_n, e_n),
+                          UVM_MEDIUM)
+                `uvm_info("TB_INT_SB",
+                          $sformatf("lane=%0d ch=%0d tfine=%0d heads: A=%s | H0=%s | H1=%s | H1e=%s | B=%s | C=%s | D=%s | E=%s",
+                                    lane, kb[9:5], kb[4:0],
+                                    (a_n > 0) ? obs_head_desc(stage_a_ledger[lane][kb]) : "-",
+                                    (h0_n > 0) ? obs_head_desc(stage_h0_ledger[lane][kb]) : "-",
+                                    (h1_n > 0) ? obs_head_desc(stage_h1_ledger[lane][kb]) : "-",
+                                    (h1e_n > 0) ? obs_head_desc(stage_h1_eligible_ledger[lane][kb]) : "-",
+                                    (b_n > 0) ? obs_head_desc(stage_b_ledger[lane][kb]) : "-",
+                                    (c_n > 0) ? obs_head_desc(stage_c_ledger[lane][kb]) : "-",
+                                    (d_n > 0) ? obs_head_desc(stage_d_ledger[lane][kb]) : "-",
+                                    (e_n > 0) ? obs_head_desc(stage_e_ledger[lane][kb]) : "-"),
+                          UVM_HIGH)
+                dump_boundary_candidates(
+                    "A->H0",
+                    $sformatf("lane=%0d ch=%0d tfine=%0d", lane, kb[9:5], kb[4:0]),
+                    "A",
+                    stage_a_ledger[lane].exists(kb) ? stage_a_ledger[lane][kb] : empty_q,
+                    a_n,
+                    "H0",
+                    stage_h0_ledger[lane].exists(kb) ? stage_h0_ledger[lane][kb] : empty_q,
+                    h0_n,
+                    2
+                );
+                dump_boundary_candidates(
+                    "H0->H1",
+                    $sformatf("lane=%0d ch=%0d tfine=%0d", lane, kb[9:5], kb[4:0]),
+                    "H0",
+                    stage_h0_ledger[lane].exists(kb) ? stage_h0_ledger[lane][kb] : empty_q,
+                    h0_n,
+                    "H1",
+                    stage_h1_ledger[lane].exists(kb) ? stage_h1_ledger[lane][kb] : empty_q,
+                    h1_n,
+                    2
+                );
+                dump_boundary_candidates(
+                    "H1->B(eligible)",
+                    $sformatf("lane=%0d ch=%0d tfine=%0d", lane, kb[9:5], kb[4:0]),
+                    "H1e",
+                    stage_h1_eligible_ledger[lane].exists(kb) ? stage_h1_eligible_ledger[lane][kb] : empty_q,
+                    h1e_n,
+                    "B",
+                    stage_b_ledger[lane].exists(kb) ? stage_b_ledger[lane][kb] : empty_q,
+                    b_n,
+                    2
+                );
+                dump_boundary_candidates(
+                    "B->C",
+                    $sformatf("lane=%0d ch=%0d tfine=%0d", lane, kb[9:5], kb[4:0]),
+                    "B",
+                    stage_b_ledger[lane].exists(kb) ? stage_b_ledger[lane][kb] : empty_q,
+                    b_n,
+                    "C",
+                    stage_c_ledger[lane].exists(kb) ? stage_c_ledger[lane][kb] : empty_q,
+                    c_n,
+                    2
+                );
+                dump_boundary_candidates(
+                    "C->D",
+                    $sformatf("lane=%0d ch=%0d tfine=%0d", lane, kb[9:5], kb[4:0]),
+                    "C",
+                    stage_c_ledger[lane].exists(kb) ? stage_c_ledger[lane][kb] : empty_q,
+                    c_n,
+                    "D",
+                    stage_d_ledger[lane].exists(kb) ? stage_d_ledger[lane][kb] : empty_q,
+                    d_n,
+                    2
+                );
+                dump_boundary_candidates(
+                    "D->E",
+                    $sformatf("lane=%0d ch=%0d tfine=%0d", lane, kb[9:5], kb[4:0]),
+                    "D",
+                    stage_d_ledger[lane].exists(kb) ? stage_d_ledger[lane][kb] : empty_q,
+                    d_n,
+                    "E",
+                    stage_e_ledger[lane].exists(kb) ? stage_e_ledger[lane][kb] : empty_q,
+                    e_n,
+                    2
+                );
+                dumped++;
+            end
+        endfunction
+
+        // Dump the first N residual key buckets seen at any stage for this
+        // lane. Multiple passes are acceptable here because the goal is to
+        // expose concrete mismatches quickly, not to produce a deduplicated
+        // exhaustive report.
+        virtual function void dump_residual_buckets(int unsigned lane, int unsigned n_max);
+            int unsigned dumped;
+            bit [9:0] kb;
+            bit       ok;
+            dumped = 0;
+            if (stage_a_ledger[lane].first(kb)) begin
+                ok = 1'b1;
+                while (ok && dumped < n_max) begin
+                    dump_bucket_if_residual(lane, kb, dumped, n_max);
+                    ok = stage_a_ledger[lane].next(kb);
+                end
+            end
+            if (stage_h0_ledger[lane].first(kb)) begin
+                ok = 1'b1;
+                while (ok && dumped < n_max) begin
+                    dump_bucket_if_residual(lane, kb, dumped, n_max);
+                    ok = stage_h0_ledger[lane].next(kb);
+                end
+            end
+            if (stage_h1_ledger[lane].first(kb)) begin
+                ok = 1'b1;
+                while (ok && dumped < n_max) begin
+                    dump_bucket_if_residual(lane, kb, dumped, n_max);
+                    ok = stage_h1_ledger[lane].next(kb);
+                end
+            end
+            if (stage_b_ledger[lane].first(kb)) begin
+                ok = 1'b1;
+                while (ok && dumped < n_max) begin
+                    dump_bucket_if_residual(lane, kb, dumped, n_max);
+                    ok = stage_b_ledger[lane].next(kb);
+                end
+            end
+            if (stage_c_ledger[lane].first(kb)) begin
+                ok = 1'b1;
+                while (ok && dumped < n_max) begin
+                    dump_bucket_if_residual(lane, kb, dumped, n_max);
+                    ok = stage_c_ledger[lane].next(kb);
+                end
+            end
+            if (stage_d_ledger[lane].first(kb)) begin
+                ok = 1'b1;
+                while (ok && dumped < n_max) begin
+                    dump_bucket_if_residual(lane, kb, dumped, n_max);
+                    ok = stage_d_ledger[lane].next(kb);
+                end
+            end
+            if (stage_e_ledger[lane].first(kb)) begin
+                ok = 1'b1;
+                while (ok && dumped < n_max) begin
+                    dump_bucket_if_residual(lane, kb, dumped, n_max);
+                    ok = stage_e_ledger[lane].next(kb);
+                end
+            end
+        endfunction
+
+        function automatic void dump_h1b_slot_bucket_if_residual(
+            int unsigned lane,
+            int unsigned slot,
+            bit [9:0] kb,
+            ref int unsigned dumped,
+            int unsigned n_max
+        );
+            int h1_n, h1e_n, b_n;
+            obs_q_t empty_q;
+            if (dumped >= n_max)
+                return;
+            h1_n = stage_h1_slot_ledger[lane][slot].exists(kb)
+                   ? stage_h1_slot_ledger[lane][slot][kb].size() : 0;
+            h1e_n = stage_h1_eligible_slot_ledger[lane][slot].exists(kb)
+                    ? stage_h1_eligible_slot_ledger[lane][slot][kb].size() : 0;
+            b_n = stage_b_slot_ledger[lane][slot].exists(kb)
+                  ? stage_b_slot_ledger[lane][slot][kb].size() : 0;
+            if (h1e_n != b_n) begin
+                `uvm_info("TB_INT_SB",
+                          $sformatf("lane=%0d slot=%0d ch=%0d tfine=%0d   H1=%0d H1e=%0d B=%0d",
+                                    lane, slot, kb[9:5], kb[4:0], h1_n, h1e_n, b_n),
+                          UVM_MEDIUM)
+                `uvm_info("TB_INT_SB",
+                          $sformatf("lane=%0d slot=%0d ch=%0d tfine=%0d heads: H1=%s | H1e=%s | B=%s",
+                                    lane, slot, kb[9:5], kb[4:0],
+                                    (h1_n > 0) ? obs_head_desc(stage_h1_slot_ledger[lane][slot][kb]) : "-",
+                                    (h1e_n > 0) ? obs_head_desc(stage_h1_eligible_slot_ledger[lane][slot][kb]) : "-",
+                                    (b_n > 0) ? obs_head_desc(stage_b_slot_ledger[lane][slot][kb]) : "-"),
+                          UVM_HIGH)
+                dump_boundary_candidates(
+                    "H1->B(slot eligible)",
+                    $sformatf("lane=%0d slot=%0d ch=%0d tfine=%0d", lane, slot, kb[9:5], kb[4:0]),
+                    "H1e",
+                    stage_h1_eligible_slot_ledger[lane][slot].exists(kb)
+                        ? stage_h1_eligible_slot_ledger[lane][slot][kb] : empty_q,
+                    h1e_n,
+                    "B",
+                    stage_b_slot_ledger[lane][slot].exists(kb)
+                        ? stage_b_slot_ledger[lane][slot][kb] : empty_q,
+                    b_n,
+                    2
+                );
+                dumped++;
+            end
+        endfunction
+
+        virtual function void dump_h1b_slot_residual_buckets(
+            int unsigned lane,
+            int unsigned slot,
+            int unsigned n_max
+        );
+            int unsigned dumped;
+            bit [9:0] kb;
+            bit       ok;
+
+            dumped = 0;
+            if (stage_h1_slot_ledger[lane][slot].first(kb)) begin
+                ok = 1'b1;
+                while (ok && dumped < n_max) begin
+                    dump_h1b_slot_bucket_if_residual(lane, slot, kb, dumped, n_max);
+                    ok = stage_h1_slot_ledger[lane][slot].next(kb);
+                end
+            end
+            if (stage_b_slot_ledger[lane][slot].first(kb)) begin
+                ok = 1'b1;
+                while (ok && dumped < n_max) begin
+                    dump_h1b_slot_bucket_if_residual(lane, slot, kb, dumped, n_max);
+                    ok = stage_b_slot_ledger[lane][slot].next(kb);
+                end
+            end
         endfunction
 
         virtual function void report_phase(uvm_phase phase);
+            int unsigned h0_hits_total;
+            int unsigned h0_frames_total;
+            int unsigned h0_restart_total;
+            int unsigned h0_orphan_eop_total;
+            int unsigned h0_contract_total;
+            int unsigned b_hits_total;
+            int unsigned b_packets_total;
+            int unsigned b_contract_total;
+            int unsigned h1_error_total;
+            int unsigned h1_eligible_total;
+            int unsigned c_hits_total;
+            int unsigned c_subheaders_total;
+            int unsigned c_frames_total;
+            int unsigned c_trailers_total;
             int unsigned d_hits_total;
             int unsigned d_subheaders_total;
             int unsigned d_frames_total;
             int unsigned d_trailers_total;
+
             super.report_phase(phase);
+            reconcile();
+            reconcile_running_origin();
+
+            h0_hits_total      = 0;
+            h0_frames_total    = 0;
+            h0_restart_total   = 0;
+            h0_orphan_eop_total = 0;
+            h0_contract_total  = 0;
+            b_hits_total     = 0;
+            b_packets_total  = 0;
+            b_contract_total = 0;
+            h1_error_total   = 0;
+            h1_eligible_total = 0;
+            c_hits_total       = 0;
+            c_subheaders_total = 0;
+            c_frames_total     = 0;
+            c_trailers_total   = 0;
             d_hits_total       = 0;
             d_subheaders_total = 0;
             d_frames_total     = 0;
             d_trailers_total   = 0;
+
+            foreach (h0_parser[i]) begin
+                h0_hits_total     += h0_parser[i].n_hits;
+                h0_frames_total   += h0_parser[i].n_frames;
+                h0_restart_total  += h0_parser[i].n_restart_sop;
+                h0_orphan_eop_total += h0_parser[i].n_orphan_eop;
+                h0_contract_total += h0_parser[i].n_contract_err;
+                `uvm_info("TB_INT_SB",
+                          $sformatf("stage_h0[%0d] parser: frames=%0d hits=%0d orphan=%0d restart_sop=%0d orphan_eop=%0d open_at_end=%0b contract_err=%0d",
+                                    i,
+                                    h0_parser[i].n_frames,
+                                    h0_parser[i].n_hits,
+                                    h0_parser[i].n_orphan,
+                                    h0_parser[i].n_restart_sop,
+                                    h0_parser[i].n_orphan_eop,
+                                    h0_parser[i].frame_open,
+                                    h0_parser[i].n_contract_err),
+                          UVM_LOW)
+            end
+            `uvm_info("TB_INT_SB",
+                      $sformatf("stage_h0 totals: beats=%0d frames=%0d hits=%0d restart_sop=%0d orphan_eop=%0d contract_err=%0d",
+                                n_stage_h0_beats, h0_frames_total, h0_hits_total,
+                                h0_restart_total, h0_orphan_eop_total, h0_contract_total),
+                      UVM_LOW)
+            if (h0_contract_total != 0)
+                `uvm_error("TB_INT_SB",
+                           $sformatf("stage_h0 contract parser saw %0d errors", h0_contract_total))
+
+            foreach (n_stage_h1_error_per_lane[i])
+                h1_error_total += n_stage_h1_error_per_lane[i];
+            foreach (rec_h1_eligible_total_per_lane[i])
+                h1_eligible_total += rec_h1_eligible_total_per_lane[i];
+            `uvm_info("TB_INT_SB",
+                      $sformatf("stage_h1 totals: beats=%0d eligible=%0d filtered_tserr=%0d filter_inerr=%0b",
+                                n_stage_h1_beats, h1_eligible_total,
+                                h1_error_total, rbcam_filter_inerr_enabled),
+                      UVM_LOW)
+            `uvm_info("TB_INT_SB",
+                      $sformatf("stage_h1 error beats: lane0=(raw=%0d err=%0d eligible=%0d) lane1=(raw=%0d err=%0d eligible=%0d) lane2=(raw=%0d err=%0d eligible=%0d) lane3=(raw=%0d err=%0d eligible=%0d)",
+                                n_stage_h1_beats_per_lane[0], n_stage_h1_error_per_lane[0], rec_h1_eligible_total_per_lane[0],
+                                n_stage_h1_beats_per_lane[1], n_stage_h1_error_per_lane[1], rec_h1_eligible_total_per_lane[1],
+                                n_stage_h1_beats_per_lane[2], n_stage_h1_error_per_lane[2], rec_h1_eligible_total_per_lane[2],
+                                n_stage_h1_beats_per_lane[3], n_stage_h1_error_per_lane[3], rec_h1_eligible_total_per_lane[3]),
+                      UVM_LOW)
+
+            foreach (b_parser[i,j]) begin
+                b_hits_total     += b_parser[i][j].n_hits;
+                b_packets_total  += b_parser[i][j].n_packets;
+                b_contract_total += b_parser[i][j].n_contract_err;
+                `uvm_info("TB_INT_SB",
+                          $sformatf("stage_b[%0d][%0d] parser: packets=%0d subheaders=%0d hits=%0d empty=%0d orphan=%0d contract_err=%0d",
+                                    i, j,
+                                    b_parser[i][j].n_packets,
+                                    b_parser[i][j].n_subheaders,
+                                    b_parser[i][j].n_hits,
+                                    b_parser[i][j].n_empty_packets,
+                                    b_parser[i][j].n_orphan,
+                                    b_parser[i][j].n_contract_err),
+                          UVM_LOW)
+            end
+            `uvm_info("TB_INT_SB",
+                      $sformatf("stage_b totals: beats=%0d packets=%0d hits=%0d contract_err=%0d",
+                                n_stage_b_beats, b_packets_total, b_hits_total, b_contract_total),
+                      UVM_LOW)
+            if (b_contract_total != 0)
+                `uvm_error("TB_INT_SB",
+                           $sformatf("stage_b contract parser saw %0d errors", b_contract_total))
+
+            foreach (c_parser[i]) begin
+                c_hits_total       += c_parser[i].n_hits;
+                c_subheaders_total += c_parser[i].n_subheaders;
+                c_frames_total     += c_parser[i].n_frames;
+                c_trailers_total   += c_parser[i].n_trailers;
+                `uvm_info("TB_INT_SB",
+                          $sformatf("stage_c[%0d] parser: frames=%0d preambles=%0d headers=%0d subheaders=%0d hits=%0d trailers=%0d orphan=%0d contract_err=%0d",
+                                    i,
+                                    c_parser[i].n_frames,
+                                    c_parser[i].n_preambles,
+                                    c_parser[i].n_headers,
+                                    c_parser[i].n_subheaders,
+                                    c_parser[i].n_hits,
+                                    c_parser[i].n_trailers,
+                                    c_parser[i].n_orphan,
+                                    c_parser[i].n_contract_err),
+                          UVM_LOW)
+                if (c_parser[i].n_contract_err != 0)
+                    `uvm_error("TB_INT_SB",
+                               $sformatf("stage_c[%0d] contract parser saw %0d errors",
+                                         i, c_parser[i].n_contract_err))
+            end
+            `uvm_info("TB_INT_SB",
+                      $sformatf("stage_c totals: frames=%0d hits=%0d subheaders=%0d trailers=%0d",
+                                c_frames_total, c_hits_total,
+                                c_subheaders_total, c_trailers_total),
+                      UVM_LOW)
+
             foreach (d_parser[i]) begin
                 d_hits_total       += d_parser[i].n_hits;
                 d_subheaders_total += d_parser[i].n_subheaders;
                 d_frames_total     += d_parser[i].n_frames;
                 d_trailers_total   += d_parser[i].n_trailers;
                 `uvm_info("TB_INT_SB",
-                          $sformatf("stage_d[%0d] parser: frames=%0d preambles=%0d headers=%0d subheaders=%0d hits=%0d trailers=%0d orphan=%0d missing_eop=%0d mid_sop=%0d",
+                          $sformatf("stage_d[%0d] parser: frames=%0d preambles=%0d headers=%0d subheaders=%0d hits=%0d trailers=%0d orphan=%0d contract_err=%0d",
                                     i,
                                     d_parser[i].n_frames,
                                     d_parser[i].n_preambles,
@@ -357,17 +3176,21 @@ package tb_int_pkg;
                                     d_parser[i].n_hits,
                                     d_parser[i].n_trailers,
                                     d_parser[i].n_orphan,
-                                    d_parser[i].n_missing_eop,
-                                    d_parser[i].n_mid_sop),
+                                    d_parser[i].n_contract_err),
                           UVM_LOW)
+                if (d_parser[i].n_contract_err != 0)
+                    `uvm_error("TB_INT_SB",
+                               $sformatf("stage_d[%0d] contract parser saw %0d errors",
+                                         i, d_parser[i].n_contract_err))
             end
             `uvm_info("TB_INT_SB",
                       $sformatf("stage_d totals: frames=%0d hits=%0d subheaders=%0d trailers=%0d",
                                 d_frames_total, d_hits_total,
                                 d_subheaders_total, d_trailers_total),
                       UVM_LOW)
+
             `uvm_info("TB_INT_SB",
-                      $sformatf("stage_e parser: frames=%0d preambles=%0d headers=%0d subheaders=%0d hits=%0d trailers=%0d orphan=%0d missing_eop=%0d mid_sop=%0d",
+                      $sformatf("stage_e parser: frames=%0d preambles=%0d headers=%0d subheaders=%0d hits=%0d trailers=%0d orphan=%0d restart_sop=%0d contract_err=%0d",
                                 e_parser.n_frames,
                                 e_parser.n_preambles,
                                 e_parser.n_headers,
@@ -375,25 +3198,232 @@ package tb_int_pkg;
                                 e_parser.n_hits,
                                 e_parser.n_trailers,
                                 e_parser.n_orphan,
-                                e_parser.n_missing_eop,
-                                e_parser.n_mid_sop),
+                                e_parser.n_restart_sop,
+                                e_parser.n_contract_err),
                       UVM_LOW)
+            if (e_parser.n_contract_err != 0)
+                `uvm_error("TB_INT_SB",
+                           $sformatf("stage_e contract parser saw %0d errors",
+                                     e_parser.n_contract_err))
+
             `uvm_info("TB_INT_SB",
-                      $sformatf("stage_a=%0d a_per_lane=(%0d,%0d,%0d,%0d) stage_d_beats=%0d stage_d_frames=%0d d_beats_per_lane=(%0d,%0d,%0d,%0d) d_frames_per_lane=(%0d,%0d,%0d,%0d) stage_e_beats=%0d stage_e_frames=%0d hit_db=%0d missing=%0d ghost=%0d slot_violation=%0d",
+                      $sformatf("stage_a=%0d a_per_lane=(%0d,%0d,%0d,%0d) stage_h0=%0d h0_per_lane=(%0d,%0d,%0d,%0d) h0_frames_per_lane=(%0d,%0d,%0d,%0d) stage_h1=%0d h1_per_lane=(%0d,%0d,%0d,%0d) stage_b_beats=%0d stage_b_packets=%0d b_beats_per_lane=(%0d,%0d,%0d,%0d) b_packets_per_lane=(%0d,%0d,%0d,%0d) stage_c_beats=%0d stage_c_frames=%0d c_beats_per_lane=(%0d,%0d,%0d,%0d) c_frames_per_lane=(%0d,%0d,%0d,%0d) stage_d_beats=%0d stage_d_frames=%0d d_beats_per_lane=(%0d,%0d,%0d,%0d) d_frames_per_lane=(%0d,%0d,%0d,%0d) stage_e_beats=%0d stage_e_frames=%0d e_lane_unknown=%0d",
                                 n_stage_a,
                                 n_stage_a_per_lane[0], n_stage_a_per_lane[1],
                                 n_stage_a_per_lane[2], n_stage_a_per_lane[3],
+                                n_stage_h0_beats,
+                                n_stage_h0_beats_per_lane[0], n_stage_h0_beats_per_lane[1],
+                                n_stage_h0_beats_per_lane[2], n_stage_h0_beats_per_lane[3],
+                                n_stage_h0_frames_per_lane[0], n_stage_h0_frames_per_lane[1],
+                                n_stage_h0_frames_per_lane[2], n_stage_h0_frames_per_lane[3],
+                                n_stage_h1_beats,
+                                n_stage_h1_beats_per_lane[0], n_stage_h1_beats_per_lane[1],
+                                n_stage_h1_beats_per_lane[2], n_stage_h1_beats_per_lane[3],
+                                n_stage_b_beats, n_stage_b_packets,
+                                n_stage_b_beats_per_lane[0], n_stage_b_beats_per_lane[1],
+                                n_stage_b_beats_per_lane[2], n_stage_b_beats_per_lane[3],
+                                n_stage_b_packets_per_lane[0], n_stage_b_packets_per_lane[1],
+                                n_stage_b_packets_per_lane[2], n_stage_b_packets_per_lane[3],
+                                n_stage_c_beats, n_stage_c_frames,
+                                n_stage_c_beats_per_lane[0], n_stage_c_beats_per_lane[1],
+                                n_stage_c_beats_per_lane[2], n_stage_c_beats_per_lane[3],
+                                n_stage_c_frames_per_lane[0], n_stage_c_frames_per_lane[1],
+                                n_stage_c_frames_per_lane[2], n_stage_c_frames_per_lane[3],
                                 n_stage_d_beats, n_stage_d_frames,
                                 n_stage_d_beats_per_lane[0], n_stage_d_beats_per_lane[1],
                                 n_stage_d_beats_per_lane[2], n_stage_d_beats_per_lane[3],
                                 n_stage_d_frames_per_lane[0], n_stage_d_frames_per_lane[1],
                                 n_stage_d_frames_per_lane[2], n_stage_d_frames_per_lane[3],
                                 n_stage_e_beats, n_stage_e_frames,
-                                hit_db.size(),
-                                n_missing, n_ghost, n_slot_violation),
+                                n_stage_e_lane_unknown),
                       UVM_LOW)
+            `uvm_info("TB_INT_SB",
+                      $sformatf("stage_h1 slot beats: lane0=(%0d,%0d,%0d,%0d) lane1=(%0d,%0d,%0d,%0d) lane2=(%0d,%0d,%0d,%0d) lane3=(%0d,%0d,%0d,%0d)",
+                                n_stage_h1_beats_per_slot[0][0], n_stage_h1_beats_per_slot[0][1],
+                                n_stage_h1_beats_per_slot[0][2], n_stage_h1_beats_per_slot[0][3],
+                                n_stage_h1_beats_per_slot[1][0], n_stage_h1_beats_per_slot[1][1],
+                                n_stage_h1_beats_per_slot[1][2], n_stage_h1_beats_per_slot[1][3],
+                                n_stage_h1_beats_per_slot[2][0], n_stage_h1_beats_per_slot[2][1],
+                                n_stage_h1_beats_per_slot[2][2], n_stage_h1_beats_per_slot[2][3],
+                                n_stage_h1_beats_per_slot[3][0], n_stage_h1_beats_per_slot[3][1],
+                                n_stage_h1_beats_per_slot[3][2], n_stage_h1_beats_per_slot[3][3]),
+                      UVM_LOW)
+            `uvm_info("TB_INT_SB",
+                      $sformatf("stage_h1 slot errors: lane0=(%0d,%0d,%0d,%0d) lane1=(%0d,%0d,%0d,%0d) lane2=(%0d,%0d,%0d,%0d) lane3=(%0d,%0d,%0d,%0d)",
+                                n_stage_h1_error_per_slot[0][0], n_stage_h1_error_per_slot[0][1],
+                                n_stage_h1_error_per_slot[0][2], n_stage_h1_error_per_slot[0][3],
+                                n_stage_h1_error_per_slot[1][0], n_stage_h1_error_per_slot[1][1],
+                                n_stage_h1_error_per_slot[1][2], n_stage_h1_error_per_slot[1][3],
+                                n_stage_h1_error_per_slot[2][0], n_stage_h1_error_per_slot[2][1],
+                                n_stage_h1_error_per_slot[2][2], n_stage_h1_error_per_slot[2][3],
+                                n_stage_h1_error_per_slot[3][0], n_stage_h1_error_per_slot[3][1],
+                                n_stage_h1_error_per_slot[3][2], n_stage_h1_error_per_slot[3][3]),
+                      UVM_LOW)
+            foreach (rec_h1_total_per_slot[i,j]) begin
+                `uvm_info("TB_INT_SB",
+                          $sformatf("lane[%0d] slot[%0d] H1->B: H1=%0d H1e=%0d filtered=%0d B=%0d matched_raw=%0d missing_raw=%0d ghost_raw=%0d matched_eligible=%0d missing_eligible=%0d ghost_eligible=%0d",
+                                    i, j,
+                                    rec_h1_total_per_slot[i][j],
+                                    rec_h1_eligible_total_per_slot[i][j],
+                                    rec_h1_filtered_per_slot[i][j],
+                                    rec_b_total_per_slot[i][j],
+                                    rec_matched_h1b_per_slot[i][j],
+                                    rec_missing_b_per_slot[i][j],
+                                    rec_ghost_b_per_slot[i][j],
+                                    rec_matched_h1b_eligible_per_slot[i][j],
+                                    rec_missing_b_eligible_per_slot[i][j],
+                                    rec_ghost_b_eligible_per_slot[i][j]),
+                          UVM_LOW)
+                if (rec_missing_b_eligible_per_slot[i][j] > 0 ||
+                    rec_ghost_b_eligible_per_slot[i][j] > 0)
+                    dump_h1b_slot_residual_buckets(i, j, 8);
+            end
+
+            `uvm_info("TB_INT_SB",
+                      $sformatf("stable running origin window: %s",
+                                tb_int_run_window_db::describe()),
+                      UVM_LOW)
+            foreach (rec_run_a_total_per_lane[i]) begin
+                `uvm_info("TB_INT_SB",
+                          $sformatf("lane[%0d] RUN-origin: A=%0d H0=%0d H1=%0d H1e=%0d B=%0d C=%0d D=%0d E=%0d | A->H0 matched=%0d missing=%0d ghost=%0d | H0->H1 matched=%0d missing=%0d ghost=%0d | H1e->B matched=%0d missing=%0d ghost=%0d | B->C matched=%0d missing=%0d ghost=%0d | C->D matched=%0d missing=%0d ghost=%0d | D->E matched=%0d missing=%0d ghost=%0d",
+                                    i,
+                                    rec_run_a_total_per_lane[i],
+                                    rec_run_h0_total_per_lane[i],
+                                    rec_run_h1_total_per_lane[i],
+                                    rec_run_h1e_total_per_lane[i],
+                                    rec_run_b_total_per_lane[i],
+                                    rec_run_c_total_per_lane[i],
+                                    rec_run_d_total_per_lane[i],
+                                    rec_run_e_total_per_lane[i],
+                                    rec_run_matched_ah0_per_lane[i],
+                                    rec_run_missing_h0_per_lane[i],
+                                    rec_run_ghost_h0_per_lane[i],
+                                    rec_run_matched_ah1_per_lane[i],
+                                    rec_run_missing_h1_per_lane[i],
+                                    rec_run_ghost_h1_per_lane[i],
+                                    rec_run_matched_ab_per_lane[i],
+                                    rec_run_missing_b_per_lane[i],
+                                    rec_run_ghost_b_per_lane[i],
+                                    rec_run_matched_bc_per_lane[i],
+                                    rec_run_missing_c_per_lane[i],
+                                    rec_run_ghost_c_per_lane[i],
+                                    rec_run_matched_cd_per_lane[i],
+                                    rec_run_missing_d_per_lane[i],
+                                    rec_run_ghost_d_per_lane[i],
+                                    rec_run_matched_de_per_lane[i],
+                                    rec_run_missing_e_per_lane[i],
+                                    rec_run_ghost_e_per_lane[i]),
+                          UVM_LOW)
+                if (rec_run_missing_h0_per_lane[i] > 0 || rec_run_ghost_h0_per_lane[i] > 0)
+                    dump_root_boundary_candidates($sformatf("lane[%0d] RUN A->H0", i),
+                                                 "A", stage_a_run_root_obs[i],
+                                                 "H0", stage_h0_run_root_obs[i], 8);
+                if (rec_run_missing_h1_per_lane[i] > 0 || rec_run_ghost_h1_per_lane[i] > 0)
+                    dump_root_boundary_candidates($sformatf("lane[%0d] RUN H0->H1", i),
+                                                 "H0", stage_h0_run_root_obs[i],
+                                                 "H1", stage_h1_run_root_obs[i], 8);
+                if (rec_run_missing_b_per_lane[i] > 0 || rec_run_ghost_b_per_lane[i] > 0)
+                    dump_root_boundary_candidates($sformatf("lane[%0d] RUN H1e->B", i),
+                                                 "H1e", stage_h1e_run_root_obs[i],
+                                                 "B", stage_b_run_root_obs[i], 8);
+                if (rec_run_missing_c_per_lane[i] > 0 || rec_run_ghost_c_per_lane[i] > 0)
+                    dump_root_boundary_candidates($sformatf("lane[%0d] RUN B->C", i),
+                                                 "B", stage_b_run_root_obs[i],
+                                                 "C", stage_c_run_root_obs[i], 8);
+                if (rec_run_missing_d_per_lane[i] > 0 || rec_run_ghost_d_per_lane[i] > 0)
+                    dump_root_boundary_candidates($sformatf("lane[%0d] RUN C->D", i),
+                                                 "C", stage_c_run_root_obs[i],
+                                                 "D", stage_d_run_root_obs[i], 8);
+                if (rec_run_missing_e_per_lane[i] > 0 || rec_run_ghost_e_per_lane[i] > 0)
+                    dump_root_boundary_candidates($sformatf("lane[%0d] RUN D->E", i),
+                                                 "D", stage_d_run_root_obs[i],
+                                                 "E", stage_e_run_root_obs[i], 8);
+                `uvm_info("TB_INT_SB",
+                          $sformatf("lane[%0d] RUN-active reach: H1e(before_run_end)=%0d -> B(any) matched=%0d missing=%0d | B(before_run_end)=%0d -> C(any) matched=%0d missing=%0d",
+                                    i,
+                                    rec_run_active_h1e_total_per_lane[i],
+                                    rec_run_active_h1e_matched_b_per_lane[i],
+                                    rec_run_active_h1e_missing_b_per_lane[i],
+                                    rec_run_active_b_total_per_lane[i],
+                                    rec_run_active_b_matched_c_per_lane[i],
+                                    rec_run_active_b_missing_c_per_lane[i]),
+                          UVM_LOW)
+            end
+
+            foreach (rec_a_total_per_lane[i]) begin
+                `uvm_info("TB_INT_SB",
+                          $sformatf("lane[%0d] ledger: A=%0d H0=%0d H1=%0d H1e=%0d B=%0d C=%0d D=%0d E=%0d | A->H0 matched=%0d missing=%0d ghost=%0d | H0->H1 matched=%0d missing=%0d ghost=%0d | H1->B raw matched=%0d missing=%0d ghost=%0d | H1->B eligible matched=%0d missing=%0d ghost=%0d filtered=%0d | B->C matched=%0d missing=%0d ghost=%0d | C->D matched=%0d missing=%0d ghost=%0d | D->E matched=%0d missing=%0d ghost=%0d | first_fail=%s | largest_loss=%s",
+                                    i,
+                                    rec_a_total_per_lane[i],
+                                    rec_h0_total_per_lane[i],
+                                    rec_h1_total_per_lane[i],
+                                    rec_h1_eligible_total_per_lane[i],
+                                    rec_b_total_per_lane[i],
+                                    rec_c_total_per_lane[i],
+                                    rec_d_total_per_lane[i],
+                                    rec_e_total_per_lane[i],
+                                    rec_matched_ah0_per_lane[i],
+                                    rec_missing_h0_per_lane[i],
+                                    rec_ghost_h0_per_lane[i],
+                                    rec_matched_ah1_per_lane[i],
+                                    rec_missing_h1_per_lane[i],
+                                    rec_ghost_h1_per_lane[i],
+                                    rec_matched_ab_per_lane[i],
+                                    rec_missing_b_per_lane[i],
+                                    rec_ghost_b_per_lane[i],
+                                    rec_matched_ab_eligible_per_lane[i],
+                                    rec_missing_b_eligible_per_lane[i],
+                                    rec_ghost_b_eligible_per_lane[i],
+                                    rec_h1_filtered_per_lane[i],
+                                    rec_matched_bc_per_lane[i],
+                                    rec_missing_c_per_lane[i],
+                                    rec_ghost_c_per_lane[i],
+                                    rec_matched_cd_per_lane[i],
+                                    rec_missing_d_per_lane[i],
+                                    rec_ghost_d_per_lane[i],
+                                    rec_matched_de_per_lane[i],
+                                    rec_missing_e_per_lane[i],
+                                    rec_ghost_e_per_lane[i],
+                                    first_fail_desc(i),
+                                    largest_loss_desc(i)),
+                          UVM_LOW)
+                if (rec_missing_h0_per_lane[i] > 0 || rec_missing_h1_per_lane[i] > 0 ||
+                    rec_missing_b_eligible_per_lane[i] > 0 || rec_missing_c_per_lane[i] > 0 ||
+                    rec_missing_d_per_lane[i] > 0 || rec_missing_e_per_lane[i] > 0 ||
+                    rec_ghost_h0_per_lane[i]  > 0 || rec_ghost_h1_per_lane[i]  > 0 ||
+                    rec_ghost_b_eligible_per_lane[i] > 0 || rec_ghost_c_per_lane[i] > 0 ||
+                    rec_ghost_d_per_lane[i]   > 0 || rec_ghost_e_per_lane[i]   > 0) begin
+                    if (rec_missing_h0_per_lane[i] > 0 || rec_ghost_h0_per_lane[i] > 0)
+                        dump_ah0_residual_buckets(i, 8);
+                    if (rec_missing_c_per_lane[i] > 0 || rec_ghost_c_per_lane[i] > 0)
+                        dump_hit2_residual_buckets("B->C", i, stage_b_exact_ledger[i], "B",
+                                                   stage_c_exact_ledger[i], "C", 8);
+                    if (rec_missing_d_per_lane[i] > 0 || rec_ghost_d_per_lane[i] > 0)
+                        dump_hit2_residual_buckets("C->D", i, stage_c_exact_ledger[i], "C",
+                                                   stage_d_exact_ledger[i], "D", 8);
+                    if (rec_missing_e_per_lane[i] > 0 || rec_ghost_e_per_lane[i] > 0)
+                        dump_hit2_residual_buckets("D->E", i, stage_d_exact_ledger[i], "D",
+                                                   stage_e_exact_ledger[i], "E", 8);
+                    dump_residual_buckets(i, 20);
+                end
+            end
+
             if (n_stage_a == 0)
                 `uvm_error("TB_INT_SB", "no stage A hits observed")
+            if (n_stage_h0_beats == 0)
+                `uvm_error("TB_INT_SB", "no stage H0 beats observed")
+            if (n_stage_h0_frames == 0)
+                `uvm_error("TB_INT_SB", "no stage H0 frame heads observed")
+            if (n_stage_h1_beats == 0)
+                `uvm_error("TB_INT_SB", "no stage H1 beats observed")
+            if (n_stage_b_beats == 0)
+                `uvm_error("TB_INT_SB", "no stage B beats observed")
+            if (n_stage_b_packets == 0)
+                `uvm_error("TB_INT_SB", "no stage B packets observed")
+            if (n_stage_c_beats == 0)
+                `uvm_error("TB_INT_SB", "no stage C beats observed")
+            if (n_stage_c_frames == 0)
+                `uvm_error("TB_INT_SB", "no stage C frame heads observed")
             if (n_stage_d_beats == 0)
                 `uvm_error("TB_INT_SB", "no stage D beats observed")
             if (n_stage_d_frames == 0)
@@ -402,12 +3432,46 @@ package tb_int_pkg;
                 `uvm_error("TB_INT_SB", "no stage E beats observed")
             if (n_stage_e_frames == 0)
                 `uvm_error("TB_INT_SB", "no stage E frame heads observed")
-            // Every lane must be live — single-silent-lane would satisfy
-            // the n_stage_a > 0 check but violate the 4-lane topology.
+
             foreach (n_stage_a_per_lane[i]) begin
                 if (n_stage_a_per_lane[i] == 0)
                     `uvm_error("TB_INT_SB",
                                $sformatf("stage A lane %0d silent (per-lane hit count 0)", i))
+            end
+            foreach (n_stage_h0_beats_per_lane[i]) begin
+                if (n_stage_h0_beats_per_lane[i] == 0)
+                    `uvm_error("TB_INT_SB",
+                               $sformatf("stage H0 lane %0d silent (per-lane beat count 0)", i))
+            end
+            foreach (n_stage_h0_frames_per_lane[i]) begin
+                if (n_stage_h0_frames_per_lane[i] == 0)
+                    `uvm_error("TB_INT_SB",
+                               $sformatf("stage H0 lane %0d emitted no frame heads", i))
+            end
+            foreach (n_stage_h1_beats_per_lane[i]) begin
+                if (n_stage_h1_beats_per_lane[i] == 0)
+                    `uvm_error("TB_INT_SB",
+                               $sformatf("stage H1 lane %0d silent (per-lane beat count 0)", i))
+            end
+            foreach (n_stage_b_beats_per_lane[i]) begin
+                if (n_stage_b_beats_per_lane[i] == 0)
+                    `uvm_error("TB_INT_SB",
+                               $sformatf("stage B lane %0d silent (per-lane beat count 0)", i))
+            end
+            foreach (n_stage_b_packets_per_lane[i]) begin
+                if (n_stage_b_packets_per_lane[i] == 0)
+                    `uvm_error("TB_INT_SB",
+                               $sformatf("stage B lane %0d emitted no hit_type2 packets", i))
+            end
+            foreach (n_stage_c_beats_per_lane[i]) begin
+                if (n_stage_c_beats_per_lane[i] == 0)
+                    `uvm_error("TB_INT_SB",
+                               $sformatf("stage C lane %0d silent (per-lane beat count 0)", i))
+            end
+            foreach (n_stage_c_frames_per_lane[i]) begin
+                if (n_stage_c_frames_per_lane[i] == 0)
+                    `uvm_error("TB_INT_SB",
+                               $sformatf("stage C lane %0d emitted no frame heads", i))
             end
             foreach (n_stage_d_beats_per_lane[i]) begin
                 if (n_stage_d_beats_per_lane[i] == 0)
@@ -467,6 +3531,173 @@ package tb_int_pkg;
     endclass
 
     // -----------------------------------------------------------------------
+    // Stage H0 monitor — one per datapath. Samples valid hit_type0 beats on
+    // the frame_rcv -> mts boundary.
+    // -----------------------------------------------------------------------
+    class tb_int_stage_h0_monitor extends uvm_component;
+        `uvm_component_utils(tb_int_stage_h0_monitor)
+        virtual hit_type0_if vif;
+        uvm_analysis_port#(tb_int_hit0_event) ap;
+        int unsigned lane_id;
+
+        function new(string name, uvm_component parent);
+            super.new(name, parent);
+        endfunction
+
+        virtual function void build_phase(uvm_phase phase);
+            super.build_phase(phase);
+            ap = new("ap", this);
+        endfunction
+
+        virtual task run_phase(uvm_phase phase);
+            if (vif == null)
+                `uvm_fatal("STAGE_H0", $sformatf("vif not assigned for stage_h0 lane %0d", lane_id))
+            forever begin
+                @(posedge vif.clk);
+                if (vif.rst === 1'b1) continue;
+                if (vif.valid === 1'b1) begin
+                    tb_int_hit0_event ev;
+                    ev = tb_int_hit0_event::type_id::create("ev");
+                    ev.lane_id = lane_id;
+                    ev.abs_ts  = $time;
+                    ev.data    = vif.data;
+                    ev.channel = vif.channel;
+                    ev.sop     = vif.startofpacket;
+                    ev.eop     = vif.endofpacket;
+                    ev.error   = vif.error;
+                    ap.write(ev);
+                end
+            end
+        endtask
+    endclass
+
+    // -----------------------------------------------------------------------
+    // Stage H1 monitor — one per datapath. Samples accepted hit_type1 beats
+    // on the mts -> rb_cam boundary.
+    // -----------------------------------------------------------------------
+    class tb_int_stage_h1_monitor extends uvm_component;
+        `uvm_component_utils(tb_int_stage_h1_monitor)
+        virtual hit_type1_if vif;
+        uvm_analysis_port#(tb_int_hit1_event) ap;
+        int unsigned lane_id;
+
+        function new(string name, uvm_component parent);
+            super.new(name, parent);
+        endfunction
+
+        virtual function void build_phase(uvm_phase phase);
+            super.build_phase(phase);
+            ap = new("ap", this);
+        endfunction
+
+        virtual task run_phase(uvm_phase phase);
+            if (vif == null)
+                `uvm_fatal("STAGE_H1", $sformatf("vif not assigned for stage_h1 lane %0d", lane_id))
+            forever begin
+                @(posedge vif.clk);
+                if (vif.rst === 1'b1) continue;
+                if (vif.valid === 1'b1 && vif.ready === 1'b1) begin
+                    tb_int_hit1_event ev;
+                    ev = tb_int_hit1_event::type_id::create("ev");
+                    ev.lane_id = lane_id;
+                    ev.abs_ts  = $time;
+                    ev.data    = vif.data;
+                    ev.channel = vif.channel;
+                    ev.sop     = vif.startofpacket;
+                    ev.eop     = vif.endofpacket;
+                    ev.empty   = vif.empty;
+                    ev.error   = vif.error;
+                    ap.write(ev);
+                end
+            end
+        endtask
+    endclass
+
+    // -----------------------------------------------------------------------
+    // Stage B monitor — one per datapath/slot ring_buffer_cam hit_type2
+    // stream. Samples only accepted beats (valid && ready).
+    // -----------------------------------------------------------------------
+    class tb_int_stage_b_monitor extends uvm_component;
+        `uvm_component_utils(tb_int_stage_b_monitor)
+        virtual hit_type2_if vif;
+        uvm_analysis_port#(tb_int_hit2_event) ap;
+        int unsigned lane_id;
+        int unsigned slot_id;
+
+        function new(string name, uvm_component parent);
+            super.new(name, parent);
+        endfunction
+
+        virtual function void build_phase(uvm_phase phase);
+            super.build_phase(phase);
+            ap = new("ap", this);
+        endfunction
+
+        virtual task run_phase(uvm_phase phase);
+            if (vif == null)
+                `uvm_fatal("STAGE_B",
+                           $sformatf("vif not assigned for stage_b lane %0d slot %0d",
+                                     lane_id, slot_id))
+            forever begin
+                @(posedge vif.clk);
+                if (vif.rst === 1'b1) continue;
+                if (vif.valid === 1'b1 && vif.ready === 1'b1) begin
+                    tb_int_hit2_event ev;
+                    ev = tb_int_hit2_event::type_id::create("ev");
+                    ev.lane_id = lane_id;
+                    ev.slot_id = slot_id;
+                    ev.abs_ts  = $time;
+                    ev.data    = vif.data;
+                    ev.channel = vif.channel;
+                    ev.sop     = vif.startofpacket;
+                    ev.eop     = vif.endofpacket;
+                    ev.error   = vif.error[0];
+                    ap.write(ev);
+                end
+            end
+        endtask
+    endclass
+
+    // -----------------------------------------------------------------------
+    // Stage C monitor — one per pre-gate FEB tx lane.
+    // -----------------------------------------------------------------------
+    class tb_int_stage_c_monitor extends uvm_component;
+        `uvm_component_utils(tb_int_stage_c_monitor)
+        virtual opq_ingress_if vif;
+        uvm_analysis_port#(tb_int_ingress_event) ap;
+        int unsigned lane_id;
+
+        function new(string name, uvm_component parent);
+            super.new(name, parent);
+        endfunction
+
+        virtual function void build_phase(uvm_phase phase);
+            super.build_phase(phase);
+            ap = new("ap", this);
+        endfunction
+
+        virtual task run_phase(uvm_phase phase);
+            if (vif == null)
+                `uvm_fatal("STAGE_C", $sformatf("vif not assigned for stage_c lane %0d", lane_id))
+            forever begin
+                @(posedge vif.clk);
+                if (vif.rst === 1'b1) continue;
+                if (vif.valid === 1'b1) begin
+                    tb_int_ingress_event ev;
+                    ev = tb_int_ingress_event::type_id::create("ev");
+                    ev.lane_id = lane_id;
+                    ev.abs_ts  = $time;
+                    ev.data    = vif.data;
+                    ev.channel = vif.channel;
+                    ev.sop     = vif.startofpacket;
+                    ev.eop     = vif.endofpacket;
+                    ap.write(ev);
+                end
+            end
+        endtask
+    endclass
+
+    // -----------------------------------------------------------------------
     // Stage E monitor — snoops the OPQ egress AvST and emits one
     // tb_int_egress_event per accepted beat.
     // -----------------------------------------------------------------------
@@ -497,6 +3728,7 @@ package tb_int_pkg;
                     ev.data   = vif.data;
                     ev.sop    = vif.startofpacket;
                     ev.eop    = vif.endofpacket;
+                    ev.error  = vif.error;
                     ap.write(ev);
                 end
             end
@@ -504,11 +3736,10 @@ package tb_int_pkg;
     endclass
 
     // -----------------------------------------------------------------------
-    // Stage D monitor — one per OPQ ingress lane. Snoops valid beats on
-    // the opq_ingress_if and publishes a tb_int_ingress_event per beat.
-    // The OPQ ingress side has no ready/valid handshake to gate against
-    // (the swb_ingress_stub is always ready), so every cycle of valid is
-    // an accepted beat.
+    // Stage D monitor — one per post-gate OPQ ingress lane. Snoops valid
+    // beats on the run_enable-qualified ingress stream. The OPQ ingress side
+    // has no ready/valid handshake to gate against, so every cycle of valid
+    // is an accepted beat.
     // -----------------------------------------------------------------------
     class tb_int_stage_d_monitor extends uvm_component;
         `uvm_component_utils(tb_int_stage_d_monitor)
@@ -581,13 +3812,25 @@ package tb_int_pkg;
         localparam bit [8:0] RC_STATE_RUNNING     = 9'b0_0000_1000;
         localparam bit [8:0] RC_STATE_TERMINATING = 9'b0_0001_0000;
 
+        int unsigned stable_start_guard_cycles = 128;
+        int unsigned stable_end_guard_cycles   = 128;
+
         function new(string name, uvm_component parent);
             super.new(name, parent);
         endfunction
 
         virtual task run_phase(uvm_phase phase);
+            int unsigned plusarg_cycles;
+
             if (!uvm_config_db#(virtual run_control_if)::get(this, "", "rc_if", vif))
                 `uvm_fatal("RC_DRV", "rc_if not found in config db")
+            if ($value$plusargs("TB_INT_STABLE_START_GUARD_CYCLES=%d", plusarg_cycles))
+                stable_start_guard_cycles = plusarg_cycles;
+            if ($value$plusargs("TB_INT_STABLE_END_GUARD_CYCLES=%d", plusarg_cycles))
+                stable_end_guard_cycles = plusarg_cycles;
+            tb_int_run_window_db::configure_guards(stable_start_guard_cycles,
+                                                   stable_end_guard_cycles);
+            tb_int_run_window_db::reset();
             vif.run_state  <= RC_STATE_IDLE;
             vif.run_enable <= 1'b0;
             forever begin
@@ -613,6 +3856,7 @@ package tb_int_pkg;
             int unsigned waited;
             case (it.op)
                 RC_PREPARE: begin
+                    tb_int_run_window_db::reset();
                     vif.run_state  <= RC_STATE_PREPARE;
                     vif.run_enable <= 1'b0;
                     // Hold PREPARE for the minimum requested time first so
@@ -638,6 +3882,10 @@ package tb_int_pkg;
                               UVM_LOW)
                 end
                 RC_START: begin
+                    int unsigned stable_prefix_cycles;
+                    int unsigned stable_body_cycles;
+                    int unsigned stable_suffix_cycles;
+
                     // SYNC pulse: resets rb_cam gts counter and releases the
                     // PREPARE-state flush. The OPQ/feb pipeline chain all
                     // honor the same 9-bit one-hot convention.
@@ -646,12 +3894,32 @@ package tb_int_pkg;
                     repeat (SYNC_HOLD_CYCLES) @(posedge vif.clk);
                     vif.run_state  <= RC_STATE_RUNNING;
                     vif.run_enable <= 1'b1;
-                    repeat (it.hold_cycles) @(posedge vif.clk);
+                    tb_int_run_window_db::note_run_start($time);
+
+                    stable_prefix_cycles = (it.hold_cycles < stable_start_guard_cycles)
+                                           ? it.hold_cycles : stable_start_guard_cycles;
+                    if (it.hold_cycles > stable_prefix_cycles + stable_end_guard_cycles)
+                        stable_suffix_cycles = stable_end_guard_cycles;
+                    else
+                        stable_suffix_cycles = (it.hold_cycles > stable_prefix_cycles)
+                                               ? (it.hold_cycles - stable_prefix_cycles) : 0;
+                    stable_body_cycles = it.hold_cycles - stable_prefix_cycles - stable_suffix_cycles;
+
+                    repeat (stable_prefix_cycles) @(posedge vif.clk);
+                    if (stable_body_cycles != 0) begin
+                        tb_int_run_window_db::note_stable_start($time);
+                        repeat (stable_body_cycles) @(posedge vif.clk);
+                        tb_int_run_window_db::note_stable_end($time);
+                    end
+                    repeat (stable_suffix_cycles) @(posedge vif.clk);
                 end
                 RC_END: begin
+                    tb_int_run_window_db::note_run_end($time);
                     vif.run_state  <= RC_STATE_TERMINATING;
-                    vif.run_enable <= 1'b0;
+                    vif.run_enable <= 1'b1;
                     repeat (it.hold_cycles) @(posedge vif.clk);
+                    vif.run_state  <= RC_STATE_IDLE;
+                    vif.run_enable <= 1'b0;
                 end
             endcase
         endtask
@@ -688,6 +3956,10 @@ package tb_int_pkg;
         tb_int_scoreboard       sb;
         run_control_agent       rc_agent;
         tb_int_stage_a_monitor  stage_a [4];
+        tb_int_stage_h0_monitor stage_h0[4];
+        tb_int_stage_h1_monitor stage_h1[4];
+        tb_int_stage_b_monitor  stage_b [4][4];
+        tb_int_stage_c_monitor  stage_c [4];
         tb_int_stage_d_monitor  stage_d [4];
         tb_int_stage_e_monitor  stage_e;
 
@@ -711,14 +3983,54 @@ package tb_int_pkg;
                     `uvm_fatal("ENV",
                                $sformatf("stage_a%0d_if not found in config db", i))
             end
+            foreach (stage_h0[i]) begin
+                stage_h0[i] = tb_int_stage_h0_monitor::type_id::create(
+                                  $sformatf("stage_h0_%0d", i), this);
+                stage_h0[i].lane_id = i;
+                if (!uvm_config_db#(virtual hit_type0_if)::get(
+                        this, "", $sformatf("stage_h0_lane%0d_if", i), stage_h0[i].vif))
+                    `uvm_fatal("ENV",
+                               $sformatf("stage_h0_lane%0d_if not found in config db", i))
+            end
+            foreach (stage_h1[i]) begin
+                stage_h1[i] = tb_int_stage_h1_monitor::type_id::create(
+                                  $sformatf("stage_h1_%0d", i), this);
+                stage_h1[i].lane_id = i;
+                if (!uvm_config_db#(virtual hit_type1_if)::get(
+                        this, "", $sformatf("stage_h1_lane%0d_if", i), stage_h1[i].vif))
+                    `uvm_fatal("ENV",
+                               $sformatf("stage_h1_lane%0d_if not found in config db", i))
+            end
+            foreach (stage_b[i,j]) begin
+                stage_b[i][j] = tb_int_stage_b_monitor::type_id::create(
+                                    $sformatf("stage_b_%0d_%0d", i, j), this);
+                stage_b[i][j].lane_id = i;
+                stage_b[i][j].slot_id = j;
+                if (!uvm_config_db#(virtual hit_type2_if)::get(
+                        this, "",
+                        $sformatf("stage_b_lane%0d_slot%0d_if", i, j),
+                        stage_b[i][j].vif))
+                    `uvm_fatal("ENV",
+                               $sformatf("stage_b_lane%0d_slot%0d_if not found in config db",
+                                         i, j))
+            end
+            foreach (stage_c[i]) begin
+                stage_c[i] = tb_int_stage_c_monitor::type_id::create(
+                                 $sformatf("stage_c_%0d", i), this);
+                stage_c[i].lane_id = i;
+                if (!uvm_config_db#(virtual opq_ingress_if)::get(
+                        this, "", $sformatf("stage_c_lane%0d_if", i), stage_c[i].vif))
+                    `uvm_fatal("ENV",
+                               $sformatf("stage_c_lane%0d_if not found in config db", i))
+            end
             foreach (stage_d[i]) begin
                 stage_d[i] = tb_int_stage_d_monitor::type_id::create(
                                  $sformatf("stage_d_%0d", i), this);
                 stage_d[i].lane_id = i;
                 if (!uvm_config_db#(virtual opq_ingress_if)::get(
-                        this, "", $sformatf("lane%0d_if", i), stage_d[i].vif))
+                        this, "", $sformatf("stage_d_lane%0d_if", i), stage_d[i].vif))
                     `uvm_fatal("ENV",
-                               $sformatf("lane%0d_if not found in config db", i))
+                               $sformatf("stage_d_lane%0d_if not found in config db", i))
             end
             stage_e = tb_int_stage_e_monitor::type_id::create("stage_e", this);
             if (!uvm_config_db#(virtual opq_egress_if)::get(
@@ -729,6 +4041,10 @@ package tb_int_pkg;
         virtual function void connect_phase(uvm_phase phase);
             super.connect_phase(phase);
             foreach (stage_a[i]) stage_a[i].ap.connect(sb.stage_a_imp);
+            foreach (stage_h0[i]) stage_h0[i].ap.connect(sb.stage_h0_imp);
+            foreach (stage_h1[i]) stage_h1[i].ap.connect(sb.stage_h1_imp);
+            foreach (stage_b[i,j]) stage_b[i][j].ap.connect(sb.stage_b_imp);
+            foreach (stage_c[i]) stage_c[i].ap.connect(sb.stage_c_imp);
             foreach (stage_d[i]) stage_d[i].ap.connect(sb.stage_d_imp);
             stage_e.ap.connect(sb.stage_e_imp);
         endfunction
@@ -742,18 +4058,31 @@ package tb_int_pkg;
         run_control_sequencer rc_sqr;
         int unsigned prepare_cycles = 1024;
         int unsigned run_cycles     = 2000;
-        // Drain budget after the emulator stops generating new hits. Must
-        // exceed the rb_cam jitter window (910*2 short-mode cycles) plus
-        // feb_frame_assembly + OPQ residency, otherwise the last few
-        // frames are still trapped in the pipeline at end-of-sim.
-        int unsigned end_cycles     = 4096;
+        // Drain budget after the emulator stops generating new hits. During
+        // RC_END the run_state moves to TERMINATING but the SWB gate stays
+        // open so the already committed FIFO contents can reach stage D/E.
+        // The dominant term is rb_cam emptying: with a populated buffer it
+        // takes ~131k cycles for the last entry to reach ffa, far beyond
+        // the 910*2 single-hit latency. 140000 gives rb_cam + ffa +
+        // packet_scheduler + OPQ time to flush completely before we drop
+        // the gate back to IDLE.
+        int unsigned end_cycles     = 140000;
 
         function new(string name = "tb_int_base_vseq");
             super.new(name);
         endfunction
 
         virtual task body();
+            int unsigned    plusarg_cycles;
             run_control_item it;
+
+            if ($value$plusargs("TB_INT_PREPARE_CYCLES=%d", plusarg_cycles))
+                prepare_cycles = plusarg_cycles;
+            if ($value$plusargs("TB_INT_RUN_CYCLES=%d", plusarg_cycles))
+                run_cycles = plusarg_cycles;
+            if ($value$plusargs("TB_INT_END_CYCLES=%d", plusarg_cycles))
+                end_cycles = plusarg_cycles;
+
             it = run_control_item::type_id::create("rc_prepare");
             it.op = RC_PREPARE;
             it.hold_cycles = prepare_cycles;
@@ -841,7 +4170,11 @@ package tb_int_pkg;
         virtual function tb_int_cfg make_cfg();
             tb_int_cfg c;
             c = tb_int_cfg::type_id::create("cfg");
-            c.smoke_run_cycles = 200000;
+            // Shortened from 200000 to keep the run below the latent OPQ
+            // truncation/delta-storm window that opens at sim time
+            // ~2061780 ns. Long-horizon run lives in a follow-up once
+            // the OPQ bug is rooted out.
+            c.smoke_run_cycles = 40000;
             return c;
         endfunction
     endclass
