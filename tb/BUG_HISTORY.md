@@ -22,7 +22,7 @@
 - Fix status:
   - open
 - Fix commit:
-  - pending
+  - `6b9ed41` `Fix native SV OPQ CSR plane and CSR proof traffic`
 
 
 ## 2026-04-17 Native SV empty-frame drain replays trailer-only packets
@@ -57,3 +57,31 @@
 - Fix commit:
   - `37c4b2a` `Fix native OPQ FEB reference path`
 
+## 2026-04-17 Native SV CSR plane returned zeros and hid live credits
+
+- First seen:
+  - `packet_scheduler/tb/uvm` `TEST=opq_basic_feb_packet_contract_test OPQ_N_LANE=2 DUT_IMPL=native_sv`
+- Symptom:
+  - native SV datapath matched the VHDL FEB reference, but the CSR wrapper hard-returned zero data, could not program DRR allowance before traffic, and misreported restored lane/ticket credits at the end of the run
+  - the first native bring-up also tripped the CSR SVA because `readdatavalid` did not match the expected Avalon/MM read contract
+- Root cause:
+  - `ordered_priority_queue_dut_sv.sv` still contained a stub CSR plane instead of the VHDL-visible register map
+  - there was no native plumbing for programmable DRR allowance into the block path, no live counter/counter-accumulation logic, and the wrapper exposed raw internal credit state rather than the visible restored credit contract used by the VHDL DUT
+- Fix status:
+  - fixed
+- Fix commit:
+  - `6b9ed41` `Fix native SV OPQ CSR plane and CSR proof traffic`
+
+## 2026-04-17 Cross-bucket CSR proof used non-FEB ingress framing
+
+- First seen:
+  - `packet_scheduler/tb/uvm` `TEST=opq_cross_bp_credit_test OPQ_N_LANE=2 DUT_IMPL=native_sv`
+  - `packet_scheduler/tb/uvm` `TEST=opq_cross_drr_allowance_test OPQ_N_LANE=2 DUT_IMPL=native_sv`
+- Symptom:
+  - both tests completed with clean UVM scoreboard accounting, but the ingress SVA fired on every frame because the stress sequences asserted fresh `sop` on subheaders instead of using one whole-frame packet with trailer-only `eop`
+- Root cause:
+  - `opq_soak_virtual_sequence` and `opq_drr_saturation_virtual_sequence` were still driving split-packet synthetic traffic, while the active signoff contract for OPQ debug is FEB whole-frame traffic
+- Fix status:
+  - fixed
+- Fix commit:
+  - pending
