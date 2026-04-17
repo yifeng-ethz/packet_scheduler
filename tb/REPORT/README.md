@@ -39,6 +39,7 @@
 - catalog_pending_cases: `962`
 - evidenced_promoted_cases: `31`
 - excluded_cases: `3`
+- promoted_random_cases: `0`
 - merged total code coverage across promoted isolated evidence: `stmt=89.77, branch=81.09, cond=60.32, expr=81.82, fsm_state=94.29, fsm_trans=51.25, toggle=59.29`
 - promoted functional coverage: `89.08% (31/31)`
 

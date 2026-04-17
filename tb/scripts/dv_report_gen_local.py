@@ -415,6 +415,7 @@ def render_report_readme(data: dict[str, Any]) -> str:
     totals = data.get("totals") or {}
     merged = totals.get("merged_total_code_coverage") or {}
     func = totals.get("functional_coverage") or {}
+    random_cases = data.get("random_cases") or []
     out = [
         f"# {data.get('report_title', 'DUT')} — REPORT index",
         "",
@@ -466,12 +467,35 @@ def render_report_readme(data: dict[str, Any]) -> str:
         f"- catalog_pending_cases: `{totals.get('catalog_pending_cases','?')}`",
         f"- evidenced_promoted_cases: `{totals.get('evidenced_cases','?')}`",
         f"- excluded_cases: `{totals.get('excluded_cases','?')}`",
+        f"- promoted_random_cases: `{len(random_cases)}`",
         f"- merged total code coverage across promoted isolated evidence: `{base.fmt_cov(merged)}`",
         f"- promoted functional coverage: `{func.get('pct','?')}% ({func.get('evidenced','?')}/{func.get('planned','?')})`",
         "",
         "---",
         "_[Dashboard](../DV_REPORT.md) &middot; [Coverage](../DV_COV.md)_",
     ]
+    return "\n".join(out)
+
+
+def render_txn_growth_index(data: dict[str, Any]) -> str:
+    random_cases = data.get("random_cases") or []
+    out = [
+        f"# {data.get('report_title', 'DUT')} — txn_growth index",
+        "",
+    ]
+    if not random_cases:
+        out += [
+            "No promoted random signoff cases are present in the active native-SV report set.",
+            "The current promoted buckets are directed-only, so no checkpoint-UCDB growth pages are required.",
+        ]
+    else:
+        out += [
+            "Promoted random testcase checkpoint curves:",
+            "",
+        ]
+        for rc in random_cases:
+            cid = display_case_id(rc)
+            out.append(f"- [`{cid}`]({cid}.md)")
     return "\n".join(out)
 
 
@@ -732,6 +756,7 @@ def main() -> int:
             ucdb_rel = f"uvm/cov_after/{cid}_s{seed}.ucdb"
             base.write(case_path, render_case(rc, log_rel, ucdb_rel))
         base.write(report / "txn_growth" / f"{cid}.md", base.render_txn_growth(rc))
+    base.write(report / "txn_growth" / "README.md", render_txn_growth_index(data))
 
     signoff_modes = {
         mode.get("run_id"): mode

@@ -149,11 +149,18 @@ comparison path, but it must not contribute to final signoff evidence.
 
 ## 7. Add Random-Test Transaction-Growth Evidence
 
-- [ ] Identify which promoted cases are random and require checkpoint growth
+- [x] Identify which promoted cases are random and require checkpoint growth
       curves.
-- [ ] Add checkpoint-UCDB collection for those cases.
-- [ ] Generate `REPORT/txn_growth/<case_id>.md` for each promoted random case.
-- [ ] If checkpoint UCDBs are not yet practical, create the required pages
+      Result: the active promoted native-SV signoff set is directed-only, so
+      there are no promoted random cases that require checkpoint UCDB growth
+      tracking in the current report.
+- [x] Add checkpoint-UCDB collection for those cases.
+      Result: not applicable for the current promoted set because there are no
+      promoted random cases.
+- [x] Generate `REPORT/txn_growth/<case_id>.md` for each promoted random case.
+      Result: the generated `REPORT/txn_growth/README.md` now states the
+      directed-only status explicitly.
+- [x] If checkpoint UCDBs are not yet practical, create the required pages
       anyway and state the limitation explicitly until the flow is implemented.
 
 ## 8. Close Native-SV DUT And Observability Blockers
