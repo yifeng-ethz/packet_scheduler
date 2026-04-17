@@ -188,6 +188,10 @@ package opq_pkg;
     rand bit [15:0] feb_id;
     rand int unsigned pre_gap_cycles;
     bit [2:0] preamble_error_bits;
+    bit [2:0] data_header0_error_bits;
+    bit [2:0] data_header1_error_bits;
+    bit [2:0] debug_header0_error_bits;
+    bit [2:0] debug_header1_error_bits;
     bit whole_frame_packet;
     bit omit_trailer;
     bit suppress_scoreboard_frame;
@@ -205,6 +209,10 @@ package opq_pkg;
       `uvm_field_int(feb_id, UVM_DEFAULT)
       `uvm_field_int(pre_gap_cycles, UVM_DEFAULT)
       `uvm_field_int(preamble_error_bits, UVM_DEFAULT)
+      `uvm_field_int(data_header0_error_bits, UVM_DEFAULT)
+      `uvm_field_int(data_header1_error_bits, UVM_DEFAULT)
+      `uvm_field_int(debug_header0_error_bits, UVM_DEFAULT)
+      `uvm_field_int(debug_header1_error_bits, UVM_DEFAULT)
       `uvm_field_int(whole_frame_packet, UVM_DEFAULT)
       `uvm_field_int(omit_trailer, UVM_DEFAULT)
       `uvm_field_int(suppress_scoreboard_frame, UVM_DEFAULT)
@@ -217,6 +225,10 @@ package opq_pkg;
       feb_id = 16'h0001;
       pre_gap_cycles = 0;
       preamble_error_bits = '0;
+      data_header0_error_bits = '0;
+      data_header1_error_bits = '0;
+      debug_header0_error_bits = '0;
+      debug_header1_error_bits = '0;
       whole_frame_packet = 1'b1;
       omit_trailer = 1'b0;
       suppress_scoreboard_frame = 1'b0;

@@ -48,6 +48,7 @@ comparison path, but it must not contribute to final signoff evidence.
       - probe-only exclusions that remain outside signoff:
         `opq_cross_drr_bursty_random_test`,
         `opq_error_header_mask_recovery_test`,
+        `opq_error_header_word_mask_recovery_test`,
         `opq_error_ftable_overflow_test`
 - [x] Write the explicit non-claims in `DV_REPORT.json` / `DV_COV.md` so the
       dashboard does not imply closure on unsupported sweeps.
@@ -165,12 +166,15 @@ comparison path, but it must not contribute to final signoff evidence.
 
 ## 8. Close Native-SV DUT And Observability Blockers
 
-- [ ] Resolve the open lane-mask recovery bug before promoting
-      `opq_error_lane_mask_recovery_test`.
 - [ ] Resolve the forced-overwrite / malformed-egress bug before promoting
       `opq_error_ftable_overflow_test`.
 - [ ] Resolve the bursty DRR stall-boundary corruption before promoting
       `opq_cross_drr_bursty_random_test`.
+- [ ] Resolve the chained header-word recovery corruption before promoting
+      `opq_error_header_word_mask_recovery_test`.
+- [ ] Resolve the chained malformed-subheader recovery corruption before adding
+      `opq_error_subheader_mask_recovery_test` back into the mixed-bucket soak
+      pool.
 - [x] Resolve the native-SV no-reset drain / credit-restore bug before calling
       `bucket_frame` or `all_buckets_frame` signoff closed.
 - [ ] Add enough late-drop observability to prove hit integrity on the bursty
@@ -192,6 +196,9 @@ comparison path, but it must not contribute to final signoff evidence.
 - [ ] Add fix commit hashes for every fixed issue.
 - [ ] Mark deferred issues with explicit blocking reasons instead of leaving
       them ambiguous.
+      Status: header-word recovery and chained subheader-recovery regressions
+      are now recorded as explicit open native-SV issues; the remaining audit
+      is to backfill any older signoff-era findings that still lack commit IDs.
 
 ## 10. Generate And Review The Final Report
 

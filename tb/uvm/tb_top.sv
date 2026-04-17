@@ -12,17 +12,26 @@ module tb_top;
   import opq_pkg::*;
   import opq_env_pkg::*;
 
-  localparam time CLK_PERIOD = 4ns;
-
   logic d_clk = 1'b0;
   logic d_reset = 1'b1;
+  time clk_period = 4ns;
+  int unsigned clk_period_ns;
 
   opq_ingress_if ingress_if [OPQ_N_LANE] (d_clk);
   opq_egress_if egress_if (d_clk);
   opq_csr_if csr_if (d_clk);
   opq_drop_if #(OPQ_N_LANE) drop_if (d_clk);
 
-  always #(CLK_PERIOD/2) d_clk = ~d_clk;
+  initial begin
+    if ($value$plusargs("TB_CLK_PERIOD_NS=%d", clk_period_ns)) begin
+      if (clk_period_ns == 0) begin
+        $fatal(1, "TB_CLK_PERIOD_NS must be non-zero");
+      end
+      clk_period = clk_period_ns * 1ns;
+    end
+
+    forever #(clk_period/2) d_clk = ~d_clk;
+  end
 
   initial begin
     repeat (4) @(posedge d_clk);

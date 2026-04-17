@@ -31,6 +31,7 @@ DUT; the archived VHDL image remains reference-only.
 | `opq_basic_ts_boundary_test` | Sparse/boundary subheader timestamp values with full-ts reconstruction | Passing |
 | `opq_basic_subheader_shape_test` | Mixed empty / non-empty subheader structure on the healthy path | Passing |
 | `opq_basic_feb_packet_contract_test` | Native FEB whole-frame packet contract, including monitor-side frame reconstruction from real DUT pins | Passing |
+| `opq_basic_single_active_lane_test` | One hit-producing lane while the peer lane stays on legal empty-frame cadence | Passing |
 
 ---
 

@@ -23,6 +23,7 @@ lane skew.
 | `opq_prof_lane_skew_test` | Sustained two-lane skew using the stress sequence rather than zero-skew bring-up traffic | Passing |
 | `opq_prof_whole_frame_skew_test` | Whole-frame skew with alternating active/empty FEB frames to close packet-level cadence under sustained traffic | Passing |
 | `opq_prof_missing_empty_frame_test` | Uneven per-lane frame-count stress for the active 2-lane harness contract, preserving hit integrity while sampling sparse-frame cadence | Passing |
+| `opq_prof_long_soak_test` | Longer directed FEB whole-frame soak beyond the short promoted stress run | Passing |
 
 ---
 

@@ -1,5 +1,41 @@
 # OPQ Bug History
 
+## 2026-04-17 Header-word recovery path still corrupts the next legal frame
+
+- First seen:
+  - `packet_scheduler/tb/uvm` `TEST=opq_error_header_word_mask_recovery_test OPQ_N_LANE=2 DUT_IMPL=native_sv`
+- Symptom:
+  - a malformed header-word frame is counted twice by the lane counters and the following legal recovery frame emerges with the right payload words but the wrong timestamp base
+  - observed isolated failure is `expected=4 actual=4 missing=4 ghost=4`, with the recovery hits reconstructed at `ts=0x10` instead of `ts=0x1010`
+- Root cause status:
+  - open
+  - the native-SV header-error handling path still lets stale frame context leak into the next legal frame, even when the malformed stimulus is injected at header-word granularity instead of by truncating the whole packet
+- Candidate fixes:
+  - complete the native-SV header-word mask recovery reinitialization so the next legal preamble rebuilds timestamp/ticket context from a clean parser state
+  - add a parser-boundary assertion for header-word recovery so stale frame context is caught before egress
+- Fix status:
+  - open
+- Fix commit:
+  - pending
+
+## 2026-04-17 Chained malformed-subheader recovery is not composable in mixed-bucket soak
+
+- First seen:
+  - `packet_scheduler/tb/uvm` `TEST=opq_cross_mixed_bucket_random_soak_test OPQ_N_LANE=2 DUT_IMPL=native_sv`
+- Symptom:
+  - the isolated `opq_error_subheader_mask_recovery_test` remains green, but when the same malformed-subheader recovery is chained behind prior mixed-bucket traffic it can emit malformed egress framing and trip `opq_hit3_contract_sva`
+  - the first mixed-soak failure showed `Egress expected hit payload, got datak=0x1` followed by `sub-header arrived before the previous sub-header drained` and a later credit-restore timeout on the chained recovery step
+- Root cause status:
+  - open
+  - the native-SV malformed-subheader recovery path is not fully composable after prior no-restart traffic; the mixed-bucket soak now excludes that step until the chained recovery contract is fixed
+- Candidate fixes:
+  - root-cause the lingering parser/presenter state that survives the malformed-subheader recovery path across chained no-restart traffic
+  - add a focused chained-recovery testcase once the recovery state machine is repaired, then return that step to the mixed-soak pool
+- Fix status:
+  - open
+- Fix commit:
+  - pending
+
 ## 2026-04-17 Native-SV no-restart signoff accounting breaks continuous-frame closure
 
 - First seen:

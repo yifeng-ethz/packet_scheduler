@@ -12,36 +12,36 @@
 | OPQ_N_LANE | `2` |
 | OPQ_N_SHD | `128`, `256`, `512` |
 | MODE | `MERGING` |
-| probe_only_exclusions | `opq_error_ftable_overflow_test`, `opq_error_header_mask_recovery_test`, `opq_cross_drr_bursty_random_test` |
+| probe_only_exclusions | `opq_error_ftable_overflow_test`, `opq_error_header_mask_recovery_test`, `opq_error_header_word_mask_recovery_test`, `opq_cross_drr_bursty_random_test` |
 
 ## Buckets
 
 | status | bucket | catalog_planned | promoted | evidenced | backlog | merged |
 |:---:|---|---:|---:|---:|---:|---|
-| ⚠️ | [`BASIC`](buckets/BASIC.md) | 146 | 4 | 4 | 142 | stmt=84.07, branch=71.93, cond=46.56, expr=70.91, fsm_state=85.71, fsm_trans=43.75, toggle=45.51 |
+| ⚠️ | [`BASIC`](buckets/BASIC.md) | 146 | 5 | 5 | 141 | stmt=82.72, branch=70.18, cond=45.50, expr=69.09, fsm_state=85.71, fsm_trans=43.75, toggle=47.43 |
 | ⚠️ | [`PARAM`](buckets/PARAM.md) | 180 | 6 | 6 | 174 | stmt=84.28, branch=72.12, cond=48.15, expr=70.91, fsm_state=85.71, fsm_trans=43.75, toggle=46.76 |
-| ⚠️ | [`EDGE`](buckets/EDGE.md) | 168 | 6 | 6 | 162 | stmt=83.64, branch=71.73, cond=48.68, expr=70.91, fsm_state=85.71, fsm_trans=43.75, toggle=43.87 |
-| ⚠️ | [`PROF`](buckets/PROF.md) | 168 | 4 | 4 | 164 | stmt=84.07, branch=71.73, cond=46.56, expr=70.91, fsm_state=85.71, fsm_trans=43.75, toggle=44.68 |
+| ⚠️ | [`EDGE`](buckets/EDGE.md) | 168 | 7 | 7 | 161 | stmt=83.58, branch=71.54, cond=47.09, expr=69.09, fsm_state=85.71, fsm_trans=43.75, toggle=43.87 |
+| ⚠️ | [`PROF`](buckets/PROF.md) | 168 | 5 | 5 | 163 | stmt=83.80, branch=71.54, cond=46.03, expr=69.09, fsm_state=85.71, fsm_trans=43.75, toggle=44.68 |
 | ⚠️ | [`ERROR`](buckets/ERROR.md) | 166 | 6 | 6 | 160 | stmt=86.54, branch=76.61, cond=50.26, expr=74.55, fsm_state=91.43, fsm_trans=48.75, toggle=41.13 |
-| ⚠️ | [`CROSS`](buckets/CROSS.md) | 165 | 5 | 5 | 160 | stmt=86.01, branch=74.85, cond=51.85, expr=70.91, fsm_state=88.57, fsm_trans=46.25, toggle=51.18 |
+| ⚠️ | [`CROSS`](buckets/CROSS.md) | 165 | 7 | 7 | 158 | stmt=86.65, branch=75.73, cond=54.76, expr=81.82, fsm_state=88.57, fsm_trans=46.25, toggle=64.10 |
 
 ## Cross / continuous-frame runs
 
 | status | run_id | kind | seq | txns | cross_pct |
 |:---:|---|---|---|---:|---:|
-| ✅ | [`bucket_frame_native_sv`](cross/bucket_frame_native_sv.md) | bucket_frame | OPQ_BUCKET_FRAME_NATIVE_SV | 202 | 78.11 |
-| ✅ | [`all_buckets_frame_native_sv`](cross/all_buckets_frame_native_sv.md) | all_buckets_frame | OPQ_ALL_BUCKETS_FRAME_NATIVE_SV | 230 | 77.91 |
+| ✅ | [`bucket_frame_native_sv`](cross/bucket_frame_native_sv.md) | bucket_frame | OPQ_BUCKET_FRAME_NATIVE_SV | 276 | 77.94 |
+| ✅ | [`all_buckets_frame_native_sv`](cross/all_buckets_frame_native_sv.md) | all_buckets_frame | OPQ_ALL_BUCKETS_FRAME_NATIVE_SV | 304 | 77.74 |
 
 ## Totals
 
 - catalog_planned_cases: `993`
-- promoted_signoff_cases: `31`
-- catalog_pending_cases: `962`
-- evidenced_promoted_cases: `31`
-- excluded_cases: `3`
-- promoted_random_cases: `0`
-- merged total code coverage across promoted isolated evidence: `stmt=89.77, branch=81.09, cond=60.32, expr=81.82, fsm_state=94.29, fsm_trans=51.25, toggle=59.29`
-- promoted functional coverage: `89.08% (31/31)`
+- promoted_signoff_cases: `36`
+- catalog_pending_cases: `957`
+- evidenced_promoted_cases: `36`
+- excluded_cases: `4`
+- promoted_random_cases: `1`
+- merged total code coverage across promoted isolated evidence: `stmt=88.54, branch=78.85, cond=58.99, expr=87.27, fsm_state=94.29, fsm_trans=51.25, toggle=65.16`
+- promoted functional coverage: `89.76% (36/36)`
 
 ---
 _[Dashboard](../DV_REPORT.md) &middot; [Coverage](../DV_COV.md)_

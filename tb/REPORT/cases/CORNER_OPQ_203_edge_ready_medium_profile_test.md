@@ -30,7 +30,7 @@
 | ℹ️ | log.cg_cfg | `49.4` |
 | ℹ️ | log.cg_frame | `63.33` |
 | ℹ️ | log.cg_subh | `59.72` |
-| ℹ️ | log.cg_bp | `25.0` |
+| ℹ️ | log.cg_bp | `20.0` |
 | ℹ️ | log.cg_csr | `92.26` |
 | ℹ️ | log.cg_credit | `60.0` |
 | ℹ️ | log.cg_drop | `48.61` |
@@ -54,7 +54,7 @@
 | expr | 67.27 | 67.27 | 0.00 | 67.27 | 0.00 |
 | fsm_state | 85.71 | 85.71 | 0.00 | 85.71 | 0.00 |
 | fsm_trans | 43.75 | 43.75 | 0.00 | 43.75 | 0.00 |
-| toggle | 39.17 | 39.17 | 0.00 | 39.19 | 0.00 |
+| toggle | 39.19 | 39.19 | 0.00 | 39.19 | 0.00 |
 
 ---
 _Back to [bucket](../buckets/EDGE.md) &middot; [dashboard](../../DV_REPORT.md)_

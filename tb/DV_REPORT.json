@@ -20,6 +20,7 @@
     "probe_only_exclusions": [
       "opq_error_ftable_overflow_test",
       "opq_error_header_mask_recovery_test",
+      "opq_error_header_word_mask_recovery_test",
       "opq_cross_drr_bursty_random_test"
     ]
   },
@@ -46,6 +47,11 @@
         "bucket": "BASIC",
         "report_case_id": "STD_OPQ_004_basic_feb_packet_contract_test",
         "legacy_test_name": "opq_basic_feb_packet_contract_test"
+      },
+      {
+        "bucket": "BASIC",
+        "report_case_id": "STD_OPQ_005_basic_single_active_lane_test",
+        "legacy_test_name": "opq_basic_single_active_lane_test"
       },
       {
         "bucket": "PARAM",
@@ -108,6 +114,11 @@
         "legacy_test_name": "opq_edge_toggle_backpressure_test"
       },
       {
+        "bucket": "EDGE",
+        "report_case_id": "CORNER_OPQ_207_edge_burst_restart_profile_test",
+        "legacy_test_name": "opq_edge_burst_restart_profile_test"
+      },
+      {
         "bucket": "PROF",
         "report_case_id": "COMBO_OPQ_301_prof_stress_test",
         "legacy_test_name": "opq_prof_stress_test"
@@ -126,6 +137,11 @@
         "bucket": "PROF",
         "report_case_id": "COMBO_OPQ_304_prof_missing_empty_frame_test",
         "legacy_test_name": "opq_prof_missing_empty_frame_test"
+      },
+      {
+        "bucket": "PROF",
+        "report_case_id": "COMBO_OPQ_305_prof_long_soak_test",
+        "legacy_test_name": "opq_prof_long_soak_test"
       },
       {
         "bucket": "ERROR",
@@ -181,6 +197,16 @@
         "bucket": "CROSS",
         "report_case_id": "COMBO_OPQ_505_cross_drr_short_allowance_test",
         "legacy_test_name": "opq_cross_drr_short_allowance_test"
+      },
+      {
+        "bucket": "CROSS",
+        "report_case_id": "COMBO_OPQ_506_cross_idle_lane_backpressure_test",
+        "legacy_test_name": "opq_cross_idle_lane_backpressure_test"
+      },
+      {
+        "bucket": "CROSS",
+        "report_case_id": "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test",
+        "legacy_test_name": "opq_cross_mixed_bucket_random_soak_test"
       }
     ]
   },
@@ -242,6 +268,7 @@
     "excluded_probe_cases": [
       "opq_error_ftable_overflow_test",
       "opq_error_header_mask_recovery_test",
+      "opq_error_header_word_mask_recovery_test",
       "opq_cross_drr_bursty_random_test"
     ],
     "mode_scope": "MERGING mode only is claimed in the active native-SV report",
@@ -264,7 +291,8 @@
           "STD_OPQ_001_basic_smoke_test",
           "STD_OPQ_002_basic_ts_boundary_test",
           "STD_OPQ_003_basic_subheader_shape_test",
-          "STD_OPQ_004_basic_feb_packet_contract_test"
+          "STD_OPQ_004_basic_feb_packet_contract_test",
+          "STD_OPQ_005_basic_single_active_lane_test"
         ],
         "PARAM": [
           "COMBO_OPQ_101_basic_smoke_test_nshd128",
@@ -280,13 +308,15 @@
           "CORNER_OPQ_203_edge_ready_medium_profile_test",
           "CORNER_OPQ_204_edge_stuck_low_backpressure_test",
           "CORNER_OPQ_205_edge_max_hits_test",
-          "CORNER_OPQ_206_edge_toggle_backpressure_test"
+          "CORNER_OPQ_206_edge_toggle_backpressure_test",
+          "CORNER_OPQ_207_edge_burst_restart_profile_test"
         ],
         "PROF": [
           "COMBO_OPQ_301_prof_stress_test",
           "COMBO_OPQ_302_prof_lane_skew_test",
           "COMBO_OPQ_303_prof_whole_frame_skew_test",
-          "COMBO_OPQ_304_prof_missing_empty_frame_test"
+          "COMBO_OPQ_304_prof_missing_empty_frame_test",
+          "COMBO_OPQ_305_prof_long_soak_test"
         ],
         "ERROR": [
           "CORNER_OPQ_401_error_lane_mask_test",
@@ -301,7 +331,9 @@
           "COMBO_OPQ_502_cross_drr_allowance_test",
           "COMBO_OPQ_503_cross_drr_idle_lane_test",
           "COMBO_OPQ_504_cross_drr_zero_allowance_test",
-          "COMBO_OPQ_505_cross_drr_short_allowance_test"
+          "COMBO_OPQ_505_cross_drr_short_allowance_test",
+          "COMBO_OPQ_506_cross_idle_lane_backpressure_test",
+          "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test"
         ]
       }
     },
@@ -336,6 +368,11 @@
           "legacy_test_name": "opq_basic_subheader_shape_test"
         },
         {
+          "bucket": "BASIC",
+          "report_case_id": "STD_OPQ_005_basic_single_active_lane_test",
+          "legacy_test_name": "opq_basic_single_active_lane_test"
+        },
+        {
           "bucket": "EDGE",
           "report_case_id": "CORNER_OPQ_201_edge_backpressure_test",
           "legacy_test_name": "opq_edge_backpressure_test"
@@ -349,6 +386,11 @@
           "bucket": "EDGE",
           "report_case_id": "CORNER_OPQ_203_edge_ready_medium_profile_test",
           "legacy_test_name": "opq_edge_ready_medium_profile_test"
+        },
+        {
+          "bucket": "EDGE",
+          "report_case_id": "CORNER_OPQ_207_edge_burst_restart_profile_test",
+          "legacy_test_name": "opq_edge_burst_restart_profile_test"
         },
         {
           "bucket": "EDGE",
@@ -384,6 +426,11 @@
           "bucket": "PROF",
           "report_case_id": "COMBO_OPQ_304_prof_missing_empty_frame_test",
           "legacy_test_name": "opq_prof_missing_empty_frame_test"
+        },
+        {
+          "bucket": "PROF",
+          "report_case_id": "COMBO_OPQ_305_prof_long_soak_test",
+          "legacy_test_name": "opq_prof_long_soak_test"
         },
         {
           "bucket": "ERROR",
@@ -434,11 +481,17 @@
           "bucket": "CROSS",
           "report_case_id": "COMBO_OPQ_505_cross_drr_short_allowance_test",
           "legacy_test_name": "opq_cross_drr_short_allowance_test"
+        },
+        {
+          "bucket": "CROSS",
+          "report_case_id": "COMBO_OPQ_506_cross_idle_lane_backpressure_test",
+          "legacy_test_name": "opq_cross_idle_lane_backpressure_test"
         }
       ],
       "limitations": [
         "PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.",
-        "opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow."
+        "opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow.",
+        "opq_cross_mixed_bucket_random_soak_test is isolated-only evidence; it intentionally randomizes across buckets rather than serving as the fixed promoted no-restart baseline."
       ]
     },
     "all_buckets_frame": {
@@ -472,6 +525,11 @@
           "legacy_test_name": "opq_basic_subheader_shape_test"
         },
         {
+          "bucket": "BASIC",
+          "report_case_id": "STD_OPQ_005_basic_single_active_lane_test",
+          "legacy_test_name": "opq_basic_single_active_lane_test"
+        },
+        {
           "bucket": "EDGE",
           "report_case_id": "CORNER_OPQ_201_edge_backpressure_test",
           "legacy_test_name": "opq_edge_backpressure_test"
@@ -485,6 +543,11 @@
           "bucket": "EDGE",
           "report_case_id": "CORNER_OPQ_203_edge_ready_medium_profile_test",
           "legacy_test_name": "opq_edge_ready_medium_profile_test"
+        },
+        {
+          "bucket": "EDGE",
+          "report_case_id": "CORNER_OPQ_207_edge_burst_restart_profile_test",
+          "legacy_test_name": "opq_edge_burst_restart_profile_test"
         },
         {
           "bucket": "EDGE",
@@ -520,6 +583,11 @@
           "bucket": "PROF",
           "report_case_id": "COMBO_OPQ_304_prof_missing_empty_frame_test",
           "legacy_test_name": "opq_prof_missing_empty_frame_test"
+        },
+        {
+          "bucket": "PROF",
+          "report_case_id": "COMBO_OPQ_305_prof_long_soak_test",
+          "legacy_test_name": "opq_prof_long_soak_test"
         },
         {
           "bucket": "ERROR",
@@ -570,6 +638,11 @@
           "bucket": "CROSS",
           "report_case_id": "COMBO_OPQ_505_cross_drr_short_allowance_test",
           "legacy_test_name": "opq_cross_drr_short_allowance_test"
+        },
+        {
+          "bucket": "CROSS",
+          "report_case_id": "COMBO_OPQ_506_cross_idle_lane_backpressure_test",
+          "legacy_test_name": "opq_cross_idle_lane_backpressure_test"
         }
       ],
       "extra_tail_steps": [
@@ -587,7 +660,8 @@
       "limitations": [
         "PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.",
         "opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow.",
-        "This run appends two extra tail sequences after the 24 promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases."
+        "opq_cross_mixed_bucket_random_soak_test is isolated-only evidence; it intentionally randomizes across buckets rather than serving as the fixed promoted no-restart baseline.",
+        "This run appends two extra tail sequences after the 28 promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases."
       ]
     }
   },
@@ -1237,6 +1311,168 @@
         },
         "toggle": {
           "pct": 0.24
+        }
+      }
+    },
+    {
+      "case_id": "STD_OPQ_005_basic_single_active_lane_test",
+      "full_case_id": "STD_OPQ_005_basic_single_active_lane_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Only one active hit-producing lane while the peer lane still emits legal empty-frame cadence.",
+      "primary_checks": "Hit integrity and credit restore with asymmetric legal FEB frame cadence.",
+      "contract_anchor": "DV_BASIC single-active-lane closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "BASIC",
+      "legacy_test_name": "opq_basic_single_active_lane_test",
+      "test_name": "opq_basic_single_active_lane_test",
+      "report_case_id": "STD_OPQ_005_basic_single_active_lane_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 64,
+        "hit_actual": 64,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 58.33,
+        "cg_subh": 22.22,
+        "cg_bp": 0.0,
+        "cg_csr": 92.26,
+        "cg_credit": 46.67,
+        "cg_drop": 48.61,
+        "cg_drr": 49.0,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 4,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 4,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 68.42
+        },
+        "cond": {
+          "pct": 44.44
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 82.86
+        },
+        "fsm_trans": {
+          "pct": 41.25
+        },
+        "stmt": {
+          "pct": 81.38
+        },
+        "toggle": {
+          "pct": 24.9
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 68.42
+        },
+        "cond": {
+          "pct": 44.44
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 82.86
+        },
+        "fsm_trans": {
+          "pct": 41.25
+        },
+        "stmt": {
+          "pct": 81.38
+        },
+        "toggle": {
+          "pct": 24.9
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 1.92
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 70.18
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 69.09
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 82.72
+        },
+        "toggle": {
+          "pct": 47.43
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 1.92
         }
       }
     },
@@ -2568,7 +2804,7 @@
         "cg_cfg": 49.4,
         "cg_frame": 63.33,
         "cg_subh": 59.72,
-        "cg_bp": 25.0,
+        "cg_bp": 20.0,
         "cg_csr": 92.26,
         "cg_credit": 60.0,
         "cg_drop": 48.61,
@@ -2602,7 +2838,7 @@
           "pct": 83.53
         },
         "toggle": {
-          "pct": 39.17
+          "pct": 39.19
         }
       },
       "isolated_cov_per_txn": {
@@ -2625,7 +2861,7 @@
           "pct": 83.53
         },
         "toggle": {
-          "pct": 39.17
+          "pct": 39.19
         }
       },
       "bucket_gain_by_case": {
@@ -2792,13 +3028,13 @@
       },
       "bucket_gain_by_case": {
         "branch": {
-          "pct": 0.19
+          "pct": 0.09
         },
         "cond": {
-          "pct": 2.12
+          "pct": 1.06
         },
         "expr": {
-          "pct": 3.64
+          "pct": 1.82
         },
         "fsm_state": {
           "pct": 0.0
@@ -2815,13 +3051,13 @@
       },
       "bucket_merged_total_after_case": {
         "branch": {
-          "pct": 71.54
+          "pct": 71.44
         },
         "cond": {
-          "pct": 47.62
+          "pct": 46.56
         },
         "expr": {
-          "pct": 70.91
+          "pct": 69.09
         },
         "fsm_state": {
           "pct": 85.71
@@ -2838,13 +3074,13 @@
       },
       "bucket_gain_per_txn": {
         "branch": {
-          "pct": 0.19
+          "pct": 0.09
         },
         "cond": {
-          "pct": 2.12
+          "pct": 1.06
         },
         "expr": {
-          "pct": 3.64
+          "pct": 1.82
         },
         "fsm_state": {
           "pct": 0.0
@@ -2954,10 +3190,10 @@
       },
       "bucket_gain_by_case": {
         "branch": {
-          "pct": 0.19
+          "pct": 0.1
         },
         "cond": {
-          "pct": 1.06
+          "pct": 0.53
         },
         "expr": {
           "pct": 0.0
@@ -2969,7 +3205,7 @@
           "pct": 0.0
         },
         "stmt": {
-          "pct": 0.11
+          "pct": 0.05
         },
         "toggle": {
           "pct": 4.67
@@ -2977,13 +3213,13 @@
       },
       "bucket_merged_total_after_case": {
         "branch": {
-          "pct": 71.73
+          "pct": 71.54
         },
         "cond": {
-          "pct": 48.68
+          "pct": 47.09
         },
         "expr": {
-          "pct": 70.91
+          "pct": 69.09
         },
         "fsm_state": {
           "pct": 85.71
@@ -2992,7 +3228,7 @@
           "pct": 43.75
         },
         "stmt": {
-          "pct": 83.64
+          "pct": 83.58
         },
         "toggle": {
           "pct": 43.87
@@ -3000,10 +3236,10 @@
       },
       "bucket_gain_per_txn": {
         "branch": {
-          "pct": 0.19
+          "pct": 0.1
         },
         "cond": {
-          "pct": 1.06
+          "pct": 0.53
         },
         "expr": {
           "pct": 0.0
@@ -3015,7 +3251,7 @@
           "pct": 0.0
         },
         "stmt": {
-          "pct": 0.11
+          "pct": 0.05
         },
         "toggle": {
           "pct": 4.67
@@ -3139,13 +3375,13 @@
       },
       "bucket_merged_total_after_case": {
         "branch": {
-          "pct": 71.73
+          "pct": 71.54
         },
         "cond": {
-          "pct": 48.68
+          "pct": 47.09
         },
         "expr": {
-          "pct": 70.91
+          "pct": 69.09
         },
         "fsm_state": {
           "pct": 85.71
@@ -3154,7 +3390,169 @@
           "pct": 43.75
         },
         "stmt": {
-          "pct": 83.64
+          "pct": 83.58
+        },
+        "toggle": {
+          "pct": 43.87
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "CORNER_OPQ_207_edge_burst_restart_profile_test",
+      "full_case_id": "CORNER_OPQ_207_edge_burst_restart_profile_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Burstier legal ready restart profile with shorter ready windows and deeper low stretches.",
+      "primary_checks": "Presenter hold/restart behavior across repeated medium-depth stall bursts.",
+      "contract_anchor": "DV_EDGE burst-restart profile closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "EDGE",
+      "legacy_test_name": "opq_edge_burst_restart_profile_test",
+      "test_name": "opq_edge_burst_restart_profile_test",
+      "report_case_id": "CORNER_OPQ_207_edge_burst_restart_profile_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 4,
+        "hit_actual": 4,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 63.33,
+        "cg_subh": 59.72,
+        "cg_bp": 11.67,
+        "cg_csr": 92.26,
+        "cg_credit": 60.0,
+        "cg_drop": 48.61,
+        "cg_drr": 40.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 3,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 3,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 39.19
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 39.19
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 0.0
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 71.54
+        },
+        "cond": {
+          "pct": 47.09
+        },
+        "expr": {
+          "pct": 69.09
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.58
         },
         "toggle": {
           "pct": 43.87
@@ -3829,6 +4227,168 @@
         },
         "toggle": {
           "pct": 0.17
+        }
+      }
+    },
+    {
+      "case_id": "COMBO_OPQ_305_prof_long_soak_test",
+      "full_case_id": "COMBO_OPQ_305_prof_long_soak_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Longer directed FEB whole-frame soak on the default 2-lane native-SV path.",
+      "primary_checks": "Sustained hit integrity and clean credit restore beyond the short promoted soak.",
+      "contract_anchor": "DV_PROF extended directed soak closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "PROF",
+      "legacy_test_name": "opq_prof_long_soak_test",
+      "test_name": "opq_prof_long_soak_test",
+      "report_case_id": "COMBO_OPQ_305_prof_long_soak_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 32,
+        "hit_actual": 32,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 63.33,
+        "cg_subh": 61.11,
+        "cg_bp": 0.0,
+        "cg_csr": 92.26,
+        "cg_credit": 60.0,
+        "cg_drop": 48.61,
+        "cg_drr": 43.67,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 24,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 24,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 44.22
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 44.22
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 0.0
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 71.54
+        },
+        "cond": {
+          "pct": 46.03
+        },
+        "expr": {
+          "pct": 69.09
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.8
+        },
+        "toggle": {
+          "pct": 44.68
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 0.0
         }
       }
     },
@@ -5597,27 +6157,352 @@
           "pct": 1.06
         }
       }
+    },
+    {
+      "case_id": "COMBO_OPQ_506_cross_idle_lane_backpressure_test",
+      "full_case_id": "COMBO_OPQ_506_cross_idle_lane_backpressure_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "One hit-idle lane crossed with periodic egress stalls on the active lane.",
+      "primary_checks": "Idle-lane cadence preservation and clean restart behavior under backpressure.",
+      "contract_anchor": "DV_CROSS idle-lane cadence x backpressure closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "CROSS",
+      "legacy_test_name": "opq_cross_idle_lane_backpressure_test",
+      "test_name": "opq_cross_idle_lane_backpressure_test",
+      "report_case_id": "COMBO_OPQ_506_cross_idle_lane_backpressure_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 384,
+        "hit_actual": 384,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 48.33,
+        "cg_subh": 22.22,
+        "cg_bp": 25.0,
+        "cg_csr": 92.26,
+        "cg_credit": 46.67,
+        "cg_drop": 48.61,
+        "cg_drr": 57.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 6,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 6,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 70.18
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 82.78
+        },
+        "toggle": {
+          "pct": 29.32
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 70.18
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 82.78
+        },
+        "toggle": {
+          "pct": 29.32
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 0.04
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 72.51
+        },
+        "cond": {
+          "pct": 48.68
+        },
+        "expr": {
+          "pct": 69.09
+        },
+        "fsm_state": {
+          "pct": 88.57
+        },
+        "fsm_trans": {
+          "pct": 46.25
+        },
+        "stmt": {
+          "pct": 84.39
+        },
+        "toggle": {
+          "pct": 51.22
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 0.04
+        }
+      }
+    },
+    {
+      "case_id": "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test",
+      "full_case_id": "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test",
+      "method": "R",
+      "observed_txn": 64,
+      "scenario": "Random mixed-bucket soak that draws safe directed scenarios from BASIC, EDGE, PROF, ERROR, and CROSS.",
+      "primary_checks": "Multi-bucket chained hit integrity, bucket visitation, and no-restart drain stability under randomized sequencing.",
+      "contract_anchor": "DV_CROSS mixed-bucket random soak closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "high",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "CROSS",
+      "legacy_test_name": "opq_cross_mixed_bucket_random_soak_test",
+      "test_name": "opq_cross_mixed_bucket_random_soak_test",
+      "report_case_id": "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 5798,
+        "hit_actual": 5798,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 90.0,
+        "cg_subh": 79.17,
+        "cg_bp": 40.0,
+        "cg_csr": 95.24,
+        "cg_credit": 46.67,
+        "cg_drop": 62.5,
+        "cg_drr": 42.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 270,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 270,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0,
+        "random_txn": 64
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 76.61
+        },
+        "cond": {
+          "pct": 57.67
+        },
+        "expr": {
+          "pct": 92.73
+        },
+        "fsm_state": {
+          "pct": 88.57
+        },
+        "fsm_trans": {
+          "pct": 46.25
+        },
+        "stmt": {
+          "pct": 87.3
+        },
+        "toggle": {
+          "pct": 63.26
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 1.197
+        },
+        "cond": {
+          "pct": 0.9011
+        },
+        "expr": {
+          "pct": 1.4489
+        },
+        "fsm_state": {
+          "pct": 1.3839
+        },
+        "fsm_trans": {
+          "pct": 0.7227
+        },
+        "stmt": {
+          "pct": 1.3641
+        },
+        "toggle": {
+          "pct": 0.9884
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 3.22
+        },
+        "cond": {
+          "pct": 6.08
+        },
+        "expr": {
+          "pct": 12.73
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 2.26
+        },
+        "toggle": {
+          "pct": 12.88
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 75.73
+        },
+        "cond": {
+          "pct": 54.76
+        },
+        "expr": {
+          "pct": 81.82
+        },
+        "fsm_state": {
+          "pct": 88.57
+        },
+        "fsm_trans": {
+          "pct": 46.25
+        },
+        "stmt": {
+          "pct": 86.65
+        },
+        "toggle": {
+          "pct": 64.1
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.0503
+        },
+        "cond": {
+          "pct": 0.095
+        },
+        "expr": {
+          "pct": 0.1989
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0353
+        },
+        "toggle": {
+          "pct": 0.2013
+        }
+      }
     }
   ],
   "bucket_summary": [
     {
       "bucket": "BASIC",
-      "planned_cases": 4,
+      "planned_cases": 5,
       "catalog_planned_cases": 146,
-      "catalog_pending_cases": 142,
+      "catalog_pending_cases": 141,
       "catalog_source": "legacy/tb/DV_BASIC.md",
       "catalog_summary": "Archived directed BASIC catalog preserved in tb/legacy/tb/DV_BASIC.md.",
-      "promoted_cases": 4,
-      "evidenced_cases": 4,
+      "promoted_cases": 5,
+      "evidenced_cases": 5,
       "merged_bucket_total": {
         "branch": {
-          "pct": 71.93
+          "pct": 70.18
         },
         "cond": {
-          "pct": 46.56
+          "pct": 45.5
         },
         "expr": {
-          "pct": 70.91
+          "pct": 69.09
         },
         "fsm_state": {
           "pct": 85.71
@@ -5626,21 +6511,21 @@
           "pct": 43.75
         },
         "stmt": {
-          "pct": 84.07
+          "pct": 82.72
         },
         "toggle": {
-          "pct": 45.51
+          "pct": 47.43
         }
       },
       "merged_all_buckets_total_after_bucket": {
         "branch": {
-          "pct": 71.93
+          "pct": 70.18
         },
         "cond": {
-          "pct": 46.56
+          "pct": 45.5
         },
         "expr": {
-          "pct": 70.91
+          "pct": 69.09
         },
         "fsm_state": {
           "pct": 85.71
@@ -5649,22 +6534,23 @@
           "pct": 43.75
         },
         "stmt": {
-          "pct": 84.07
+          "pct": 82.72
         },
         "toggle": {
-          "pct": 45.51
+          "pct": 47.43
         }
       },
       "functional_coverage": {
-        "pct": 66.97,
-        "evidenced": 4,
-        "planned": 4
+        "pct": 68.17,
+        "evidenced": 5,
+        "planned": 5
       },
       "ordered_case_ids": [
         "STD_OPQ_001_basic_smoke_test",
         "STD_OPQ_002_basic_ts_boundary_test",
         "STD_OPQ_003_basic_subheader_shape_test",
-        "STD_OPQ_004_basic_feb_packet_contract_test"
+        "STD_OPQ_004_basic_feb_packet_contract_test",
+        "STD_OPQ_005_basic_single_active_lane_test"
       ]
     },
     {
@@ -5701,13 +6587,13 @@
       },
       "merged_all_buckets_total_after_bucket": {
         "branch": {
-          "pct": 72.12
+          "pct": 70.27
         },
         "cond": {
-          "pct": 48.15
+          "pct": 46.3
         },
         "expr": {
-          "pct": 70.91
+          "pct": 69.09
         },
         "fsm_state": {
           "pct": 85.71
@@ -5716,10 +6602,10 @@
           "pct": 43.75
         },
         "stmt": {
-          "pct": 84.28
+          "pct": 82.83
         },
         "toggle": {
-          "pct": 48.95
+          "pct": 50.23
         }
       },
       "functional_coverage": {
@@ -5738,22 +6624,22 @@
     },
     {
       "bucket": "EDGE",
-      "planned_cases": 6,
+      "planned_cases": 7,
       "catalog_planned_cases": 168,
-      "catalog_pending_cases": 162,
+      "catalog_pending_cases": 161,
       "catalog_source": "legacy/tb/DV_EDGE.md",
       "catalog_summary": "Archived directed EDGE catalog preserved in tb/legacy/tb/DV_EDGE.md.",
-      "promoted_cases": 6,
-      "evidenced_cases": 6,
+      "promoted_cases": 7,
+      "evidenced_cases": 7,
       "merged_bucket_total": {
         "branch": {
-          "pct": 71.73
+          "pct": 71.54
         },
         "cond": {
-          "pct": 48.68
+          "pct": 47.09
         },
         "expr": {
-          "pct": 70.91
+          "pct": 69.09
         },
         "fsm_state": {
           "pct": 85.71
@@ -5762,7 +6648,7 @@
           "pct": 43.75
         },
         "stmt": {
-          "pct": 83.64
+          "pct": 83.58
         },
         "toggle": {
           "pct": 43.87
@@ -5770,56 +6656,10 @@
       },
       "merged_all_buckets_total_after_bucket": {
         "branch": {
-          "pct": 72.32
+          "pct": 71.93
         },
         "cond": {
-          "pct": 50.26
-        },
-        "expr": {
-          "pct": 74.55
-        },
-        "fsm_state": {
-          "pct": 85.71
-        },
-        "fsm_trans": {
-          "pct": 43.75
-        },
-        "stmt": {
-          "pct": 84.28
-        },
-        "toggle": {
-          "pct": 48.99
-        }
-      },
-      "functional_coverage": {
-        "pct": 71.5,
-        "evidenced": 6,
-        "planned": 6
-      },
-      "ordered_case_ids": [
-        "CORNER_OPQ_201_edge_backpressure_test",
-        "CORNER_OPQ_202_edge_always_ready_test",
-        "CORNER_OPQ_203_edge_ready_medium_profile_test",
-        "CORNER_OPQ_204_edge_stuck_low_backpressure_test",
-        "CORNER_OPQ_205_edge_max_hits_test",
-        "CORNER_OPQ_206_edge_toggle_backpressure_test"
-      ]
-    },
-    {
-      "bucket": "PROF",
-      "planned_cases": 4,
-      "catalog_planned_cases": 168,
-      "catalog_pending_cases": 164,
-      "catalog_source": "legacy/tb/DV_PROF.md",
-      "catalog_summary": "Archived directed PROF catalog preserved in tb/legacy/tb/DV_PROF.md.",
-      "promoted_cases": 4,
-      "evidenced_cases": 4,
-      "merged_bucket_total": {
-        "branch": {
-          "pct": 71.73
-        },
-        "cond": {
-          "pct": 46.56
+          "pct": 48.94
         },
         "expr": {
           "pct": 70.91
@@ -5831,21 +6671,45 @@
           "pct": 43.75
         },
         "stmt": {
-          "pct": 84.07
+          "pct": 83.96
         },
         "toggle": {
-          "pct": 44.68
+          "pct": 50.27
         }
       },
-      "merged_all_buckets_total_after_bucket": {
+      "functional_coverage": {
+        "pct": 71.5,
+        "evidenced": 7,
+        "planned": 7
+      },
+      "ordered_case_ids": [
+        "CORNER_OPQ_201_edge_backpressure_test",
+        "CORNER_OPQ_202_edge_always_ready_test",
+        "CORNER_OPQ_203_edge_ready_medium_profile_test",
+        "CORNER_OPQ_204_edge_stuck_low_backpressure_test",
+        "CORNER_OPQ_205_edge_max_hits_test",
+        "CORNER_OPQ_206_edge_toggle_backpressure_test",
+        "CORNER_OPQ_207_edge_burst_restart_profile_test"
+      ]
+    },
+    {
+      "bucket": "PROF",
+      "planned_cases": 5,
+      "catalog_planned_cases": 168,
+      "catalog_pending_cases": 163,
+      "catalog_source": "legacy/tb/DV_PROF.md",
+      "catalog_summary": "Archived directed PROF catalog preserved in tb/legacy/tb/DV_PROF.md.",
+      "promoted_cases": 5,
+      "evidenced_cases": 5,
+      "merged_bucket_total": {
         "branch": {
-          "pct": 72.32
+          "pct": 71.54
         },
         "cond": {
-          "pct": 50.26
+          "pct": 46.03
         },
         "expr": {
-          "pct": 74.55
+          "pct": 69.09
         },
         "fsm_state": {
           "pct": 85.71
@@ -5854,22 +6718,46 @@
           "pct": 43.75
         },
         "stmt": {
-          "pct": 84.28
+          "pct": 83.8
         },
         "toggle": {
-          "pct": 53.01
+          "pct": 44.68
+        }
+      },
+      "merged_all_buckets_total_after_bucket": {
+        "branch": {
+          "pct": 71.93
+        },
+        "cond": {
+          "pct": 48.94
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.96
+        },
+        "toggle": {
+          "pct": 53.87
         }
       },
       "functional_coverage": {
         "pct": 64.37,
-        "evidenced": 4,
-        "planned": 4
+        "evidenced": 5,
+        "planned": 5
       },
       "ordered_case_ids": [
         "COMBO_OPQ_301_prof_stress_test",
         "COMBO_OPQ_302_prof_lane_skew_test",
         "COMBO_OPQ_303_prof_whole_frame_skew_test",
-        "COMBO_OPQ_304_prof_missing_empty_frame_test"
+        "COMBO_OPQ_304_prof_missing_empty_frame_test",
+        "COMBO_OPQ_305_prof_long_soak_test"
       ]
     },
     {
@@ -5906,13 +6794,13 @@
       },
       "merged_all_buckets_total_after_bucket": {
         "branch": {
-          "pct": 77.58
+          "pct": 74.56
         },
         "cond": {
-          "pct": 55.03
+          "pct": 51.32
         },
         "expr": {
-          "pct": 81.82
+          "pct": 74.55
         },
         "fsm_state": {
           "pct": 91.43
@@ -5921,10 +6809,10 @@
           "pct": 48.75
         },
         "stmt": {
-          "pct": 87.3
+          "pct": 85.47
         },
         "toggle": {
-          "pct": 53.67
+          "pct": 54.53
         }
       },
       "functional_coverage": {
@@ -5943,22 +6831,22 @@
     },
     {
       "bucket": "CROSS",
-      "planned_cases": 5,
+      "planned_cases": 7,
       "catalog_planned_cases": 165,
-      "catalog_pending_cases": 160,
+      "catalog_pending_cases": 158,
       "catalog_source": "legacy/tb/DV_CROSS.md",
       "catalog_summary": "Archived chained CROSS catalog preserved in tb/legacy/tb/DV_CROSS.md.",
-      "promoted_cases": 5,
-      "evidenced_cases": 5,
+      "promoted_cases": 7,
+      "evidenced_cases": 7,
       "merged_bucket_total": {
         "branch": {
-          "pct": 74.85
+          "pct": 75.73
         },
         "cond": {
-          "pct": 51.85
+          "pct": 54.76
         },
         "expr": {
-          "pct": 70.91
+          "pct": 81.82
         },
         "fsm_state": {
           "pct": 88.57
@@ -5967,21 +6855,21 @@
           "pct": 46.25
         },
         "stmt": {
-          "pct": 86.01
+          "pct": 86.65
         },
         "toggle": {
-          "pct": 51.18
+          "pct": 64.1
         }
       },
       "merged_all_buckets_total_after_bucket": {
         "branch": {
-          "pct": 81.09
+          "pct": 78.85
         },
         "cond": {
-          "pct": 60.32
+          "pct": 58.99
         },
         "expr": {
-          "pct": 81.82
+          "pct": 87.27
         },
         "fsm_state": {
           "pct": 94.29
@@ -5990,44 +6878,46 @@
           "pct": 51.25
         },
         "stmt": {
-          "pct": 89.77
+          "pct": 88.54
         },
         "toggle": {
-          "pct": 59.29
+          "pct": 65.16
         }
       },
       "functional_coverage": {
-        "pct": 69.56,
-        "evidenced": 5,
-        "planned": 5
+        "pct": 77.51,
+        "evidenced": 7,
+        "planned": 7
       },
       "ordered_case_ids": [
         "COMBO_OPQ_501_cross_bp_credit_test",
         "COMBO_OPQ_502_cross_drr_allowance_test",
         "COMBO_OPQ_503_cross_drr_idle_lane_test",
         "COMBO_OPQ_504_cross_drr_zero_allowance_test",
-        "COMBO_OPQ_505_cross_drr_short_allowance_test"
+        "COMBO_OPQ_505_cross_drr_short_allowance_test",
+        "COMBO_OPQ_506_cross_idle_lane_backpressure_test",
+        "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test"
       ]
     }
   ],
   "buckets": {
     "BASIC": {
-      "planned_cases": 4,
+      "planned_cases": 5,
       "catalog_planned_cases": 146,
-      "catalog_pending_cases": 142,
+      "catalog_pending_cases": 141,
       "catalog_source": "legacy/tb/DV_BASIC.md",
       "catalog_summary": "Archived directed BASIC catalog preserved in tb/legacy/tb/DV_BASIC.md.",
-      "promoted_cases": 4,
-      "evidenced_cases": 4,
+      "promoted_cases": 5,
+      "evidenced_cases": 5,
       "merged_bucket_total": {
         "branch": {
-          "pct": 71.93
+          "pct": 70.18
         },
         "cond": {
-          "pct": 46.56
+          "pct": 45.5
         },
         "expr": {
-          "pct": 70.91
+          "pct": 69.09
         },
         "fsm_state": {
           "pct": 85.71
@@ -6036,16 +6926,16 @@
           "pct": 43.75
         },
         "stmt": {
-          "pct": 84.07
+          "pct": 82.72
         },
         "toggle": {
-          "pct": 45.51
+          "pct": 47.43
         }
       },
       "functional_coverage": {
-        "pct": 66.97,
-        "evidenced": 4,
-        "planned": 4
+        "pct": 68.17,
+        "evidenced": 5,
+        "planned": 5
       },
       "merge_trace": [
         {
@@ -6163,13 +7053,43 @@
               "pct": 45.51
             }
           }
+        },
+        {
+          "step": 5,
+          "case_id": "STD_OPQ_005_basic_single_active_lane_test",
+          "full_case_id": "STD_OPQ_005_basic_single_active_lane_test",
+          "legacy_test_name": "opq_basic_single_active_lane_test",
+          "merged_total_after_case": {
+            "branch": {
+              "pct": 70.18
+            },
+            "cond": {
+              "pct": 45.5
+            },
+            "expr": {
+              "pct": 69.09
+            },
+            "fsm_state": {
+              "pct": 85.71
+            },
+            "fsm_trans": {
+              "pct": 43.75
+            },
+            "stmt": {
+              "pct": 82.72
+            },
+            "toggle": {
+              "pct": 47.43
+            }
+          }
         }
       ],
       "ordered_case_ids": [
         "STD_OPQ_001_basic_smoke_test",
         "STD_OPQ_002_basic_ts_boundary_test",
         "STD_OPQ_003_basic_subheader_shape_test",
-        "STD_OPQ_004_basic_feb_packet_contract_test"
+        "STD_OPQ_004_basic_feb_packet_contract_test",
+        "STD_OPQ_005_basic_single_active_lane_test"
       ],
       "cases": [
         {
@@ -6817,6 +7737,168 @@
             },
             "toggle": {
               "pct": 0.24
+            }
+          }
+        },
+        {
+          "case_id": "STD_OPQ_005_basic_single_active_lane_test",
+          "full_case_id": "STD_OPQ_005_basic_single_active_lane_test",
+          "method": "D",
+          "observed_txn": 1,
+          "scenario": "Only one active hit-producing lane while the peer lane still emits legal empty-frame cadence.",
+          "primary_checks": "Hit integrity and credit restore with asymmetric legal FEB frame cadence.",
+          "contract_anchor": "DV_BASIC single-active-lane closure.",
+          "implementation_mode": "native_sv",
+          "build_tag": "after",
+          "isolated_effort": "practical",
+          "build_knobs": {
+            "OPQ_N_LANE": 2,
+            "OPQ_N_SHD": 256,
+            "OPQ_TICKET_FIFO_DEPTH": 512,
+            "OPQ_PAGE_RAM_DEPTH": 65536,
+            "MODE": "MERGING"
+          },
+          "bucket": "BASIC",
+          "legacy_test_name": "opq_basic_single_active_lane_test",
+          "test_name": "opq_basic_single_active_lane_test",
+          "report_case_id": "STD_OPQ_005_basic_single_active_lane_test",
+          "implemented": true,
+          "passed": true,
+          "log_summary": {
+            "hit_expected": 64,
+            "hit_actual": 64,
+            "hit_missing": 0,
+            "hit_ghost": 0,
+            "cg_cfg": 49.4,
+            "cg_frame": 58.33,
+            "cg_subh": 22.22,
+            "cg_bp": 0.0,
+            "cg_csr": 92.26,
+            "cg_credit": 46.67,
+            "cg_drop": 48.61,
+            "cg_drr": 49.0,
+            "cg_ingress": 100.0,
+            "cg_egress": 100.0,
+            "lane0_monitored_frames": 4,
+            "lane0_orphan_beats": 0,
+            "lane0_capture_err": 0,
+            "lane1_monitored_frames": 4,
+            "lane1_orphan_beats": 0,
+            "lane1_capture_err": 0
+          },
+          "standalone_coverage": {
+            "branch": {
+              "pct": 68.42
+            },
+            "cond": {
+              "pct": 44.44
+            },
+            "expr": {
+              "pct": 67.27
+            },
+            "fsm_state": {
+              "pct": 82.86
+            },
+            "fsm_trans": {
+              "pct": 41.25
+            },
+            "stmt": {
+              "pct": 81.38
+            },
+            "toggle": {
+              "pct": 24.9
+            }
+          },
+          "isolated_cov_per_txn": {
+            "branch": {
+              "pct": 68.42
+            },
+            "cond": {
+              "pct": 44.44
+            },
+            "expr": {
+              "pct": 67.27
+            },
+            "fsm_state": {
+              "pct": 82.86
+            },
+            "fsm_trans": {
+              "pct": 41.25
+            },
+            "stmt": {
+              "pct": 81.38
+            },
+            "toggle": {
+              "pct": 24.9
+            }
+          },
+          "bucket_gain_by_case": {
+            "branch": {
+              "pct": 0.0
+            },
+            "cond": {
+              "pct": 0.0
+            },
+            "expr": {
+              "pct": 0.0
+            },
+            "fsm_state": {
+              "pct": 0.0
+            },
+            "fsm_trans": {
+              "pct": 0.0
+            },
+            "stmt": {
+              "pct": 0.0
+            },
+            "toggle": {
+              "pct": 1.92
+            }
+          },
+          "bucket_merged_total_after_case": {
+            "branch": {
+              "pct": 70.18
+            },
+            "cond": {
+              "pct": 45.5
+            },
+            "expr": {
+              "pct": 69.09
+            },
+            "fsm_state": {
+              "pct": 85.71
+            },
+            "fsm_trans": {
+              "pct": 43.75
+            },
+            "stmt": {
+              "pct": 82.72
+            },
+            "toggle": {
+              "pct": 47.43
+            }
+          },
+          "bucket_gain_per_txn": {
+            "branch": {
+              "pct": 0.0
+            },
+            "cond": {
+              "pct": 0.0
+            },
+            "expr": {
+              "pct": 0.0
+            },
+            "fsm_state": {
+              "pct": 0.0
+            },
+            "fsm_trans": {
+              "pct": 0.0
+            },
+            "stmt": {
+              "pct": 0.0
+            },
+            "toggle": {
+              "pct": 1.92
             }
           }
         }
@@ -8018,22 +9100,22 @@
       ]
     },
     "EDGE": {
-      "planned_cases": 6,
+      "planned_cases": 7,
       "catalog_planned_cases": 168,
-      "catalog_pending_cases": 162,
+      "catalog_pending_cases": 161,
       "catalog_source": "legacy/tb/DV_EDGE.md",
       "catalog_summary": "Archived directed EDGE catalog preserved in tb/legacy/tb/DV_EDGE.md.",
-      "promoted_cases": 6,
-      "evidenced_cases": 6,
+      "promoted_cases": 7,
+      "evidenced_cases": 7,
       "merged_bucket_total": {
         "branch": {
-          "pct": 71.73
+          "pct": 71.54
         },
         "cond": {
-          "pct": 48.68
+          "pct": 47.09
         },
         "expr": {
-          "pct": 70.91
+          "pct": 69.09
         },
         "fsm_state": {
           "pct": 85.71
@@ -8042,7 +9124,7 @@
           "pct": 43.75
         },
         "stmt": {
-          "pct": 83.64
+          "pct": 83.58
         },
         "toggle": {
           "pct": 43.87
@@ -8050,8 +9132,8 @@
       },
       "functional_coverage": {
         "pct": 71.5,
-        "evidenced": 6,
-        "planned": 6
+        "evidenced": 7,
+        "planned": 7
       },
       "merge_trace": [
         {
@@ -8148,13 +9230,13 @@
           "legacy_test_name": "opq_edge_stuck_low_backpressure_test",
           "merged_total_after_case": {
             "branch": {
-              "pct": 71.54
+              "pct": 71.44
             },
             "cond": {
-              "pct": 47.62
+              "pct": 46.56
             },
             "expr": {
-              "pct": 70.91
+              "pct": 69.09
             },
             "fsm_state": {
               "pct": 85.71
@@ -8177,13 +9259,13 @@
           "legacy_test_name": "opq_edge_max_hits_test",
           "merged_total_after_case": {
             "branch": {
-              "pct": 71.73
+              "pct": 71.54
             },
             "cond": {
-              "pct": 48.68
+              "pct": 47.09
             },
             "expr": {
-              "pct": 70.91
+              "pct": 69.09
             },
             "fsm_state": {
               "pct": 85.71
@@ -8192,7 +9274,7 @@
               "pct": 43.75
             },
             "stmt": {
-              "pct": 83.64
+              "pct": 83.58
             },
             "toggle": {
               "pct": 43.87
@@ -8206,13 +9288,13 @@
           "legacy_test_name": "opq_edge_toggle_backpressure_test",
           "merged_total_after_case": {
             "branch": {
-              "pct": 71.73
+              "pct": 71.54
             },
             "cond": {
-              "pct": 48.68
+              "pct": 47.09
             },
             "expr": {
-              "pct": 70.91
+              "pct": 69.09
             },
             "fsm_state": {
               "pct": 85.71
@@ -8221,7 +9303,36 @@
               "pct": 43.75
             },
             "stmt": {
-              "pct": 83.64
+              "pct": 83.58
+            },
+            "toggle": {
+              "pct": 43.87
+            }
+          }
+        },
+        {
+          "step": 7,
+          "case_id": "CORNER_OPQ_207_edge_burst_restart_profile_test",
+          "full_case_id": "CORNER_OPQ_207_edge_burst_restart_profile_test",
+          "legacy_test_name": "opq_edge_burst_restart_profile_test",
+          "merged_total_after_case": {
+            "branch": {
+              "pct": 71.54
+            },
+            "cond": {
+              "pct": 47.09
+            },
+            "expr": {
+              "pct": 69.09
+            },
+            "fsm_state": {
+              "pct": 85.71
+            },
+            "fsm_trans": {
+              "pct": 43.75
+            },
+            "stmt": {
+              "pct": 83.58
             },
             "toggle": {
               "pct": 43.87
@@ -8235,7 +9346,8 @@
         "CORNER_OPQ_203_edge_ready_medium_profile_test",
         "CORNER_OPQ_204_edge_stuck_low_backpressure_test",
         "CORNER_OPQ_205_edge_max_hits_test",
-        "CORNER_OPQ_206_edge_toggle_backpressure_test"
+        "CORNER_OPQ_206_edge_toggle_backpressure_test",
+        "CORNER_OPQ_207_edge_burst_restart_profile_test"
       ],
       "cases": [
         {
@@ -8594,7 +9706,7 @@
             "cg_cfg": 49.4,
             "cg_frame": 63.33,
             "cg_subh": 59.72,
-            "cg_bp": 25.0,
+            "cg_bp": 20.0,
             "cg_csr": 92.26,
             "cg_credit": 60.0,
             "cg_drop": 48.61,
@@ -8628,7 +9740,7 @@
               "pct": 83.53
             },
             "toggle": {
-              "pct": 39.17
+              "pct": 39.19
             }
           },
           "isolated_cov_per_txn": {
@@ -8651,7 +9763,7 @@
               "pct": 83.53
             },
             "toggle": {
-              "pct": 39.17
+              "pct": 39.19
             }
           },
           "bucket_gain_by_case": {
@@ -8818,13 +9930,13 @@
           },
           "bucket_gain_by_case": {
             "branch": {
-              "pct": 0.19
+              "pct": 0.09
             },
             "cond": {
-              "pct": 2.12
+              "pct": 1.06
             },
             "expr": {
-              "pct": 3.64
+              "pct": 1.82
             },
             "fsm_state": {
               "pct": 0.0
@@ -8841,13 +9953,13 @@
           },
           "bucket_merged_total_after_case": {
             "branch": {
-              "pct": 71.54
+              "pct": 71.44
             },
             "cond": {
-              "pct": 47.62
+              "pct": 46.56
             },
             "expr": {
-              "pct": 70.91
+              "pct": 69.09
             },
             "fsm_state": {
               "pct": 85.71
@@ -8864,13 +9976,13 @@
           },
           "bucket_gain_per_txn": {
             "branch": {
-              "pct": 0.19
+              "pct": 0.09
             },
             "cond": {
-              "pct": 2.12
+              "pct": 1.06
             },
             "expr": {
-              "pct": 3.64
+              "pct": 1.82
             },
             "fsm_state": {
               "pct": 0.0
@@ -8980,10 +10092,10 @@
           },
           "bucket_gain_by_case": {
             "branch": {
-              "pct": 0.19
+              "pct": 0.1
             },
             "cond": {
-              "pct": 1.06
+              "pct": 0.53
             },
             "expr": {
               "pct": 0.0
@@ -8995,7 +10107,7 @@
               "pct": 0.0
             },
             "stmt": {
-              "pct": 0.11
+              "pct": 0.05
             },
             "toggle": {
               "pct": 4.67
@@ -9003,13 +10115,13 @@
           },
           "bucket_merged_total_after_case": {
             "branch": {
-              "pct": 71.73
+              "pct": 71.54
             },
             "cond": {
-              "pct": 48.68
+              "pct": 47.09
             },
             "expr": {
-              "pct": 70.91
+              "pct": 69.09
             },
             "fsm_state": {
               "pct": 85.71
@@ -9018,7 +10130,7 @@
               "pct": 43.75
             },
             "stmt": {
-              "pct": 83.64
+              "pct": 83.58
             },
             "toggle": {
               "pct": 43.87
@@ -9026,10 +10138,10 @@
           },
           "bucket_gain_per_txn": {
             "branch": {
-              "pct": 0.19
+              "pct": 0.1
             },
             "cond": {
-              "pct": 1.06
+              "pct": 0.53
             },
             "expr": {
               "pct": 0.0
@@ -9041,7 +10153,7 @@
               "pct": 0.0
             },
             "stmt": {
-              "pct": 0.11
+              "pct": 0.05
             },
             "toggle": {
               "pct": 4.67
@@ -9165,13 +10277,13 @@
           },
           "bucket_merged_total_after_case": {
             "branch": {
-              "pct": 71.73
+              "pct": 71.54
             },
             "cond": {
-              "pct": 48.68
+              "pct": 47.09
             },
             "expr": {
-              "pct": 70.91
+              "pct": 69.09
             },
             "fsm_state": {
               "pct": 85.71
@@ -9180,7 +10292,169 @@
               "pct": 43.75
             },
             "stmt": {
-              "pct": 83.64
+              "pct": 83.58
+            },
+            "toggle": {
+              "pct": 43.87
+            }
+          },
+          "bucket_gain_per_txn": {
+            "branch": {
+              "pct": 0.0
+            },
+            "cond": {
+              "pct": 0.0
+            },
+            "expr": {
+              "pct": 0.0
+            },
+            "fsm_state": {
+              "pct": 0.0
+            },
+            "fsm_trans": {
+              "pct": 0.0
+            },
+            "stmt": {
+              "pct": 0.0
+            },
+            "toggle": {
+              "pct": 0.0
+            }
+          }
+        },
+        {
+          "case_id": "CORNER_OPQ_207_edge_burst_restart_profile_test",
+          "full_case_id": "CORNER_OPQ_207_edge_burst_restart_profile_test",
+          "method": "D",
+          "observed_txn": 1,
+          "scenario": "Burstier legal ready restart profile with shorter ready windows and deeper low stretches.",
+          "primary_checks": "Presenter hold/restart behavior across repeated medium-depth stall bursts.",
+          "contract_anchor": "DV_EDGE burst-restart profile closure.",
+          "implementation_mode": "native_sv",
+          "build_tag": "after",
+          "isolated_effort": "practical",
+          "build_knobs": {
+            "OPQ_N_LANE": 2,
+            "OPQ_N_SHD": 256,
+            "OPQ_TICKET_FIFO_DEPTH": 512,
+            "OPQ_PAGE_RAM_DEPTH": 65536,
+            "MODE": "MERGING"
+          },
+          "bucket": "EDGE",
+          "legacy_test_name": "opq_edge_burst_restart_profile_test",
+          "test_name": "opq_edge_burst_restart_profile_test",
+          "report_case_id": "CORNER_OPQ_207_edge_burst_restart_profile_test",
+          "implemented": true,
+          "passed": true,
+          "log_summary": {
+            "hit_expected": 4,
+            "hit_actual": 4,
+            "hit_missing": 0,
+            "hit_ghost": 0,
+            "cg_cfg": 49.4,
+            "cg_frame": 63.33,
+            "cg_subh": 59.72,
+            "cg_bp": 11.67,
+            "cg_csr": 92.26,
+            "cg_credit": 60.0,
+            "cg_drop": 48.61,
+            "cg_drr": 40.33,
+            "cg_ingress": 100.0,
+            "cg_egress": 100.0,
+            "lane0_monitored_frames": 3,
+            "lane0_orphan_beats": 0,
+            "lane0_capture_err": 0,
+            "lane1_monitored_frames": 3,
+            "lane1_orphan_beats": 0,
+            "lane1_capture_err": 0
+          },
+          "standalone_coverage": {
+            "branch": {
+              "pct": 71.35
+            },
+            "cond": {
+              "pct": 45.5
+            },
+            "expr": {
+              "pct": 67.27
+            },
+            "fsm_state": {
+              "pct": 85.71
+            },
+            "fsm_trans": {
+              "pct": 43.75
+            },
+            "stmt": {
+              "pct": 83.53
+            },
+            "toggle": {
+              "pct": 39.19
+            }
+          },
+          "isolated_cov_per_txn": {
+            "branch": {
+              "pct": 71.35
+            },
+            "cond": {
+              "pct": 45.5
+            },
+            "expr": {
+              "pct": 67.27
+            },
+            "fsm_state": {
+              "pct": 85.71
+            },
+            "fsm_trans": {
+              "pct": 43.75
+            },
+            "stmt": {
+              "pct": 83.53
+            },
+            "toggle": {
+              "pct": 39.19
+            }
+          },
+          "bucket_gain_by_case": {
+            "branch": {
+              "pct": 0.0
+            },
+            "cond": {
+              "pct": 0.0
+            },
+            "expr": {
+              "pct": 0.0
+            },
+            "fsm_state": {
+              "pct": 0.0
+            },
+            "fsm_trans": {
+              "pct": 0.0
+            },
+            "stmt": {
+              "pct": 0.0
+            },
+            "toggle": {
+              "pct": 0.0
+            }
+          },
+          "bucket_merged_total_after_case": {
+            "branch": {
+              "pct": 71.54
+            },
+            "cond": {
+              "pct": 47.09
+            },
+            "expr": {
+              "pct": 69.09
+            },
+            "fsm_state": {
+              "pct": 85.71
+            },
+            "fsm_trans": {
+              "pct": 43.75
+            },
+            "stmt": {
+              "pct": 83.58
             },
             "toggle": {
               "pct": 43.87
@@ -9213,22 +10487,22 @@
       ]
     },
     "PROF": {
-      "planned_cases": 4,
+      "planned_cases": 5,
       "catalog_planned_cases": 168,
-      "catalog_pending_cases": 164,
+      "catalog_pending_cases": 163,
       "catalog_source": "legacy/tb/DV_PROF.md",
       "catalog_summary": "Archived directed PROF catalog preserved in tb/legacy/tb/DV_PROF.md.",
-      "promoted_cases": 4,
-      "evidenced_cases": 4,
+      "promoted_cases": 5,
+      "evidenced_cases": 5,
       "merged_bucket_total": {
         "branch": {
-          "pct": 71.73
+          "pct": 71.54
         },
         "cond": {
-          "pct": 46.56
+          "pct": 46.03
         },
         "expr": {
-          "pct": 70.91
+          "pct": 69.09
         },
         "fsm_state": {
           "pct": 85.71
@@ -9237,7 +10511,7 @@
           "pct": 43.75
         },
         "stmt": {
-          "pct": 84.07
+          "pct": 83.8
         },
         "toggle": {
           "pct": 44.68
@@ -9245,8 +10519,8 @@
       },
       "functional_coverage": {
         "pct": 64.37,
-        "evidenced": 4,
-        "planned": 4
+        "evidenced": 5,
+        "planned": 5
       },
       "merge_trace": [
         {
@@ -9364,13 +10638,43 @@
               "pct": 44.68
             }
           }
+        },
+        {
+          "step": 5,
+          "case_id": "COMBO_OPQ_305_prof_long_soak_test",
+          "full_case_id": "COMBO_OPQ_305_prof_long_soak_test",
+          "legacy_test_name": "opq_prof_long_soak_test",
+          "merged_total_after_case": {
+            "branch": {
+              "pct": 71.54
+            },
+            "cond": {
+              "pct": 46.03
+            },
+            "expr": {
+              "pct": 69.09
+            },
+            "fsm_state": {
+              "pct": 85.71
+            },
+            "fsm_trans": {
+              "pct": 43.75
+            },
+            "stmt": {
+              "pct": 83.8
+            },
+            "toggle": {
+              "pct": 44.68
+            }
+          }
         }
       ],
       "ordered_case_ids": [
         "COMBO_OPQ_301_prof_stress_test",
         "COMBO_OPQ_302_prof_lane_skew_test",
         "COMBO_OPQ_303_prof_whole_frame_skew_test",
-        "COMBO_OPQ_304_prof_missing_empty_frame_test"
+        "COMBO_OPQ_304_prof_missing_empty_frame_test",
+        "COMBO_OPQ_305_prof_long_soak_test"
       ],
       "cases": [
         {
@@ -10018,6 +11322,168 @@
             },
             "toggle": {
               "pct": 0.17
+            }
+          }
+        },
+        {
+          "case_id": "COMBO_OPQ_305_prof_long_soak_test",
+          "full_case_id": "COMBO_OPQ_305_prof_long_soak_test",
+          "method": "D",
+          "observed_txn": 1,
+          "scenario": "Longer directed FEB whole-frame soak on the default 2-lane native-SV path.",
+          "primary_checks": "Sustained hit integrity and clean credit restore beyond the short promoted soak.",
+          "contract_anchor": "DV_PROF extended directed soak closure.",
+          "implementation_mode": "native_sv",
+          "build_tag": "after",
+          "isolated_effort": "practical",
+          "build_knobs": {
+            "OPQ_N_LANE": 2,
+            "OPQ_N_SHD": 256,
+            "OPQ_TICKET_FIFO_DEPTH": 512,
+            "OPQ_PAGE_RAM_DEPTH": 65536,
+            "MODE": "MERGING"
+          },
+          "bucket": "PROF",
+          "legacy_test_name": "opq_prof_long_soak_test",
+          "test_name": "opq_prof_long_soak_test",
+          "report_case_id": "COMBO_OPQ_305_prof_long_soak_test",
+          "implemented": true,
+          "passed": true,
+          "log_summary": {
+            "hit_expected": 32,
+            "hit_actual": 32,
+            "hit_missing": 0,
+            "hit_ghost": 0,
+            "cg_cfg": 49.4,
+            "cg_frame": 63.33,
+            "cg_subh": 61.11,
+            "cg_bp": 0.0,
+            "cg_csr": 92.26,
+            "cg_credit": 60.0,
+            "cg_drop": 48.61,
+            "cg_drr": 43.67,
+            "cg_ingress": 100.0,
+            "cg_egress": 100.0,
+            "lane0_monitored_frames": 24,
+            "lane0_orphan_beats": 0,
+            "lane0_capture_err": 0,
+            "lane1_monitored_frames": 24,
+            "lane1_orphan_beats": 0,
+            "lane1_capture_err": 0
+          },
+          "standalone_coverage": {
+            "branch": {
+              "pct": 71.35
+            },
+            "cond": {
+              "pct": 45.5
+            },
+            "expr": {
+              "pct": 67.27
+            },
+            "fsm_state": {
+              "pct": 85.71
+            },
+            "fsm_trans": {
+              "pct": 43.75
+            },
+            "stmt": {
+              "pct": 83.53
+            },
+            "toggle": {
+              "pct": 44.22
+            }
+          },
+          "isolated_cov_per_txn": {
+            "branch": {
+              "pct": 71.35
+            },
+            "cond": {
+              "pct": 45.5
+            },
+            "expr": {
+              "pct": 67.27
+            },
+            "fsm_state": {
+              "pct": 85.71
+            },
+            "fsm_trans": {
+              "pct": 43.75
+            },
+            "stmt": {
+              "pct": 83.53
+            },
+            "toggle": {
+              "pct": 44.22
+            }
+          },
+          "bucket_gain_by_case": {
+            "branch": {
+              "pct": 0.0
+            },
+            "cond": {
+              "pct": 0.0
+            },
+            "expr": {
+              "pct": 0.0
+            },
+            "fsm_state": {
+              "pct": 0.0
+            },
+            "fsm_trans": {
+              "pct": 0.0
+            },
+            "stmt": {
+              "pct": 0.0
+            },
+            "toggle": {
+              "pct": 0.0
+            }
+          },
+          "bucket_merged_total_after_case": {
+            "branch": {
+              "pct": 71.54
+            },
+            "cond": {
+              "pct": 46.03
+            },
+            "expr": {
+              "pct": 69.09
+            },
+            "fsm_state": {
+              "pct": 85.71
+            },
+            "fsm_trans": {
+              "pct": 43.75
+            },
+            "stmt": {
+              "pct": 83.8
+            },
+            "toggle": {
+              "pct": 44.68
+            }
+          },
+          "bucket_gain_per_txn": {
+            "branch": {
+              "pct": 0.0
+            },
+            "cond": {
+              "pct": 0.0
+            },
+            "expr": {
+              "pct": 0.0
+            },
+            "fsm_state": {
+              "pct": 0.0
+            },
+            "fsm_trans": {
+              "pct": 0.0
+            },
+            "stmt": {
+              "pct": 0.0
+            },
+            "toggle": {
+              "pct": 0.0
             }
           }
         }
@@ -11203,22 +12669,22 @@
       ]
     },
     "CROSS": {
-      "planned_cases": 5,
+      "planned_cases": 7,
       "catalog_planned_cases": 165,
-      "catalog_pending_cases": 160,
+      "catalog_pending_cases": 158,
       "catalog_source": "legacy/tb/DV_CROSS.md",
       "catalog_summary": "Archived chained CROSS catalog preserved in tb/legacy/tb/DV_CROSS.md.",
-      "promoted_cases": 5,
-      "evidenced_cases": 5,
+      "promoted_cases": 7,
+      "evidenced_cases": 7,
       "merged_bucket_total": {
         "branch": {
-          "pct": 74.85
+          "pct": 75.73
         },
         "cond": {
-          "pct": 51.85
+          "pct": 54.76
         },
         "expr": {
-          "pct": 70.91
+          "pct": 81.82
         },
         "fsm_state": {
           "pct": 88.57
@@ -11227,16 +12693,16 @@
           "pct": 46.25
         },
         "stmt": {
-          "pct": 86.01
+          "pct": 86.65
         },
         "toggle": {
-          "pct": 51.18
+          "pct": 64.1
         }
       },
       "functional_coverage": {
-        "pct": 69.56,
-        "evidenced": 5,
-        "planned": 5
+        "pct": 77.51,
+        "evidenced": 7,
+        "planned": 7
       },
       "merge_trace": [
         {
@@ -11383,6 +12849,64 @@
               "pct": 51.18
             }
           }
+        },
+        {
+          "step": 6,
+          "case_id": "COMBO_OPQ_506_cross_idle_lane_backpressure_test",
+          "full_case_id": "COMBO_OPQ_506_cross_idle_lane_backpressure_test",
+          "legacy_test_name": "opq_cross_idle_lane_backpressure_test",
+          "merged_total_after_case": {
+            "branch": {
+              "pct": 72.51
+            },
+            "cond": {
+              "pct": 48.68
+            },
+            "expr": {
+              "pct": 69.09
+            },
+            "fsm_state": {
+              "pct": 88.57
+            },
+            "fsm_trans": {
+              "pct": 46.25
+            },
+            "stmt": {
+              "pct": 84.39
+            },
+            "toggle": {
+              "pct": 51.22
+            }
+          }
+        },
+        {
+          "step": 7,
+          "case_id": "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test",
+          "full_case_id": "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test",
+          "legacy_test_name": "opq_cross_mixed_bucket_random_soak_test",
+          "merged_total_after_case": {
+            "branch": {
+              "pct": 75.73
+            },
+            "cond": {
+              "pct": 54.76
+            },
+            "expr": {
+              "pct": 81.82
+            },
+            "fsm_state": {
+              "pct": 88.57
+            },
+            "fsm_trans": {
+              "pct": 46.25
+            },
+            "stmt": {
+              "pct": 86.65
+            },
+            "toggle": {
+              "pct": 64.1
+            }
+          }
         }
       ],
       "ordered_case_ids": [
@@ -11390,7 +12914,9 @@
         "COMBO_OPQ_502_cross_drr_allowance_test",
         "COMBO_OPQ_503_cross_drr_idle_lane_test",
         "COMBO_OPQ_504_cross_drr_zero_allowance_test",
-        "COMBO_OPQ_505_cross_drr_short_allowance_test"
+        "COMBO_OPQ_505_cross_drr_short_allowance_test",
+        "COMBO_OPQ_506_cross_idle_lane_backpressure_test",
+        "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test"
       ],
       "cases": [
         {
@@ -12202,26 +13728,351 @@
               "pct": 1.06
             }
           }
+        },
+        {
+          "case_id": "COMBO_OPQ_506_cross_idle_lane_backpressure_test",
+          "full_case_id": "COMBO_OPQ_506_cross_idle_lane_backpressure_test",
+          "method": "D",
+          "observed_txn": 1,
+          "scenario": "One hit-idle lane crossed with periodic egress stalls on the active lane.",
+          "primary_checks": "Idle-lane cadence preservation and clean restart behavior under backpressure.",
+          "contract_anchor": "DV_CROSS idle-lane cadence x backpressure closure.",
+          "implementation_mode": "native_sv",
+          "build_tag": "after",
+          "isolated_effort": "practical",
+          "build_knobs": {
+            "OPQ_N_LANE": 2,
+            "OPQ_N_SHD": 256,
+            "OPQ_TICKET_FIFO_DEPTH": 512,
+            "OPQ_PAGE_RAM_DEPTH": 65536,
+            "MODE": "MERGING"
+          },
+          "bucket": "CROSS",
+          "legacy_test_name": "opq_cross_idle_lane_backpressure_test",
+          "test_name": "opq_cross_idle_lane_backpressure_test",
+          "report_case_id": "COMBO_OPQ_506_cross_idle_lane_backpressure_test",
+          "implemented": true,
+          "passed": true,
+          "log_summary": {
+            "hit_expected": 384,
+            "hit_actual": 384,
+            "hit_missing": 0,
+            "hit_ghost": 0,
+            "cg_cfg": 49.4,
+            "cg_frame": 48.33,
+            "cg_subh": 22.22,
+            "cg_bp": 25.0,
+            "cg_csr": 92.26,
+            "cg_credit": 46.67,
+            "cg_drop": 48.61,
+            "cg_drr": 57.33,
+            "cg_ingress": 100.0,
+            "cg_egress": 100.0,
+            "lane0_monitored_frames": 6,
+            "lane0_orphan_beats": 0,
+            "lane0_capture_err": 0,
+            "lane1_monitored_frames": 6,
+            "lane1_orphan_beats": 0,
+            "lane1_capture_err": 0
+          },
+          "standalone_coverage": {
+            "branch": {
+              "pct": 70.18
+            },
+            "cond": {
+              "pct": 45.5
+            },
+            "expr": {
+              "pct": 67.27
+            },
+            "fsm_state": {
+              "pct": 85.71
+            },
+            "fsm_trans": {
+              "pct": 43.75
+            },
+            "stmt": {
+              "pct": 82.78
+            },
+            "toggle": {
+              "pct": 29.32
+            }
+          },
+          "isolated_cov_per_txn": {
+            "branch": {
+              "pct": 70.18
+            },
+            "cond": {
+              "pct": 45.5
+            },
+            "expr": {
+              "pct": 67.27
+            },
+            "fsm_state": {
+              "pct": 85.71
+            },
+            "fsm_trans": {
+              "pct": 43.75
+            },
+            "stmt": {
+              "pct": 82.78
+            },
+            "toggle": {
+              "pct": 29.32
+            }
+          },
+          "bucket_gain_by_case": {
+            "branch": {
+              "pct": 0.0
+            },
+            "cond": {
+              "pct": 0.0
+            },
+            "expr": {
+              "pct": 0.0
+            },
+            "fsm_state": {
+              "pct": 0.0
+            },
+            "fsm_trans": {
+              "pct": 0.0
+            },
+            "stmt": {
+              "pct": 0.0
+            },
+            "toggle": {
+              "pct": 0.04
+            }
+          },
+          "bucket_merged_total_after_case": {
+            "branch": {
+              "pct": 72.51
+            },
+            "cond": {
+              "pct": 48.68
+            },
+            "expr": {
+              "pct": 69.09
+            },
+            "fsm_state": {
+              "pct": 88.57
+            },
+            "fsm_trans": {
+              "pct": 46.25
+            },
+            "stmt": {
+              "pct": 84.39
+            },
+            "toggle": {
+              "pct": 51.22
+            }
+          },
+          "bucket_gain_per_txn": {
+            "branch": {
+              "pct": 0.0
+            },
+            "cond": {
+              "pct": 0.0
+            },
+            "expr": {
+              "pct": 0.0
+            },
+            "fsm_state": {
+              "pct": 0.0
+            },
+            "fsm_trans": {
+              "pct": 0.0
+            },
+            "stmt": {
+              "pct": 0.0
+            },
+            "toggle": {
+              "pct": 0.04
+            }
+          }
+        },
+        {
+          "case_id": "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test",
+          "full_case_id": "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test",
+          "method": "R",
+          "observed_txn": 64,
+          "scenario": "Random mixed-bucket soak that draws safe directed scenarios from BASIC, EDGE, PROF, ERROR, and CROSS.",
+          "primary_checks": "Multi-bucket chained hit integrity, bucket visitation, and no-restart drain stability under randomized sequencing.",
+          "contract_anchor": "DV_CROSS mixed-bucket random soak closure.",
+          "implementation_mode": "native_sv",
+          "build_tag": "after",
+          "isolated_effort": "high",
+          "build_knobs": {
+            "OPQ_N_LANE": 2,
+            "OPQ_N_SHD": 256,
+            "OPQ_TICKET_FIFO_DEPTH": 512,
+            "OPQ_PAGE_RAM_DEPTH": 65536,
+            "MODE": "MERGING"
+          },
+          "bucket": "CROSS",
+          "legacy_test_name": "opq_cross_mixed_bucket_random_soak_test",
+          "test_name": "opq_cross_mixed_bucket_random_soak_test",
+          "report_case_id": "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test",
+          "implemented": true,
+          "passed": true,
+          "log_summary": {
+            "hit_expected": 5798,
+            "hit_actual": 5798,
+            "hit_missing": 0,
+            "hit_ghost": 0,
+            "cg_cfg": 49.4,
+            "cg_frame": 90.0,
+            "cg_subh": 79.17,
+            "cg_bp": 40.0,
+            "cg_csr": 95.24,
+            "cg_credit": 46.67,
+            "cg_drop": 62.5,
+            "cg_drr": 42.33,
+            "cg_ingress": 100.0,
+            "cg_egress": 100.0,
+            "lane0_monitored_frames": 270,
+            "lane0_orphan_beats": 0,
+            "lane0_capture_err": 0,
+            "lane1_monitored_frames": 270,
+            "lane1_orphan_beats": 0,
+            "lane1_capture_err": 0,
+            "random_txn": 64
+          },
+          "standalone_coverage": {
+            "branch": {
+              "pct": 76.61
+            },
+            "cond": {
+              "pct": 57.67
+            },
+            "expr": {
+              "pct": 92.73
+            },
+            "fsm_state": {
+              "pct": 88.57
+            },
+            "fsm_trans": {
+              "pct": 46.25
+            },
+            "stmt": {
+              "pct": 87.3
+            },
+            "toggle": {
+              "pct": 63.26
+            }
+          },
+          "isolated_cov_per_txn": {
+            "branch": {
+              "pct": 1.197
+            },
+            "cond": {
+              "pct": 0.9011
+            },
+            "expr": {
+              "pct": 1.4489
+            },
+            "fsm_state": {
+              "pct": 1.3839
+            },
+            "fsm_trans": {
+              "pct": 0.7227
+            },
+            "stmt": {
+              "pct": 1.3641
+            },
+            "toggle": {
+              "pct": 0.9884
+            }
+          },
+          "bucket_gain_by_case": {
+            "branch": {
+              "pct": 3.22
+            },
+            "cond": {
+              "pct": 6.08
+            },
+            "expr": {
+              "pct": 12.73
+            },
+            "fsm_state": {
+              "pct": 0.0
+            },
+            "fsm_trans": {
+              "pct": 0.0
+            },
+            "stmt": {
+              "pct": 2.26
+            },
+            "toggle": {
+              "pct": 12.88
+            }
+          },
+          "bucket_merged_total_after_case": {
+            "branch": {
+              "pct": 75.73
+            },
+            "cond": {
+              "pct": 54.76
+            },
+            "expr": {
+              "pct": 81.82
+            },
+            "fsm_state": {
+              "pct": 88.57
+            },
+            "fsm_trans": {
+              "pct": 46.25
+            },
+            "stmt": {
+              "pct": 86.65
+            },
+            "toggle": {
+              "pct": 64.1
+            }
+          },
+          "bucket_gain_per_txn": {
+            "branch": {
+              "pct": 0.0503
+            },
+            "cond": {
+              "pct": 0.095
+            },
+            "expr": {
+              "pct": 0.1989
+            },
+            "fsm_state": {
+              "pct": 0.0
+            },
+            "fsm_trans": {
+              "pct": 0.0
+            },
+            "stmt": {
+              "pct": 0.0353
+            },
+            "toggle": {
+              "pct": 0.2013
+            }
+          }
         }
       ]
     }
   },
   "totals": {
-    "planned_cases": 31,
+    "planned_cases": 36,
     "catalog_planned_cases": 993,
-    "catalog_pending_cases": 962,
-    "promoted_cases": 31,
-    "evidenced_cases": 31,
-    "excluded_cases": 3,
+    "catalog_pending_cases": 957,
+    "promoted_cases": 36,
+    "evidenced_cases": 36,
+    "excluded_cases": 4,
     "merged_total_code_coverage": {
       "branch": {
-        "pct": 81.09
+        "pct": 78.85
       },
       "cond": {
-        "pct": 60.32
+        "pct": 58.99
       },
       "expr": {
-        "pct": 81.82
+        "pct": 87.27
       },
       "fsm_state": {
         "pct": 94.29
@@ -12230,16 +14081,16 @@
         "pct": 51.25
       },
       "stmt": {
-        "pct": 89.77
+        "pct": 88.54
       },
       "toggle": {
-        "pct": 59.29
+        "pct": 65.16
       }
     },
     "functional_coverage": {
-      "pct": 89.08,
-      "evidenced": 31,
-      "planned": 31
+      "pct": 89.76,
+      "evidenced": 36,
+      "planned": 36
     }
   },
   "signoff_runs": [
@@ -12250,13 +14101,14 @@
       "build_tag": "native_sv",
       "bucket": null,
       "sequence_name": "OPQ_BUCKET_FRAME_NATIVE_SV",
-      "case_count": 24,
+      "case_count": 28,
       "effort": "practical",
       "iter_cap": null,
       "payload_cap": null,
       "limitations": [
         "PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.",
-        "opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow."
+        "opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow.",
+        "opq_cross_mixed_bucket_random_soak_test is isolated-only evidence; it intentionally randomizes across buckets rather than serving as the fixed promoted no-restart baseline."
       ],
       "implemented": true,
       "passed": true,
@@ -12280,36 +14132,36 @@
           "pct": 89.45
         },
         "toggle": {
-          "pct": 62.16
+          "pct": 63.05
         }
       },
       "cross_summary": {
-        "pct": 78.11,
-        "txns": 202,
+        "pct": 77.94,
+        "txns": 276,
         "queued_overlap": 0,
         "counter_checks_failed": 0,
         "unexpected_outputs": 0,
         "curve": ""
       },
       "log_summary": {
-        "hit_expected": 3770,
-        "hit_actual": 3770,
+        "hit_expected": 4254,
+        "hit_actual": 4254,
         "hit_missing": 0,
         "hit_ghost": 0,
         "cg_cfg": 49.4,
         "cg_frame": 100.0,
         "cg_subh": 100.0,
-        "cg_bp": 85.0,
+        "cg_bp": 83.33,
         "cg_csr": 95.24,
         "cg_credit": 46.67,
         "cg_drop": 62.5,
         "cg_drr": 42.33,
         "cg_ingress": 100.0,
         "cg_egress": 100.0,
-        "lane0_monitored_frames": 101,
+        "lane0_monitored_frames": 138,
         "lane0_orphan_beats": 0,
         "lane0_capture_err": 0,
-        "lane1_monitored_frames": 101,
+        "lane1_monitored_frames": 138,
         "lane1_orphan_beats": 0,
         "lane1_capture_err": 0
       }
@@ -12321,14 +14173,15 @@
       "build_tag": "native_sv",
       "bucket": null,
       "sequence_name": "OPQ_ALL_BUCKETS_FRAME_NATIVE_SV",
-      "case_count": 24,
+      "case_count": 28,
       "effort": "practical",
       "iter_cap": null,
       "payload_cap": null,
       "limitations": [
         "PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.",
         "opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow.",
-        "This run appends two extra tail sequences after the 24 promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases."
+        "opq_cross_mixed_bucket_random_soak_test is isolated-only evidence; it intentionally randomizes across buckets rather than serving as the fixed promoted no-restart baseline.",
+        "This run appends two extra tail sequences after the 28 promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases."
       ],
       "implemented": true,
       "passed": true,
@@ -12352,40 +14205,204 @@
           "pct": 89.45
         },
         "toggle": {
-          "pct": 62.36
+          "pct": 63.05
         }
       },
       "cross_summary": {
-        "pct": 77.91,
-        "txns": 230,
+        "pct": 77.74,
+        "txns": 304,
         "queued_overlap": 0,
         "counter_checks_failed": 0,
         "unexpected_outputs": 0,
         "curve": ""
       },
       "log_summary": {
-        "hit_expected": 3788,
-        "hit_actual": 3788,
+        "hit_expected": 4272,
+        "hit_actual": 4272,
         "hit_missing": 0,
         "hit_ghost": 0,
         "cg_cfg": 49.4,
         "cg_frame": 100.0,
         "cg_subh": 100.0,
-        "cg_bp": 85.0,
+        "cg_bp": 83.33,
         "cg_csr": 95.24,
         "cg_credit": 46.67,
         "cg_drop": 62.5,
         "cg_drr": 40.33,
         "cg_ingress": 100.0,
         "cg_egress": 100.0,
-        "lane0_monitored_frames": 115,
+        "lane0_monitored_frames": 152,
         "lane0_orphan_beats": 0,
         "lane0_capture_err": 0,
-        "lane1_monitored_frames": 115,
+        "lane1_monitored_frames": 152,
         "lane1_orphan_beats": 0,
         "lane1_capture_err": 0
       }
     }
   ],
-  "random_cases": []
+  "random_cases": [
+    {
+      "case_id": "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test",
+      "full_case_id": "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test",
+      "method": "R",
+      "observed_txn": 64,
+      "scenario": "Random mixed-bucket soak that draws safe directed scenarios from BASIC, EDGE, PROF, ERROR, and CROSS.",
+      "primary_checks": "Multi-bucket chained hit integrity, bucket visitation, and no-restart drain stability under randomized sequencing.",
+      "contract_anchor": "DV_CROSS mixed-bucket random soak closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "high",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "CROSS",
+      "legacy_test_name": "opq_cross_mixed_bucket_random_soak_test",
+      "test_name": "opq_cross_mixed_bucket_random_soak_test",
+      "report_case_id": "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 5798,
+        "hit_actual": 5798,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 90.0,
+        "cg_subh": 79.17,
+        "cg_bp": 40.0,
+        "cg_csr": 95.24,
+        "cg_credit": 46.67,
+        "cg_drop": 62.5,
+        "cg_drr": 42.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 270,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 270,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0,
+        "random_txn": 64
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 76.61
+        },
+        "cond": {
+          "pct": 57.67
+        },
+        "expr": {
+          "pct": 92.73
+        },
+        "fsm_state": {
+          "pct": 88.57
+        },
+        "fsm_trans": {
+          "pct": 46.25
+        },
+        "stmt": {
+          "pct": 87.3
+        },
+        "toggle": {
+          "pct": 63.26
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 1.197
+        },
+        "cond": {
+          "pct": 0.9011
+        },
+        "expr": {
+          "pct": 1.4489
+        },
+        "fsm_state": {
+          "pct": 1.3839
+        },
+        "fsm_trans": {
+          "pct": 0.7227
+        },
+        "stmt": {
+          "pct": 1.3641
+        },
+        "toggle": {
+          "pct": 0.9884
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 3.22
+        },
+        "cond": {
+          "pct": 6.08
+        },
+        "expr": {
+          "pct": 12.73
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 2.26
+        },
+        "toggle": {
+          "pct": 12.88
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 75.73
+        },
+        "cond": {
+          "pct": 54.76
+        },
+        "expr": {
+          "pct": 81.82
+        },
+        "fsm_state": {
+          "pct": 88.57
+        },
+        "fsm_trans": {
+          "pct": 46.25
+        },
+        "stmt": {
+          "pct": 86.65
+        },
+        "toggle": {
+          "pct": 64.1
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.0503
+        },
+        "cond": {
+          "pct": 0.095
+        },
+        "expr": {
+          "pct": 0.1989
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0353
+        },
+        "toggle": {
+          "pct": 0.2013
+        }
+      }
+    }
+  ]
 }

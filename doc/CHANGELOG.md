@@ -1,6 +1,13 @@
 # Changelog
 Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 
+## 26.3.16.0417
+
+- **Verification / Bucket Promotion**: promoted additional native-SV passing cases into the active report inventory and no-restart baseline. The current directed signoff set now includes `opq_basic_single_active_lane_test`, `opq_edge_burst_restart_profile_test`, `opq_prof_long_soak_test`, and `opq_cross_idle_lane_backpressure_test`, and the fixed `bucket_frame` ordering expands from 24 to 28 composed steps.
+- **Verification / Harness Timing**: added a bench clock-period override (`+TB_CLK_PERIOD_NS`) and converted the frame-signoff waits from fixed absolute delays to cycle-scaled timing in the composed no-restart harness. This keeps the mixed-bucket soak and the continuous-frame baselines stable when the testbench clock is intentionally slowed for long sim-time evidence.
+- **Verification / Mixed Soak**: added `opq_cross_mixed_bucket_random_soak_test` plus the long-simtime companion `opq_cross_mixed_bucket_long_simtime_soak_test`. The bounded mixed soak now passes with full bucket visitation and `expected=5798 actual=5798 missing=0 ghost=0`, while the slowed-clock companion reaches `2194139500 us` of sim time without DUT or scoreboard errors.
+- **Verification / Open Probes**: recorded two still-open native-SV recovery issues in `tb/BUG_HISTORY.md`: `opq_error_header_word_mask_recovery_test` remains a failing header-recovery probe, and chained `opq_error_subheader_mask_recovery_test` behavior remains excluded from the mixed-soak pool until the no-restart recovery contract is fixed.
+
 ## 26.3.15.0417
 
 - **Verification / Continuous Frame**: fixed the native-SV no-restart signoff harness so composed `bucket_frame` and `all_buckets_frame` runs carry continuous `pkg_cnt` and frame-timestamp identity instead of restarting those fields at each case boundary. This matches the native allocator contract and removes the false credit-restore / missing-hit collapse in long no-restart runs.

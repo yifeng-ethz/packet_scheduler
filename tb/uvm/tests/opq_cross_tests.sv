@@ -349,6 +349,94 @@ class opq_cross_drr_short_allowance_test extends opq_base_test;
   endtask
 endclass
 
+class opq_cross_idle_lane_backpressure_test extends opq_base_test;
+  `uvm_component_utils(opq_cross_idle_lane_backpressure_test)
+
+  function new(string name = "opq_cross_idle_lane_backpressure_test", uvm_component parent = null);
+    super.new(name, parent);
+  endfunction
+
+  virtual function opq_scoreboard_cfg create_scoreboard_cfg();
+    opq_scoreboard_cfg cfg;
+    cfg = super.create_scoreboard_cfg();
+    cfg.check_hit_integrity = 1'b1;
+    return cfg;
+  endfunction
+
+  virtual function time dwell_time();
+    return 1100us;
+  endfunction
+
+  virtual task run_main_sequence();
+    opq_single_lane_virtual_sequence seq;
+    opq_bp_sequence bp_seq;
+    opq_bp_item bp_item;
+
+    csr_clear_counters();
+    seq = opq_single_lane_virtual_sequence::type_id::create("seq");
+    seq.active_lane = 0;
+    seq.frame_count = 6;
+    seq.subheaders_per_frame = 8;
+    seq.hit_count = 8;
+
+    bp_seq = opq_bp_sequence::type_id::create("bp_seq");
+    bp_item = opq_bp_item::type_id::create("bp_item");
+    bp_item.mode = BP_PERIODIC_STALL;
+    bp_item.high_cycles = 8;
+    bp_item.low_cycles = 8;
+    bp_item.repeat_count = 40;
+    bp_seq.items.push_back(bp_item);
+
+    fork
+      seq.start(env.vseqr);
+      begin
+        #2us;
+        bp_seq.start(env.vseqr.egress_seqr);
+      end
+      begin
+        #14us;
+        poll_lane_credits(24, 8us);
+      end
+    join
+  endtask
+
+  virtual task run_post_sequence_checks();
+    int unsigned allowance_word;
+    int unsigned quantum_word;
+    int unsigned grant_cnt_word;
+    int unsigned beat_cnt_word;
+    int unsigned defer_cnt_word;
+
+    super.run_post_sequence_checks();
+    check_lane_no_drop_and_credit(0, 1'b0);
+    check_lane_no_drop_and_credit(1, 1'b0);
+    check_frame_table_counts();
+
+    sample_lane_drr_snapshot(0, OPQ_DRR_DEFAULT_ALLOWANCE, 1'b1, 1'b0);
+    read_lane_drr_snapshot(1, allowance_word, quantum_word, grant_cnt_word, beat_cnt_word, defer_cnt_word);
+    env.coverage.sample_drr_snapshot(1, allowance_word, quantum_word, grant_cnt_word, beat_cnt_word, defer_cnt_word);
+
+    if (allowance_word !== OPQ_DRR_DEFAULT_ALLOWANCE) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "Idle lane allowance mismatch under backpressure expected=%0d actual=%0d",
+        OPQ_DRR_DEFAULT_ALLOWANCE, allowance_word
+      ))
+    end
+    if (grant_cnt_word !== 0 || beat_cnt_word !== 0 || defer_cnt_word !== 0) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "Idle lane should not accumulate DRR counters under backpressure grant=%0d beat=%0d defer=%0d",
+        grant_cnt_word, beat_cnt_word, defer_cnt_word
+      ))
+    end
+    if (quantum_word !== OPQ_DRR_DEFAULT_ALLOWANCE) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "Idle lane live quantum mismatch under backpressure expected=%0d actual=%0d",
+        OPQ_DRR_DEFAULT_ALLOWANCE, quantum_word
+      ))
+    end
+  endtask
+endclass
+
 class opq_cross_drr_bursty_random_test extends opq_base_test;
   `uvm_component_utils(opq_cross_drr_bursty_random_test)
 

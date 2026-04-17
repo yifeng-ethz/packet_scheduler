@@ -24,10 +24,11 @@
 |------|---------|----------------|
 | `opq_edge_backpressure_test` | Periodic stall / restart path with hit-integrity checks | Passing |
 | `opq_edge_always_ready_test` | Explicit ready-high baseline under the same harness plumbing | Passing |
-| `opq_edge_ready_medium_profile_test` | Medium-duty ready profile to sample non-trivial but healthy backpressure bins | Passing |
+| `opq_edge_ready_medium_profile_test` | Medium-duty periodic-stall ready profile to sample non-trivial but healthy backpressure bins | Passing |
 | `opq_edge_stuck_low_backpressure_test` | Longer low-ready windows short of the known overwrite probe path | Passing |
 | `opq_edge_max_hits_test` | Max-hit packet shape on the live symbol path | Passing |
 | `opq_edge_toggle_backpressure_test` | One-cycle ready toggle stress to close short backpressure bins | Passing |
+| `opq_edge_burst_restart_profile_test` | Short ready bursts with deeper low stretches to stress repeated presenter restart | Passing |
 
 ---
 

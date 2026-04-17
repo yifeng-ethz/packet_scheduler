@@ -64,6 +64,8 @@ def case_entry(
     contract_anchor: str,
     n_shd: int = 256,
     effort: str = "practical",
+    method: str = "D",
+    observed_txn: int = 1,
 ) -> dict:
     ticket_fifo_depth = 256
     while ticket_fifo_depth <= n_shd:
@@ -71,8 +73,8 @@ def case_entry(
     return {
         "case_id": name,
         "full_case_id": name,
-        "method": "D",
-        "observed_txn": 1,
+        "method": method,
+        "observed_txn": observed_txn,
         "scenario": scenario,
         "primary_checks": primary_checks,
         "contract_anchor": contract_anchor,
@@ -117,6 +119,12 @@ BUCKET_CASES = OrderedDict(
                     "Real FEB whole-frame packets on both ingress lanes.",
                     "Monitor-side frame reconstruction from DUT pins and scoreboard hit integrity.",
                     "DV_BASIC FEB whole-frame contract closure.",
+                ),
+                case_entry(
+                    "opq_basic_single_active_lane_test",
+                    "Only one active hit-producing lane while the peer lane still emits legal empty-frame cadence.",
+                    "Hit integrity and credit restore with asymmetric legal FEB frame cadence.",
+                    "DV_BASIC single-active-lane closure.",
                 ),
             ],
         ),
@@ -206,6 +214,12 @@ BUCKET_CASES = OrderedDict(
                     "Short-toggle backpressure bins and presenter restart correctness.",
                     "DV_EDGE short-toggle closure.",
                 ),
+                case_entry(
+                    "opq_edge_burst_restart_profile_test",
+                    "Burstier legal ready restart profile with shorter ready windows and deeper low stretches.",
+                    "Presenter hold/restart behavior across repeated medium-depth stall bursts.",
+                    "DV_EDGE burst-restart profile closure.",
+                ),
             ],
         ),
         (
@@ -234,6 +248,12 @@ BUCKET_CASES = OrderedDict(
                     "Uneven per-lane frame-count stress on the active 2-lane harness contract.",
                     "Sparse-frame residency, credit stability, and hit integrity without claiming 4-lane closure.",
                     "DV_PROF sparse-frame residency closure.",
+                ),
+                case_entry(
+                    "opq_prof_long_soak_test",
+                    "Longer directed FEB whole-frame soak on the default 2-lane native-SV path.",
+                    "Sustained hit integrity and clean credit restore beyond the short promoted soak.",
+                    "DV_PROF extended directed soak closure.",
                 ),
             ],
         ),
@@ -311,6 +331,21 @@ BUCKET_CASES = OrderedDict(
                     "Directed DRR reload and service-handoff behavior under constrained allowance.",
                     "DV_CROSS short-allowance closure.",
                 ),
+                case_entry(
+                    "opq_cross_idle_lane_backpressure_test",
+                    "One hit-idle lane crossed with periodic egress stalls on the active lane.",
+                    "Idle-lane cadence preservation and clean restart behavior under backpressure.",
+                    "DV_CROSS idle-lane cadence x backpressure closure.",
+                ),
+                case_entry(
+                    "opq_cross_mixed_bucket_random_soak_test",
+                    "Random mixed-bucket soak that draws safe directed scenarios from BASIC, EDGE, PROF, ERROR, and CROSS.",
+                    "Multi-bucket chained hit integrity, bucket visitation, and no-restart drain stability under randomized sequencing.",
+                    "DV_CROSS mixed-bucket random soak closure.",
+                    effort="high",
+                    method="R",
+                    observed_txn=128,
+                ),
             ],
         ),
     ]
@@ -319,6 +354,7 @@ BUCKET_CASES = OrderedDict(
 EXCLUDED_CASES = [
     "opq_error_ftable_overflow_test",
     "opq_error_header_mask_recovery_test",
+    "opq_error_header_word_mask_recovery_test",
     "opq_cross_drr_bursty_random_test",
 ]
 
@@ -367,9 +403,11 @@ BUCKET_FRAME_LEGACY_ORDER = [
     ("BASIC", "opq_basic_ts_boundary_test"),
     ("BASIC", "opq_basic_feb_packet_contract_test"),
     ("BASIC", "opq_basic_subheader_shape_test"),
+    ("BASIC", "opq_basic_single_active_lane_test"),
     ("EDGE", "opq_edge_backpressure_test"),
     ("EDGE", "opq_edge_always_ready_test"),
     ("EDGE", "opq_edge_ready_medium_profile_test"),
+    ("EDGE", "opq_edge_burst_restart_profile_test"),
     ("EDGE", "opq_edge_stuck_low_backpressure_test"),
     ("EDGE", "opq_edge_max_hits_test"),
     ("EDGE", "opq_edge_toggle_backpressure_test"),
@@ -377,6 +415,7 @@ BUCKET_FRAME_LEGACY_ORDER = [
     ("PROF", "opq_prof_lane_skew_test"),
     ("PROF", "opq_prof_whole_frame_skew_test"),
     ("PROF", "opq_prof_missing_empty_frame_test"),
+    ("PROF", "opq_prof_long_soak_test"),
     ("ERROR", "opq_error_lane_mask_test"),
     ("ERROR", "opq_error_lane_mask_single_hit_test"),
     ("ERROR", "opq_error_lane_mask_burst_test"),
@@ -387,6 +426,7 @@ BUCKET_FRAME_LEGACY_ORDER = [
     ("CROSS", "opq_cross_drr_idle_lane_test"),
     ("CROSS", "opq_cross_drr_zero_allowance_test"),
     ("CROSS", "opq_cross_drr_short_allowance_test"),
+    ("CROSS", "opq_cross_idle_lane_backpressure_test"),
 ]
 ALL_BUCKETS_FRAME_EXTRA_TAIL = [
     {
@@ -419,7 +459,7 @@ REPORT_CASE_BASE = {
     "CROSS": 501,
 }
 
-SIGNOFF_CASE_COUNT = 24
+SIGNOFF_CASE_COUNT = len(BUCKET_FRAME_LEGACY_ORDER)
 SIGNOFF_RUN_SPECS = [
     {
         "run_id": "bucket_frame_native_sv",
@@ -435,6 +475,7 @@ SIGNOFF_RUN_SPECS = [
         "limitations": [
             "PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.",
             "opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow.",
+            "opq_cross_mixed_bucket_random_soak_test is isolated-only evidence; it intentionally randomizes across buckets rather than serving as the fixed promoted no-restart baseline.",
         ],
     },
     {
@@ -451,7 +492,8 @@ SIGNOFF_RUN_SPECS = [
         "limitations": [
             "PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.",
             "opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow.",
-            "This run appends two extra tail sequences after the 24 promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases.",
+            "opq_cross_mixed_bucket_random_soak_test is isolated-only evidence; it intentionally randomizes across buckets rather than serving as the fixed promoted no-restart baseline.",
+            "This run appends two extra tail sequences after the 28 promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases.",
         ],
     },
 ]
@@ -530,6 +572,14 @@ def flatten_pct(cov: dict) -> dict:
     return {metric: {"pct": round(values.get("pct", 0.0), 2)} for metric, values in cov.items()}
 
 
+def scale_cov_per_txn(cov: dict, txn_count: int) -> dict:
+    denom = max(int(txn_count), 1)
+    return {
+        metric: {"pct": round(values.get("pct", 0.0) / denom, 4)}
+        for metric, values in cov.items()
+    }
+
+
 def zero_cov() -> dict:
     return {metric: {"pct": 0.0} for metric in METRIC_MAP.values()}
 
@@ -599,6 +649,13 @@ def extract_log_summary(log_path: Path) -> tuple[bool, bool, dict]:
             summary[f"lane{lane}_monitored_frames"] = int(mon_match.group(1))
             summary[f"lane{lane}_orphan_beats"] = int(mon_match.group(2))
             summary[f"lane{lane}_capture_err"] = int(mon_match.group(3))
+
+    mixed_soak_steps = [
+        int(match.group(1))
+        for match in re.finditer(r"Mixed-soak step (\d+) selected bucket", text)
+    ]
+    if mixed_soak_steps:
+        summary["random_txn"] = max(mixed_soak_steps) + 1
 
     return True, engine_ok, summary if pass_ok else summary
 
@@ -735,7 +792,12 @@ def build() -> dict:
             case["passed"] = engine_ok
             case["log_summary"] = log_summary
             case["standalone_coverage"] = flatten_pct(standalone_cov)
-            case["isolated_cov_per_txn"] = flatten_pct(standalone_cov)
+            if case.get("method") == "R":
+                case["observed_txn"] = int(log_summary.get("random_txn", case.get("observed_txn", 1)) or 1)
+                case["isolated_cov_per_txn"] = scale_cov_per_txn(standalone_cov, case["observed_txn"])
+            else:
+                case["observed_txn"] = int(case.get("observed_txn", 1) or 1)
+                case["isolated_cov_per_txn"] = flatten_pct(standalone_cov)
 
             if engine_ok:
                 evidenced_cases += 1
@@ -745,7 +807,10 @@ def build() -> dict:
                 )
                 case["bucket_gain_by_case"] = cov_delta(merged_after, bucket_merged_cov_before)
                 case["bucket_merged_total_after_case"] = flatten_pct(merged_after)
-                case["bucket_gain_per_txn"] = dict(case["bucket_gain_by_case"])
+                if case.get("method") == "R":
+                    case["bucket_gain_per_txn"] = scale_cov_per_txn(case["bucket_gain_by_case"], case["observed_txn"])
+                else:
+                    case["bucket_gain_per_txn"] = dict(case["bucket_gain_by_case"])
                 bucket_merged_cov_before = merged_after
                 merge_trace.append(
                     {
@@ -761,7 +826,10 @@ def build() -> dict:
             else:
                 case["bucket_gain_by_case"] = flatten_pct({metric: {"pct": 0.0} for metric in METRIC_MAP.values()})
                 case["bucket_merged_total_after_case"] = flatten_pct(bucket_merged_cov_before or {})
-                case["bucket_gain_per_txn"] = dict(case["bucket_gain_by_case"])
+                if case.get("method") == "R":
+                    case["bucket_gain_per_txn"] = scale_cov_per_txn(case["bucket_gain_by_case"], case["observed_txn"])
+                else:
+                    case["bucket_gain_per_txn"] = dict(case["bucket_gain_by_case"])
                 failed_cases.append(report_case_id)
 
             bucket_cases.append(case)
@@ -924,7 +992,7 @@ def build() -> dict:
             "functional_coverage": total_functional_cov,
         },
         "signoff_runs": signoff_runs,
-        "random_cases": [],
+        "random_cases": [case for case in all_cases if case.get("method") == "R"],
     }
 
 

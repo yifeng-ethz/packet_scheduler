@@ -923,6 +923,46 @@ class opq_header_error_recovery_virtual_sequence extends opq_virtual_sequence_ba
   endtask
 endclass
 
+class opq_header_word_error_recovery_virtual_sequence extends opq_virtual_sequence_base;
+  `uvm_object_utils(opq_header_word_error_recovery_virtual_sequence)
+
+  function new(string name = "opq_header_word_error_recovery_virtual_sequence");
+    super.new(name);
+  endfunction
+
+  task body();
+    opq_frame_item lane0_frames[$];
+    opq_frame_item lane1_frames[$];
+    bit [31:0] lane0_hits[$];
+    bit [31:0] lane1_hits[$];
+    bit [47:0] ts_step;
+    opq_frame_item bad_frame;
+
+    ts_step = OPQ_N_SHD * 16;
+    lane0_hits = {32'h7C10_0001, 32'h7C10_0002};
+    lane1_hits = {32'h7D10_0001, 32'h7D10_0002};
+
+    bad_frame = build_frame("lane0_hdr_word_err", 0, 48'd0, 16'd0, 0, 0, 0, '0, '0, 0);
+    bad_frame.data_header1_error_bits = 3'b100;
+    bad_frame.suppress_scoreboard_frame = 1'b1;
+    lane0_frames.push_back(bad_frame);
+
+    bad_frame = build_frame("lane1_hdr_word_err", 1, 48'd0, 16'd0, 0, 0, 0, '0, '0, 0);
+    bad_frame.data_header1_error_bits = 3'b100;
+    bad_frame.suppress_scoreboard_frame = 1'b1;
+    lane1_frames.push_back(bad_frame);
+
+    lane0_frames.push_back(build_single_subheader_frame(
+      "lane0_hdr_word_recovery", 0, ts_step, 16'd1, 8'h01, OPQ_MIN_SOP_GAP_CYCLES, lane0_hits
+    ));
+    lane1_frames.push_back(build_single_subheader_frame(
+      "lane1_hdr_word_recovery", 1, ts_step, 16'd1, 8'h01, OPQ_MIN_SOP_GAP_CYCLES, lane1_hits
+    ));
+
+    start_lane_frames(lane0_frames, lane1_frames);
+  endtask
+endclass
+
 class opq_subheader_error_recovery_virtual_sequence extends opq_virtual_sequence_base;
   `uvm_object_utils(opq_subheader_error_recovery_virtual_sequence)
 

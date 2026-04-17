@@ -28,6 +28,7 @@ Environment:
   OPQ_PAGE_RAM_DEPTH Optional page RAM depth override passed into the DUT wrapper generator
   QUESTA_PREFER_FE  0 by default; set to 1 to force the FE executable
   RUN_DO            Optional override for the vsim `-do` script
+  VSIM_PLUSARGS     Optional extra vsim plusargs, for example `+TB_CLK_PERIOD_NS=100000`
 EOF
 }
 
@@ -97,6 +98,9 @@ run_one() {
 
   if [[ -n "${RUN_DO-}" ]]; then
     make_args+=("RUN_DO=${RUN_DO}")
+  fi
+  if [[ -n "${VSIM_PLUSARGS-}" ]]; then
+    make_args+=("VSIM_PLUSARGS=${VSIM_PLUSARGS}")
   fi
   if [[ "${test_name}" == "opq_error_ftable_overflow_test" && -z "${OPQ_PAGE_RAM_DEPTH-}" ]]; then
     page_ram_depth=512

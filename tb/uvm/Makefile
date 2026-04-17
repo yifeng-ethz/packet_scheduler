@@ -57,6 +57,7 @@ COV ?= 0
 COV_CODE ?= sbecft
 RUN_DO ?= run -all; quit -f
 DUT_IMPL ?= native_sv
+VSIM_PLUSARGS ?=
 
 LM_LICENSE_FILE := $(TB_LICENSE_CHAIN)
 export LM_LICENSE_FILE
@@ -177,10 +178,10 @@ endif
 	$(VLOG) $(VLOG_FLAGS) $(SV_SRCS)
 
 run: compile
-	cd $(BUILD_DIR) && $(VSIM) $(VSIM_FLAGS) -c work.tb_top +UVM_TESTNAME=$(TEST) -do "$(RUN_DO)"
+	cd $(BUILD_DIR) && $(VSIM) $(VSIM_FLAGS) -c work.tb_top +UVM_TESTNAME=$(TEST) $(VSIM_PLUSARGS) -do "$(RUN_DO)"
 
 run_cov: compile
-	cd $(BUILD_DIR) && $(VSIM) $(VSIM_FLAGS) -c work.tb_top +UVM_TESTNAME=$(TEST) -do "coverage save -onexit opq_$(TEST).ucdb; $(RUN_DO)"
+	cd $(BUILD_DIR) && $(VSIM) $(VSIM_FLAGS) -c work.tb_top +UVM_TESTNAME=$(TEST) $(VSIM_PLUSARGS) -do "coverage save -onexit opq_$(TEST).ucdb; $(RUN_DO)"
 
 lint:
 	python3 $(PKT_DIR)/tb/legacy/tb/lint/lint_opq.py
