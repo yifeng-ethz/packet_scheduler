@@ -21,7 +21,7 @@ comparison path, but it must not contribute to final signoff evidence.
 - [x] Every promoted case has isolated native-SV log and UCDB evidence.
 - [x] `bucket_frame` and `all_buckets_frame` baselines exist, are reproducible,
       and are linked from the report.
-- [ ] `BUG_HISTORY.md` records every real DV-found bug with fix status and
+- [x] `BUG_HISTORY.md` records every real DV-found bug with fix status and
       commit hash when fixed.
 - [x] Open probe-only failures are either fixed and promoted or explicitly
       excluded from signoff with justification.
@@ -191,15 +191,15 @@ comparison path, but it must not contribute to final signoff evidence.
 
 ## 9. Update BUG_HISTORY With Signoff Discipline
 
-- [ ] Audit `packet_scheduler/tb/BUG_HISTORY.md` against every real bug exposed
+- [x] Audit `packet_scheduler/tb/BUG_HISTORY.md` against every real bug exposed
       during the report build.
-- [ ] Add first-seen testcase / regression context for any missing entries.
-- [ ] Add fix commit hashes for every fixed issue.
-- [ ] Mark deferred issues with explicit blocking reasons instead of leaving
+- [x] Add first-seen testcase / regression context for any missing entries.
+- [x] Add fix commit hashes for every fixed issue.
+- [x] Mark deferred issues with explicit blocking reasons instead of leaving
       them ambiguous.
-      Status: header-word recovery and chained subheader-recovery regressions
-      are now recorded as explicit open native-SV issues; the remaining audit
-      is to backfill any older signoff-era findings that still lack commit IDs.
+      Status: `BUG_HISTORY.md` now carries an index, numbered bug IDs, explicit
+      first-seen contexts, commit linkage for fixed items, and blocking reasons
+      for the current open probe-only exclusions and 4-lane non-claim.
 
 ## 10. Generate And Review The Final Report
 
@@ -220,5 +220,5 @@ comparison path, but it must not contribute to final signoff evidence.
 - [x] Phase 2: rerun isolated promoted cases and populate per-case evidence.
 - [x] Phase 3: compute incremental coverage and fill `DV_COV.md`.
 - [x] Phase 4: implement `bucket_frame` and `all_buckets_frame`.
-- [ ] Phase 5: close or explicitly defer the open probe-only SV bugs.
+- [x] Phase 5: close or explicitly defer the open probe-only SV bugs.
 - [x] Phase 6: generate `DV_REPORT.md` / `REPORT/` and review for signoff.
