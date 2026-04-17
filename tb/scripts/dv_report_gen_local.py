@@ -22,6 +22,39 @@ def load_base():
 base = load_base()
 
 
+def catalog_planned(bucket: dict[str, Any]) -> int:
+    return int(bucket.get("catalog_planned_cases", bucket.get("planned_cases", 0)))
+
+
+def promoted_cases(bucket: dict[str, Any]) -> int:
+    return int(bucket.get("promoted_cases", bucket.get("planned_cases", len(bucket.get("cases", [])))))
+
+
+def evidenced_cases(bucket: dict[str, Any]) -> int:
+    return int(bucket.get("evidenced_cases", 0))
+
+
+def catalog_pending(bucket: dict[str, Any]) -> int:
+    return int(bucket.get("catalog_pending_cases", max(catalog_planned(bucket) - promoted_cases(bucket), 0)))
+
+
+def bucket_status(bucket: dict[str, Any]) -> str:
+    promoted = promoted_cases(bucket)
+    evidenced = evidenced_cases(bucket)
+    if promoted == 0:
+        return base.PEND_EMOJI
+    if evidenced < promoted:
+        return base.WARN_EMOJI
+    if catalog_pending(bucket) > 0:
+        return base.WARN_EMOJI
+    merged = bucket.get("merged_bucket_total") or {}
+    for key, target in base.TARGETS.items():
+        value = merged.get(key)
+        if isinstance(value, dict) and value.get("pct", 0.0) < target:
+            return base.WARN_EMOJI
+    return base.PASS_EMOJI
+
+
 def display_case_id(case: dict[str, Any]) -> str:
     return (
         case.get("report_case_id")
@@ -195,16 +228,22 @@ def render_case(case: dict[str, Any], tb_rel_log: str, tb_rel_ucdb: str) -> str:
 
 
 def render_bucket(bucket_name: str, bucket: dict[str, Any]) -> str:
-    st = base.bucket_status(bucket)
-    planned = bucket.get("planned_cases", 0)
-    evidenced = bucket.get("evidenced_cases", 0)
+    st = bucket_status(bucket)
+    planned = catalog_planned(bucket)
+    promoted = promoted_cases(bucket)
+    evidenced = evidenced_cases(bucket)
     ordered_case_ids = bucket.get("ordered_case_ids") or []
     tot = bucket.get("merged_bucket_total") or {}
 
     out = [
         f"# {st} {bucket_name} bucket",
         "",
-        f"**Planned:** `{planned}` &nbsp; **Evidenced:** `{evidenced}` &nbsp; **Status:** {st}",
+        f"**Catalog planned:** `{planned}` &nbsp; **Promoted:** `{promoted}` &nbsp; **Evidenced:** `{evidenced}` &nbsp; **Catalog backlog:** `{catalog_pending(bucket)}` &nbsp; **Status:** {st}",
+        "",
+        "## Catalog Inventory",
+        "",
+        f"- source: [`{bucket.get('catalog_source','?')}`](../../{bucket.get('catalog_source','')})",
+        f"- summary: {bucket.get('catalog_summary','n/a')}",
         "",
         "## Ordered isolated baseline",
         "",
@@ -389,14 +428,14 @@ def render_report_readme(data: dict[str, Any]) -> str:
         "",
         "## Buckets",
         "",
-        "| status | bucket | planned | evidenced | merged |",
-        "|:---:|---|---:|---:|---|",
+        "| status | bucket | catalog_planned | promoted | evidenced | backlog | merged |",
+        "|:---:|---|---:|---:|---:|---:|---|",
     ]
     for summary in data.get("bucket_summary", []):
         bucket_name = summary.get("bucket")
         detail = (data.get("buckets") or {}).get(bucket_name, {})
         out.append(
-            f"| {base.bucket_status(detail) if detail else base.INFO_EMOJI} | [`{bucket_name}`](buckets/{bucket_name}.md) | {summary.get('planned_cases',0)} | {summary.get('evidenced_cases',0)} | {base.fmt_cov(summary.get('merged_bucket_total'))} |"
+            f"| {bucket_status(detail) if detail else base.INFO_EMOJI} | [`{bucket_name}`](buckets/{bucket_name}.md) | {summary.get('catalog_planned_cases',0)} | {summary.get('promoted_cases',0)} | {summary.get('evidenced_cases',0)} | {summary.get('catalog_pending_cases',0)} | {base.fmt_cov(summary.get('merged_bucket_total'))} |"
         )
     out += [
         "",
@@ -422,11 +461,13 @@ def render_report_readme(data: dict[str, Any]) -> str:
         "",
         "## Totals",
         "",
-        f"- planned_cases: `{totals.get('planned_cases','?')}`",
-        f"- evidenced_cases: `{totals.get('evidenced_cases','?')}`",
+        f"- catalog_planned_cases: `{totals.get('catalog_planned_cases','?')}`",
+        f"- promoted_signoff_cases: `{totals.get('promoted_cases','?')}`",
+        f"- catalog_pending_cases: `{totals.get('catalog_pending_cases','?')}`",
+        f"- evidenced_promoted_cases: `{totals.get('evidenced_cases','?')}`",
         f"- excluded_cases: `{totals.get('excluded_cases','?')}`",
-        f"- merged total code coverage: `{base.fmt_cov(merged)}`",
-        f"- functional coverage: `{func.get('pct','?')}% ({func.get('evidenced','?')}/{func.get('planned','?')})`",
+        f"- merged total code coverage across promoted isolated evidence: `{base.fmt_cov(merged)}`",
+        f"- promoted functional coverage: `{func.get('pct','?')}% ({func.get('evidenced','?')}/{func.get('planned','?')})`",
         "",
         "---",
         "_[Dashboard](../DV_REPORT.md) &middot; [Coverage](../DV_COV.md)_",
@@ -461,6 +502,7 @@ def render_dashboard(data: dict[str, Any]) -> str:
         "|:---:|---|---|",
         f"| {'❌' if failed_cases else '✅'} | failed_cases | `{len(failed_cases)}` |",
         f"| {'❌' if signoff_failures else '✅'} | signoff_runs_with_failures | `{signoff_failures}` |",
+        f"| {'⚠️' if totals.get('catalog_pending_cases',0) else '✅'} | catalog_backlog_cases | `{totals.get('catalog_pending_cases',0)}` |",
         f"| {'⚠️' if impl.get('unimplemented_count',0) else '✅'} | unimplemented_cases | `{impl.get('unimplemented_count',0)}` |",
         f"| {'⚠️' if impl.get('stale_artifact_without_engine_marker_count',0) else '✅'} | stale_artifacts | `{impl.get('stale_artifact_without_engine_marker_count',0)}` |",
         "",
@@ -470,15 +512,15 @@ def render_dashboard(data: dict[str, Any]) -> str:
         "",
         "## Bucket Summary",
         "",
-        "| status | bucket | planned | evidenced | merged | functional |",
-        "|:---:|---|---:|---:|---|---|",
+        "| status | bucket | catalog_planned | promoted | evidenced | backlog | merged | promoted functional |",
+        "|:---:|---|---:|---:|---:|---:|---|---|",
     ]
     for summary in data.get("bucket_summary", []):
         bucket_name = summary.get("bucket")
         detail = (data.get("buckets") or {}).get(bucket_name, {})
         fcov = summary.get("functional_coverage") or {}
         out.append(
-            f"| {base.bucket_status(detail) if detail else base.INFO_EMOJI} | [`{bucket_name}`](REPORT/buckets/{bucket_name}.md) | {summary.get('planned_cases',0)} | {summary.get('evidenced_cases',0)} | {base.fmt_cov(summary.get('merged_bucket_total'))} | {fcov.get('pct','?')}% ({fcov.get('evidenced','?')}/{fcov.get('planned','?')}) |"
+            f"| {bucket_status(detail) if detail else base.INFO_EMOJI} | [`{bucket_name}`](REPORT/buckets/{bucket_name}.md) | {summary.get('catalog_planned_cases',0)} | {summary.get('promoted_cases',0)} | {summary.get('evidenced_cases',0)} | {summary.get('catalog_pending_cases',0)} | {base.fmt_cov(summary.get('merged_bucket_total'))} | {fcov.get('pct','?')}% ({fcov.get('evidenced','?')}/{fcov.get('planned','?')}) |"
         )
 
     out += [
@@ -498,7 +540,10 @@ def render_dashboard(data: dict[str, Any]) -> str:
             out.append(f"| {base.PEND_EMOJI} | {key} | n/a | {base.TARGETS.get(key, '-')} |")
     out += [
         "",
-        f"- functional coverage: `{func.get('pct','?')}% ({func.get('evidenced','?')}/{func.get('planned','?')})`",
+        f"- catalog_planned_cases: `{totals.get('catalog_planned_cases','?')}`",
+        f"- promoted_signoff_cases: `{totals.get('promoted_cases','?')}`",
+        f"- evidenced_promoted_cases: `{totals.get('evidenced_cases','?')}`",
+        f"- promoted functional coverage: `{func.get('pct','?')}% ({func.get('evidenced','?')}/{func.get('planned','?')})`",
         "",
         "## Cross / Continuous-Frame Signoff",
         "",
@@ -553,6 +598,8 @@ def render_covmd(data: dict[str, Any]) -> str:
         "",
         "## Targets vs merged totals",
         "",
+        "<!-- merged_pct = merge across all evidenced promoted isolated-mode UCDBs across all signoff buckets. -->",
+        "",
         "| status | metric | merged_pct | target |",
         "|:---:|---|---|---|",
     ]
@@ -569,13 +616,19 @@ def render_covmd(data: dict[str, Any]) -> str:
         "",
         "## Per-bucket merged totals",
         "",
-        "| status | bucket | stmt | branch | cond | expr | fsm_state | fsm_trans | toggle |",
-        "|:---:|---|---|---|---|---|---|---|---|",
+        "| status | bucket | catalog_planned | promoted | evidenced | stmt | branch | cond | expr | fsm_state | fsm_trans | toggle |",
+        "|:---:|---|---:|---:|---:|---|---|---|---|---|---|---|",
     ]
     for summary in data.get("bucket_summary", []):
         bucket_name = summary.get("bucket")
         detail = (data.get("buckets") or {}).get(bucket_name, {})
-        row = [base.bucket_status(detail) if detail else base.INFO_EMOJI, f"[`{bucket_name}`](REPORT/buckets/{bucket_name}.md)"]
+        row = [
+            bucket_status(detail) if detail else base.INFO_EMOJI,
+            f"[`{bucket_name}`](REPORT/buckets/{bucket_name}.md)",
+            str(summary.get("catalog_planned_cases", 0)),
+            str(summary.get("promoted_cases", 0)),
+            str(summary.get("evidenced_cases", 0)),
+        ]
         for key in base.COV_KEYS:
             value = (summary.get("merged_bucket_total") or {}).get(key)
             row.append(f"{value['pct']:.2f}" if isinstance(value, dict) and "pct" in value else "n/a")

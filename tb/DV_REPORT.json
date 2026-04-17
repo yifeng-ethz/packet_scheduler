@@ -199,6 +199,38 @@
     "unsupported": {}
   },
   "failed_cases": [],
+  "catalog_inventory": {
+    "BASIC": {
+      "count": 146,
+      "source": "legacy/tb/DV_BASIC.md",
+      "summary": "Archived directed BASIC catalog preserved in tb/legacy/tb/DV_BASIC.md."
+    },
+    "PARAM": {
+      "count": 180,
+      "source": "DV_PARAM.md",
+      "summary": "Derived compile/elaboration matrix inventory: 3 testcase families x 3 N_SHD points x 5 N_LANE points x 2 MODE points x 2 TRACK_HEADER points."
+    },
+    "EDGE": {
+      "count": 168,
+      "source": "legacy/tb/DV_EDGE.md",
+      "summary": "Archived directed EDGE catalog preserved in tb/legacy/tb/DV_EDGE.md."
+    },
+    "PROF": {
+      "count": 168,
+      "source": "legacy/tb/DV_PROF.md",
+      "summary": "Archived directed PROF catalog preserved in tb/legacy/tb/DV_PROF.md."
+    },
+    "ERROR": {
+      "count": 166,
+      "source": "legacy/tb/DV_ERROR.md",
+      "summary": "Archived directed ERROR catalog preserved in tb/legacy/tb/DV_ERROR.md."
+    },
+    "CROSS": {
+      "count": 165,
+      "source": "legacy/tb/DV_CROSS.md",
+      "summary": "Archived chained CROSS catalog preserved in tb/legacy/tb/DV_CROSS.md."
+    }
+  },
   "implementation_summary": {
     "unimplemented_cases": [],
     "unimplemented_count": 0,
@@ -5571,6 +5603,11 @@
     {
       "bucket": "BASIC",
       "planned_cases": 4,
+      "catalog_planned_cases": 146,
+      "catalog_pending_cases": 142,
+      "catalog_source": "legacy/tb/DV_BASIC.md",
+      "catalog_summary": "Archived directed BASIC catalog preserved in tb/legacy/tb/DV_BASIC.md.",
+      "promoted_cases": 4,
       "evidenced_cases": 4,
       "merged_bucket_total": {
         "branch": {
@@ -5633,6 +5670,11 @@
     {
       "bucket": "PARAM",
       "planned_cases": 6,
+      "catalog_planned_cases": 180,
+      "catalog_pending_cases": 174,
+      "catalog_source": "DV_PARAM.md",
+      "catalog_summary": "Derived compile/elaboration matrix inventory: 3 testcase families x 3 N_SHD points x 5 N_LANE points x 2 MODE points x 2 TRACK_HEADER points.",
+      "promoted_cases": 6,
       "evidenced_cases": 6,
       "merged_bucket_total": {
         "branch": {
@@ -5697,6 +5739,11 @@
     {
       "bucket": "EDGE",
       "planned_cases": 6,
+      "catalog_planned_cases": 168,
+      "catalog_pending_cases": 162,
+      "catalog_source": "legacy/tb/DV_EDGE.md",
+      "catalog_summary": "Archived directed EDGE catalog preserved in tb/legacy/tb/DV_EDGE.md.",
+      "promoted_cases": 6,
       "evidenced_cases": 6,
       "merged_bucket_total": {
         "branch": {
@@ -5761,6 +5808,11 @@
     {
       "bucket": "PROF",
       "planned_cases": 4,
+      "catalog_planned_cases": 168,
+      "catalog_pending_cases": 164,
+      "catalog_source": "legacy/tb/DV_PROF.md",
+      "catalog_summary": "Archived directed PROF catalog preserved in tb/legacy/tb/DV_PROF.md.",
+      "promoted_cases": 4,
       "evidenced_cases": 4,
       "merged_bucket_total": {
         "branch": {
@@ -5823,6 +5875,11 @@
     {
       "bucket": "ERROR",
       "planned_cases": 6,
+      "catalog_planned_cases": 166,
+      "catalog_pending_cases": 160,
+      "catalog_source": "legacy/tb/DV_ERROR.md",
+      "catalog_summary": "Archived directed ERROR catalog preserved in tb/legacy/tb/DV_ERROR.md.",
+      "promoted_cases": 6,
       "evidenced_cases": 6,
       "merged_bucket_total": {
         "branch": {
@@ -5887,6 +5944,11 @@
     {
       "bucket": "CROSS",
       "planned_cases": 5,
+      "catalog_planned_cases": 165,
+      "catalog_pending_cases": 160,
+      "catalog_source": "legacy/tb/DV_CROSS.md",
+      "catalog_summary": "Archived chained CROSS catalog preserved in tb/legacy/tb/DV_CROSS.md.",
+      "promoted_cases": 5,
       "evidenced_cases": 5,
       "merged_bucket_total": {
         "branch": {
@@ -5951,6 +6013,11 @@
   "buckets": {
     "BASIC": {
       "planned_cases": 4,
+      "catalog_planned_cases": 146,
+      "catalog_pending_cases": 142,
+      "catalog_source": "legacy/tb/DV_BASIC.md",
+      "catalog_summary": "Archived directed BASIC catalog preserved in tb/legacy/tb/DV_BASIC.md.",
+      "promoted_cases": 4,
       "evidenced_cases": 4,
       "merged_bucket_total": {
         "branch": {
@@ -6757,6 +6824,11 @@
     },
     "PARAM": {
       "planned_cases": 6,
+      "catalog_planned_cases": 180,
+      "catalog_pending_cases": 174,
+      "catalog_source": "DV_PARAM.md",
+      "catalog_summary": "Derived compile/elaboration matrix inventory: 3 testcase families x 3 N_SHD points x 5 N_LANE points x 2 MODE points x 2 TRACK_HEADER points.",
+      "promoted_cases": 6,
       "evidenced_cases": 6,
       "merged_bucket_total": {
         "branch": {
@@ -7947,6 +8019,11 @@
     },
     "EDGE": {
       "planned_cases": 6,
+      "catalog_planned_cases": 168,
+      "catalog_pending_cases": 162,
+      "catalog_source": "legacy/tb/DV_EDGE.md",
+      "catalog_summary": "Archived directed EDGE catalog preserved in tb/legacy/tb/DV_EDGE.md.",
+      "promoted_cases": 6,
       "evidenced_cases": 6,
       "merged_bucket_total": {
         "branch": {
@@ -9137,6 +9214,11 @@
     },
     "PROF": {
       "planned_cases": 4,
+      "catalog_planned_cases": 168,
+      "catalog_pending_cases": 164,
+      "catalog_source": "legacy/tb/DV_PROF.md",
+      "catalog_summary": "Archived directed PROF catalog preserved in tb/legacy/tb/DV_PROF.md.",
+      "promoted_cases": 4,
       "evidenced_cases": 4,
       "merged_bucket_total": {
         "branch": {
@@ -9943,6 +10025,11 @@
     },
     "ERROR": {
       "planned_cases": 6,
+      "catalog_planned_cases": 166,
+      "catalog_pending_cases": 160,
+      "catalog_source": "legacy/tb/DV_ERROR.md",
+      "catalog_summary": "Archived directed ERROR catalog preserved in tb/legacy/tb/DV_ERROR.md.",
+      "promoted_cases": 6,
       "evidenced_cases": 6,
       "merged_bucket_total": {
         "branch": {
@@ -11117,6 +11204,11 @@
     },
     "CROSS": {
       "planned_cases": 5,
+      "catalog_planned_cases": 165,
+      "catalog_pending_cases": 160,
+      "catalog_source": "legacy/tb/DV_CROSS.md",
+      "catalog_summary": "Archived chained CROSS catalog preserved in tb/legacy/tb/DV_CROSS.md.",
+      "promoted_cases": 5,
       "evidenced_cases": 5,
       "merged_bucket_total": {
         "branch": {
@@ -12116,6 +12208,9 @@
   },
   "totals": {
     "planned_cases": 31,
+    "catalog_planned_cases": 993,
+    "catalog_pending_cases": 962,
+    "promoted_cases": 31,
     "evidenced_cases": 31,
     "excluded_cases": 3,
     "merged_total_code_coverage": {

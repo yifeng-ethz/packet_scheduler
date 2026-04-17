@@ -1,6 +1,11 @@
 # ⚠️ PROF bucket
 
-**Planned:** `4` &nbsp; **Evidenced:** `4` &nbsp; **Status:** ⚠️
+**Catalog planned:** `168` &nbsp; **Promoted:** `4` &nbsp; **Evidenced:** `4` &nbsp; **Catalog backlog:** `164` &nbsp; **Status:** ⚠️
+
+## Catalog Inventory
+
+- source: [`legacy/tb/DV_PROF.md`](../../legacy/tb/DV_PROF.md)
+- summary: Archived directed PROF catalog preserved in tb/legacy/tb/DV_PROF.md.
 
 ## Ordered isolated baseline
 

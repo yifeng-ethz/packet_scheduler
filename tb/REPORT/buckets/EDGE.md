@@ -1,6 +1,11 @@
 # ⚠️ EDGE bucket
 
-**Planned:** `6` &nbsp; **Evidenced:** `6` &nbsp; **Status:** ⚠️
+**Catalog planned:** `168` &nbsp; **Promoted:** `6` &nbsp; **Evidenced:** `6` &nbsp; **Catalog backlog:** `162` &nbsp; **Status:** ⚠️
+
+## Catalog Inventory
+
+- source: [`legacy/tb/DV_EDGE.md`](../../legacy/tb/DV_EDGE.md)
+- summary: Archived directed EDGE catalog preserved in tb/legacy/tb/DV_EDGE.md.
 
 ## Ordered isolated baseline
 

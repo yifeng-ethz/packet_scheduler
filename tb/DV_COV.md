@@ -38,6 +38,8 @@ This page is the coverage summary only. Per-case incremental coverage lives unde
 
 ## Targets vs merged totals
 
+<!-- merged_pct = merge across all evidenced promoted isolated-mode UCDBs across all signoff buckets. -->
+
 | status | metric | merged_pct | target |
 |:---:|---|---|---|
 | ⚠️ | stmt | 89.77 | 95.0 |
@@ -50,14 +52,14 @@ This page is the coverage summary only. Per-case incremental coverage lives unde
 
 ## Per-bucket merged totals
 
-| status | bucket | stmt | branch | cond | expr | fsm_state | fsm_trans | toggle |
-|:---:|---|---|---|---|---|---|---|---|
-| ⚠️ | [`BASIC`](REPORT/buckets/BASIC.md) | 84.07 | 71.93 | 46.56 | 70.91 | 85.71 | 43.75 | 45.51 |
-| ⚠️ | [`PARAM`](REPORT/buckets/PARAM.md) | 84.28 | 72.12 | 48.15 | 70.91 | 85.71 | 43.75 | 46.76 |
-| ⚠️ | [`EDGE`](REPORT/buckets/EDGE.md) | 83.64 | 71.73 | 48.68 | 70.91 | 85.71 | 43.75 | 43.87 |
-| ⚠️ | [`PROF`](REPORT/buckets/PROF.md) | 84.07 | 71.73 | 46.56 | 70.91 | 85.71 | 43.75 | 44.68 |
-| ⚠️ | [`ERROR`](REPORT/buckets/ERROR.md) | 86.54 | 76.61 | 50.26 | 74.55 | 91.43 | 48.75 | 41.13 |
-| ⚠️ | [`CROSS`](REPORT/buckets/CROSS.md) | 86.01 | 74.85 | 51.85 | 70.91 | 88.57 | 46.25 | 51.18 |
+| status | bucket | catalog_planned | promoted | evidenced | stmt | branch | cond | expr | fsm_state | fsm_trans | toggle |
+|:---:|---|---:|---:|---:|---|---|---|---|---|---|---|
+| ⚠️ | [`BASIC`](REPORT/buckets/BASIC.md) | 146 | 4 | 4 | 84.07 | 71.93 | 46.56 | 70.91 | 85.71 | 43.75 | 45.51 |
+| ⚠️ | [`PARAM`](REPORT/buckets/PARAM.md) | 180 | 6 | 6 | 84.28 | 72.12 | 48.15 | 70.91 | 85.71 | 43.75 | 46.76 |
+| ⚠️ | [`EDGE`](REPORT/buckets/EDGE.md) | 168 | 6 | 6 | 83.64 | 71.73 | 48.68 | 70.91 | 85.71 | 43.75 | 43.87 |
+| ⚠️ | [`PROF`](REPORT/buckets/PROF.md) | 168 | 4 | 4 | 84.07 | 71.73 | 46.56 | 70.91 | 85.71 | 43.75 | 44.68 |
+| ⚠️ | [`ERROR`](REPORT/buckets/ERROR.md) | 166 | 6 | 6 | 86.54 | 76.61 | 50.26 | 74.55 | 91.43 | 48.75 | 41.13 |
+| ⚠️ | [`CROSS`](REPORT/buckets/CROSS.md) | 165 | 5 | 5 | 86.01 | 74.85 | 51.85 | 70.91 | 88.57 | 46.25 | 51.18 |
 
 ## Isolated execution order and traceability
 

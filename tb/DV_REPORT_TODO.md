@@ -190,7 +190,7 @@ comparison path, but it must not contribute to final signoff evidence.
 - [x] Generate the report tree from `DV_REPORT.json`.
 - [x] Verify that `DV_REPORT.md` is a chief-architect dashboard, not a testcase
       dump.
-- [ ] Verify that every bucket summary count matches the JSON and real evidence.
+- [x] Verify that every bucket summary count matches the JSON and real evidence.
 - [x] Verify that every case link resolves to an actual log, UCDB, and case
       detail page.
 - [x] Verify that `DV_COV.md` and `DV_REPORT.md` agree on bucket totals and

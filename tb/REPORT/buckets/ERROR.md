@@ -1,6 +1,11 @@
 # ⚠️ ERROR bucket
 
-**Planned:** `6` &nbsp; **Evidenced:** `6` &nbsp; **Status:** ⚠️
+**Catalog planned:** `166` &nbsp; **Promoted:** `6` &nbsp; **Evidenced:** `6` &nbsp; **Catalog backlog:** `160` &nbsp; **Status:** ⚠️
+
+## Catalog Inventory
+
+- source: [`legacy/tb/DV_ERROR.md`](../../legacy/tb/DV_ERROR.md)
+- summary: Archived directed ERROR catalog preserved in tb/legacy/tb/DV_ERROR.md.
 
 ## Ordered isolated baseline
 

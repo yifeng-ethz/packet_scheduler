@@ -10,6 +10,7 @@ This page is the chief-architect dashboard. All per-case evidence lives under [`
 |:---:|---|---|
 | ✅ | failed_cases | `0` |
 | ❌ | signoff_runs_with_failures | `2` |
+| ⚠️ | catalog_backlog_cases | `962` |
 | ✅ | unimplemented_cases | `0` |
 | ✅ | stale_artifacts | `0` |
 
@@ -34,14 +35,14 @@ This page is the chief-architect dashboard. All per-case evidence lives under [`
 
 ## Bucket Summary
 
-| status | bucket | planned | evidenced | merged | functional |
-|:---:|---|---:|---:|---|---|
-| ⚠️ | [`BASIC`](REPORT/buckets/BASIC.md) | 4 | 4 | stmt=84.07, branch=71.93, cond=46.56, expr=70.91, fsm_state=85.71, fsm_trans=43.75, toggle=45.51 | 66.97% (4/4) |
-| ⚠️ | [`PARAM`](REPORT/buckets/PARAM.md) | 6 | 6 | stmt=84.28, branch=72.12, cond=48.15, expr=70.91, fsm_state=85.71, fsm_trans=43.75, toggle=46.76 | 67.37% (6/6) |
-| ⚠️ | [`EDGE`](REPORT/buckets/EDGE.md) | 6 | 6 | stmt=83.64, branch=71.73, cond=48.68, expr=70.91, fsm_state=85.71, fsm_trans=43.75, toggle=43.87 | 71.5% (6/6) |
-| ⚠️ | [`PROF`](REPORT/buckets/PROF.md) | 4 | 4 | stmt=84.07, branch=71.73, cond=46.56, expr=70.91, fsm_state=85.71, fsm_trans=43.75, toggle=44.68 | 64.37% (4/4) |
-| ⚠️ | [`ERROR`](REPORT/buckets/ERROR.md) | 6 | 6 | stmt=86.54, branch=76.61, cond=50.26, expr=74.55, fsm_state=91.43, fsm_trans=48.75, toggle=41.13 | 66.33% (6/6) |
-| ⚠️ | [`CROSS`](REPORT/buckets/CROSS.md) | 5 | 5 | stmt=86.01, branch=74.85, cond=51.85, expr=70.91, fsm_state=88.57, fsm_trans=46.25, toggle=51.18 | 69.56% (5/5) |
+| status | bucket | catalog_planned | promoted | evidenced | backlog | merged | promoted functional |
+|:---:|---|---:|---:|---:|---:|---|---|
+| ⚠️ | [`BASIC`](REPORT/buckets/BASIC.md) | 146 | 4 | 4 | 142 | stmt=84.07, branch=71.93, cond=46.56, expr=70.91, fsm_state=85.71, fsm_trans=43.75, toggle=45.51 | 66.97% (4/4) |
+| ⚠️ | [`PARAM`](REPORT/buckets/PARAM.md) | 180 | 6 | 6 | 174 | stmt=84.28, branch=72.12, cond=48.15, expr=70.91, fsm_state=85.71, fsm_trans=43.75, toggle=46.76 | 67.37% (6/6) |
+| ⚠️ | [`EDGE`](REPORT/buckets/EDGE.md) | 168 | 6 | 6 | 162 | stmt=83.64, branch=71.73, cond=48.68, expr=70.91, fsm_state=85.71, fsm_trans=43.75, toggle=43.87 | 71.5% (6/6) |
+| ⚠️ | [`PROF`](REPORT/buckets/PROF.md) | 168 | 4 | 4 | 164 | stmt=84.07, branch=71.73, cond=46.56, expr=70.91, fsm_state=85.71, fsm_trans=43.75, toggle=44.68 | 64.37% (4/4) |
+| ⚠️ | [`ERROR`](REPORT/buckets/ERROR.md) | 166 | 6 | 6 | 160 | stmt=86.54, branch=76.61, cond=50.26, expr=74.55, fsm_state=91.43, fsm_trans=48.75, toggle=41.13 | 66.33% (6/6) |
+| ⚠️ | [`CROSS`](REPORT/buckets/CROSS.md) | 165 | 5 | 5 | 160 | stmt=86.01, branch=74.85, cond=51.85, expr=70.91, fsm_state=88.57, fsm_trans=46.25, toggle=51.18 | 69.56% (5/5) |
 
 ## Totals
 
@@ -55,7 +56,10 @@ This page is the chief-architect dashboard. All per-case evidence lives under [`
 | ⚠️ | fsm_trans | 51.25 | 90.0 |
 | ⚠️ | toggle | 59.29 | 80.0 |
 
-- functional coverage: `89.08% (31/31)`
+- catalog_planned_cases: `993`
+- promoted_signoff_cases: `31`
+- evidenced_promoted_cases: `31`
+- promoted functional coverage: `89.08% (31/31)`
 
 ## Cross / Continuous-Frame Signoff
 

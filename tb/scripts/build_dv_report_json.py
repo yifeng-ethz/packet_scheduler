@@ -22,6 +22,7 @@ INSTANCE_FILTER = "/tb_top/gen_dut_2lane/dut."
 RTL_VARIANT = "after"
 SEED = 1
 SIGNOFF_DUT_IMPL = "native_sv"
+LEGACY_TB_DIR = TB_DIR / "legacy" / "tb"
 
 env_dut_impl = os.environ.get("DUT_IMPL", SIGNOFF_DUT_IMPL)
 if env_dut_impl != SIGNOFF_DUT_IMPL:
@@ -321,6 +322,45 @@ EXCLUDED_CASES = [
     "opq_cross_drr_bursty_random_test",
 ]
 
+CATALOG_SOURCES = {
+    "BASIC": {
+        "source": LEGACY_TB_DIR / "DV_BASIC.md",
+        "mode": "table_rows",
+        "pattern": r"^\|\s+[A-Z]\d+",
+        "summary": "Archived directed BASIC catalog preserved in tb/legacy/tb/DV_BASIC.md.",
+    },
+    "PARAM": {
+        "source": TB_DIR / "DV_PARAM.md",
+        "mode": "derived_matrix",
+        "count": 180,
+        "summary": "Derived compile/elaboration matrix inventory: 3 testcase families x 3 N_SHD points x 5 N_LANE points x 2 MODE points x 2 TRACK_HEADER points.",
+    },
+    "EDGE": {
+        "source": LEGACY_TB_DIR / "DV_EDGE.md",
+        "mode": "table_rows",
+        "pattern": r"^\|\s+[A-Z]\d+",
+        "summary": "Archived directed EDGE catalog preserved in tb/legacy/tb/DV_EDGE.md.",
+    },
+    "PROF": {
+        "source": LEGACY_TB_DIR / "DV_PROF.md",
+        "mode": "table_rows",
+        "pattern": r"^\|\s+[A-Z]\d+",
+        "summary": "Archived directed PROF catalog preserved in tb/legacy/tb/DV_PROF.md.",
+    },
+    "ERROR": {
+        "source": LEGACY_TB_DIR / "DV_ERROR.md",
+        "mode": "table_rows",
+        "pattern": r"^\|\s+[A-Z]\d+",
+        "summary": "Archived directed ERROR catalog preserved in tb/legacy/tb/DV_ERROR.md.",
+    },
+    "CROSS": {
+        "source": LEGACY_TB_DIR / "DV_CROSS.md",
+        "mode": "heading_rows",
+        "pattern": r"^###\s+[A-Z]\d{3}\b",
+        "summary": "Archived chained CROSS catalog preserved in tb/legacy/tb/DV_CROSS.md.",
+    },
+}
+
 BUCKET_FRAME_BUCKET_ORDER = ["BASIC", "EDGE", "PROF", "ERROR", "CROSS"]
 BUCKET_FRAME_LEGACY_ORDER = [
     ("BASIC", "opq_basic_smoke_test"),
@@ -420,6 +460,28 @@ SIGNOFF_RUN_SPECS = [
 def run_cmd(*args: str) -> str:
     proc = subprocess.run(args, check=True, text=True, capture_output=True)
     return proc.stdout
+
+
+def relpath_from_tb(path: Path) -> str:
+    return path.relative_to(TB_DIR).as_posix()
+
+
+def load_catalog_inventory() -> dict[str, dict]:
+    inventory: dict[str, dict] = {}
+    for bucket_name, spec in CATALOG_SOURCES.items():
+        source = spec["source"]
+        mode = spec["mode"]
+        if mode == "derived_matrix":
+            count = int(spec["count"])
+        else:
+            text = source.read_text(encoding="utf-8")
+            count = len(re.findall(spec["pattern"], text, flags=re.MULTILINE))
+        inventory[bucket_name] = {
+            "count": count,
+            "source": relpath_from_tb(source),
+            "summary": spec["summary"],
+        }
+    return inventory
 
 
 def parse_cov_text(text: str) -> dict:
@@ -602,6 +664,7 @@ def build_signoff_runs() -> list[dict]:
 def build() -> dict:
     WORK_DIR.mkdir(parents=True, exist_ok=True)
 
+    catalog_inventory = load_catalog_inventory()
     all_case_ids: list[str] = []
     all_cases: list[dict] = []
     report_artifacts: list[dict] = []
@@ -613,10 +676,14 @@ def build() -> dict:
     unimplemented_cases: list[str] = []
     all_passed_ucdbs: list[Path] = []
     all_passed_cases = 0
+    total_catalog_cases = 0
 
     global_merged_cov_before: dict | None = None
 
     for bucket_name, cases in BUCKET_CASES.items():
+        bucket_catalog = catalog_inventory[bucket_name]
+        promoted_cases = len(cases)
+        total_catalog_cases += bucket_catalog["count"]
         bucket_cases: list[dict] = []
         bucket_ucdbs: list[Path] = []
         merge_trace: list[dict] = []
@@ -714,7 +781,12 @@ def build() -> dict:
                 merge_ucdb(WORK_DIR / f"global_after_{bucket_name.lower()}.ucdb", all_passed_ucdbs)
             )
         bucket_payload = {
-            "planned_cases": len(cases),
+            "planned_cases": promoted_cases,
+            "catalog_planned_cases": bucket_catalog["count"],
+            "catalog_pending_cases": max(bucket_catalog["count"] - promoted_cases, 0),
+            "catalog_source": bucket_catalog["source"],
+            "catalog_summary": bucket_catalog["summary"],
+            "promoted_cases": promoted_cases,
             "evidenced_cases": evidenced_cases,
             "merged_bucket_total": flatten_pct(bucket_merged_cov),
             "functional_coverage": bucket_functional_cov,
@@ -726,7 +798,12 @@ def build() -> dict:
         bucket_summary.append(
             {
                 "bucket": bucket_name,
-                "planned_cases": len(cases),
+                "planned_cases": promoted_cases,
+                "catalog_planned_cases": bucket_catalog["count"],
+                "catalog_pending_cases": max(bucket_catalog["count"] - promoted_cases, 0),
+                "catalog_source": bucket_catalog["source"],
+                "catalog_summary": bucket_catalog["summary"],
+                "promoted_cases": promoted_cases,
                 "evidenced_cases": evidenced_cases,
                 "merged_bucket_total": flatten_pct(bucket_merged_cov),
                 "merged_all_buckets_total_after_bucket": flatten_pct(global_after_bucket or {}),
@@ -796,6 +873,7 @@ def build() -> dict:
             "unsupported": {},
         },
         "failed_cases": failed_cases,
+        "catalog_inventory": catalog_inventory,
         "implementation_summary": {
             "unimplemented_cases": sorted(set(unimplemented_cases)),
             "unimplemented_count": len(set(unimplemented_cases)),
@@ -837,6 +915,9 @@ def build() -> dict:
         "buckets": bucket_payloads,
         "totals": {
             "planned_cases": len(all_case_ids),
+            "catalog_planned_cases": total_catalog_cases,
+            "catalog_pending_cases": max(total_catalog_cases - len(all_case_ids), 0),
+            "promoted_cases": len(all_case_ids),
             "evidenced_cases": all_passed_cases,
             "excluded_cases": len(EXCLUDED_CASES),
             "merged_total_code_coverage": merged_total_cov,

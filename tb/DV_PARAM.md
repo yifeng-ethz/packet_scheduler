@@ -38,6 +38,28 @@ The runner for this bucket is `packet_scheduler/tb/scripts/run_param.sh`.
 
 ---
 
+## Full Catalog Inventory
+
+The generated `DV_REPORT.md` tracks `DV_PARAM` against the broader compile /
+elaboration backlog, not just the six non-default promoted sweep points above.
+
+The current backlog inventory is held as a derived parameter matrix:
+
+- testcase families: `opq_basic_smoke_test`, `opq_basic_ts_boundary_test`,
+  `opq_edge_max_hits_test`
+- `N_SHD`: `128 / 256 / 512`
+- `N_LANE`: `1 / 2 / 4 / 8 / 16`
+- `MODE`: `MERGING / MULTIPLEXING`
+- `TRACK_HEADER`: `true / false`
+
+That produces a tracked `DV_PARAM` catalog size of
+`3 x 3 x 5 x 2 x 2 = 180` planned build points.
+
+Only the promoted native-SV subset is currently evidenced. The remainder is
+backlog inventory, not a closed signoff claim.
+
+---
+
 ## Coverage Intent
 
 This bucket owns the signoff-visible configuration bins for the active harness:

@@ -1,6 +1,11 @@
 # ⚠️ BASIC bucket
 
-**Planned:** `4` &nbsp; **Evidenced:** `4` &nbsp; **Status:** ⚠️
+**Catalog planned:** `146` &nbsp; **Promoted:** `4` &nbsp; **Evidenced:** `4` &nbsp; **Catalog backlog:** `142` &nbsp; **Status:** ⚠️
+
+## Catalog Inventory
+
+- source: [`legacy/tb/DV_BASIC.md`](../../legacy/tb/DV_BASIC.md)
+- summary: Archived directed BASIC catalog preserved in tb/legacy/tb/DV_BASIC.md.
 
 ## Ordered isolated baseline
 

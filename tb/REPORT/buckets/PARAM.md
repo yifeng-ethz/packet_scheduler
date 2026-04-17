@@ -1,6 +1,11 @@
 # ⚠️ PARAM bucket
 
-**Planned:** `6` &nbsp; **Evidenced:** `6` &nbsp; **Status:** ⚠️
+**Catalog planned:** `180` &nbsp; **Promoted:** `6` &nbsp; **Evidenced:** `6` &nbsp; **Catalog backlog:** `174` &nbsp; **Status:** ⚠️
+
+## Catalog Inventory
+
+- source: [`DV_PARAM.md`](../../DV_PARAM.md)
+- summary: Derived compile/elaboration matrix inventory: 3 testcase families x 3 N_SHD points x 5 N_LANE points x 2 MODE points x 2 TRACK_HEADER points.
 
 ## Ordered isolated baseline
 

@@ -1,6 +1,11 @@
 # ⚠️ CROSS bucket
 
-**Planned:** `5` &nbsp; **Evidenced:** `5` &nbsp; **Status:** ⚠️
+**Catalog planned:** `165` &nbsp; **Promoted:** `5` &nbsp; **Evidenced:** `5` &nbsp; **Catalog backlog:** `160` &nbsp; **Status:** ⚠️
+
+## Catalog Inventory
+
+- source: [`legacy/tb/DV_CROSS.md`](../../legacy/tb/DV_CROSS.md)
+- summary: Archived chained CROSS catalog preserved in tb/legacy/tb/DV_CROSS.md.
 
 ## Ordered isolated baseline
 

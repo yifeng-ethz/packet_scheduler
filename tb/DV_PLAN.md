@@ -123,6 +123,15 @@ Open reproducers stay outside the default bucket runners and are grouped under
 The merged signoff coverage closure remains separately controlled by
 `run_cov_closure.sh`.
 
+The generated `DV_REPORT.md` / `DV_COV.md` intentionally separate:
+
+- full bucket catalog inventory from the archived or derived plan
+- promoted native-SV signoff subset
+- actually evidenced passing native-SV cases
+
+This prevents the dashboard from collapsing the full verification plan into the
+much smaller currently promoted closure set.
+
 ---
 
 ## 5. Validated Current Cases
