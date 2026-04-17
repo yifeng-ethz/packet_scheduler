@@ -24,6 +24,118 @@ SEED = 1
 SIGNOFF_DUT_IMPL = "native_sv"
 LEGACY_TB_DIR = TB_DIR / "legacy" / "tb"
 
+INSTANCE_HOLE_SPECS = [
+    {
+        "area": "Ingress parser recovery states",
+        "instance_paths": [
+            "/tb_top/gen_dut_2lane/dut/u_native/g_ingress_parser[0]/ingress_parser_i",
+            "/tb_top/gen_dut_2lane/dut/u_native/g_ingress_parser[1]/ingress_parser_i",
+        ],
+        "classification": "real gap",
+        "reason": (
+            "Header-error and header-word recovery remain probe-only, so the "
+            "MASK_PKT_EXTENDED re-entry and stale-context cleanup paths are still "
+            "under-covered in promoted native-SV evidence."
+        ),
+        "evidence_anchor": (
+            "ordered_priority_queue_monolithic_ingress_parser.sv:305-320, 409-410; "
+            "BUG-005-R / BUG-010-R; "
+            "opq_error_header_mask_recovery_test, opq_error_header_word_mask_recovery_test"
+        ),
+        "next_action": (
+            "Fix parser recovery reinitialization, promote the clean recovery cases, "
+            "and rerun merged coverage."
+        ),
+    },
+    {
+        "area": "Allocator and DRR transition space",
+        "instance_paths": [
+            "/tb_top/gen_dut_2lane/dut/u_native/page_allocator_i",
+            "/tb_top/gen_dut_2lane/dut/u_native/block_path_i",
+        ],
+        "classification": "real gap",
+        "reason": (
+            "The remaining low FSM-transition coverage lines up with the still-open "
+            "bursty DRR stall-boundary probe and the 4-lane sparse-cadence non-claim."
+        ),
+        "evidence_anchor": (
+            "BUG-007-R / BUG-009-R; opq_cross_drr_bursty_random_test; "
+            "opq_prof_missing_empty_frame_test @ OPQ_N_LANE=4"
+        ),
+        "next_action": (
+            "Repair bursty DRR ordering and 4-lane sparse cadence, then add promoted "
+            "directed closure around those transitions."
+        ),
+    },
+    {
+        "area": "Presenter flush/backpressure hybrids",
+        "instance_paths": [
+            "/tb_top/gen_dut_2lane/dut/u_native/presenter_i",
+        ],
+        "classification": "needs-new-test",
+        "reason": (
+            "The reduced-depth overwrite repro is now green in isolation, but the "
+            "promoted suite still lacks a directed hybrid that couples flush pressure "
+            "with legal backpressure windows over a default-build runtime."
+        ),
+        "evidence_anchor": (
+            "ordered_priority_queue_monolithic_basic_presenter.sv:128-145, 165-188; "
+            "DV_FORMAL.md B27/B28; CORNER_OPQ_407_error_ftable_overflow_test"
+        ),
+        "next_action": (
+            "Add the directed backpressure-plus-flush hybrid testcase and use it to "
+            "raise presenter transition and toggle coverage."
+        ),
+    },
+    {
+        "area": "Native wrapper fixed-scope decode paths",
+        "instance_paths": [
+            "/tb_top/gen_dut_2lane/dut/u_native",
+            "/tb_top/gen_dut_2lane/dut",
+        ],
+        "classification": "justified exclusion",
+        "reason": (
+            "A large part of the wrapper hole count comes from fixed-scope native-SV "
+            "configuration, dormant CSR decode/default branches, and status/meta "
+            "observability that are outside the active 2-lane signoff claim."
+        ),
+        "evidence_anchor": (
+            "ordered_priority_queue_dut_sv.sv:227-245, 268-337, 494-505; "
+            "DV_REPORT non-claims for OPQ_N_LANE=2 and reduced-depth isolated points"
+        ),
+        "next_action": (
+            "Keep the wrapper holes documented as non-claims unless a dedicated CSR "
+            "decode sweep becomes a signoff requirement."
+        ),
+    },
+    {
+        "area": "FIFO and page-RAM data-bit toggles",
+        "instance_paths": [
+            "/tb_top/gen_dut_2lane/dut/u_native/g_storage[0]/ticket_fifo_i",
+            "/tb_top/gen_dut_2lane/dut/u_native/g_storage[0]/lane_fifo_i",
+            "/tb_top/gen_dut_2lane/dut/u_native/g_storage[0]/handle_fifo_i",
+            "/tb_top/gen_dut_2lane/dut/u_native/g_storage[1]/ticket_fifo_i",
+            "/tb_top/gen_dut_2lane/dut/u_native/g_storage[1]/lane_fifo_i",
+            "/tb_top/gen_dut_2lane/dut/u_native/g_storage[1]/handle_fifo_i",
+            "/tb_top/gen_dut_2lane/dut/u_native/page_ram_i",
+        ],
+        "classification": "redundant case",
+        "reason": (
+            "The lowest remaining toggle bins are wide storage-array data bits. "
+            "Extra fill-pattern tests would mostly churn memory bit coverage without "
+            "closing a new architectural contract."
+        ),
+        "evidence_anchor": (
+            "ticket_fifo / lane_fifo / handle_fifo / page_ram toggle summaries in the "
+            "merged native-SV UCDB"
+        ),
+        "next_action": (
+            "Do not promote memory-bit churn tests for signoff; only revisit if a "
+            "real storage-corruption bug appears."
+        ),
+    },
+]
+
 env_dut_impl = os.environ.get("DUT_IMPL", SIGNOFF_DUT_IMPL)
 if env_dut_impl != SIGNOFF_DUT_IMPL:
     raise SystemExit(
@@ -558,6 +670,36 @@ def code_cov_for_ucdb(ucdb: Path) -> dict:
     return parse_cov_text(text)
 
 
+def instance_cov_for_ucdb(ucdb: Path) -> dict[str, dict]:
+    text = run_cmd(str(VCOVER), "report", "-codeAll", f"-instance={INSTANCE_FILTER}", str(ucdb))
+    instance_cov: dict[str, dict] = {}
+    current_instance: str | None = None
+    metric_re = re.compile(
+        r"^\s*(Branches|Conditions|Expressions|FSM States|FSM Transitions|Statements|Toggles)\s+"
+        r"(\d+)\s+(\d+)\s+(\d+)\s+([0-9.]+)%"
+    )
+    for line in text.splitlines():
+        inst_match = re.match(r"^=== Instance: (.+)$", line)
+        if inst_match:
+            current_instance = inst_match.group(1).strip()
+            instance_cov.setdefault(current_instance, {"design_unit": None, "metrics": {}})
+            continue
+        du_match = re.match(r"^=== Design Unit: (.+)$", line)
+        if du_match and current_instance is not None:
+            instance_cov[current_instance]["design_unit"] = du_match.group(1).strip()
+            continue
+        metric_match = metric_re.match(line)
+        if metric_match and current_instance is not None:
+            metric = METRIC_MAP[metric_match.group(1)]
+            instance_cov[current_instance]["metrics"][metric] = {
+                "bins": int(metric_match.group(2)),
+                "hits": int(metric_match.group(3)),
+                "misses": int(metric_match.group(4)),
+                "pct": round(float(metric_match.group(5)), 2),
+            }
+    return instance_cov
+
+
 def functional_cov_for_ucdb(ucdb: Path) -> dict:
     text = run_cmd(str(VCOVER), "report", "-summary", "-cvg", str(ucdb))
     match = re.search(r"Covergroups\s+\d+\s+na\s+na\s+\d+\s+([0-9.]+)%", text)
@@ -591,6 +733,48 @@ def scale_cov_per_txn(cov: dict, txn_count: int) -> dict:
 
 def zero_cov() -> dict:
     return {metric: {"pct": 0.0} for metric in METRIC_MAP.values()}
+
+
+def summarize_instance_group(instance_cov: dict[str, dict], instance_paths: list[str]) -> dict:
+    selected = [instance_cov[path] for path in instance_paths if path in instance_cov]
+    summary_metrics: dict[str, float] = {}
+    for metric in METRIC_MAP.values():
+        metric_values = [
+            payload["metrics"].get(metric, {}).get("pct")
+            for payload in selected
+            if payload.get("metrics", {}).get(metric) is not None
+        ]
+        metric_values = [value for value in metric_values if value is not None]
+        if metric_values:
+            summary_metrics[metric] = round(min(metric_values), 2)
+    return {
+        "instance_count": len(selected),
+        "instances": [path for path in instance_paths if path in instance_cov],
+        "metrics": summary_metrics,
+    }
+
+
+def build_coverage_hole_disposition(merged_total_ucdb: Path | None) -> list[dict]:
+    if merged_total_ucdb is None or not merged_total_ucdb.is_file():
+        return []
+
+    instance_cov = instance_cov_for_ucdb(merged_total_ucdb)
+    disposition: list[dict] = []
+    for spec in INSTANCE_HOLE_SPECS:
+        group_summary = summarize_instance_group(instance_cov, spec["instance_paths"])
+        if not group_summary["instances"]:
+            continue
+        disposition.append(
+            {
+                "area": spec["area"],
+                "classification": spec["classification"],
+                "reason": spec["reason"],
+                "evidence_anchor": spec["evidence_anchor"],
+                "next_action": spec["next_action"],
+                "instance_summary": group_summary,
+            }
+        )
+    return disposition
 
 
 def resolve_ucdb_path(name: str) -> Path | None:
@@ -894,11 +1078,13 @@ def build() -> dict:
 
     merged_total_cov = flatten_pct(global_merged_cov_before or {})
     total_functional_cov = {"pct": 0.0, "evidenced": all_passed_cases, "planned": len(all_case_ids)}
+    merged_total_ucdb: Path | None = None
     if all_passed_ucdbs:
         merged_total_ucdb = merge_ucdb(WORK_DIR / "all_buckets_merged.ucdb", all_passed_ucdbs)
         total_functional_cov = functional_cov_for_ucdb(merged_total_ucdb)
         total_functional_cov["evidenced"] = all_passed_cases
         total_functional_cov["planned"] = len(all_case_ids)
+    coverage_hole_disposition = build_coverage_hole_disposition(merged_total_ucdb)
 
     signoff_runs = build_signoff_runs()
     bucket_frame_order = [
@@ -990,6 +1176,7 @@ def build() -> dict:
         "cases": all_cases,
         "bucket_summary": bucket_summary,
         "buckets": bucket_payloads,
+        "coverage_hole_disposition": coverage_hole_disposition,
         "totals": {
             "planned_cases": len(all_case_ids),
             "catalog_planned_cases": total_catalog_cases,

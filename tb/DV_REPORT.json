@@ -14410,6 +14410,122 @@
       ]
     }
   },
+  "coverage_hole_disposition": [
+    {
+      "area": "Ingress parser recovery states",
+      "classification": "real gap",
+      "reason": "Header-error and header-word recovery remain probe-only, so the MASK_PKT_EXTENDED re-entry and stale-context cleanup paths are still under-covered in promoted native-SV evidence.",
+      "evidence_anchor": "ordered_priority_queue_monolithic_ingress_parser.sv:305-320, 409-410; BUG-005-R / BUG-010-R; opq_error_header_mask_recovery_test, opq_error_header_word_mask_recovery_test",
+      "next_action": "Fix parser recovery reinitialization, promote the clean recovery cases, and rerun merged coverage.",
+      "instance_summary": {
+        "instance_count": 2,
+        "instances": [
+          "/tb_top/gen_dut_2lane/dut/u_native/g_ingress_parser[0]/ingress_parser_i",
+          "/tb_top/gen_dut_2lane/dut/u_native/g_ingress_parser[1]/ingress_parser_i"
+        ],
+        "metrics": {
+          "branch": 60.71,
+          "cond": 27.41,
+          "expr": 75.0,
+          "fsm_state": 90.0,
+          "fsm_trans": 45.83,
+          "stmt": 75.2,
+          "toggle": 68.12
+        }
+      }
+    },
+    {
+      "area": "Allocator and DRR transition space",
+      "classification": "real gap",
+      "reason": "The remaining low FSM-transition coverage lines up with the still-open bursty DRR stall-boundary probe and the 4-lane sparse-cadence non-claim.",
+      "evidence_anchor": "BUG-007-R / BUG-009-R; opq_cross_drr_bursty_random_test; opq_prof_missing_empty_frame_test @ OPQ_N_LANE=4",
+      "next_action": "Repair bursty DRR ordering and 4-lane sparse cadence, then add promoted directed closure around those transitions.",
+      "instance_summary": {
+        "instance_count": 2,
+        "instances": [
+          "/tb_top/gen_dut_2lane/dut/u_native/page_allocator_i",
+          "/tb_top/gen_dut_2lane/dut/u_native/block_path_i"
+        ],
+        "metrics": {
+          "branch": 91.25,
+          "cond": 78.75,
+          "expr": 83.33,
+          "fsm_state": 100.0,
+          "fsm_trans": 58.82,
+          "stmt": 93.18,
+          "toggle": 74.88
+        }
+      }
+    },
+    {
+      "area": "Presenter flush/backpressure hybrids",
+      "classification": "needs-new-test",
+      "reason": "The reduced-depth overwrite repro is now green in isolation, but the promoted suite still lacks a directed hybrid that couples flush pressure with legal backpressure windows over a default-build runtime.",
+      "evidence_anchor": "ordered_priority_queue_monolithic_basic_presenter.sv:128-145, 165-188; DV_FORMAL.md B27/B28; CORNER_OPQ_407_error_ftable_overflow_test",
+      "next_action": "Add the directed backpressure-plus-flush hybrid testcase and use it to raise presenter transition and toggle coverage.",
+      "instance_summary": {
+        "instance_count": 1,
+        "instances": [
+          "/tb_top/gen_dut_2lane/dut/u_native/presenter_i"
+        ],
+        "metrics": {
+          "branch": 88.46,
+          "cond": 76.66,
+          "expr": 100.0,
+          "fsm_state": 100.0,
+          "fsm_trans": 57.14,
+          "stmt": 89.36,
+          "toggle": 52.09
+        }
+      }
+    },
+    {
+      "area": "Native wrapper fixed-scope decode paths",
+      "classification": "justified exclusion",
+      "reason": "A large part of the wrapper hole count comes from fixed-scope native-SV configuration, dormant CSR decode/default branches, and status/meta observability that are outside the active 2-lane signoff claim.",
+      "evidence_anchor": "ordered_priority_queue_dut_sv.sv:227-245, 268-337, 494-505; DV_REPORT non-claims for OPQ_N_LANE=2 and reduced-depth isolated points",
+      "next_action": "Keep the wrapper holes documented as non-claims unless a dedicated CSR decode sweep becomes a signoff requirement.",
+      "instance_summary": {
+        "instance_count": 2,
+        "instances": [
+          "/tb_top/gen_dut_2lane/dut/u_native",
+          "/tb_top/gen_dut_2lane/dut"
+        ],
+        "metrics": {
+          "branch": 33.33,
+          "cond": 0.0,
+          "expr": 70.0,
+          "stmt": 55.55,
+          "toggle": 40.95
+        }
+      }
+    },
+    {
+      "area": "FIFO and page-RAM data-bit toggles",
+      "classification": "redundant case",
+      "reason": "The lowest remaining toggle bins are wide storage-array data bits. Extra fill-pattern tests would mostly churn memory bit coverage without closing a new architectural contract.",
+      "evidence_anchor": "ticket_fifo / lane_fifo / handle_fifo / page_ram toggle summaries in the merged native-SV UCDB",
+      "next_action": "Do not promote memory-bit churn tests for signoff; only revisit if a real storage-corruption bug appears.",
+      "instance_summary": {
+        "instance_count": 7,
+        "instances": [
+          "/tb_top/gen_dut_2lane/dut/u_native/g_storage[0]/ticket_fifo_i",
+          "/tb_top/gen_dut_2lane/dut/u_native/g_storage[0]/lane_fifo_i",
+          "/tb_top/gen_dut_2lane/dut/u_native/g_storage[0]/handle_fifo_i",
+          "/tb_top/gen_dut_2lane/dut/u_native/g_storage[1]/ticket_fifo_i",
+          "/tb_top/gen_dut_2lane/dut/u_native/g_storage[1]/lane_fifo_i",
+          "/tb_top/gen_dut_2lane/dut/u_native/g_storage[1]/handle_fifo_i",
+          "/tb_top/gen_dut_2lane/dut/u_native/page_ram_i"
+        ],
+        "metrics": {
+          "branch": 100.0,
+          "cond": 100.0,
+          "stmt": 100.0,
+          "toggle": 59.32
+        }
+      }
+    }
+  ],
   "totals": {
     "planned_cases": 37,
     "catalog_planned_cases": 993,

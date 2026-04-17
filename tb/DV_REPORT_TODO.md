@@ -127,8 +127,12 @@ comparison path, but it must not contribute to final signoff evidence.
       them.
 - [x] Preserve traceability from each bucket total back to the per-case rows in
       `REPORT/cases/` and `REPORT/buckets/`.
-- [ ] Capture coverage-hole disposition: real gap, justified exclusion,
+- [x] Capture coverage-hole disposition: real gap, justified exclusion,
       redundant case, or needs-new-test.
+      Status: `DV_REPORT.json` now records generated hole-disposition rows from
+      the merged native-SV UCDB, and `DV_COV.md` renders them as a coverage
+      closure table tied to open bugs, justified non-claims, or no-value
+      memory-toggle churn.
 
 ## 6. Implement Continuous-Frame Baselines
 

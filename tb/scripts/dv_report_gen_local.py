@@ -134,6 +134,46 @@ def render_category_status(data: dict[str, Any]) -> list[str]:
     return out
 
 
+def fmt_instance_metrics(summary: dict[str, Any]) -> str:
+    metrics = summary.get("metrics") or {}
+    ordered = []
+    for key in ("stmt", "branch", "cond", "fsm_trans", "toggle"):
+        value = metrics.get(key)
+        if value is not None:
+            ordered.append(f"{key}={value:.2f}")
+    count = summary.get("instance_count", 0)
+    suffix = f" (min across {count} instance{'s' if count != 1 else ''})"
+    return ", ".join(ordered) + suffix if ordered else f"n/a{suffix}"
+
+
+def render_hole_disposition(data: dict[str, Any]) -> list[str]:
+    disposition = data.get("coverage_hole_disposition") or []
+    out = [
+        "## Coverage-Hole Disposition",
+        "",
+    ]
+    if not disposition:
+        out.append(f"{base.PEND_EMOJI} no merged-UCDB hole classification recorded yet.")
+        return out
+
+    out += [
+        "| area | measured summary | disposition | evidence anchor | next action |",
+        "|---|---|---|---|---|",
+    ]
+    for item in disposition:
+        out.append(
+            "| {area} | {summary} | {disp}: {reason} | {anchor} | {action} |".format(
+                area=item.get("area", "?"),
+                summary=fmt_instance_metrics(item.get("instance_summary") or {}),
+                disp=item.get("classification", "?"),
+                reason=item.get("reason", ""),
+                anchor=item.get("evidence_anchor", ""),
+                action=item.get("next_action", ""),
+            )
+        )
+    return out
+
+
 def link_case(case_id: str, prefix: str) -> str:
     return f"[`{case_id}`]({prefix}{case_id}.md)"
 
@@ -618,7 +658,7 @@ def render_covmd(data: dict[str, Any]) -> str:
         "",
     ]
     out.extend(render_scope_table(data))
-    out += [""] + render_non_claims(data) + [""] + render_category_status(data) + [
+    out += [""] + render_non_claims(data) + [""] + render_category_status(data) + [""] + render_hole_disposition(data) + [
         "",
         "## Targets vs merged totals",
         "",
