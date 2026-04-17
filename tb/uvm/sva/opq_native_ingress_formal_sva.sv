@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 // IP Name   : opq_native_ingress_formal_sva
 // Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
-// Revision  : 0.1 - formal-oriented ingress credit and packet-write invariants
+// Revision  : 0.2 - align packet-write invariants to the real same-cycle ptr/we update timing
 // Description:
 //   Native-SV formal checker for the ingress parser. These checks implement
 //   the packet-shape/credit invariants called out in DV_FORMAL plane A/B
@@ -44,10 +44,7 @@ module opq_native_ingress_formal_sva #(
   localparam logic [7:0] K284 = 8'h9C;
   localparam logic [7:0] K237 = 8'hF7;
 
-  logic [TICKET_FIFO_ADDR_WIDTH-1:0] ticket_wptr_q;
-  logic [LANE_FIFO_ADDR_WIDTH-1:0]   lane_wptr_q;
-  logic                              ticket_we_q;
-  logic                              lane_we_q;
+  logic                              past_valid;
 `ifdef OPQ_NATIVE_FORMAL_STRICT
   int                                outstanding_tickets;
   int                                outstanding_lane_words;
@@ -67,19 +64,13 @@ module opq_native_ingress_formal_sva #(
 
   always_ff @(posedge d_clk) begin
     if (d_reset) begin
-      ticket_wptr_q <= '0;
-      lane_wptr_q <= '0;
-      ticket_we_q <= 1'b0;
-      lane_we_q <= 1'b0;
+      past_valid <= 1'b0;
 `ifdef OPQ_NATIVE_FORMAL_STRICT
       outstanding_tickets <= 0;
       outstanding_lane_words <= 0;
 `endif
     end else begin
-      ticket_wptr_q <= ticket_wptr;
-      lane_wptr_q <= lane_wptr;
-      ticket_we_q <= ticket_we;
-      lane_we_q <= lane_we;
+      past_valid <= 1'b1;
 
 `ifdef OPQ_NATIVE_FORMAL_STRICT
       outstanding_tickets <= outstanding_tickets +
@@ -92,20 +83,20 @@ module opq_native_ingress_formal_sva #(
     end
   end
 
-  assert property (@(posedge d_clk) disable iff (d_reset)
-    ticket_we_q |-> (ticket_wptr == (ticket_wptr_q + TICKET_FIFO_ADDR_WIDTH'(1))))
+  assert property (@(posedge d_clk) disable iff (d_reset || !past_valid)
+    ticket_we |-> (ticket_wptr == ($past(ticket_wptr) + TICKET_FIFO_ADDR_WIDTH'(1))))
     else $error("OPQ_NATIVE_INGRESS_FORMAL ticket_wptr did not advance after ticket_we");
 
-  assert property (@(posedge d_clk) disable iff (d_reset)
-    !ticket_we_q |-> $stable(ticket_wptr))
+  assert property (@(posedge d_clk) disable iff (d_reset || !past_valid)
+    !ticket_we |-> $stable(ticket_wptr))
     else $error("OPQ_NATIVE_INGRESS_FORMAL ticket_wptr moved without ticket_we");
 
-  assert property (@(posedge d_clk) disable iff (d_reset)
-    lane_we_q |-> (lane_wptr == (lane_wptr_q + LANE_FIFO_ADDR_WIDTH'(1))))
+  assert property (@(posedge d_clk) disable iff (d_reset || !past_valid)
+    lane_we |-> (lane_wptr == ($past(lane_wptr) + LANE_FIFO_ADDR_WIDTH'(1))))
     else $error("OPQ_NATIVE_INGRESS_FORMAL lane_wptr did not advance after lane_we");
 
-  assert property (@(posedge d_clk) disable iff (d_reset)
-    !lane_we_q |-> $stable(lane_wptr))
+  assert property (@(posedge d_clk) disable iff (d_reset || !past_valid)
+    !lane_we |-> $stable(lane_wptr))
     else $error("OPQ_NATIVE_INGRESS_FORMAL lane_wptr moved without lane_we");
 
 `ifdef OPQ_NATIVE_FORMAL_STRICT

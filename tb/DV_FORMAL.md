@@ -980,8 +980,8 @@ per the paper:
 Three scripts now exist under `packet_scheduler/tb/scripts/`:
 
 - `formal_ingress.sh` — compiles plane A + B with abstractions on,
-  drives the JasperGold / Questa Formal flow, dumps a
-  per-property result CSV.
+  and then launches either a real proof backend or the no-backend
+  simulation fallback, dumping one status CSV.
 - `formal_mover.sh` — compiles plane C + D + the shared-page-RAM
   mutual-exclusion properties.
 - `formal_egress.sh` — compiles plane E + F, including the
@@ -996,27 +996,64 @@ use standalone elaboration tops (`opq_formal_ingress_tb`,
 `opq_formal_ftable_tb`) so those planes can be checked without relying
 on unsupported full-top parameter reductions.
 
+The wrapper API is intentionally stable ahead of a real `qverify`
+install:
+
+- `FORMAL_BACKEND=auto|stress|qverify` selects the backend. `auto`
+  chooses `stress` unless `FORMAL_QVERIFY_ENABLE=1` is set.
+- `FORMAL_STRESS_TESTS` overrides the default simulation fallback test
+  list for one plane without editing the wrapper.
+- `FORMAL_STRESS_INCLUDE_PROBES=1` appends the plane's probe-only
+  negative tests.
+- `FORMAL_STRESS_EXTRA_TESTS="..."` appends ad hoc tests to the default
+  list.
+
 ### 10.4.1 Current host execution status (2026-04-18)
 
 The wrappers were executed on **2026-04-18** with the current host tool
 installation:
 
 - `formal_ingress.sh`: compile/elaboration passed on
-  `opq_formal_ingress_tb`, which elaborates the native-SV ingress parser
-  and its packet-shape checker without depending on full-top
-  `N_LANE=1` support.
+  `opq_formal_ingress_tb`, and the current default fallback stress suite
+  now passes with `FORMAL_BACKEND=stress` on the smallest known-good
+  contract-preserving abstraction:
+  `FORMAL_OPQ_N_SHD=256`, `FORMAL_OPQ_TICKET_FIFO_DEPTH=512`,
+  stress tests `opq_basic_smoke_test` and
+  `opq_error_subheader_mask_recovery_test`.
 - `formal_mover.sh`: compile/elaboration passed on the live allocator /
-  block-mover path.
+  block-mover path, and the current default fallback stress suite
+  passes: `opq_cross_drr_allowance_test`,
+  `opq_cross_drr_short_allowance_test`, and
+  `opq_cross_bp_credit_test`.
 - `formal_egress.sh`: compile/elaboration passed on the live
   basic-presenter path and on the standalone `opq_formal_ftable_tb`
-  elaboration top for the translated frame-table tracker/presenter path.
+  elaboration top for the translated frame-table tracker/presenter
+  path, and the current default fallback stress suite passes:
+  `opq_edge_toggle_backpressure_test` and
+  `opq_edge_stuck_low_backpressure_test`.
+
+Current ingress probe classification:
+
+- `opq_error_header_mask_recovery_test` is **probe-only** in the
+  fallback flow because it intentionally launches a new preamble before
+  the masked bad frame closes, which violates the top-level
+  `opq_avst_ingress_sva` no-nested-SOP contract by construction.
+- `opq_error_header_word_mask_recovery_test` remains **probe-only**
+  because it is already an open native-SV recovery probe in the main DV
+  plan.
+- `opq_error_subheader_mask_recovery_test` is **not** probe-only, but
+  it does require the non-shrunken `N_SHD=256` ingress abstraction in
+  the current simulation fallback. The more aggressive
+  `FORMAL_OPQ_N_SHD=8/16` fallback reductions create a false failing
+  model where one recovery hit is lost and one lane credit does not
+  restore, while the normal-size run closes cleanly.
 
 Current blocker: the ETH license server exposes `znformal`, but the
 current host tool installation does **not** provide a runnable
 `qverify`/`znformal` binary in `PATH` or under the checked Questa
 install trees. So the current wrappers close compile/elaboration
-readiness and record a concrete tool-availability block, but they do not
-yet execute a real proof engine on this host.
+readiness and can execute a consistent simulation-backed fallback flow,
+but they do not yet execute a real proof engine on this host.
 
 ---
 

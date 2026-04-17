@@ -154,7 +154,7 @@ VCOM_FLAGS += +cover=$(COV_CODE)
 VSIM_FLAGS += -coverage
 endif
 
-.PHONY: all gen_dut prepare compile run run_cov lint lint_src lint_elab clean license_diag coverage_report
+.PHONY: all gen_dut prepare compile run run_no_compile run_cov run_cov_no_compile lint lint_src lint_elab clean license_diag coverage_report
 
 all: run
 
@@ -212,7 +212,13 @@ endif
 run: compile
 	cd $(BUILD_DIR) && $(VSIM) $(VSIM_FLAGS) -c work.$(TOP) +UVM_TESTNAME=$(TEST) $(VSIM_PLUSARGS) -do "$(RUN_DO)"
 
+run_no_compile:
+	cd $(BUILD_DIR) && $(VSIM) $(VSIM_FLAGS) -c work.$(TOP) +UVM_TESTNAME=$(TEST) $(VSIM_PLUSARGS) -do "$(RUN_DO)"
+
 run_cov: compile
+	cd $(BUILD_DIR) && $(VSIM) $(VSIM_FLAGS) -c work.$(TOP) +UVM_TESTNAME=$(TEST) $(VSIM_PLUSARGS) -do "coverage save -onexit opq_$(TEST).ucdb; $(RUN_DO)"
+
+run_cov_no_compile:
 	cd $(BUILD_DIR) && $(VSIM) $(VSIM_FLAGS) -c work.$(TOP) +UVM_TESTNAME=$(TEST) $(VSIM_PLUSARGS) -do "coverage save -onexit opq_$(TEST).ucdb; $(RUN_DO)"
 
 lint:

@@ -19,5 +19,7 @@ formal_run_plane \
   "2" \
   "8" \
   "16" \
-  "256" \
-  "Plane C/D allocator, page-writer, and DRR block-mover invariants on the live native-SV path"
+  "2048" \
+  "Plane C/D allocator, page-writer, and DRR block-mover invariants on the live native-SV path" \
+  "opq_cross_drr_allowance_test opq_cross_drr_short_allowance_test opq_cross_bp_credit_test" \
+  "opq_cross_drr_bursty_random_test"

@@ -2,7 +2,7 @@
 #------------------------------------------------------------------------------
 # IP Name   : formal_common
 # Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
-# Revision  : 0.1 - shared helpers for OPQ packet-formal compile/elab wrappers
+# Revision  : 0.2 - add a stable fallback-stress API alongside the future proof backend
 # Description:
 #   Shared utilities for the `formal_*.sh` wrappers described in DV_FORMAL.
 #   The wrappers intentionally isolate their build trees from the normal UVM
@@ -20,6 +20,10 @@ FORMAL_CSV_DIR="${FORMAL_RUN_DIR}/csv"
 ETH_MENTOR_SERVER="${ETH_MENTOR_SERVER:-8161@lic-mentor.ethz.ch}"
 
 mkdir -p "${FORMAL_LOG_DIR}" "${FORMAL_CSV_DIR}"
+
+FORMAL_RESULT_STATUS=""
+FORMAL_RESULT_BACKEND=""
+FORMAL_RESULT_NOTE=""
 
 formal_csv_escape() {
   local value="$1"
@@ -66,6 +70,104 @@ formal_use_license_env() {
   export LM_LICENSE_FILE="${chain}"
   export MGLS_LICENSE_FILE="${chain}"
   export SALT_LICENSE_SERVER="${ETH_MENTOR_SERVER}"
+}
+
+formal_log_has_failure() {
+  local log_path="$1"
+
+  rg -q \
+    -e '# UVM_ERROR :[[:space:]]*[1-9][0-9]*' \
+    -e '# UVM_FATAL :[[:space:]]*[1-9][0-9]*' \
+    -e '\*\* Error:' \
+    -e '\*\* Fatal:' \
+    "${log_path}"
+}
+
+formal_run_stress_suite() {
+  local plane="$1"
+  local build_dir="$2"
+  local strict_mode="$3"
+  local tests="$4"
+  local stress_top="$5"
+  local timestamp="$6"
+  local suite_log="$7"
+  local n_lane="$8"
+  local n_shd="$9"
+  local ticket_fifo_depth="${10}"
+  local page_ram_depth="${11}"
+  local plane_note="${12}"
+  local run_do
+  local -a summaries=()
+  local -a make_args=()
+  local test
+  local test_log
+  local status
+  local pass_count=0
+  local fail_count=0
+  local summary_joined=""
+
+  if [[ -z "${tests}" ]]; then
+    FORMAL_RESULT_STATUS="fallback_stress_not_configured"
+    FORMAL_RESULT_BACKEND="simulation_formal_like"
+    FORMAL_RESULT_NOTE="${plane_note}; no formal-like stress tests configured"
+    return 0
+  fi
+
+  run_do="${FORMAL_RUN_DO:-run -all; quit -f}"
+  printf '[formal_%s] fallback_backend=stress tests=%s\n' "${plane}" "${tests}" | tee -a "${suite_log}"
+
+  for test in ${tests}; do
+    test_log="${FORMAL_LOG_DIR}/formal_${plane}_${test}_${timestamp}.log"
+    make_args=(
+      "-C" "${UVM_DIR}"
+      "run_no_compile"
+      "QUESTA_PREFER_FE=${QUESTA_PREFER_FE:-0}"
+      "TEST=${test}"
+      "TOP=${stress_top}"
+      "RUN_DO=${run_do}"
+      "DUT_IMPL=native_sv"
+      "FORMAL_SVA=1"
+      "FORMAL_PLANE=${plane}"
+      "FORMAL_STRICT=${strict_mode}"
+      "BUILD_DIR=${build_dir}"
+      "OPQ_N_LANE=${n_lane}"
+      "OPQ_N_SHD=${n_shd}"
+      "OPQ_TICKET_FIFO_DEPTH=${ticket_fifo_depth}"
+      "OPQ_PAGE_RAM_DEPTH=${page_ram_depth}"
+    )
+    if [[ -n "${FORMAL_VSIM_PLUSARGS:-}" ]]; then
+      make_args+=("VSIM_PLUSARGS=${FORMAL_VSIM_PLUSARGS}")
+    fi
+
+    printf '[formal_%s] stress_test=%s log=%s\n' "${plane}" "${test}" "${test_log}" | tee -a "${suite_log}"
+    if make "${make_args[@]}" > "${test_log}" 2>&1; then
+      if formal_log_has_failure "${test_log}"; then
+        status="fail"
+        fail_count=$((fail_count + 1))
+      else
+        status="pass"
+        pass_count=$((pass_count + 1))
+      fi
+    else
+      status="fail"
+      fail_count=$((fail_count + 1))
+    fi
+    summaries+=("${test}:${status}")
+    printf '[formal_%s] stress_test=%s status=%s\n' "${plane}" "${test}" "${status}" | tee -a "${suite_log}"
+  done
+
+  if ((${#summaries[@]} > 0)); then
+    summary_joined="$(printf '%s;' "${summaries[@]}")"
+    summary_joined="${summary_joined%;}"
+  fi
+
+  FORMAL_RESULT_BACKEND="simulation_formal_like"
+  FORMAL_RESULT_NOTE="${plane_note}; formal-like stress tests=${summary_joined}; pass=${pass_count}; fail=${fail_count}"
+  if ((fail_count == 0)); then
+    FORMAL_RESULT_STATUS="fallback_stress_pass"
+  else
+    FORMAL_RESULT_STATUS="fallback_stress_fail"
+  fi
 }
 
 formal_write_csv() {
@@ -155,6 +257,8 @@ formal_run_plane() {
   local default_ticket_fifo_depth="$5"
   local default_page_ram_depth="$6"
   local plane_note="$7"
+  local stress_tests="${8:-}"
+  local probe_tests="${9:-}"
   local timestamp
   local build_dir
   local n_lane
@@ -162,6 +266,7 @@ formal_run_plane() {
   local ticket_fifo_depth
   local page_ram_depth
   local strict_mode
+  local backend_mode
   local qverify_bin=""
   local compile_status="not_run"
   local elab_status="not_run"
@@ -181,9 +286,20 @@ formal_run_plane() {
   ticket_fifo_depth="${FORMAL_OPQ_TICKET_FIFO_DEPTH:-${default_ticket_fifo_depth}}"
   page_ram_depth="${FORMAL_OPQ_PAGE_RAM_DEPTH:-${default_page_ram_depth}}"
   strict_mode="${FORMAL_STRICT:-0}"
+  backend_mode="${FORMAL_BACKEND:-auto}"
   log_file="${FORMAL_LOG_DIR}/formal_${plane}_${timestamp}.log"
   latest_csv="${FORMAL_CSV_DIR}/formal_${plane}_latest.csv"
   history_csv="${FORMAL_CSV_DIR}/formal_${plane}_history.csv"
+
+  if [[ -n "${FORMAL_STRESS_TESTS:-}" ]]; then
+    stress_tests="${FORMAL_STRESS_TESTS}"
+  fi
+  if [[ "${FORMAL_STRESS_INCLUDE_PROBES:-0}" == "1" && -n "${probe_tests}" ]]; then
+    stress_tests="${stress_tests} ${probe_tests}"
+  fi
+  if [[ -n "${FORMAL_STRESS_EXTRA_TESTS:-}" ]]; then
+    stress_tests="${stress_tests} ${FORMAL_STRESS_EXTRA_TESTS}"
+  fi
 
   formal_use_license_env
 
@@ -238,15 +354,52 @@ formal_run_plane() {
   fi
 
   if [[ "${compile_status}" == "pass" && "${elab_fail}" -eq 0 ]]; then
-    if qverify_bin="$(formal_find_qverify 2>/dev/null)"; then
-      formal_status="blocked_no_scripted_qverify_flow"
-      backend="${qverify_bin}"
-      note="${plane_note}; qverify is installed but a scripted plane-specific proof harness is not yet wired on this host"
-    else
-      formal_status="blocked_no_qverify"
-      backend="compile_elab_only"
-      note="${plane_note}; compile and elaboration passed, but qverify/znformal is not installed on this host"
-    fi
+    case "${backend_mode}" in
+      auto)
+        if [[ "${FORMAL_QVERIFY_ENABLE:-0}" == "1" ]]; then
+          backend_mode="qverify"
+        else
+          backend_mode="stress"
+        fi
+        ;;
+    esac
+
+    case "${backend_mode}" in
+      qverify)
+        if qverify_bin="$(formal_find_qverify 2>/dev/null)"; then
+          formal_status="blocked_no_scripted_qverify_flow"
+          backend="${qverify_bin}"
+          note="${plane_note}; qverify is installed but a scripted plane-specific proof harness is not yet wired on this host"
+        else
+          formal_status="blocked_no_qverify"
+          backend="compile_elab_only"
+          note="${plane_note}; compile and elaboration passed, but qverify/znformal is not installed on this host"
+        fi
+        ;;
+      stress)
+        formal_run_stress_suite \
+          "${plane}" \
+          "${build_dir}" \
+          "${strict_mode}" \
+          "${stress_tests}" \
+          "${FORMAL_STRESS_TOP:-tb_top}" \
+          "${timestamp}" \
+          "${log_file}" \
+          "${n_lane}" \
+          "${n_shd}" \
+          "${ticket_fifo_depth}" \
+          "${page_ram_depth}" \
+          "${plane_note}"
+        formal_status="${FORMAL_RESULT_STATUS}"
+        backend="${FORMAL_RESULT_BACKEND}"
+        note="${FORMAL_RESULT_NOTE}"
+        ;;
+      *)
+        formal_status="blocked_bad_backend"
+        backend="${backend_mode}"
+        note="${plane_note}; unsupported FORMAL_BACKEND=${backend_mode}"
+        ;;
+    esac
   fi
 
   formal_write_csv \

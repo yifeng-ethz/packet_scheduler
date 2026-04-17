@@ -1,6 +1,12 @@
 # Changelog
 Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 
+## 26.3.17.0418
+
+- **Verification / Formal Fallback API**: stabilized the no-backend packet-formal wrappers so the same `formal_ingress.sh`, `formal_mover.sh`, and `formal_egress.sh` entry points can serve both today's simulation-backed fallback and a future `qverify`/`znformal` backend. The shared wrapper layer now accepts `FORMAL_BACKEND=auto|stress|qverify` and `FORMAL_STRESS_TESTS` for targeted per-plane fallback runs without editing the scripts.
+- **Verification / Native-SV Formal SVA**: fixed the native ingress and block-mover SVA timing model to match the real DUT sampling points. Ingress pointer/write assertions now check the same-sampled `*_we`/`*_wptr` contract, and the mover/page-writer assertions now compare the registered page-RAM outputs against the previous cycle's selected source instead of the current combinational arbiter state.
+- **Verification / Fallback Status**: the default simulation-backed packet-formal plane status is now coherent on this host: ingress passes on `opq_basic_smoke_test` plus `opq_error_subheader_mask_recovery_test` at `N_SHD=256` / `TICKET_FIFO_DEPTH=512`, mover passes on the directed DRR tests, and egress passes on the directed backpressure tests. Intentionally contract-breaking ingress recovery cases (`opq_error_header_mask_recovery_test`, `opq_error_header_word_mask_recovery_test`) are explicitly left in the probe-only set instead of polluting the default fallback result.
+
 ## 26.3.16.0417
 
 - **Verification / Bucket Promotion**: promoted additional native-SV passing cases into the active report inventory and no-restart baseline. The current directed signoff set now includes `opq_basic_single_active_lane_test`, `opq_edge_burst_restart_profile_test`, `opq_prof_long_soak_test`, and `opq_cross_idle_lane_backpressure_test`, and the fixed `bucket_frame` ordering expands from 24 to 28 composed steps.

@@ -246,6 +246,25 @@ comparison path, but it must not contribute to final signoff evidence.
         `opq_formal_ftable_tb` elaboration top
       - blocker: `znformal` licenses are available, but this host does not
         have a runnable `qverify` / `znformal` binary installed
+- [x] Stabilize a no-backend fallback API that keeps the future proof entry
+      points intact.
+      Status on `2026-04-18`:
+      - wrappers now support `FORMAL_BACKEND=auto|stress|qverify`
+      - wrappers now support `FORMAL_STRESS_TESTS` for targeted fallback runs
+      - default fallback status:
+        - ingress: pass on `opq_basic_smoke_test` +
+          `opq_error_subheader_mask_recovery_test` with
+          `FORMAL_OPQ_N_SHD=256`, `FORMAL_OPQ_TICKET_FIFO_DEPTH=512`
+        - mover: pass on
+          `opq_cross_drr_allowance_test`,
+          `opq_cross_drr_short_allowance_test`,
+          `opq_cross_bp_credit_test`
+        - egress: pass on
+          `opq_edge_toggle_backpressure_test`,
+          `opq_edge_stuck_low_backpressure_test`
+      - ingress probe-only exclusions:
+        `opq_error_header_mask_recovery_test`,
+        `opq_error_header_word_mask_recovery_test`
 - [ ] Run the first actual formal proof round once the proof backend is
       installed, then record any failing properties back into
       `DV_FORMAL.md` and `BUG_HISTORY.md` when a real RTL issue is exposed.

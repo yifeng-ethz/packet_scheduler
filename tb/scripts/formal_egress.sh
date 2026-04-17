@@ -20,5 +20,7 @@ formal_run_plane \
   "2" \
   "8" \
   "16" \
-  "256" \
-  "Plane E/F live basic-presenter checks plus standalone frame-table tracker/presenter elaboration"
+  "512" \
+  "Plane E/F live basic-presenter checks plus standalone frame-table tracker/presenter elaboration" \
+  "opq_edge_toggle_backpressure_test opq_edge_stuck_low_backpressure_test" \
+  "opq_formal_like_egress_flush_backpressure_stress_test opq_error_ftable_overflow_test"

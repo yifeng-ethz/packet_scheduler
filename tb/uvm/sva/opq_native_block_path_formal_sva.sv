@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 // IP Name   : opq_native_block_path_formal_sva
 // Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
-// Revision  : 0.1 - formal-oriented page-writer and DRR ownership invariants
+// Revision  : 0.2 - align page-writer ownership invariants to registered page-RAM outputs
 // Description:
 //   Native-SV formal checker for the block mover / DRR arbiter. These checks
 //   prove the page-RAM writer ownership and lane-data forwarding rules from
@@ -36,11 +36,24 @@ module opq_native_block_path_formal_sva #(
   input logic                                      locked
 );
   logic pa_write;
+  logic pa_direct_write;
+  logic past_valid;
 
   assign pa_write = page_allocator_write_page_i ||
     page_allocator_write_head_i ||
     page_allocator_write_tail_i ||
     page_allocator_page_we_i;
+  assign pa_direct_write = page_allocator_write_page_i ||
+    page_allocator_write_head_i ||
+    page_allocator_write_tail_i;
+
+  always_ff @(posedge d_clk) begin
+    if (d_reset) begin
+      past_valid <= 1'b0;
+    end else begin
+      past_valid <= 1'b1;
+    end
+  end
 
   assert property (@(posedge d_clk) disable iff (d_reset) $onehot0(gnt))
     else $error("OPQ_NATIVE_BLOCK_FORMAL grant is not onehot0");
@@ -63,39 +76,34 @@ module opq_native_block_path_formal_sva #(
     !locked && !pa_write && (req_eligible == '0) |-> (gnt == '0))
     else $error("OPQ_NATIVE_BLOCK_FORMAL arbiter granted without eligible requests");
 
-  assert property (@(posedge d_clk) disable iff (d_reset)
-    (gnt != '0) |-> ((gnt & ~req_raw) == '0))
-    else $error("OPQ_NATIVE_BLOCK_FORMAL arbiter granted a lane without a raw request");
-
-  assert property (@(posedge d_clk) disable iff (d_reset)
-    page_ram_we_o |-> ((pa_write && (gnt == '0)) || (!pa_write && $onehot(gnt))))
-    else $error("OPQ_NATIVE_BLOCK_FORMAL page RAM write did not come from exactly one writer");
-
-  assert property (@(posedge d_clk) disable iff (d_reset)
-    pa_write |-> (page_ram_we_o == page_allocator_page_we_i) &&
-                 (page_ram_wr_addr_o == page_allocator_page_waddr_i) &&
-                 (page_ram_wr_data_o == page_allocator_page_wdata_i))
+  assert property (@(posedge d_clk) disable iff (d_reset || !past_valid)
+    page_ram_we_o && $past(pa_direct_write) |-> $past(page_allocator_page_we_i) &&
+      (page_ram_wr_addr_o == $past(page_allocator_page_waddr_i)) &&
+      (page_ram_wr_data_o == $past(page_allocator_page_wdata_i)))
     else $error("OPQ_NATIVE_BLOCK_FORMAL page-allocator write data/address mismatch");
+
+  assert property (@(posedge d_clk) disable iff (d_reset || !past_valid)
+    page_ram_we_o && !$past(pa_direct_write) |-> $onehot($past(gnt & req_raw)))
+    else $error("OPQ_NATIVE_BLOCK_FORMAL page RAM write did not come from exactly one mover writer");
 
   generate
     genvar lane;
     for (lane = 0; lane < N_LANE; lane++) begin : gen_lane
       assert property (@(posedge d_clk) disable iff (d_reset)
-        gnt[lane] && !pa_write |-> req_eligible[lane] && req_raw[lane])
-        else $error("OPQ_NATIVE_BLOCK_FORMAL lane %0d granted without eligibility", lane);
+        !locked && gnt[lane] && !pa_write |-> req_eligible[lane] && req_raw[lane])
+        else $error("OPQ_NATIVE_BLOCK_FORMAL lane %0d freshly granted without eligibility", lane);
 
-      assert property (@(posedge d_clk) disable iff (d_reset)
-        page_ram_we_o && gnt[lane] && !pa_write |->
-          (page_ram_wr_data_o == lane_fifos_rd_data_i[lane]))
+      assert property (@(posedge d_clk) disable iff (d_reset || !past_valid)
+        $past(gnt[lane] && req_raw[lane] && !pa_write) |->
+          page_ram_we_o && (page_ram_wr_data_o == $past(lane_fifos_rd_data_i[lane])))
         else $error("OPQ_NATIVE_BLOCK_FORMAL lane %0d page write data mismatch", lane);
 
-      assert property (@(posedge d_clk) disable iff (d_reset)
+      assert property (@(posedge d_clk) disable iff (d_reset || !past_valid)
         defer_event[lane] |-> $past(req_raw[lane] && !req_eligible[lane]))
         else $error("OPQ_NATIVE_BLOCK_FORMAL defer_event on lane %0d without blocked request", lane);
 
-      assert property (@(posedge d_clk) disable iff (d_reset)
-        lock_event[lane] |-> ((req_raw[lane] && req_eligible[lane]) ||
-                              $past(req_raw[lane] && req_eligible[lane])))
+      assert property (@(posedge d_clk) disable iff (d_reset || !past_valid)
+        lock_event[lane] |-> $past(gnt[lane] && req_raw[lane] && req_eligible[lane]))
         else $error("OPQ_NATIVE_BLOCK_FORMAL lock_event on lane %0d without eligible request", lane);
 
       cover property (@(posedge d_clk) disable iff (d_reset)
