@@ -4501,10 +4501,10 @@
         "cg_frame": 58.33,
         "cg_subh": 23.61,
         "cg_bp": 0.0,
-        "cg_csr": 81.43,
+        "cg_csr": 92.26,
         "cg_credit": 46.67,
         "cg_drop": 48.61,
-        "cg_drr": 0.0,
+        "cg_drr": 40.33,
         "cg_ingress": 100.0,
         "cg_egress": 100.0,
         "lane0_monitored_frames": 2,
@@ -10913,10 +10913,10 @@
             "cg_frame": 58.33,
             "cg_subh": 23.61,
             "cg_bp": 0.0,
-            "cg_csr": 81.43,
+            "cg_csr": 92.26,
             "cg_credit": 46.67,
             "cg_drop": 48.61,
-            "cg_drr": 0.0,
+            "cg_drr": 40.33,
             "cg_ingress": 100.0,
             "cg_egress": 100.0,
             "lane0_monitored_frames": 2,
@@ -12259,49 +12259,49 @@
         "opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow."
       ],
       "implemented": true,
-      "passed": false,
+      "passed": true,
       "code_coverage": {
         "branch": {
-          "pct": 80.12
+          "pct": 80.51
         },
         "cond": {
-          "pct": 59.79
+          "pct": 60.85
         },
         "expr": {
           "pct": 81.82
         },
         "fsm_state": {
-          "pct": 91.43
+          "pct": 94.29
         },
         "fsm_trans": {
-          "pct": 50.0
+          "pct": 51.25
         },
         "stmt": {
-          "pct": 89.02
+          "pct": 89.45
         },
         "toggle": {
-          "pct": 54.54
+          "pct": 62.16
         }
       },
       "cross_summary": {
         "pct": 78.11,
         "txns": 202,
         "queued_overlap": 0,
-        "counter_checks_failed": 1,
+        "counter_checks_failed": 0,
         "unexpected_outputs": 0,
         "curve": ""
       },
       "log_summary": {
         "hit_expected": 3770,
-        "hit_actual": 4,
-        "hit_missing": 3766,
+        "hit_actual": 3770,
+        "hit_missing": 0,
         "hit_ghost": 0,
         "cg_cfg": 49.4,
         "cg_frame": 100.0,
         "cg_subh": 100.0,
         "cg_bp": 85.0,
         "cg_csr": 95.24,
-        "cg_credit": 60.0,
+        "cg_credit": 46.67,
         "cg_drop": 62.5,
         "cg_drr": 42.33,
         "cg_ingress": 100.0,
@@ -12331,42 +12331,42 @@
         "This run appends two extra tail sequences after the 24 promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases."
       ],
       "implemented": true,
-      "passed": false,
+      "passed": true,
       "code_coverage": {
         "branch": {
           "pct": 80.51
         },
         "cond": {
-          "pct": 59.79
+          "pct": 60.85
         },
         "expr": {
           "pct": 81.82
         },
         "fsm_state": {
-          "pct": 91.43
+          "pct": 94.29
         },
         "fsm_trans": {
-          "pct": 50.0
+          "pct": 51.25
         },
         "stmt": {
-          "pct": 89.24
+          "pct": 89.45
         },
         "toggle": {
-          "pct": 54.77
+          "pct": 62.36
         }
       },
       "cross_summary": {
-        "pct": 78.11,
+        "pct": 77.91,
         "txns": 230,
         "queued_overlap": 0,
-        "counter_checks_failed": 1,
+        "counter_checks_failed": 0,
         "unexpected_outputs": 0,
         "curve": ""
       },
       "log_summary": {
         "hit_expected": 3788,
-        "hit_actual": 4,
-        "hit_missing": 3784,
+        "hit_actual": 3788,
+        "hit_missing": 0,
         "hit_ghost": 0,
         "cg_cfg": 49.4,
         "cg_frame": 100.0,
@@ -12375,7 +12375,7 @@
         "cg_csr": 95.24,
         "cg_credit": 46.67,
         "cg_drop": 62.5,
-        "cg_drr": 42.33,
+        "cg_drr": 40.33,
         "cg_ingress": 100.0,
         "cg_egress": 100.0,
         "lane0_monitored_frames": 115,

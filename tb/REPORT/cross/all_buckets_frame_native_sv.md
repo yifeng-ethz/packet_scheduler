@@ -1,4 +1,4 @@
-# ❌ all_buckets_frame_native_sv
+# ✅ all_buckets_frame_native_sv
 
 **Kind:** `all_buckets_frame` &nbsp; **Build:** `native_sv` &nbsp; **Sequence:** `OPQ_ALL_BUCKETS_FRAME_NATIVE_SV`
 
@@ -9,8 +9,8 @@
 | ℹ️ | case_count | `24` |
 | ℹ️ | effort | `practical` |
 | ℹ️ | txns | `230` |
-| ❌ | functional_cross_pct | `78.11` |
-| ❌ | counter_checks_failed | `1` |
+| ✅ | functional_cross_pct | `77.91` |
+| ✅ | counter_checks_failed | `0` |
 | ✅ | unexpected_outputs | `0` |
 | ⚠️ | limitation | PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime. |
 | ⚠️ | limitation | opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow. |
@@ -56,13 +56,13 @@
 
 | metric | pct |
 |---|---|
-| stmt | 89.24 |
+| stmt | 89.45 |
 | branch | 80.51 |
-| cond | 59.79 |
+| cond | 60.85 |
 | expr | 81.82 |
-| fsm_state | 91.43 |
-| fsm_trans | 50.00 |
-| toggle | 54.77 |
+| fsm_state | 94.29 |
+| fsm_trans | 51.25 |
+| toggle | 62.36 |
 
 ## Transaction growth curve
 

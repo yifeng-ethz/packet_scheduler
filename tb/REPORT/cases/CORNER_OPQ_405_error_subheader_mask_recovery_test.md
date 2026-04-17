@@ -31,10 +31,10 @@
 | ℹ️ | log.cg_frame | `58.33` |
 | ℹ️ | log.cg_subh | `23.61` |
 | ℹ️ | log.cg_bp | `0.0` |
-| ℹ️ | log.cg_csr | `81.43` |
+| ℹ️ | log.cg_csr | `92.26` |
 | ℹ️ | log.cg_credit | `46.67` |
 | ℹ️ | log.cg_drop | `48.61` |
-| ℹ️ | log.cg_drr | `0.0` |
+| ℹ️ | log.cg_drr | `40.33` |
 | ℹ️ | log.cg_ingress | `100.0` |
 | ℹ️ | log.cg_egress | `100.0` |
 | ℹ️ | log.lane0_monitored_frames | `2` |

@@ -1,6 +1,6 @@
 # OPQ Bug History
 
-## 2026-04-17 Native-SV no-restart signoff run does not restore lane/ticket credit
+## 2026-04-17 Native-SV no-restart signoff accounting breaks continuous-frame closure
 
 - First seen:
   - `packet_scheduler/tb/uvm` `TEST=opq_bucket_frame_native_sv_test OPQ_N_LANE=2 DUT_IMPL=native_sv`
@@ -15,17 +15,14 @@
     - `soak_seq_credit_restore timed out waiting for lane/ticket credit restore`
     - `whole_frame_seq_credit_restore timed out waiting for lane/ticket credit restore`
 - Root cause status:
-  - open
-  - this is not just a placeholder-report problem or a blind-gap harness issue anymore; the native-SV DUT does not return to the fully drained credit state after composed no-reset traffic
-  - the failure appears before final scoreboard closure and leaves lane/ticket credits stuck low, so later cases accumulate expected hits that never emerge at egress
-- Candidate fixes:
-  - add focused assertions or debug counters around lane-credit return, ticket-credit return, and frame-table empty/ownership handoff under no-reset case chaining
-  - reduce the continuous-frame runner to the strict `dv-workflow` practical composition if any composed case is still over-driving beyond its intended one-transaction baseline
-  - fix the native-SV presenter / frame-table / allocator drain path if credit does not restore even under the tightened case-by-case drain checkpoints
+  - fixed
+  - the first failure was a harness identity bug, not a real no-reset drain failure: composed no-restart cases restarted `pkg_cnt` and frame timestamp context from zero, while the native page allocator uses the SOP serial as the frame identity. Reusing those identities across one continuous frame caused later tickets to alias earlier frames and left the signoff runner appearing to stall on credit restore.
+  - after the serial/timestamp carry fix, the last residual `bucket_frame` failure was a scoreboard accounting bug: the harness still counted malformed subheaders as accepted lane traffic even though the native ingress parser masks a subheader with `error_bits[1]` and does not issue a ticket write for it.
+  - carrying continuous-frame `pkg_cnt` / timestamp identity through the composed sequences and counting only parser-accepted subheaders/hits in the scoreboard closes both mandatory no-restart baselines.
 - Fix status:
-  - open
+  - fixed
 - Fix commit:
-  - pending
+  - `b799f94` `Fix OPQ native-SV continuous-frame signoff accounting`
 
 ## 2026-04-17 SWB 4-lane sparse-frame cadence drops later hits
 

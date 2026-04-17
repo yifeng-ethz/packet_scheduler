@@ -76,8 +76,8 @@ This page is the coverage summary only. Per-case incremental coverage lives unde
 
 | status | run_id | kind | build | case_count | stmt | branch | toggle | functional_cross_pct | txns |
 |:---:|---|---|---|---:|---|---|---|---:|---:|
-| ❌ | [`bucket_frame_native_sv`](REPORT/cross/bucket_frame_native_sv.md) | bucket_frame | native_sv | 24 | 89.02 | 80.12 | 54.54 | 78.11 | 202 |
-| ❌ | [`all_buckets_frame_native_sv`](REPORT/cross/all_buckets_frame_native_sv.md) | all_buckets_frame | native_sv | 24 | 89.24 | 80.51 | 54.77 | 78.11 | 230 |
+| ✅ | [`bucket_frame_native_sv`](REPORT/cross/bucket_frame_native_sv.md) | bucket_frame | native_sv | 24 | 89.45 | 80.51 | 62.16 | 78.11 | 202 |
+| ✅ | [`all_buckets_frame_native_sv`](REPORT/cross/all_buckets_frame_native_sv.md) | all_buckets_frame | native_sv | 24 | 89.45 | 80.51 | 62.36 | 77.91 | 230 |
 
 ## Continuous-frame execution order
 

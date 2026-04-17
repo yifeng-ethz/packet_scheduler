@@ -1,6 +1,13 @@
 # Changelog
 Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 
+## 26.3.15.0417
+
+- **Verification / Continuous Frame**: fixed the native-SV no-restart signoff harness so composed `bucket_frame` and `all_buckets_frame` runs carry continuous `pkg_cnt` and frame-timestamp identity instead of restarting those fields at each case boundary. This matches the native allocator contract and removes the false credit-restore / missing-hit collapse in long no-restart runs.
+- **Verification / Scoreboard Contract**: corrected lane-counter accounting for malformed subheaders on the native-SV path. The scoreboard now distinguishes declared FEB packet geometry from parser-accepted lane traffic, so a subheader with `error_bits[1]` no longer inflates expected `wr_shd` / `rd_shd` counts during continuous-frame signoff.
+- **Verification / Error Coverage**: strengthened `opq_error_subheader_mask_recovery_test` to check the same lane/frame-table counters that the signoff baselines use, so malformed-subheader accounting regressions are caught in isolated runs instead of surfacing only at the end of composed regressions.
+- **Verification / Signoff Evidence**: reran the mandatory native-SV continuous-frame baselines and closed them cleanly: `opq_bucket_frame_native_sv_test` now finishes with `expected=3770 actual=3770 missing=0 ghost=0`, and `opq_all_buckets_frame_native_sv_test` now finishes with `expected=3788 actual=3788 missing=0 ghost=0`.
+
 ## 26.3.10.0414
 
 - **RTL / Monolithic VHDL**: committed the currently exercised DRR and presenter fixes into the packaged source tree. The monolithic OPQ now carries the block-level deficit scheduling state, per-lane DRR allowance and service/defer counters, frame-table actual-count side storage, and the presenter skid/hold tightening that the active DV probes have been running against.

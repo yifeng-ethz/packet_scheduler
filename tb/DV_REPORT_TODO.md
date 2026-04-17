@@ -139,8 +139,9 @@ comparison path, but it must not contribute to final signoff evidence.
 - [x] Verify the scoreboard, reset handling, counters, and sequence plumbing can
       run multiple cases in one continuous frame without hidden restart
       assumptions.
-      Result: the tightened native-SV runner now proves an open no-reset
-      drain / credit-restore bug instead of silently relying on fixed gaps.
+      Result: the native-SV continuous-frame runner now carries serial and
+      timestamp identity across composed cases, and both mandatory no-restart
+      baselines pass on the signoff default build.
 - [x] Generate one report page per continuous-frame signoff run under
       `REPORT/cross/`.
 - [x] Link the continuous-frame baselines from both `DV_COV.md` and
@@ -163,7 +164,7 @@ comparison path, but it must not contribute to final signoff evidence.
       `opq_error_ftable_overflow_test`.
 - [ ] Resolve the bursty DRR stall-boundary corruption before promoting
       `opq_cross_drr_bursty_random_test`.
-- [ ] Resolve the native-SV no-reset drain / credit-restore bug before calling
+- [x] Resolve the native-SV no-reset drain / credit-restore bug before calling
       `bucket_frame` or `all_buckets_frame` signoff closed.
 - [ ] Add enough late-drop observability to prove hit integrity on the bursty
       DRR path, or explicitly keep that path probe-only.
@@ -195,7 +196,7 @@ comparison path, but it must not contribute to final signoff evidence.
       detail page.
 - [x] Verify that `DV_COV.md` and `DV_REPORT.md` agree on bucket totals and
       execution-mode baselines.
-- [ ] Run one final native-SV regression pass before calling the report closed.
+- [x] Run one final native-SV regression pass before calling the report closed.
 
 ## Recommended Execution Order
 
@@ -203,6 +204,6 @@ comparison path, but it must not contribute to final signoff evidence.
       wrapper.
 - [x] Phase 2: rerun isolated promoted cases and populate per-case evidence.
 - [x] Phase 3: compute incremental coverage and fill `DV_COV.md`.
-- [ ] Phase 4: implement `bucket_frame` and `all_buckets_frame`.
+- [x] Phase 4: implement `bucket_frame` and `all_buckets_frame`.
 - [ ] Phase 5: close or explicitly defer the open probe-only SV bugs.
-- [ ] Phase 6: generate `DV_REPORT.md` / `REPORT/` and review for signoff.
+- [x] Phase 6: generate `DV_REPORT.md` / `REPORT/` and review for signoff.

@@ -1,4 +1,4 @@
-# ❌ DV Report — packet_scheduler ordered_priority_queue native_sv
+# ✅ DV Report — packet_scheduler ordered_priority_queue native_sv
 
 **DUT:** `ordered_priority_queue_monolithic_sv` &nbsp; **Date:** `2026-04-17` &nbsp; **RTL variant:** `after` &nbsp; **Seed:** `1`
 
@@ -9,7 +9,7 @@ This page is the chief-architect dashboard. All per-case evidence lives under [`
 | status | field | value |
 |:---:|---|---|
 | ✅ | failed_cases | `0` |
-| ❌ | signoff_runs_with_failures | `2` |
+| ✅ | signoff_runs_with_failures | `0` |
 | ⚠️ | catalog_backlog_cases | `962` |
 | ✅ | unimplemented_cases | `0` |
 | ✅ | stale_artifacts | `0` |
@@ -65,8 +65,8 @@ This page is the chief-architect dashboard. All per-case evidence lives under [`
 
 | status | run_id | kind | build | seq | txns | cross_pct |
 |:---:|---|---|---|---|---:|---:|
-| ❌ | [`bucket_frame_native_sv`](REPORT/cross/bucket_frame_native_sv.md) | bucket_frame | native_sv | OPQ_BUCKET_FRAME_NATIVE_SV | 202 | 78.11 |
-| ❌ | [`all_buckets_frame_native_sv`](REPORT/cross/all_buckets_frame_native_sv.md) | all_buckets_frame | native_sv | OPQ_ALL_BUCKETS_FRAME_NATIVE_SV | 230 | 78.11 |
+| ✅ | [`bucket_frame_native_sv`](REPORT/cross/bucket_frame_native_sv.md) | bucket_frame | native_sv | OPQ_BUCKET_FRAME_NATIVE_SV | 202 | 78.11 |
+| ✅ | [`all_buckets_frame_native_sv`](REPORT/cross/all_buckets_frame_native_sv.md) | all_buckets_frame | native_sv | OPQ_ALL_BUCKETS_FRAME_NATIVE_SV | 230 | 77.91 |
 
 ## Index
 
