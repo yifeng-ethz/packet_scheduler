@@ -38,7 +38,7 @@ recovery gaps.
 | Test | Purpose | Current status |
 |------|---------|----------------|
 | `opq_error_header_mask_recovery_test` | Malformed preamble/header suppression followed by a legal recovery frame | Open repro: the native-SV ingress parser still loses the recovery frame timestamp context after a header-error mask path, producing ghost/missing hits with low-byte-only timestamps |
-| `opq_error_header_word_mask_recovery_test` | Header-word error injection followed by a legal recovery frame | Open repro: the native-SV path still double-counts the malformed header packet and corrupts the following legal frame timestamp context |
+| `opq_error_header_word_mask_recovery_test` | Header-word error injection followed by a legal recovery frame | Open repro: isolated native-SV still ends at `expected=4 actual=4 missing=4 ghost=4`, with recovery hits emitted at `ts=0x0010` instead of `ts=0x1010`; attempted promotion into the no-restart ERROR bucket was backed out because it also poisoned later continuous-frame accounting |
 | `opq_error_ftable_overflow_test` | Reduced-depth forced overwrite / frame-table drop accounting | Open repro: forced overwrite still produces malformed accepted egress beats under always-stall backpressure, so the testcase is useful bug evidence but not promotable signoff coverage today |
 
 ---

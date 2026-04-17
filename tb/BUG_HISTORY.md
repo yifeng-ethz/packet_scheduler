@@ -17,7 +17,7 @@ Class legend:
 | [BUG-007-R](#bug-007-r-swb-4-lane-sparse-frame-cadence-drops-later-hits) | R | open | `opq_prof_missing_empty_frame_test` @ `OPQ_N_LANE=4` | `pending` | Unmasked quiescent lanes can block later active-lane traffic when empty-frame cadence is absent. |
 | [BUG-008-R](#bug-008-r-forced-overwrite-path-still-emits-malformed-accepted-egress-and-no-frame-table-drop-accounting) | R | open | `opq_error_ftable_overflow_test` | `pending` | Reduced-depth forced overwrite under always-stall still corrupts accepted egress and leaves frame-table drop counters at zero. |
 | [BUG-009-R](#bug-009-r-bursty-drr-stall-boundary-path-still-corrupts-egress-ordering-and-lacks-late-drop-identity) | R | open | `opq_cross_drr_bursty_random_test` | `pending` | Bursty DRR plus periodic stall still trips contract assertions and large ghost/missing-hit drift. |
-| [BUG-010-R](#bug-010-r-header-word-recovery-path-still-corrupts-the-next-legal-frame) | R | open | `opq_error_header_word_mask_recovery_test` | `pending` | Header-word error injection still double-counts the malformed frame and corrupts the next legal timestamp base. |
+| [BUG-010-R](#bug-010-r-header-word-recovery-path-still-corrupts-the-next-legal-frame) | R | open | `opq_error_header_word_mask_recovery_test` | `pending` | Header-word error injection still corrupts the next legal timestamp base and cannot stay in no-restart signoff. |
 | [BUG-011-R](#bug-011-r-chained-malformed-subheader-recovery-is-not-composable-in-mixed-bucket-soak) | R | open | `opq_cross_mixed_bucket_random_soak_test` | `pending` | Isolated malformed-subheader recovery is green, but chained mixed-soak recovery still breaks no-restart framing. |
 | [BUG-012-H](#bug-012-h-edge-medium-ready-profile-testcase-was-wired-as-always-ready) | H | fixed | promoted EDGE isolated rerun on `2026-04-17` | `cbb05e0` | The supposed medium-backpressure testcase never applied stalls and gave false evidence. |
 | [BUG-013-H](#bug-013-h-mixed-bucket-random-soak-was-reported-as-directed-and-omitted-txn-growth-traceability) | H | fixed | regenerated native-SV report on `2026-04-17` | `cbb05e0` | The promoted mixed-soak testcase was misclassified as directed and hid required random-case reporting. |
@@ -197,13 +197,14 @@ Class legend:
 - First seen in:
   - `packet_scheduler/tb/uvm` `TEST=opq_error_header_word_mask_recovery_test OPQ_N_LANE=2 DUT_IMPL=native_sv`
 - Symptom:
-  - a malformed header-word frame is counted twice by the lane counters and the following legal recovery frame emerges with the right payload words but the wrong timestamp base
-  - observed isolated failure is `expected=4 actual=4 missing=4 ghost=4`, with the recovery hits reconstructed at `ts=0x10` instead of `ts=0x1010`
+  - isolated native-SV still ends at `expected=4 actual=4 missing=4 ghost=4`, with the recovery hits reconstructed at `ts=0x10` instead of `ts=0x1010`
+  - when this testcase was temporarily inserted into the promoted no-restart ERROR bucket on `2026-04-17`, `opq_bucket_frame_native_sv_test` and `opq_all_buckets_frame_native_sv_test` both stopped being signoff-clean until the promotion was reverted
 - Root cause status:
   - open
   - the native-SV header-error handling path still lets stale frame context leak into the next legal frame even when the malformed stimulus is injected at header-word granularity instead of by truncating the whole packet
+  - the current harness cleanup keeps the malformed frame visible to the scoreboard instead of silently suppressing it, which makes the repro more honest but does not fix the DUT recovery bug
 - Blocking reason:
-  - kept probe-only and excluded from signoff because the malformed frame is still double-counted and the following legal frame is not reconstructable with trustworthy timestamp identity
+  - kept probe-only and excluded from signoff because the following legal frame is not reconstructable with trustworthy timestamp identity, and the testcase also corrupts continuous-frame signoff if it is promoted prematurely
 - Candidate fixes:
   - complete the native-SV header-word mask recovery reinitialization so the next legal preamble rebuilds timestamp/ticket context from a clean parser state
   - add a parser-boundary assertion for header-word recovery so stale frame context is caught before egress

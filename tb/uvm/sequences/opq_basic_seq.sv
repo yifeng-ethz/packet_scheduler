@@ -944,12 +944,10 @@ class opq_header_word_error_recovery_virtual_sequence extends opq_virtual_sequen
 
     bad_frame = build_frame("lane0_hdr_word_err", 0, 48'd0, 16'd0, 0, 0, 0, '0, '0, 0);
     bad_frame.data_header1_error_bits = 3'b100;
-    bad_frame.suppress_scoreboard_frame = 1'b1;
     lane0_frames.push_back(bad_frame);
 
     bad_frame = build_frame("lane1_hdr_word_err", 1, 48'd0, 16'd0, 0, 0, 0, '0, '0, 0);
     bad_frame.data_header1_error_bits = 3'b100;
-    bad_frame.suppress_scoreboard_frame = 1'b1;
     lane1_frames.push_back(bad_frame);
 
     lane0_frames.push_back(build_single_subheader_frame(

@@ -173,6 +173,10 @@ comparison path, but it must not contribute to final signoff evidence.
       `opq_cross_drr_bursty_random_test`.
 - [ ] Resolve the chained header-word recovery corruption before promoting
       `opq_error_header_word_mask_recovery_test`.
+      Status: a `2026-04-17` promotion attempt was backed out after the case
+      reproduced as `missing=4 ghost=4` in isolated native-SV and also
+      corrupted `bucket_frame` / `all_buckets_frame` until removed from the
+      promoted ERROR inventory.
 - [ ] Resolve the chained malformed-subheader recovery corruption before adding
       `opq_error_subheader_mask_recovery_test` back into the mixed-bucket soak
       pool.
