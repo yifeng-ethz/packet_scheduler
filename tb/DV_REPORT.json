@@ -23,6 +23,181 @@
       "opq_cross_drr_bursty_random_test"
     ]
   },
+  "case_id_policy": {
+    "mode": "alias_map",
+    "summary": "DV report keeps the live UVM class names as evidence anchors and carries stable report_case_id aliases in JSON.",
+    "aliases": [
+      {
+        "bucket": "BASIC",
+        "report_case_id": "STD_OPQ_001_basic_smoke_test",
+        "legacy_test_name": "opq_basic_smoke_test"
+      },
+      {
+        "bucket": "BASIC",
+        "report_case_id": "STD_OPQ_002_basic_ts_boundary_test",
+        "legacy_test_name": "opq_basic_ts_boundary_test"
+      },
+      {
+        "bucket": "BASIC",
+        "report_case_id": "STD_OPQ_003_basic_subheader_shape_test",
+        "legacy_test_name": "opq_basic_subheader_shape_test"
+      },
+      {
+        "bucket": "BASIC",
+        "report_case_id": "STD_OPQ_004_basic_feb_packet_contract_test",
+        "legacy_test_name": "opq_basic_feb_packet_contract_test"
+      },
+      {
+        "bucket": "PARAM",
+        "report_case_id": "COMBO_OPQ_101_basic_smoke_test_nshd128",
+        "legacy_test_name": "opq_basic_smoke_test_nshd128"
+      },
+      {
+        "bucket": "PARAM",
+        "report_case_id": "COMBO_OPQ_102_basic_smoke_test_nshd512",
+        "legacy_test_name": "opq_basic_smoke_test_nshd512"
+      },
+      {
+        "bucket": "PARAM",
+        "report_case_id": "COMBO_OPQ_103_basic_ts_boundary_test_nshd128",
+        "legacy_test_name": "opq_basic_ts_boundary_test_nshd128"
+      },
+      {
+        "bucket": "PARAM",
+        "report_case_id": "COMBO_OPQ_104_basic_ts_boundary_test_nshd512",
+        "legacy_test_name": "opq_basic_ts_boundary_test_nshd512"
+      },
+      {
+        "bucket": "PARAM",
+        "report_case_id": "COMBO_OPQ_105_edge_max_hits_test_nshd128",
+        "legacy_test_name": "opq_edge_max_hits_test_nshd128"
+      },
+      {
+        "bucket": "PARAM",
+        "report_case_id": "COMBO_OPQ_106_edge_max_hits_test_nshd512",
+        "legacy_test_name": "opq_edge_max_hits_test_nshd512"
+      },
+      {
+        "bucket": "EDGE",
+        "report_case_id": "CORNER_OPQ_201_edge_backpressure_test",
+        "legacy_test_name": "opq_edge_backpressure_test"
+      },
+      {
+        "bucket": "EDGE",
+        "report_case_id": "CORNER_OPQ_202_edge_always_ready_test",
+        "legacy_test_name": "opq_edge_always_ready_test"
+      },
+      {
+        "bucket": "EDGE",
+        "report_case_id": "CORNER_OPQ_203_edge_ready_medium_profile_test",
+        "legacy_test_name": "opq_edge_ready_medium_profile_test"
+      },
+      {
+        "bucket": "EDGE",
+        "report_case_id": "CORNER_OPQ_204_edge_stuck_low_backpressure_test",
+        "legacy_test_name": "opq_edge_stuck_low_backpressure_test"
+      },
+      {
+        "bucket": "EDGE",
+        "report_case_id": "CORNER_OPQ_205_edge_max_hits_test",
+        "legacy_test_name": "opq_edge_max_hits_test"
+      },
+      {
+        "bucket": "EDGE",
+        "report_case_id": "CORNER_OPQ_206_edge_toggle_backpressure_test",
+        "legacy_test_name": "opq_edge_toggle_backpressure_test"
+      },
+      {
+        "bucket": "PROF",
+        "report_case_id": "COMBO_OPQ_301_prof_stress_test",
+        "legacy_test_name": "opq_prof_stress_test"
+      },
+      {
+        "bucket": "PROF",
+        "report_case_id": "COMBO_OPQ_302_prof_lane_skew_test",
+        "legacy_test_name": "opq_prof_lane_skew_test"
+      },
+      {
+        "bucket": "PROF",
+        "report_case_id": "COMBO_OPQ_303_prof_whole_frame_skew_test",
+        "legacy_test_name": "opq_prof_whole_frame_skew_test"
+      },
+      {
+        "bucket": "PROF",
+        "report_case_id": "COMBO_OPQ_304_prof_missing_empty_frame_test",
+        "legacy_test_name": "opq_prof_missing_empty_frame_test"
+      },
+      {
+        "bucket": "ERROR",
+        "report_case_id": "CORNER_OPQ_401_error_lane_mask_test",
+        "legacy_test_name": "opq_error_lane_mask_test"
+      },
+      {
+        "bucket": "ERROR",
+        "report_case_id": "CORNER_OPQ_402_error_lane_mask_single_hit_test",
+        "legacy_test_name": "opq_error_lane_mask_single_hit_test"
+      },
+      {
+        "bucket": "ERROR",
+        "report_case_id": "CORNER_OPQ_403_error_lane_mask_burst_test",
+        "legacy_test_name": "opq_error_lane_mask_burst_test"
+      },
+      {
+        "bucket": "ERROR",
+        "report_case_id": "CORNER_OPQ_404_error_lane_mask_recovery_test",
+        "legacy_test_name": "opq_error_lane_mask_recovery_test"
+      },
+      {
+        "bucket": "ERROR",
+        "report_case_id": "CORNER_OPQ_405_error_subheader_mask_recovery_test",
+        "legacy_test_name": "opq_error_subheader_mask_recovery_test"
+      },
+      {
+        "bucket": "ERROR",
+        "report_case_id": "CORNER_OPQ_406_error_counter_clear_test",
+        "legacy_test_name": "opq_error_counter_clear_test"
+      },
+      {
+        "bucket": "CROSS",
+        "report_case_id": "COMBO_OPQ_501_cross_bp_credit_test",
+        "legacy_test_name": "opq_cross_bp_credit_test"
+      },
+      {
+        "bucket": "CROSS",
+        "report_case_id": "COMBO_OPQ_502_cross_drr_allowance_test",
+        "legacy_test_name": "opq_cross_drr_allowance_test"
+      },
+      {
+        "bucket": "CROSS",
+        "report_case_id": "COMBO_OPQ_503_cross_drr_idle_lane_test",
+        "legacy_test_name": "opq_cross_drr_idle_lane_test"
+      },
+      {
+        "bucket": "CROSS",
+        "report_case_id": "COMBO_OPQ_504_cross_drr_zero_allowance_test",
+        "legacy_test_name": "opq_cross_drr_zero_allowance_test"
+      },
+      {
+        "bucket": "CROSS",
+        "report_case_id": "COMBO_OPQ_505_cross_drr_short_allowance_test",
+        "legacy_test_name": "opq_cross_drr_short_allowance_test"
+      }
+    ]
+  },
+  "coverage_category_status": {
+    "supported_with_targets": {
+      "stmt": "supported in the native-SV Questa flow; tracked against the 95% workflow target",
+      "branch": "supported in the native-SV Questa flow; tracked against the 90% workflow target",
+      "fsm_state": "supported in the native-SV Questa flow; tracked against the 95% workflow target",
+      "fsm_trans": "supported in the native-SV Questa flow; tracked against the 90% workflow target",
+      "toggle": "supported in the native-SV Questa flow; tracked against the 80% workflow target"
+    },
+    "supported_without_hard_target": {
+      "cond": "supported in the native-SV Questa flow and reported explicitly even though the workflow does not impose a fixed threshold",
+      "expr": "supported in the native-SV Questa flow and reported explicitly even though the workflow does not impose a fixed threshold"
+    },
+    "unsupported": {}
+  },
   "failed_cases": [],
   "implementation_summary": {
     "unimplemented_cases": [],
@@ -39,8 +214,5359 @@
     ],
     "mode_scope": "MERGING mode only is claimed in the active native-SV report",
     "n_shd_scope": "native-SV signoff claim covers OPQ_N_SHD = 128 / 256 / 512 only",
-    "four_lane_status": "4-lane native-SV remains out of signoff scope until the sparse-frame cadence bug in BUG_HISTORY.md is closed"
+    "four_lane_status": "4-lane native-SV remains out of signoff scope until the sparse-frame cadence bug in BUG_HISTORY.md is closed",
+    "continuous_frame_scope": "continuous-frame baselines currently cover the default-build promoted matrix only; PARAM build points require separate elaboration and are excluded from no-restart baselines"
   },
+  "execution_modes": {
+    "isolated": {
+      "bucket_order": [
+        "BASIC",
+        "PARAM",
+        "EDGE",
+        "PROF",
+        "ERROR",
+        "CROSS"
+      ],
+      "per_bucket_case_order": {
+        "BASIC": [
+          "STD_OPQ_001_basic_smoke_test",
+          "STD_OPQ_002_basic_ts_boundary_test",
+          "STD_OPQ_003_basic_subheader_shape_test",
+          "STD_OPQ_004_basic_feb_packet_contract_test"
+        ],
+        "PARAM": [
+          "COMBO_OPQ_101_basic_smoke_test_nshd128",
+          "COMBO_OPQ_102_basic_smoke_test_nshd512",
+          "COMBO_OPQ_103_basic_ts_boundary_test_nshd128",
+          "COMBO_OPQ_104_basic_ts_boundary_test_nshd512",
+          "COMBO_OPQ_105_edge_max_hits_test_nshd128",
+          "COMBO_OPQ_106_edge_max_hits_test_nshd512"
+        ],
+        "EDGE": [
+          "CORNER_OPQ_201_edge_backpressure_test",
+          "CORNER_OPQ_202_edge_always_ready_test",
+          "CORNER_OPQ_203_edge_ready_medium_profile_test",
+          "CORNER_OPQ_204_edge_stuck_low_backpressure_test",
+          "CORNER_OPQ_205_edge_max_hits_test",
+          "CORNER_OPQ_206_edge_toggle_backpressure_test"
+        ],
+        "PROF": [
+          "COMBO_OPQ_301_prof_stress_test",
+          "COMBO_OPQ_302_prof_lane_skew_test",
+          "COMBO_OPQ_303_prof_whole_frame_skew_test",
+          "COMBO_OPQ_304_prof_missing_empty_frame_test"
+        ],
+        "ERROR": [
+          "CORNER_OPQ_401_error_lane_mask_test",
+          "CORNER_OPQ_402_error_lane_mask_single_hit_test",
+          "CORNER_OPQ_403_error_lane_mask_burst_test",
+          "CORNER_OPQ_404_error_lane_mask_recovery_test",
+          "CORNER_OPQ_405_error_subheader_mask_recovery_test",
+          "CORNER_OPQ_406_error_counter_clear_test"
+        ],
+        "CROSS": [
+          "COMBO_OPQ_501_cross_bp_credit_test",
+          "COMBO_OPQ_502_cross_drr_allowance_test",
+          "COMBO_OPQ_503_cross_drr_idle_lane_test",
+          "COMBO_OPQ_504_cross_drr_zero_allowance_test",
+          "COMBO_OPQ_505_cross_drr_short_allowance_test"
+        ]
+      }
+    },
+    "bucket_frame": {
+      "run_id": "bucket_frame_native_sv",
+      "bucket_order": [
+        "BASIC",
+        "EDGE",
+        "PROF",
+        "ERROR",
+        "CROSS"
+      ],
+      "ordered_steps": [
+        {
+          "bucket": "BASIC",
+          "report_case_id": "STD_OPQ_001_basic_smoke_test",
+          "legacy_test_name": "opq_basic_smoke_test"
+        },
+        {
+          "bucket": "BASIC",
+          "report_case_id": "STD_OPQ_002_basic_ts_boundary_test",
+          "legacy_test_name": "opq_basic_ts_boundary_test"
+        },
+        {
+          "bucket": "BASIC",
+          "report_case_id": "STD_OPQ_004_basic_feb_packet_contract_test",
+          "legacy_test_name": "opq_basic_feb_packet_contract_test"
+        },
+        {
+          "bucket": "BASIC",
+          "report_case_id": "STD_OPQ_003_basic_subheader_shape_test",
+          "legacy_test_name": "opq_basic_subheader_shape_test"
+        },
+        {
+          "bucket": "EDGE",
+          "report_case_id": "CORNER_OPQ_201_edge_backpressure_test",
+          "legacy_test_name": "opq_edge_backpressure_test"
+        },
+        {
+          "bucket": "EDGE",
+          "report_case_id": "CORNER_OPQ_202_edge_always_ready_test",
+          "legacy_test_name": "opq_edge_always_ready_test"
+        },
+        {
+          "bucket": "EDGE",
+          "report_case_id": "CORNER_OPQ_203_edge_ready_medium_profile_test",
+          "legacy_test_name": "opq_edge_ready_medium_profile_test"
+        },
+        {
+          "bucket": "EDGE",
+          "report_case_id": "CORNER_OPQ_204_edge_stuck_low_backpressure_test",
+          "legacy_test_name": "opq_edge_stuck_low_backpressure_test"
+        },
+        {
+          "bucket": "EDGE",
+          "report_case_id": "CORNER_OPQ_205_edge_max_hits_test",
+          "legacy_test_name": "opq_edge_max_hits_test"
+        },
+        {
+          "bucket": "EDGE",
+          "report_case_id": "CORNER_OPQ_206_edge_toggle_backpressure_test",
+          "legacy_test_name": "opq_edge_toggle_backpressure_test"
+        },
+        {
+          "bucket": "PROF",
+          "report_case_id": "COMBO_OPQ_301_prof_stress_test",
+          "legacy_test_name": "opq_prof_stress_test"
+        },
+        {
+          "bucket": "PROF",
+          "report_case_id": "COMBO_OPQ_302_prof_lane_skew_test",
+          "legacy_test_name": "opq_prof_lane_skew_test"
+        },
+        {
+          "bucket": "PROF",
+          "report_case_id": "COMBO_OPQ_303_prof_whole_frame_skew_test",
+          "legacy_test_name": "opq_prof_whole_frame_skew_test"
+        },
+        {
+          "bucket": "PROF",
+          "report_case_id": "COMBO_OPQ_304_prof_missing_empty_frame_test",
+          "legacy_test_name": "opq_prof_missing_empty_frame_test"
+        },
+        {
+          "bucket": "ERROR",
+          "report_case_id": "CORNER_OPQ_401_error_lane_mask_test",
+          "legacy_test_name": "opq_error_lane_mask_test"
+        },
+        {
+          "bucket": "ERROR",
+          "report_case_id": "CORNER_OPQ_402_error_lane_mask_single_hit_test",
+          "legacy_test_name": "opq_error_lane_mask_single_hit_test"
+        },
+        {
+          "bucket": "ERROR",
+          "report_case_id": "CORNER_OPQ_403_error_lane_mask_burst_test",
+          "legacy_test_name": "opq_error_lane_mask_burst_test"
+        },
+        {
+          "bucket": "ERROR",
+          "report_case_id": "CORNER_OPQ_404_error_lane_mask_recovery_test",
+          "legacy_test_name": "opq_error_lane_mask_recovery_test"
+        },
+        {
+          "bucket": "ERROR",
+          "report_case_id": "CORNER_OPQ_405_error_subheader_mask_recovery_test",
+          "legacy_test_name": "opq_error_subheader_mask_recovery_test"
+        },
+        {
+          "bucket": "CROSS",
+          "report_case_id": "COMBO_OPQ_501_cross_bp_credit_test",
+          "legacy_test_name": "opq_cross_bp_credit_test"
+        },
+        {
+          "bucket": "CROSS",
+          "report_case_id": "COMBO_OPQ_502_cross_drr_allowance_test",
+          "legacy_test_name": "opq_cross_drr_allowance_test"
+        },
+        {
+          "bucket": "CROSS",
+          "report_case_id": "COMBO_OPQ_503_cross_drr_idle_lane_test",
+          "legacy_test_name": "opq_cross_drr_idle_lane_test"
+        },
+        {
+          "bucket": "CROSS",
+          "report_case_id": "COMBO_OPQ_504_cross_drr_zero_allowance_test",
+          "legacy_test_name": "opq_cross_drr_zero_allowance_test"
+        },
+        {
+          "bucket": "CROSS",
+          "report_case_id": "COMBO_OPQ_505_cross_drr_short_allowance_test",
+          "legacy_test_name": "opq_cross_drr_short_allowance_test"
+        }
+      ],
+      "limitations": [
+        "PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.",
+        "opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow."
+      ]
+    },
+    "all_buckets_frame": {
+      "run_id": "all_buckets_frame_native_sv",
+      "bucket_order": [
+        "BASIC",
+        "EDGE",
+        "PROF",
+        "ERROR",
+        "CROSS"
+      ],
+      "ordered_steps": [
+        {
+          "bucket": "BASIC",
+          "report_case_id": "STD_OPQ_001_basic_smoke_test",
+          "legacy_test_name": "opq_basic_smoke_test"
+        },
+        {
+          "bucket": "BASIC",
+          "report_case_id": "STD_OPQ_002_basic_ts_boundary_test",
+          "legacy_test_name": "opq_basic_ts_boundary_test"
+        },
+        {
+          "bucket": "BASIC",
+          "report_case_id": "STD_OPQ_004_basic_feb_packet_contract_test",
+          "legacy_test_name": "opq_basic_feb_packet_contract_test"
+        },
+        {
+          "bucket": "BASIC",
+          "report_case_id": "STD_OPQ_003_basic_subheader_shape_test",
+          "legacy_test_name": "opq_basic_subheader_shape_test"
+        },
+        {
+          "bucket": "EDGE",
+          "report_case_id": "CORNER_OPQ_201_edge_backpressure_test",
+          "legacy_test_name": "opq_edge_backpressure_test"
+        },
+        {
+          "bucket": "EDGE",
+          "report_case_id": "CORNER_OPQ_202_edge_always_ready_test",
+          "legacy_test_name": "opq_edge_always_ready_test"
+        },
+        {
+          "bucket": "EDGE",
+          "report_case_id": "CORNER_OPQ_203_edge_ready_medium_profile_test",
+          "legacy_test_name": "opq_edge_ready_medium_profile_test"
+        },
+        {
+          "bucket": "EDGE",
+          "report_case_id": "CORNER_OPQ_204_edge_stuck_low_backpressure_test",
+          "legacy_test_name": "opq_edge_stuck_low_backpressure_test"
+        },
+        {
+          "bucket": "EDGE",
+          "report_case_id": "CORNER_OPQ_205_edge_max_hits_test",
+          "legacy_test_name": "opq_edge_max_hits_test"
+        },
+        {
+          "bucket": "EDGE",
+          "report_case_id": "CORNER_OPQ_206_edge_toggle_backpressure_test",
+          "legacy_test_name": "opq_edge_toggle_backpressure_test"
+        },
+        {
+          "bucket": "PROF",
+          "report_case_id": "COMBO_OPQ_301_prof_stress_test",
+          "legacy_test_name": "opq_prof_stress_test"
+        },
+        {
+          "bucket": "PROF",
+          "report_case_id": "COMBO_OPQ_302_prof_lane_skew_test",
+          "legacy_test_name": "opq_prof_lane_skew_test"
+        },
+        {
+          "bucket": "PROF",
+          "report_case_id": "COMBO_OPQ_303_prof_whole_frame_skew_test",
+          "legacy_test_name": "opq_prof_whole_frame_skew_test"
+        },
+        {
+          "bucket": "PROF",
+          "report_case_id": "COMBO_OPQ_304_prof_missing_empty_frame_test",
+          "legacy_test_name": "opq_prof_missing_empty_frame_test"
+        },
+        {
+          "bucket": "ERROR",
+          "report_case_id": "CORNER_OPQ_401_error_lane_mask_test",
+          "legacy_test_name": "opq_error_lane_mask_test"
+        },
+        {
+          "bucket": "ERROR",
+          "report_case_id": "CORNER_OPQ_402_error_lane_mask_single_hit_test",
+          "legacy_test_name": "opq_error_lane_mask_single_hit_test"
+        },
+        {
+          "bucket": "ERROR",
+          "report_case_id": "CORNER_OPQ_403_error_lane_mask_burst_test",
+          "legacy_test_name": "opq_error_lane_mask_burst_test"
+        },
+        {
+          "bucket": "ERROR",
+          "report_case_id": "CORNER_OPQ_404_error_lane_mask_recovery_test",
+          "legacy_test_name": "opq_error_lane_mask_recovery_test"
+        },
+        {
+          "bucket": "ERROR",
+          "report_case_id": "CORNER_OPQ_405_error_subheader_mask_recovery_test",
+          "legacy_test_name": "opq_error_subheader_mask_recovery_test"
+        },
+        {
+          "bucket": "CROSS",
+          "report_case_id": "COMBO_OPQ_501_cross_bp_credit_test",
+          "legacy_test_name": "opq_cross_bp_credit_test"
+        },
+        {
+          "bucket": "CROSS",
+          "report_case_id": "COMBO_OPQ_502_cross_drr_allowance_test",
+          "legacy_test_name": "opq_cross_drr_allowance_test"
+        },
+        {
+          "bucket": "CROSS",
+          "report_case_id": "COMBO_OPQ_503_cross_drr_idle_lane_test",
+          "legacy_test_name": "opq_cross_drr_idle_lane_test"
+        },
+        {
+          "bucket": "CROSS",
+          "report_case_id": "COMBO_OPQ_504_cross_drr_zero_allowance_test",
+          "legacy_test_name": "opq_cross_drr_zero_allowance_test"
+        },
+        {
+          "bucket": "CROSS",
+          "report_case_id": "COMBO_OPQ_505_cross_drr_short_allowance_test",
+          "legacy_test_name": "opq_cross_drr_short_allowance_test"
+        }
+      ],
+      "extra_tail_steps": [
+        {
+          "bucket": "PROF",
+          "legacy_step_name": "extra_prof_seq",
+          "description": "extra whole-frame skew tail beyond the promoted default-build matrix"
+        },
+        {
+          "bucket": "ERROR",
+          "legacy_step_name": "extra_err_seq",
+          "description": "extra subheader-recovery tail beyond the promoted default-build matrix"
+        }
+      ],
+      "limitations": [
+        "PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.",
+        "opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow.",
+        "This run appends two extra tail sequences after the 24 promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases."
+      ]
+    }
+  },
+  "cases": [
+    {
+      "case_id": "STD_OPQ_001_basic_smoke_test",
+      "full_case_id": "STD_OPQ_001_basic_smoke_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Healthy long-frame bring-up on the default 2-lane native-SV path.",
+      "primary_checks": "Hit integrity, zero drops, and restored credits on both lanes.",
+      "contract_anchor": "DV_BASIC healthy-path closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "BASIC",
+      "legacy_test_name": "opq_basic_smoke_test",
+      "test_name": "opq_basic_smoke_test",
+      "report_case_id": "STD_OPQ_001_basic_smoke_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 4,
+        "hit_actual": 4,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 63.33,
+        "cg_subh": 59.72,
+        "cg_bp": 0.0,
+        "cg_csr": 92.26,
+        "cg_credit": 46.67,
+        "cg_drop": 48.61,
+        "cg_drr": 40.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 3,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 3,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 39.17
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 39.17
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 39.17
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 39.17
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 39.17
+        }
+      }
+    },
+    {
+      "case_id": "STD_OPQ_002_basic_ts_boundary_test",
+      "full_case_id": "STD_OPQ_002_basic_ts_boundary_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Sparse timestamp-boundary traffic across low and high subheader values.",
+      "primary_checks": "Full timestamp reconstruction and zero ghost/missing hits.",
+      "contract_anchor": "DV_BASIC full-ts boundary closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "BASIC",
+      "legacy_test_name": "opq_basic_ts_boundary_test",
+      "test_name": "opq_basic_ts_boundary_test",
+      "report_case_id": "STD_OPQ_002_basic_ts_boundary_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 6,
+        "hit_actual": 6,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 73.33,
+        "cg_subh": 50.0,
+        "cg_bp": 0.0,
+        "cg_csr": 92.26,
+        "cg_credit": 46.67,
+        "cg_drop": 48.61,
+        "cg_drr": 40.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 2,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 2,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 70.18
+        },
+        "cond": {
+          "pct": 42.86
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 82.99
+        },
+        "toggle": {
+          "pct": 26.12
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 70.18
+        },
+        "cond": {
+          "pct": 42.86
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 82.99
+        },
+        "toggle": {
+          "pct": 26.12
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 0.58
+        },
+        "cond": {
+          "pct": 0.53
+        },
+        "expr": {
+          "pct": 3.64
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.54
+        },
+        "toggle": {
+          "pct": 2.54
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 71.93
+        },
+        "cond": {
+          "pct": 46.03
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 84.07
+        },
+        "toggle": {
+          "pct": 41.71
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.58
+        },
+        "cond": {
+          "pct": 0.53
+        },
+        "expr": {
+          "pct": 3.64
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.54
+        },
+        "toggle": {
+          "pct": 2.54
+        }
+      }
+    },
+    {
+      "case_id": "STD_OPQ_003_basic_subheader_shape_test",
+      "full_case_id": "STD_OPQ_003_basic_subheader_shape_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Mixed empty and non-empty subheaders with varied hit counts.",
+      "primary_checks": "Subheader placement, hit-count encoding, and clean healthy-path framing.",
+      "contract_anchor": "DV_BASIC subheader-shape closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "BASIC",
+      "legacy_test_name": "opq_basic_subheader_shape_test",
+      "test_name": "opq_basic_subheader_shape_test",
+      "report_case_id": "STD_OPQ_003_basic_subheader_shape_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 136,
+        "hit_actual": 136,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 58.33,
+        "cg_subh": 50.0,
+        "cg_bp": 0.0,
+        "cg_csr": 92.26,
+        "cg_credit": 46.67,
+        "cg_drop": 48.61,
+        "cg_drr": 43.67,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 4,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 4,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 70.37
+        },
+        "cond": {
+          "pct": 44.44
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 82.56
+        },
+        "toggle": {
+          "pct": 31.85
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 70.37
+        },
+        "cond": {
+          "pct": 44.44
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 82.56
+        },
+        "toggle": {
+          "pct": 31.85
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.53
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 3.56
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 71.93
+        },
+        "cond": {
+          "pct": 46.56
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 84.07
+        },
+        "toggle": {
+          "pct": 45.27
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.53
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 3.56
+        }
+      }
+    },
+    {
+      "case_id": "STD_OPQ_004_basic_feb_packet_contract_test",
+      "full_case_id": "STD_OPQ_004_basic_feb_packet_contract_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Real FEB whole-frame packets on both ingress lanes.",
+      "primary_checks": "Monitor-side frame reconstruction from DUT pins and scoreboard hit integrity.",
+      "contract_anchor": "DV_BASIC FEB whole-frame contract closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "BASIC",
+      "legacy_test_name": "opq_basic_feb_packet_contract_test",
+      "test_name": "opq_basic_feb_packet_contract_test",
+      "report_case_id": "STD_OPQ_004_basic_feb_packet_contract_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 4,
+        "hit_actual": 4,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 63.33,
+        "cg_subh": 59.72,
+        "cg_bp": 0.0,
+        "cg_csr": 92.26,
+        "cg_credit": 46.67,
+        "cg_drop": 48.61,
+        "cg_drr": 40.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 3,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 3,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 38.9
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 38.9
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 0.24
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 71.93
+        },
+        "cond": {
+          "pct": 46.56
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 84.07
+        },
+        "toggle": {
+          "pct": 45.51
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 0.24
+        }
+      }
+    },
+    {
+      "case_id": "COMBO_OPQ_101_basic_smoke_test_nshd128",
+      "full_case_id": "COMBO_OPQ_101_basic_smoke_test_nshd128",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Default healthy-path bring-up at non-default build point N_SHD=128.",
+      "primary_checks": "Hit integrity and restored credits at the smallest claimed native-SV subheader depth.",
+      "contract_anchor": "DV_PARAM compile/elaboration sweep, N_SHD=128.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 128,
+        "OPQ_TICKET_FIFO_DEPTH": 256,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "PARAM",
+      "legacy_test_name": "opq_basic_smoke_test_nshd128",
+      "test_name": "opq_basic_smoke_test_nshd128",
+      "report_case_id": "COMBO_OPQ_101_basic_smoke_test_nshd128",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 4,
+        "hit_actual": 4,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 68.33,
+        "cg_subh": 59.72,
+        "cg_bp": 0.0,
+        "cg_csr": 92.26,
+        "cg_credit": 46.67,
+        "cg_drop": 48.61,
+        "cg_drr": 40.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 3,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 3,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 37.77
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 37.77
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 37.77
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 37.77
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 37.77
+        }
+      }
+    },
+    {
+      "case_id": "COMBO_OPQ_102_basic_smoke_test_nshd512",
+      "full_case_id": "COMBO_OPQ_102_basic_smoke_test_nshd512",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Default healthy-path bring-up at non-default build point N_SHD=512.",
+      "primary_checks": "Hit integrity and restored credits with derived deep ticket FIFO.",
+      "contract_anchor": "DV_PARAM compile/elaboration sweep, N_SHD=512.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 512,
+        "OPQ_TICKET_FIFO_DEPTH": 1024,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "PARAM",
+      "legacy_test_name": "opq_basic_smoke_test_nshd512",
+      "test_name": "opq_basic_smoke_test_nshd512",
+      "report_case_id": "COMBO_OPQ_102_basic_smoke_test_nshd512",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 4,
+        "hit_actual": 4,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 63.33,
+        "cg_subh": 59.72,
+        "cg_bp": 0.0,
+        "cg_csr": 92.26,
+        "cg_credit": 46.67,
+        "cg_drop": 48.61,
+        "cg_drr": 40.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 3,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 3,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 71.54
+        },
+        "cond": {
+          "pct": 46.56
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.75
+        },
+        "toggle": {
+          "pct": 40.22
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 71.54
+        },
+        "cond": {
+          "pct": 46.56
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.75
+        },
+        "toggle": {
+          "pct": 40.22
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 0.19
+        },
+        "cond": {
+          "pct": 1.06
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.22
+        },
+        "toggle": {
+          "pct": 2.89
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 71.54
+        },
+        "cond": {
+          "pct": 46.56
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.75
+        },
+        "toggle": {
+          "pct": 40.66
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.19
+        },
+        "cond": {
+          "pct": 1.06
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.22
+        },
+        "toggle": {
+          "pct": 2.89
+        }
+      }
+    },
+    {
+      "case_id": "COMBO_OPQ_103_basic_ts_boundary_test_nshd128",
+      "full_case_id": "COMBO_OPQ_103_basic_ts_boundary_test_nshd128",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Timestamp-boundary sparse packets at N_SHD=128.",
+      "primary_checks": "Boundary timestamp reconstruction at the smallest claimed build point.",
+      "contract_anchor": "DV_PARAM timestamp sweep, N_SHD=128.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 128,
+        "OPQ_TICKET_FIFO_DEPTH": 256,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "PARAM",
+      "legacy_test_name": "opq_basic_ts_boundary_test_nshd128",
+      "test_name": "opq_basic_ts_boundary_test_nshd128",
+      "report_case_id": "COMBO_OPQ_103_basic_ts_boundary_test_nshd128",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 6,
+        "hit_actual": 6,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 73.33,
+        "cg_subh": 50.0,
+        "cg_bp": 0.0,
+        "cg_csr": 92.26,
+        "cg_credit": 46.67,
+        "cg_drop": 48.61,
+        "cg_drr": 40.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 2,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 2,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 70.18
+        },
+        "cond": {
+          "pct": 42.86
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 82.99
+        },
+        "toggle": {
+          "pct": 25.64
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 70.18
+        },
+        "cond": {
+          "pct": 42.86
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 82.99
+        },
+        "toggle": {
+          "pct": 25.64
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 0.58
+        },
+        "cond": {
+          "pct": 0.53
+        },
+        "expr": {
+          "pct": 3.64
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.53
+        },
+        "toggle": {
+          "pct": 2.53
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 72.12
+        },
+        "cond": {
+          "pct": 47.09
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 84.28
+        },
+        "toggle": {
+          "pct": 43.19
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.58
+        },
+        "cond": {
+          "pct": 0.53
+        },
+        "expr": {
+          "pct": 3.64
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.53
+        },
+        "toggle": {
+          "pct": 2.53
+        }
+      }
+    },
+    {
+      "case_id": "COMBO_OPQ_104_basic_ts_boundary_test_nshd512",
+      "full_case_id": "COMBO_OPQ_104_basic_ts_boundary_test_nshd512",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Timestamp-boundary sparse packets at N_SHD=512.",
+      "primary_checks": "Boundary timestamp reconstruction with derived deep ticket FIFO.",
+      "contract_anchor": "DV_PARAM timestamp sweep, N_SHD=512.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 512,
+        "OPQ_TICKET_FIFO_DEPTH": 1024,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "PARAM",
+      "legacy_test_name": "opq_basic_ts_boundary_test_nshd512",
+      "test_name": "opq_basic_ts_boundary_test_nshd512",
+      "report_case_id": "COMBO_OPQ_104_basic_ts_boundary_test_nshd512",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 6,
+        "hit_actual": 6,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 73.33,
+        "cg_subh": 50.0,
+        "cg_bp": 0.0,
+        "cg_csr": 92.26,
+        "cg_credit": 46.67,
+        "cg_drop": 48.61,
+        "cg_drr": 40.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 2,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 2,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 70.18
+        },
+        "cond": {
+          "pct": 42.86
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 82.99
+        },
+        "toggle": {
+          "pct": 26.1
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 70.18
+        },
+        "cond": {
+          "pct": 42.86
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 82.99
+        },
+        "toggle": {
+          "pct": 26.1
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 0.0
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 72.12
+        },
+        "cond": {
+          "pct": 47.09
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 84.28
+        },
+        "toggle": {
+          "pct": 43.19
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "COMBO_OPQ_105_edge_max_hits_test_nshd128",
+      "full_case_id": "COMBO_OPQ_105_edge_max_hits_test_nshd128",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Maximum-hit packet shape at N_SHD=128.",
+      "primary_checks": "Max-hit frame shape and hit preservation at the smallest claimed build point.",
+      "contract_anchor": "DV_PARAM max-hit sweep, N_SHD=128.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 128,
+        "OPQ_TICKET_FIFO_DEPTH": 256,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "PARAM",
+      "legacy_test_name": "opq_edge_max_hits_test_nshd128",
+      "test_name": "opq_edge_max_hits_test_nshd128",
+      "report_case_id": "COMBO_OPQ_105_edge_max_hits_test_nshd128",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 96,
+        "hit_actual": 96,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 48.33,
+        "cg_subh": 15.28,
+        "cg_bp": 0.0,
+        "cg_csr": 92.26,
+        "cg_credit": 46.67,
+        "cg_drop": 48.61,
+        "cg_drr": 40.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 2,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 2,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 70.18
+        },
+        "cond": {
+          "pct": 43.92
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 82.45
+        },
+        "toggle": {
+          "pct": 25.89
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 70.18
+        },
+        "cond": {
+          "pct": 43.92
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 82.45
+        },
+        "toggle": {
+          "pct": 25.89
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 1.06
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 3.57
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 72.12
+        },
+        "cond": {
+          "pct": 48.15
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 84.28
+        },
+        "toggle": {
+          "pct": 46.76
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 1.06
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 3.57
+        }
+      }
+    },
+    {
+      "case_id": "COMBO_OPQ_106_edge_max_hits_test_nshd512",
+      "full_case_id": "COMBO_OPQ_106_edge_max_hits_test_nshd512",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Maximum-hit packet shape at N_SHD=512.",
+      "primary_checks": "Max-hit frame shape and hit preservation with deep ticket FIFO.",
+      "contract_anchor": "DV_PARAM max-hit sweep, N_SHD=512.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 512,
+        "OPQ_TICKET_FIFO_DEPTH": 1024,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "PARAM",
+      "legacy_test_name": "opq_edge_max_hits_test_nshd512",
+      "test_name": "opq_edge_max_hits_test_nshd512",
+      "report_case_id": "COMBO_OPQ_106_edge_max_hits_test_nshd512",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 96,
+        "hit_actual": 96,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 48.33,
+        "cg_subh": 15.28,
+        "cg_bp": 0.0,
+        "cg_csr": 92.26,
+        "cg_credit": 46.67,
+        "cg_drop": 48.61,
+        "cg_drr": 40.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 2,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 2,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 70.18
+        },
+        "cond": {
+          "pct": 43.92
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 82.45
+        },
+        "toggle": {
+          "pct": 24.67
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 70.18
+        },
+        "cond": {
+          "pct": 43.92
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 82.45
+        },
+        "toggle": {
+          "pct": 24.67
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 0.0
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 72.12
+        },
+        "cond": {
+          "pct": 48.15
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 84.28
+        },
+        "toggle": {
+          "pct": 46.76
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "CORNER_OPQ_201_edge_backpressure_test",
+      "full_case_id": "CORNER_OPQ_201_edge_backpressure_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Periodic egress stalls on the default native-SV datapath.",
+      "primary_checks": "Presenter hold/restart behavior and hit integrity under legal backpressure.",
+      "contract_anchor": "DV_EDGE periodic-stall closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "EDGE",
+      "legacy_test_name": "opq_edge_backpressure_test",
+      "test_name": "opq_edge_backpressure_test",
+      "report_case_id": "CORNER_OPQ_201_edge_backpressure_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 4,
+        "hit_actual": 4,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 63.33,
+        "cg_subh": 59.72,
+        "cg_bp": 25.0,
+        "cg_csr": 92.26,
+        "cg_credit": 60.0,
+        "cg_drop": 48.61,
+        "cg_drr": 40.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 3,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 3,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 39.19
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 39.19
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 39.19
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 39.19
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 39.19
+        }
+      }
+    },
+    {
+      "case_id": "CORNER_OPQ_202_edge_always_ready_test",
+      "full_case_id": "CORNER_OPQ_202_edge_always_ready_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Explicit always-ready baseline with the same native-SV harness plumbing.",
+      "primary_checks": "Healthy no-stall datapath baseline and zero-drop counter closure.",
+      "contract_anchor": "DV_EDGE always-ready baseline.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "EDGE",
+      "legacy_test_name": "opq_edge_always_ready_test",
+      "test_name": "opq_edge_always_ready_test",
+      "report_case_id": "CORNER_OPQ_202_edge_always_ready_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 4,
+        "hit_actual": 4,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 63.33,
+        "cg_subh": 59.72,
+        "cg_bp": 25.0,
+        "cg_csr": 92.26,
+        "cg_credit": 60.0,
+        "cg_drop": 48.61,
+        "cg_drr": 40.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 3,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 3,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 39.17
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 39.17
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 0.0
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 39.19
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "CORNER_OPQ_203_edge_ready_medium_profile_test",
+      "full_case_id": "CORNER_OPQ_203_edge_ready_medium_profile_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Medium-duty ready profile with legal restart windows.",
+      "primary_checks": "Non-trivial healthy backpressure bins without entering the known overwrite probe path.",
+      "contract_anchor": "DV_EDGE medium-ready closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "EDGE",
+      "legacy_test_name": "opq_edge_ready_medium_profile_test",
+      "test_name": "opq_edge_ready_medium_profile_test",
+      "report_case_id": "CORNER_OPQ_203_edge_ready_medium_profile_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 4,
+        "hit_actual": 4,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 63.33,
+        "cg_subh": 59.72,
+        "cg_bp": 25.0,
+        "cg_csr": 92.26,
+        "cg_credit": 60.0,
+        "cg_drop": 48.61,
+        "cg_drr": 40.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 3,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 3,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 39.17
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 39.17
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 0.0
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 39.19
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "CORNER_OPQ_204_edge_stuck_low_backpressure_test",
+      "full_case_id": "CORNER_OPQ_204_edge_stuck_low_backpressure_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Longer low-ready windows short of the forced-overwrite probe.",
+      "primary_checks": "Hold-under-backpressure and clean restart behavior without malformed egress.",
+      "contract_anchor": "DV_EDGE stuck-low ready closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "EDGE",
+      "legacy_test_name": "opq_edge_stuck_low_backpressure_test",
+      "test_name": "opq_edge_stuck_low_backpressure_test",
+      "report_case_id": "CORNER_OPQ_204_edge_stuck_low_backpressure_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 4,
+        "hit_actual": 4,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 63.33,
+        "cg_subh": 59.72,
+        "cg_bp": 25.0,
+        "cg_csr": 92.26,
+        "cg_credit": 60.0,
+        "cg_drop": 48.61,
+        "cg_drr": 40.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 3,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 3,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 71.54
+        },
+        "cond": {
+          "pct": 47.62
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 39.2
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 71.54
+        },
+        "cond": {
+          "pct": 47.62
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 39.2
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 0.19
+        },
+        "cond": {
+          "pct": 2.12
+        },
+        "expr": {
+          "pct": 3.64
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 0.01
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 71.54
+        },
+        "cond": {
+          "pct": 47.62
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 39.2
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.19
+        },
+        "cond": {
+          "pct": 2.12
+        },
+        "expr": {
+          "pct": 3.64
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 0.01
+        }
+      }
+    },
+    {
+      "case_id": "CORNER_OPQ_205_edge_max_hits_test",
+      "full_case_id": "CORNER_OPQ_205_edge_max_hits_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Default-build maximum-hit packet shape on the live symbol path.",
+      "primary_checks": "Max-hit frame shape and full hit preservation at the default build point.",
+      "contract_anchor": "DV_EDGE max-hit closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "EDGE",
+      "legacy_test_name": "opq_edge_max_hits_test",
+      "test_name": "opq_edge_max_hits_test",
+      "report_case_id": "CORNER_OPQ_205_edge_max_hits_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 96,
+        "hit_actual": 96,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 48.33,
+        "cg_subh": 15.28,
+        "cg_bp": 0.0,
+        "cg_csr": 92.26,
+        "cg_credit": 46.67,
+        "cg_drop": 48.61,
+        "cg_drr": 40.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 2,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 2,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 70.18
+        },
+        "cond": {
+          "pct": 43.92
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 82.45
+        },
+        "toggle": {
+          "pct": 24.9
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 70.18
+        },
+        "cond": {
+          "pct": 43.92
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 82.45
+        },
+        "toggle": {
+          "pct": 24.9
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 0.19
+        },
+        "cond": {
+          "pct": 1.06
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.11
+        },
+        "toggle": {
+          "pct": 4.67
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 71.73
+        },
+        "cond": {
+          "pct": 48.68
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.64
+        },
+        "toggle": {
+          "pct": 43.87
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.19
+        },
+        "cond": {
+          "pct": 1.06
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.11
+        },
+        "toggle": {
+          "pct": 4.67
+        }
+      }
+    },
+    {
+      "case_id": "CORNER_OPQ_206_edge_toggle_backpressure_test",
+      "full_case_id": "CORNER_OPQ_206_edge_toggle_backpressure_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Single-cycle ready toggling at the egress interface.",
+      "primary_checks": "Short-toggle backpressure bins and presenter restart correctness.",
+      "contract_anchor": "DV_EDGE short-toggle closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "EDGE",
+      "legacy_test_name": "opq_edge_toggle_backpressure_test",
+      "test_name": "opq_edge_toggle_backpressure_test",
+      "report_case_id": "CORNER_OPQ_206_edge_toggle_backpressure_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 4,
+        "hit_actual": 4,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 63.33,
+        "cg_subh": 59.72,
+        "cg_bp": 25.0,
+        "cg_csr": 92.26,
+        "cg_credit": 60.0,
+        "cg_drop": 48.61,
+        "cg_drr": 40.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 3,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 3,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 39.19
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 39.19
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 0.0
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 71.73
+        },
+        "cond": {
+          "pct": 48.68
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.64
+        },
+        "toggle": {
+          "pct": 43.87
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "COMBO_OPQ_301_prof_stress_test",
+      "full_case_id": "COMBO_OPQ_301_prof_stress_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Short soak with repeated long FEB whole-frame traffic.",
+      "primary_checks": "Sustained hit integrity and credit restoration under repeated traffic bursts.",
+      "contract_anchor": "DV_PROF soak closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "PROF",
+      "legacy_test_name": "opq_prof_stress_test",
+      "test_name": "opq_prof_stress_test",
+      "report_case_id": "COMBO_OPQ_301_prof_stress_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 8,
+        "hit_actual": 8,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 63.33,
+        "cg_subh": 61.11,
+        "cg_bp": 0.0,
+        "cg_csr": 92.26,
+        "cg_credit": 60.0,
+        "cg_drop": 48.61,
+        "cg_drr": 40.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 6,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 6,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 38.26
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 38.26
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 38.26
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 38.26
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 38.26
+        }
+      }
+    },
+    {
+      "case_id": "COMBO_OPQ_302_prof_lane_skew_test",
+      "full_case_id": "COMBO_OPQ_302_prof_lane_skew_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Deterministic two-lane skew with repeated long frames.",
+      "primary_checks": "No missing or ghost hits under sustained lane skew.",
+      "contract_anchor": "DV_PROF lane-skew closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "PROF",
+      "legacy_test_name": "opq_prof_lane_skew_test",
+      "test_name": "opq_prof_lane_skew_test",
+      "report_case_id": "COMBO_OPQ_302_prof_lane_skew_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 32,
+        "hit_actual": 32,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 50.0,
+        "cg_subh": 23.61,
+        "cg_bp": 0.0,
+        "cg_csr": 92.26,
+        "cg_credit": 46.67,
+        "cg_drop": 48.61,
+        "cg_drr": 43.67,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 8,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 8,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 30.77
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 30.77
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 3.64
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 2.71
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 40.97
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 3.64
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 2.71
+        }
+      }
+    },
+    {
+      "case_id": "COMBO_OPQ_303_prof_whole_frame_skew_test",
+      "full_case_id": "COMBO_OPQ_303_prof_whole_frame_skew_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Whole-frame skew where activity alternates with legal empty frames.",
+      "primary_checks": "Packet-level cadence skew, zero drops, and monitor-side frame capture.",
+      "contract_anchor": "DV_PROF whole-frame skew closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "PROF",
+      "legacy_test_name": "opq_prof_whole_frame_skew_test",
+      "test_name": "opq_prof_whole_frame_skew_test",
+      "report_case_id": "COMBO_OPQ_303_prof_whole_frame_skew_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 24,
+        "hit_actual": 24,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 60.0,
+        "cg_subh": 59.72,
+        "cg_bp": 0.0,
+        "cg_csr": 92.26,
+        "cg_credit": 70.0,
+        "cg_drop": 48.61,
+        "cg_drr": 40.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 24,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 24,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 71.73
+        },
+        "cond": {
+          "pct": 46.56
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 84.07
+        },
+        "toggle": {
+          "pct": 38.91
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 71.73
+        },
+        "cond": {
+          "pct": 46.56
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 84.07
+        },
+        "toggle": {
+          "pct": 38.91
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 0.38
+        },
+        "cond": {
+          "pct": 1.06
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.54
+        },
+        "toggle": {
+          "pct": 3.54
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 71.73
+        },
+        "cond": {
+          "pct": 46.56
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 84.07
+        },
+        "toggle": {
+          "pct": 44.51
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.38
+        },
+        "cond": {
+          "pct": 1.06
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.54
+        },
+        "toggle": {
+          "pct": 3.54
+        }
+      }
+    },
+    {
+      "case_id": "COMBO_OPQ_304_prof_missing_empty_frame_test",
+      "full_case_id": "COMBO_OPQ_304_prof_missing_empty_frame_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Uneven per-lane frame-count stress on the active 2-lane harness contract.",
+      "primary_checks": "Sparse-frame residency, credit stability, and hit integrity without claiming 4-lane closure.",
+      "contract_anchor": "DV_PROF sparse-frame residency closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "PROF",
+      "legacy_test_name": "opq_prof_missing_empty_frame_test",
+      "test_name": "opq_prof_missing_empty_frame_test",
+      "report_case_id": "COMBO_OPQ_304_prof_missing_empty_frame_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 2,
+        "hit_actual": 2,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 60.0,
+        "cg_subh": 59.72,
+        "cg_bp": 0.0,
+        "cg_csr": 83.73,
+        "cg_credit": 60.0,
+        "cg_drop": 28.47,
+        "cg_drr": 49.0,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 2,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 2,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 67.64
+        },
+        "cond": {
+          "pct": 43.92
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 82.86
+        },
+        "fsm_trans": {
+          "pct": 41.25
+        },
+        "stmt": {
+          "pct": 81.49
+        },
+        "toggle": {
+          "pct": 27.31
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 67.64
+        },
+        "cond": {
+          "pct": 43.92
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 82.86
+        },
+        "fsm_trans": {
+          "pct": 41.25
+        },
+        "stmt": {
+          "pct": 81.49
+        },
+        "toggle": {
+          "pct": 27.31
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 0.17
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 71.73
+        },
+        "cond": {
+          "pct": 46.56
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 84.07
+        },
+        "toggle": {
+          "pct": 44.68
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 0.17
+        }
+      }
+    },
+    {
+      "case_id": "CORNER_OPQ_401_error_lane_mask_test",
+      "full_case_id": "CORNER_OPQ_401_error_lane_mask_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Packet-boundary lane masking with multi-hit packets.",
+      "primary_checks": "Masked-drop accounting and zero unexpected egress output on the dropped lane.",
+      "contract_anchor": "DV_ERROR lane-mask control closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "ERROR",
+      "legacy_test_name": "opq_error_lane_mask_test",
+      "test_name": "opq_error_lane_mask_test",
+      "report_case_id": "CORNER_OPQ_401_error_lane_mask_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "cg_cfg": 49.4,
+        "cg_frame": 41.67,
+        "cg_subh": 15.28,
+        "cg_bp": 0.0,
+        "cg_csr": 81.43,
+        "cg_credit": 46.67,
+        "cg_drop": 62.5,
+        "cg_drr": 0.0,
+        "cg_ingress": 100.0,
+        "cg_egress": 0.0,
+        "lane0_monitored_frames": 1,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 1,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 35.67
+        },
+        "cond": {
+          "pct": 4.76
+        },
+        "expr": {
+          "pct": 14.55
+        },
+        "fsm_state": {
+          "pct": 34.29
+        },
+        "fsm_trans": {
+          "pct": 6.25
+        },
+        "stmt": {
+          "pct": 52.74
+        },
+        "toggle": {
+          "pct": 6.51
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 35.67
+        },
+        "cond": {
+          "pct": 4.76
+        },
+        "expr": {
+          "pct": 14.55
+        },
+        "fsm_state": {
+          "pct": 34.29
+        },
+        "fsm_trans": {
+          "pct": 6.25
+        },
+        "stmt": {
+          "pct": 52.74
+        },
+        "toggle": {
+          "pct": 6.51
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 35.67
+        },
+        "cond": {
+          "pct": 4.76
+        },
+        "expr": {
+          "pct": 14.55
+        },
+        "fsm_state": {
+          "pct": 34.29
+        },
+        "fsm_trans": {
+          "pct": 6.25
+        },
+        "stmt": {
+          "pct": 52.74
+        },
+        "toggle": {
+          "pct": 6.51
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 35.67
+        },
+        "cond": {
+          "pct": 4.76
+        },
+        "expr": {
+          "pct": 14.55
+        },
+        "fsm_state": {
+          "pct": 34.29
+        },
+        "fsm_trans": {
+          "pct": 6.25
+        },
+        "stmt": {
+          "pct": 52.74
+        },
+        "toggle": {
+          "pct": 6.51
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 35.67
+        },
+        "cond": {
+          "pct": 4.76
+        },
+        "expr": {
+          "pct": 14.55
+        },
+        "fsm_state": {
+          "pct": 34.29
+        },
+        "fsm_trans": {
+          "pct": 6.25
+        },
+        "stmt": {
+          "pct": 52.74
+        },
+        "toggle": {
+          "pct": 6.51
+        }
+      }
+    },
+    {
+      "case_id": "CORNER_OPQ_402_error_lane_mask_single_hit_test",
+      "full_case_id": "CORNER_OPQ_402_error_lane_mask_single_hit_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Minimal masked-drop packet on the active native-SV path.",
+      "primary_checks": "Single-hit drop accounting and CSR counter closure.",
+      "contract_anchor": "DV_ERROR single-hit lane-mask closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "ERROR",
+      "legacy_test_name": "opq_error_lane_mask_single_hit_test",
+      "test_name": "opq_error_lane_mask_single_hit_test",
+      "report_case_id": "CORNER_OPQ_402_error_lane_mask_single_hit_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "cg_cfg": 49.4,
+        "cg_frame": 41.67,
+        "cg_subh": 15.28,
+        "cg_bp": 0.0,
+        "cg_csr": 81.43,
+        "cg_credit": 46.67,
+        "cg_drop": 62.5,
+        "cg_drr": 0.0,
+        "cg_ingress": 100.0,
+        "cg_egress": 0.0,
+        "lane0_monitored_frames": 1,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 1,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 35.09
+        },
+        "cond": {
+          "pct": 4.76
+        },
+        "expr": {
+          "pct": 14.55
+        },
+        "fsm_state": {
+          "pct": 34.29
+        },
+        "fsm_trans": {
+          "pct": 6.25
+        },
+        "stmt": {
+          "pct": 52.42
+        },
+        "toggle": {
+          "pct": 5.95
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 35.09
+        },
+        "cond": {
+          "pct": 4.76
+        },
+        "expr": {
+          "pct": 14.55
+        },
+        "fsm_state": {
+          "pct": 34.29
+        },
+        "fsm_trans": {
+          "pct": 6.25
+        },
+        "stmt": {
+          "pct": 52.42
+        },
+        "toggle": {
+          "pct": 5.95
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 0.02
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 35.67
+        },
+        "cond": {
+          "pct": 4.76
+        },
+        "expr": {
+          "pct": 14.55
+        },
+        "fsm_state": {
+          "pct": 34.29
+        },
+        "fsm_trans": {
+          "pct": 6.25
+        },
+        "stmt": {
+          "pct": 52.74
+        },
+        "toggle": {
+          "pct": 6.53
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 0.02
+        }
+      }
+    },
+    {
+      "case_id": "CORNER_OPQ_403_error_lane_mask_burst_test",
+      "full_case_id": "CORNER_OPQ_403_error_lane_mask_burst_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Burst masked-drop traffic across several packets.",
+      "primary_checks": "Burst drop accounting and no-drop recovery on the still-enabled lane.",
+      "contract_anchor": "DV_ERROR burst lane-mask closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "ERROR",
+      "legacy_test_name": "opq_error_lane_mask_burst_test",
+      "test_name": "opq_error_lane_mask_burst_test",
+      "report_case_id": "CORNER_OPQ_403_error_lane_mask_burst_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "cg_cfg": 49.4,
+        "cg_frame": 53.33,
+        "cg_subh": 11.11,
+        "cg_bp": 0.0,
+        "cg_csr": 81.43,
+        "cg_credit": 46.67,
+        "cg_drop": 62.5,
+        "cg_drr": 0.0,
+        "cg_ingress": 100.0,
+        "cg_egress": 0.0,
+        "lane0_monitored_frames": 3,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 3,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 35.09
+        },
+        "cond": {
+          "pct": 4.76
+        },
+        "expr": {
+          "pct": 14.55
+        },
+        "fsm_state": {
+          "pct": 34.29
+        },
+        "fsm_trans": {
+          "pct": 6.25
+        },
+        "stmt": {
+          "pct": 52.42
+        },
+        "toggle": {
+          "pct": 6.74
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 35.09
+        },
+        "cond": {
+          "pct": 4.76
+        },
+        "expr": {
+          "pct": 14.55
+        },
+        "fsm_state": {
+          "pct": 34.29
+        },
+        "fsm_trans": {
+          "pct": 6.25
+        },
+        "stmt": {
+          "pct": 52.42
+        },
+        "toggle": {
+          "pct": 6.74
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 1.39
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 35.67
+        },
+        "cond": {
+          "pct": 4.76
+        },
+        "expr": {
+          "pct": 14.55
+        },
+        "fsm_state": {
+          "pct": 34.29
+        },
+        "fsm_trans": {
+          "pct": 6.25
+        },
+        "stmt": {
+          "pct": 52.74
+        },
+        "toggle": {
+          "pct": 7.92
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 1.39
+        }
+      }
+    },
+    {
+      "case_id": "CORNER_OPQ_404_error_lane_mask_recovery_test",
+      "full_case_id": "CORNER_OPQ_404_error_lane_mask_recovery_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Mask all active lanes, accumulate drops, then clear the mask and resume healthy traffic.",
+      "primary_checks": "Masked-header drop accounting plus verified clean recovery on the next legal FEB packets.",
+      "contract_anchor": "DV_ERROR control-action recovery closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "ERROR",
+      "legacy_test_name": "opq_error_lane_mask_recovery_test",
+      "test_name": "opq_error_lane_mask_recovery_test",
+      "report_case_id": "CORNER_OPQ_404_error_lane_mask_recovery_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 4,
+        "hit_actual": 4,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 68.33,
+        "cg_subh": 59.72,
+        "cg_bp": 0.0,
+        "cg_csr": 92.26,
+        "cg_credit": 46.67,
+        "cg_drop": 62.5,
+        "cg_drr": 40.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 4,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 4,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 71.93
+        },
+        "cond": {
+          "pct": 47.09
+        },
+        "expr": {
+          "pct": 74.55
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.96
+        },
+        "toggle": {
+          "pct": 39.28
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 71.93
+        },
+        "cond": {
+          "pct": 47.09
+        },
+        "expr": {
+          "pct": 74.55
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.96
+        },
+        "toggle": {
+          "pct": 39.28
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 36.84
+        },
+        "cond": {
+          "pct": 42.33
+        },
+        "expr": {
+          "pct": 60.0
+        },
+        "fsm_state": {
+          "pct": 51.42
+        },
+        "fsm_trans": {
+          "pct": 37.5
+        },
+        "stmt": {
+          "pct": 31.54
+        },
+        "toggle": {
+          "pct": 31.67
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 72.51
+        },
+        "cond": {
+          "pct": 47.09
+        },
+        "expr": {
+          "pct": 74.55
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 84.28
+        },
+        "toggle": {
+          "pct": 39.59
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 36.84
+        },
+        "cond": {
+          "pct": 42.33
+        },
+        "expr": {
+          "pct": 60.0
+        },
+        "fsm_state": {
+          "pct": 51.42
+        },
+        "fsm_trans": {
+          "pct": 37.5
+        },
+        "stmt": {
+          "pct": 31.54
+        },
+        "toggle": {
+          "pct": 31.67
+        }
+      }
+    },
+    {
+      "case_id": "CORNER_OPQ_405_error_subheader_mask_recovery_test",
+      "full_case_id": "CORNER_OPQ_405_error_subheader_mask_recovery_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Inject a malformed subheader, then follow with a legal recovery frame on both active lanes.",
+      "primary_checks": "Ingress subheader-error masking without poisoning the following legal packet.",
+      "contract_anchor": "DV_ERROR malformed-subheader recovery closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "ERROR",
+      "legacy_test_name": "opq_error_subheader_mask_recovery_test",
+      "test_name": "opq_error_subheader_mask_recovery_test",
+      "report_case_id": "CORNER_OPQ_405_error_subheader_mask_recovery_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 2,
+        "hit_actual": 2,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 58.33,
+        "cg_subh": 23.61,
+        "cg_bp": 0.0,
+        "cg_csr": 81.43,
+        "cg_credit": 46.67,
+        "cg_drop": 48.61,
+        "cg_drr": 0.0,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 2,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 2,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 70.96
+        },
+        "cond": {
+          "pct": 44.44
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 91.43
+        },
+        "fsm_trans": {
+          "pct": 48.75
+        },
+        "stmt": {
+          "pct": 83.21
+        },
+        "toggle": {
+          "pct": 21.17
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 70.96
+        },
+        "cond": {
+          "pct": 44.44
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 91.43
+        },
+        "fsm_trans": {
+          "pct": 48.75
+        },
+        "stmt": {
+          "pct": 83.21
+        },
+        "toggle": {
+          "pct": 21.17
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 3.9
+        },
+        "cond": {
+          "pct": 3.17
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 5.72
+        },
+        "fsm_trans": {
+          "pct": 5.0
+        },
+        "stmt": {
+          "pct": 2.16
+        },
+        "toggle": {
+          "pct": 1.52
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 76.41
+        },
+        "cond": {
+          "pct": 50.26
+        },
+        "expr": {
+          "pct": 74.55
+        },
+        "fsm_state": {
+          "pct": 91.43
+        },
+        "fsm_trans": {
+          "pct": 48.75
+        },
+        "stmt": {
+          "pct": 86.44
+        },
+        "toggle": {
+          "pct": 41.11
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 3.9
+        },
+        "cond": {
+          "pct": 3.17
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 5.72
+        },
+        "fsm_trans": {
+          "pct": 5.0
+        },
+        "stmt": {
+          "pct": 2.16
+        },
+        "toggle": {
+          "pct": 1.52
+        }
+      }
+    },
+    {
+      "case_id": "CORNER_OPQ_406_error_counter_clear_test",
+      "full_case_id": "CORNER_OPQ_406_error_counter_clear_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Runtime counter clear after drop-producing traffic.",
+      "primary_checks": "Visible CSR counter reset semantics and post-clear clean state.",
+      "contract_anchor": "DV_ERROR counter-clear closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "ERROR",
+      "legacy_test_name": "opq_error_counter_clear_test",
+      "test_name": "opq_error_counter_clear_test",
+      "report_case_id": "CORNER_OPQ_406_error_counter_clear_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "cg_cfg": 49.4,
+        "cg_frame": 41.67,
+        "cg_subh": 15.28,
+        "cg_bp": 0.0,
+        "cg_csr": 81.43,
+        "cg_credit": 46.67,
+        "cg_drop": 48.61,
+        "cg_drr": 0.0,
+        "cg_ingress": 100.0,
+        "cg_egress": 0.0,
+        "lane0_monitored_frames": 1,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 1,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 36.26
+        },
+        "cond": {
+          "pct": 4.76
+        },
+        "expr": {
+          "pct": 14.55
+        },
+        "fsm_state": {
+          "pct": 34.29
+        },
+        "fsm_trans": {
+          "pct": 6.25
+        },
+        "stmt": {
+          "pct": 53.07
+        },
+        "toggle": {
+          "pct": 6.58
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 36.26
+        },
+        "cond": {
+          "pct": 4.76
+        },
+        "expr": {
+          "pct": 14.55
+        },
+        "fsm_state": {
+          "pct": 34.29
+        },
+        "fsm_trans": {
+          "pct": 6.25
+        },
+        "stmt": {
+          "pct": 53.07
+        },
+        "toggle": {
+          "pct": 6.58
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 0.2
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.1
+        },
+        "toggle": {
+          "pct": 0.02
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 76.61
+        },
+        "cond": {
+          "pct": 50.26
+        },
+        "expr": {
+          "pct": 74.55
+        },
+        "fsm_state": {
+          "pct": 91.43
+        },
+        "fsm_trans": {
+          "pct": 48.75
+        },
+        "stmt": {
+          "pct": 86.54
+        },
+        "toggle": {
+          "pct": 41.13
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.2
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.1
+        },
+        "toggle": {
+          "pct": 0.02
+        }
+      }
+    },
+    {
+      "case_id": "COMBO_OPQ_501_cross_bp_credit_test",
+      "full_case_id": "COMBO_OPQ_501_cross_bp_credit_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Backpressure crossed with credit restoration on FEB whole-frame traffic.",
+      "primary_checks": "Credit recovery, no ghost hits, and legal restart behavior under mixed-axis stress.",
+      "contract_anchor": "DV_CROSS backpressure x credit closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "CROSS",
+      "legacy_test_name": "opq_cross_bp_credit_test",
+      "test_name": "opq_cross_bp_credit_test",
+      "report_case_id": "COMBO_OPQ_501_cross_bp_credit_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 8,
+        "hit_actual": 8,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 63.33,
+        "cg_subh": 61.11,
+        "cg_bp": 25.0,
+        "cg_csr": 92.26,
+        "cg_credit": 60.0,
+        "cg_drop": 48.61,
+        "cg_drr": 40.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 6,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 6,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 38.28
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 38.28
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 38.28
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 38.28
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 71.35
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 43.75
+        },
+        "stmt": {
+          "pct": 83.53
+        },
+        "toggle": {
+          "pct": 38.28
+        }
+      }
+    },
+    {
+      "case_id": "COMBO_OPQ_502_cross_drr_allowance_test",
+      "full_case_id": "COMBO_OPQ_502_cross_drr_allowance_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Runtime DRR allowance programming with asymmetric lane service.",
+      "primary_checks": "CSR programming, defer counters, and directed service fairness.",
+      "contract_anchor": "DV_CROSS DRR allowance closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "CROSS",
+      "legacy_test_name": "opq_cross_drr_allowance_test",
+      "test_name": "opq_cross_drr_allowance_test",
+      "report_case_id": "COMBO_OPQ_502_cross_drr_allowance_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 2048,
+        "hit_actual": 2048,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 43.33,
+        "cg_subh": 22.22,
+        "cg_bp": 0.0,
+        "cg_csr": 95.24,
+        "cg_credit": 46.67,
+        "cg_drop": 48.61,
+        "cg_drr": 37.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 4,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 4,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 73.1
+        },
+        "cond": {
+          "pct": 48.68
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 88.57
+        },
+        "fsm_trans": {
+          "pct": 46.25
+        },
+        "stmt": {
+          "pct": 84.61
+        },
+        "toggle": {
+          "pct": 35.82
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 73.1
+        },
+        "cond": {
+          "pct": 48.68
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 88.57
+        },
+        "fsm_trans": {
+          "pct": 46.25
+        },
+        "stmt": {
+          "pct": 84.61
+        },
+        "toggle": {
+          "pct": 35.82
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 3.11
+        },
+        "cond": {
+          "pct": 6.35
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 2.86
+        },
+        "fsm_trans": {
+          "pct": 2.5
+        },
+        "stmt": {
+          "pct": 2.26
+        },
+        "toggle": {
+          "pct": 9.56
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 74.46
+        },
+        "cond": {
+          "pct": 51.85
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 88.57
+        },
+        "fsm_trans": {
+          "pct": 46.25
+        },
+        "stmt": {
+          "pct": 85.79
+        },
+        "toggle": {
+          "pct": 47.84
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 3.11
+        },
+        "cond": {
+          "pct": 6.35
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 2.86
+        },
+        "fsm_trans": {
+          "pct": 2.5
+        },
+        "stmt": {
+          "pct": 2.26
+        },
+        "toggle": {
+          "pct": 9.56
+        }
+      }
+    },
+    {
+      "case_id": "COMBO_OPQ_503_cross_drr_idle_lane_test",
+      "full_case_id": "COMBO_OPQ_503_cross_drr_idle_lane_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "One hit-idle peer lane that still emits legal empty-frame cadence.",
+      "primary_checks": "DRR fairness with empty-frame cadence preserved on the idle lane.",
+      "contract_anchor": "DV_CROSS idle-lane cadence closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "CROSS",
+      "legacy_test_name": "opq_cross_drr_idle_lane_test",
+      "test_name": "opq_cross_drr_idle_lane_test",
+      "report_case_id": "COMBO_OPQ_503_cross_drr_idle_lane_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 256,
+        "hit_actual": 256,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 48.33,
+        "cg_subh": 22.22,
+        "cg_bp": 0.0,
+        "cg_csr": 92.26,
+        "cg_credit": 46.67,
+        "cg_drop": 48.61,
+        "cg_drr": 51.0,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 4,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 4,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 68.81
+        },
+        "cond": {
+          "pct": 44.97
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 82.86
+        },
+        "fsm_trans": {
+          "pct": 41.25
+        },
+        "stmt": {
+          "pct": 81.59
+        },
+        "toggle": {
+          "pct": 27.68
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 68.81
+        },
+        "cond": {
+          "pct": 44.97
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 82.86
+        },
+        "fsm_trans": {
+          "pct": 41.25
+        },
+        "stmt": {
+          "pct": 81.59
+        },
+        "toggle": {
+          "pct": 27.68
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 0.2
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.11
+        },
+        "toggle": {
+          "pct": 1.19
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 74.66
+        },
+        "cond": {
+          "pct": 51.85
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 88.57
+        },
+        "fsm_trans": {
+          "pct": 46.25
+        },
+        "stmt": {
+          "pct": 85.9
+        },
+        "toggle": {
+          "pct": 49.03
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.2
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.11
+        },
+        "toggle": {
+          "pct": 1.19
+        }
+      }
+    },
+    {
+      "case_id": "COMBO_OPQ_504_cross_drr_zero_allowance_test",
+      "full_case_id": "COMBO_OPQ_504_cross_drr_zero_allowance_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Zero-allowance lane starvation followed by reload and resumed service.",
+      "primary_checks": "Directed defer/reload behavior and zero-allowance fairness recovery.",
+      "contract_anchor": "DV_CROSS zero-allowance closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "CROSS",
+      "legacy_test_name": "opq_cross_drr_zero_allowance_test",
+      "test_name": "opq_cross_drr_zero_allowance_test",
+      "report_case_id": "COMBO_OPQ_504_cross_drr_zero_allowance_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 256,
+        "hit_actual": 256,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 48.33,
+        "cg_subh": 22.22,
+        "cg_bp": 0.0,
+        "cg_csr": 95.24,
+        "cg_credit": 46.67,
+        "cg_drop": 48.61,
+        "cg_drr": 47.5,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 4,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 4,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 69.59
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 82.86
+        },
+        "fsm_trans": {
+          "pct": 41.25
+        },
+        "stmt": {
+          "pct": 82.13
+        },
+        "toggle": {
+          "pct": 27.99
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 69.59
+        },
+        "cond": {
+          "pct": 45.5
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 82.86
+        },
+        "fsm_trans": {
+          "pct": 41.25
+        },
+        "stmt": {
+          "pct": 82.13
+        },
+        "toggle": {
+          "pct": 27.99
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 0.19
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 3.64
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.11
+        },
+        "toggle": {
+          "pct": 1.09
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 74.85
+        },
+        "cond": {
+          "pct": 51.85
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 88.57
+        },
+        "fsm_trans": {
+          "pct": 46.25
+        },
+        "stmt": {
+          "pct": 86.01
+        },
+        "toggle": {
+          "pct": 50.12
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.19
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 3.64
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.11
+        },
+        "toggle": {
+          "pct": 1.09
+        }
+      }
+    },
+    {
+      "case_id": "COMBO_OPQ_505_cross_drr_short_allowance_test",
+      "full_case_id": "COMBO_OPQ_505_cross_drr_short_allowance_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Short-quantum reload with repeated service handoff.",
+      "primary_checks": "Directed DRR reload and service-handoff behavior under constrained allowance.",
+      "contract_anchor": "DV_CROSS short-allowance closure.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "practical",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "CROSS",
+      "legacy_test_name": "opq_cross_drr_short_allowance_test",
+      "test_name": "opq_cross_drr_short_allowance_test",
+      "report_case_id": "COMBO_OPQ_505_cross_drr_short_allowance_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 864,
+        "hit_actual": 864,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 43.33,
+        "cg_subh": 11.11,
+        "cg_bp": 0.0,
+        "cg_csr": 95.24,
+        "cg_credit": 46.67,
+        "cg_drop": 48.61,
+        "cg_drr": 35.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 3,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 3,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 73.1
+        },
+        "cond": {
+          "pct": 48.68
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 88.57
+        },
+        "fsm_trans": {
+          "pct": 46.25
+        },
+        "stmt": {
+          "pct": 84.61
+        },
+        "toggle": {
+          "pct": 34.94
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 73.1
+        },
+        "cond": {
+          "pct": 48.68
+        },
+        "expr": {
+          "pct": 67.27
+        },
+        "fsm_state": {
+          "pct": 88.57
+        },
+        "fsm_trans": {
+          "pct": 46.25
+        },
+        "stmt": {
+          "pct": 84.61
+        },
+        "toggle": {
+          "pct": 34.94
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 1.06
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 74.85
+        },
+        "cond": {
+          "pct": 51.85
+        },
+        "expr": {
+          "pct": 70.91
+        },
+        "fsm_state": {
+          "pct": 88.57
+        },
+        "fsm_trans": {
+          "pct": 46.25
+        },
+        "stmt": {
+          "pct": 86.01
+        },
+        "toggle": {
+          "pct": 51.18
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.0
+        },
+        "cond": {
+          "pct": 0.0
+        },
+        "expr": {
+          "pct": 0.0
+        },
+        "fsm_state": {
+          "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.0
+        },
+        "toggle": {
+          "pct": 1.06
+        }
+      }
+    }
+  ],
   "bucket_summary": [
     {
       "bucket": "BASIC",
@@ -96,7 +5622,13 @@
         "pct": 66.97,
         "evidenced": 4,
         "planned": 4
-      }
+      },
+      "ordered_case_ids": [
+        "STD_OPQ_001_basic_smoke_test",
+        "STD_OPQ_002_basic_ts_boundary_test",
+        "STD_OPQ_003_basic_subheader_shape_test",
+        "STD_OPQ_004_basic_feb_packet_contract_test"
+      ]
     },
     {
       "bucket": "PARAM",
@@ -152,7 +5684,15 @@
         "pct": 67.37,
         "evidenced": 6,
         "planned": 6
-      }
+      },
+      "ordered_case_ids": [
+        "COMBO_OPQ_101_basic_smoke_test_nshd128",
+        "COMBO_OPQ_102_basic_smoke_test_nshd512",
+        "COMBO_OPQ_103_basic_ts_boundary_test_nshd128",
+        "COMBO_OPQ_104_basic_ts_boundary_test_nshd512",
+        "COMBO_OPQ_105_edge_max_hits_test_nshd128",
+        "COMBO_OPQ_106_edge_max_hits_test_nshd512"
+      ]
     },
     {
       "bucket": "EDGE",
@@ -208,7 +5748,15 @@
         "pct": 71.5,
         "evidenced": 6,
         "planned": 6
-      }
+      },
+      "ordered_case_ids": [
+        "CORNER_OPQ_201_edge_backpressure_test",
+        "CORNER_OPQ_202_edge_always_ready_test",
+        "CORNER_OPQ_203_edge_ready_medium_profile_test",
+        "CORNER_OPQ_204_edge_stuck_low_backpressure_test",
+        "CORNER_OPQ_205_edge_max_hits_test",
+        "CORNER_OPQ_206_edge_toggle_backpressure_test"
+      ]
     },
     {
       "bucket": "PROF",
@@ -264,7 +5812,13 @@
         "pct": 64.37,
         "evidenced": 4,
         "planned": 4
-      }
+      },
+      "ordered_case_ids": [
+        "COMBO_OPQ_301_prof_stress_test",
+        "COMBO_OPQ_302_prof_lane_skew_test",
+        "COMBO_OPQ_303_prof_whole_frame_skew_test",
+        "COMBO_OPQ_304_prof_missing_empty_frame_test"
+      ]
     },
     {
       "bucket": "ERROR",
@@ -320,7 +5874,15 @@
         "pct": 66.33,
         "evidenced": 6,
         "planned": 6
-      }
+      },
+      "ordered_case_ids": [
+        "CORNER_OPQ_401_error_lane_mask_test",
+        "CORNER_OPQ_402_error_lane_mask_single_hit_test",
+        "CORNER_OPQ_403_error_lane_mask_burst_test",
+        "CORNER_OPQ_404_error_lane_mask_recovery_test",
+        "CORNER_OPQ_405_error_subheader_mask_recovery_test",
+        "CORNER_OPQ_406_error_counter_clear_test"
+      ]
     },
     {
       "bucket": "CROSS",
@@ -376,7 +5938,14 @@
         "pct": 69.56,
         "evidenced": 5,
         "planned": 5
-      }
+      },
+      "ordered_case_ids": [
+        "COMBO_OPQ_501_cross_bp_credit_test",
+        "COMBO_OPQ_502_cross_drr_allowance_test",
+        "COMBO_OPQ_503_cross_drr_idle_lane_test",
+        "COMBO_OPQ_504_cross_drr_zero_allowance_test",
+        "COMBO_OPQ_505_cross_drr_short_allowance_test"
+      ]
     }
   ],
   "buckets": {
@@ -414,8 +5983,9 @@
       "merge_trace": [
         {
           "step": 1,
-          "case_id": "opq_basic_smoke_test",
-          "full_case_id": "opq_basic_smoke_test",
+          "case_id": "STD_OPQ_001_basic_smoke_test",
+          "full_case_id": "STD_OPQ_001_basic_smoke_test",
+          "legacy_test_name": "opq_basic_smoke_test",
           "merged_total_after_case": {
             "branch": {
               "pct": 71.35
@@ -442,8 +6012,9 @@
         },
         {
           "step": 2,
-          "case_id": "opq_basic_ts_boundary_test",
-          "full_case_id": "opq_basic_ts_boundary_test",
+          "case_id": "STD_OPQ_002_basic_ts_boundary_test",
+          "full_case_id": "STD_OPQ_002_basic_ts_boundary_test",
+          "legacy_test_name": "opq_basic_ts_boundary_test",
           "merged_total_after_case": {
             "branch": {
               "pct": 71.93
@@ -470,8 +6041,9 @@
         },
         {
           "step": 3,
-          "case_id": "opq_basic_subheader_shape_test",
-          "full_case_id": "opq_basic_subheader_shape_test",
+          "case_id": "STD_OPQ_003_basic_subheader_shape_test",
+          "full_case_id": "STD_OPQ_003_basic_subheader_shape_test",
+          "legacy_test_name": "opq_basic_subheader_shape_test",
           "merged_total_after_case": {
             "branch": {
               "pct": 71.93
@@ -498,8 +6070,9 @@
         },
         {
           "step": 4,
-          "case_id": "opq_basic_feb_packet_contract_test",
-          "full_case_id": "opq_basic_feb_packet_contract_test",
+          "case_id": "STD_OPQ_004_basic_feb_packet_contract_test",
+          "full_case_id": "STD_OPQ_004_basic_feb_packet_contract_test",
+          "legacy_test_name": "opq_basic_feb_packet_contract_test",
           "merged_total_after_case": {
             "branch": {
               "pct": 71.93
@@ -525,10 +6098,16 @@
           }
         }
       ],
+      "ordered_case_ids": [
+        "STD_OPQ_001_basic_smoke_test",
+        "STD_OPQ_002_basic_ts_boundary_test",
+        "STD_OPQ_003_basic_subheader_shape_test",
+        "STD_OPQ_004_basic_feb_packet_contract_test"
+      ],
       "cases": [
         {
-          "case_id": "opq_basic_smoke_test",
-          "full_case_id": "opq_basic_smoke_test",
+          "case_id": "STD_OPQ_001_basic_smoke_test",
+          "full_case_id": "STD_OPQ_001_basic_smoke_test",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Healthy long-frame bring-up on the default 2-lane native-SV path.",
@@ -545,6 +6124,9 @@
             "MODE": "MERGING"
           },
           "bucket": "BASIC",
+          "legacy_test_name": "opq_basic_smoke_test",
+          "test_name": "opq_basic_smoke_test",
+          "report_case_id": "STD_OPQ_001_basic_smoke_test",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -686,8 +6268,8 @@
           }
         },
         {
-          "case_id": "opq_basic_ts_boundary_test",
-          "full_case_id": "opq_basic_ts_boundary_test",
+          "case_id": "STD_OPQ_002_basic_ts_boundary_test",
+          "full_case_id": "STD_OPQ_002_basic_ts_boundary_test",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Sparse timestamp-boundary traffic across low and high subheader values.",
@@ -704,6 +6286,9 @@
             "MODE": "MERGING"
           },
           "bucket": "BASIC",
+          "legacy_test_name": "opq_basic_ts_boundary_test",
+          "test_name": "opq_basic_ts_boundary_test",
+          "report_case_id": "STD_OPQ_002_basic_ts_boundary_test",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -845,8 +6430,8 @@
           }
         },
         {
-          "case_id": "opq_basic_subheader_shape_test",
-          "full_case_id": "opq_basic_subheader_shape_test",
+          "case_id": "STD_OPQ_003_basic_subheader_shape_test",
+          "full_case_id": "STD_OPQ_003_basic_subheader_shape_test",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Mixed empty and non-empty subheaders with varied hit counts.",
@@ -863,6 +6448,9 @@
             "MODE": "MERGING"
           },
           "bucket": "BASIC",
+          "legacy_test_name": "opq_basic_subheader_shape_test",
+          "test_name": "opq_basic_subheader_shape_test",
+          "report_case_id": "STD_OPQ_003_basic_subheader_shape_test",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -1004,8 +6592,8 @@
           }
         },
         {
-          "case_id": "opq_basic_feb_packet_contract_test",
-          "full_case_id": "opq_basic_feb_packet_contract_test",
+          "case_id": "STD_OPQ_004_basic_feb_packet_contract_test",
+          "full_case_id": "STD_OPQ_004_basic_feb_packet_contract_test",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Real FEB whole-frame packets on both ingress lanes.",
@@ -1022,6 +6610,9 @@
             "MODE": "MERGING"
           },
           "bucket": "BASIC",
+          "legacy_test_name": "opq_basic_feb_packet_contract_test",
+          "test_name": "opq_basic_feb_packet_contract_test",
+          "report_case_id": "STD_OPQ_004_basic_feb_packet_contract_test",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -1198,8 +6789,9 @@
       "merge_trace": [
         {
           "step": 1,
-          "case_id": "opq_basic_smoke_test_nshd128",
-          "full_case_id": "opq_basic_smoke_test_nshd128",
+          "case_id": "COMBO_OPQ_101_basic_smoke_test_nshd128",
+          "full_case_id": "COMBO_OPQ_101_basic_smoke_test_nshd128",
+          "legacy_test_name": "opq_basic_smoke_test_nshd128",
           "merged_total_after_case": {
             "branch": {
               "pct": 71.35
@@ -1226,8 +6818,9 @@
         },
         {
           "step": 2,
-          "case_id": "opq_basic_smoke_test_nshd512",
-          "full_case_id": "opq_basic_smoke_test_nshd512",
+          "case_id": "COMBO_OPQ_102_basic_smoke_test_nshd512",
+          "full_case_id": "COMBO_OPQ_102_basic_smoke_test_nshd512",
+          "legacy_test_name": "opq_basic_smoke_test_nshd512",
           "merged_total_after_case": {
             "branch": {
               "pct": 71.54
@@ -1254,8 +6847,9 @@
         },
         {
           "step": 3,
-          "case_id": "opq_basic_ts_boundary_test_nshd128",
-          "full_case_id": "opq_basic_ts_boundary_test_nshd128",
+          "case_id": "COMBO_OPQ_103_basic_ts_boundary_test_nshd128",
+          "full_case_id": "COMBO_OPQ_103_basic_ts_boundary_test_nshd128",
+          "legacy_test_name": "opq_basic_ts_boundary_test_nshd128",
           "merged_total_after_case": {
             "branch": {
               "pct": 72.12
@@ -1282,8 +6876,9 @@
         },
         {
           "step": 4,
-          "case_id": "opq_basic_ts_boundary_test_nshd512",
-          "full_case_id": "opq_basic_ts_boundary_test_nshd512",
+          "case_id": "COMBO_OPQ_104_basic_ts_boundary_test_nshd512",
+          "full_case_id": "COMBO_OPQ_104_basic_ts_boundary_test_nshd512",
+          "legacy_test_name": "opq_basic_ts_boundary_test_nshd512",
           "merged_total_after_case": {
             "branch": {
               "pct": 72.12
@@ -1310,8 +6905,9 @@
         },
         {
           "step": 5,
-          "case_id": "opq_edge_max_hits_test_nshd128",
-          "full_case_id": "opq_edge_max_hits_test_nshd128",
+          "case_id": "COMBO_OPQ_105_edge_max_hits_test_nshd128",
+          "full_case_id": "COMBO_OPQ_105_edge_max_hits_test_nshd128",
+          "legacy_test_name": "opq_edge_max_hits_test_nshd128",
           "merged_total_after_case": {
             "branch": {
               "pct": 72.12
@@ -1338,8 +6934,9 @@
         },
         {
           "step": 6,
-          "case_id": "opq_edge_max_hits_test_nshd512",
-          "full_case_id": "opq_edge_max_hits_test_nshd512",
+          "case_id": "COMBO_OPQ_106_edge_max_hits_test_nshd512",
+          "full_case_id": "COMBO_OPQ_106_edge_max_hits_test_nshd512",
+          "legacy_test_name": "opq_edge_max_hits_test_nshd512",
           "merged_total_after_case": {
             "branch": {
               "pct": 72.12
@@ -1365,10 +6962,18 @@
           }
         }
       ],
+      "ordered_case_ids": [
+        "COMBO_OPQ_101_basic_smoke_test_nshd128",
+        "COMBO_OPQ_102_basic_smoke_test_nshd512",
+        "COMBO_OPQ_103_basic_ts_boundary_test_nshd128",
+        "COMBO_OPQ_104_basic_ts_boundary_test_nshd512",
+        "COMBO_OPQ_105_edge_max_hits_test_nshd128",
+        "COMBO_OPQ_106_edge_max_hits_test_nshd512"
+      ],
       "cases": [
         {
-          "case_id": "opq_basic_smoke_test_nshd128",
-          "full_case_id": "opq_basic_smoke_test_nshd128",
+          "case_id": "COMBO_OPQ_101_basic_smoke_test_nshd128",
+          "full_case_id": "COMBO_OPQ_101_basic_smoke_test_nshd128",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Default healthy-path bring-up at non-default build point N_SHD=128.",
@@ -1385,6 +6990,9 @@
             "MODE": "MERGING"
           },
           "bucket": "PARAM",
+          "legacy_test_name": "opq_basic_smoke_test_nshd128",
+          "test_name": "opq_basic_smoke_test_nshd128",
+          "report_case_id": "COMBO_OPQ_101_basic_smoke_test_nshd128",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -1526,8 +7134,8 @@
           }
         },
         {
-          "case_id": "opq_basic_smoke_test_nshd512",
-          "full_case_id": "opq_basic_smoke_test_nshd512",
+          "case_id": "COMBO_OPQ_102_basic_smoke_test_nshd512",
+          "full_case_id": "COMBO_OPQ_102_basic_smoke_test_nshd512",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Default healthy-path bring-up at non-default build point N_SHD=512.",
@@ -1544,6 +7152,9 @@
             "MODE": "MERGING"
           },
           "bucket": "PARAM",
+          "legacy_test_name": "opq_basic_smoke_test_nshd512",
+          "test_name": "opq_basic_smoke_test_nshd512",
+          "report_case_id": "COMBO_OPQ_102_basic_smoke_test_nshd512",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -1685,8 +7296,8 @@
           }
         },
         {
-          "case_id": "opq_basic_ts_boundary_test_nshd128",
-          "full_case_id": "opq_basic_ts_boundary_test_nshd128",
+          "case_id": "COMBO_OPQ_103_basic_ts_boundary_test_nshd128",
+          "full_case_id": "COMBO_OPQ_103_basic_ts_boundary_test_nshd128",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Timestamp-boundary sparse packets at N_SHD=128.",
@@ -1703,6 +7314,9 @@
             "MODE": "MERGING"
           },
           "bucket": "PARAM",
+          "legacy_test_name": "opq_basic_ts_boundary_test_nshd128",
+          "test_name": "opq_basic_ts_boundary_test_nshd128",
+          "report_case_id": "COMBO_OPQ_103_basic_ts_boundary_test_nshd128",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -1844,8 +7458,8 @@
           }
         },
         {
-          "case_id": "opq_basic_ts_boundary_test_nshd512",
-          "full_case_id": "opq_basic_ts_boundary_test_nshd512",
+          "case_id": "COMBO_OPQ_104_basic_ts_boundary_test_nshd512",
+          "full_case_id": "COMBO_OPQ_104_basic_ts_boundary_test_nshd512",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Timestamp-boundary sparse packets at N_SHD=512.",
@@ -1862,6 +7476,9 @@
             "MODE": "MERGING"
           },
           "bucket": "PARAM",
+          "legacy_test_name": "opq_basic_ts_boundary_test_nshd512",
+          "test_name": "opq_basic_ts_boundary_test_nshd512",
+          "report_case_id": "COMBO_OPQ_104_basic_ts_boundary_test_nshd512",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -2003,8 +7620,8 @@
           }
         },
         {
-          "case_id": "opq_edge_max_hits_test_nshd128",
-          "full_case_id": "opq_edge_max_hits_test_nshd128",
+          "case_id": "COMBO_OPQ_105_edge_max_hits_test_nshd128",
+          "full_case_id": "COMBO_OPQ_105_edge_max_hits_test_nshd128",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Maximum-hit packet shape at N_SHD=128.",
@@ -2021,6 +7638,9 @@
             "MODE": "MERGING"
           },
           "bucket": "PARAM",
+          "legacy_test_name": "opq_edge_max_hits_test_nshd128",
+          "test_name": "opq_edge_max_hits_test_nshd128",
+          "report_case_id": "COMBO_OPQ_105_edge_max_hits_test_nshd128",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -2162,8 +7782,8 @@
           }
         },
         {
-          "case_id": "opq_edge_max_hits_test_nshd512",
-          "full_case_id": "opq_edge_max_hits_test_nshd512",
+          "case_id": "COMBO_OPQ_106_edge_max_hits_test_nshd512",
+          "full_case_id": "COMBO_OPQ_106_edge_max_hits_test_nshd512",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Maximum-hit packet shape at N_SHD=512.",
@@ -2180,6 +7800,9 @@
             "MODE": "MERGING"
           },
           "bucket": "PARAM",
+          "legacy_test_name": "opq_edge_max_hits_test_nshd512",
+          "test_name": "opq_edge_max_hits_test_nshd512",
+          "report_case_id": "COMBO_OPQ_106_edge_max_hits_test_nshd512",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -2356,8 +7979,9 @@
       "merge_trace": [
         {
           "step": 1,
-          "case_id": "opq_edge_backpressure_test",
-          "full_case_id": "opq_edge_backpressure_test",
+          "case_id": "CORNER_OPQ_201_edge_backpressure_test",
+          "full_case_id": "CORNER_OPQ_201_edge_backpressure_test",
+          "legacy_test_name": "opq_edge_backpressure_test",
           "merged_total_after_case": {
             "branch": {
               "pct": 71.35
@@ -2384,8 +8008,9 @@
         },
         {
           "step": 2,
-          "case_id": "opq_edge_always_ready_test",
-          "full_case_id": "opq_edge_always_ready_test",
+          "case_id": "CORNER_OPQ_202_edge_always_ready_test",
+          "full_case_id": "CORNER_OPQ_202_edge_always_ready_test",
+          "legacy_test_name": "opq_edge_always_ready_test",
           "merged_total_after_case": {
             "branch": {
               "pct": 71.35
@@ -2412,8 +8037,9 @@
         },
         {
           "step": 3,
-          "case_id": "opq_edge_ready_medium_profile_test",
-          "full_case_id": "opq_edge_ready_medium_profile_test",
+          "case_id": "CORNER_OPQ_203_edge_ready_medium_profile_test",
+          "full_case_id": "CORNER_OPQ_203_edge_ready_medium_profile_test",
+          "legacy_test_name": "opq_edge_ready_medium_profile_test",
           "merged_total_after_case": {
             "branch": {
               "pct": 71.35
@@ -2440,8 +8066,9 @@
         },
         {
           "step": 4,
-          "case_id": "opq_edge_stuck_low_backpressure_test",
-          "full_case_id": "opq_edge_stuck_low_backpressure_test",
+          "case_id": "CORNER_OPQ_204_edge_stuck_low_backpressure_test",
+          "full_case_id": "CORNER_OPQ_204_edge_stuck_low_backpressure_test",
+          "legacy_test_name": "opq_edge_stuck_low_backpressure_test",
           "merged_total_after_case": {
             "branch": {
               "pct": 71.54
@@ -2468,8 +8095,9 @@
         },
         {
           "step": 5,
-          "case_id": "opq_edge_max_hits_test",
-          "full_case_id": "opq_edge_max_hits_test",
+          "case_id": "CORNER_OPQ_205_edge_max_hits_test",
+          "full_case_id": "CORNER_OPQ_205_edge_max_hits_test",
+          "legacy_test_name": "opq_edge_max_hits_test",
           "merged_total_after_case": {
             "branch": {
               "pct": 71.73
@@ -2496,8 +8124,9 @@
         },
         {
           "step": 6,
-          "case_id": "opq_edge_toggle_backpressure_test",
-          "full_case_id": "opq_edge_toggle_backpressure_test",
+          "case_id": "CORNER_OPQ_206_edge_toggle_backpressure_test",
+          "full_case_id": "CORNER_OPQ_206_edge_toggle_backpressure_test",
+          "legacy_test_name": "opq_edge_toggle_backpressure_test",
           "merged_total_after_case": {
             "branch": {
               "pct": 71.73
@@ -2523,10 +8152,18 @@
           }
         }
       ],
+      "ordered_case_ids": [
+        "CORNER_OPQ_201_edge_backpressure_test",
+        "CORNER_OPQ_202_edge_always_ready_test",
+        "CORNER_OPQ_203_edge_ready_medium_profile_test",
+        "CORNER_OPQ_204_edge_stuck_low_backpressure_test",
+        "CORNER_OPQ_205_edge_max_hits_test",
+        "CORNER_OPQ_206_edge_toggle_backpressure_test"
+      ],
       "cases": [
         {
-          "case_id": "opq_edge_backpressure_test",
-          "full_case_id": "opq_edge_backpressure_test",
+          "case_id": "CORNER_OPQ_201_edge_backpressure_test",
+          "full_case_id": "CORNER_OPQ_201_edge_backpressure_test",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Periodic egress stalls on the default native-SV datapath.",
@@ -2543,6 +8180,9 @@
             "MODE": "MERGING"
           },
           "bucket": "EDGE",
+          "legacy_test_name": "opq_edge_backpressure_test",
+          "test_name": "opq_edge_backpressure_test",
+          "report_case_id": "CORNER_OPQ_201_edge_backpressure_test",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -2684,8 +8324,8 @@
           }
         },
         {
-          "case_id": "opq_edge_always_ready_test",
-          "full_case_id": "opq_edge_always_ready_test",
+          "case_id": "CORNER_OPQ_202_edge_always_ready_test",
+          "full_case_id": "CORNER_OPQ_202_edge_always_ready_test",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Explicit always-ready baseline with the same native-SV harness plumbing.",
@@ -2702,6 +8342,9 @@
             "MODE": "MERGING"
           },
           "bucket": "EDGE",
+          "legacy_test_name": "opq_edge_always_ready_test",
+          "test_name": "opq_edge_always_ready_test",
+          "report_case_id": "CORNER_OPQ_202_edge_always_ready_test",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -2843,8 +8486,8 @@
           }
         },
         {
-          "case_id": "opq_edge_ready_medium_profile_test",
-          "full_case_id": "opq_edge_ready_medium_profile_test",
+          "case_id": "CORNER_OPQ_203_edge_ready_medium_profile_test",
+          "full_case_id": "CORNER_OPQ_203_edge_ready_medium_profile_test",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Medium-duty ready profile with legal restart windows.",
@@ -2861,6 +8504,9 @@
             "MODE": "MERGING"
           },
           "bucket": "EDGE",
+          "legacy_test_name": "opq_edge_ready_medium_profile_test",
+          "test_name": "opq_edge_ready_medium_profile_test",
+          "report_case_id": "CORNER_OPQ_203_edge_ready_medium_profile_test",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -3002,8 +8648,8 @@
           }
         },
         {
-          "case_id": "opq_edge_stuck_low_backpressure_test",
-          "full_case_id": "opq_edge_stuck_low_backpressure_test",
+          "case_id": "CORNER_OPQ_204_edge_stuck_low_backpressure_test",
+          "full_case_id": "CORNER_OPQ_204_edge_stuck_low_backpressure_test",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Longer low-ready windows short of the forced-overwrite probe.",
@@ -3020,6 +8666,9 @@
             "MODE": "MERGING"
           },
           "bucket": "EDGE",
+          "legacy_test_name": "opq_edge_stuck_low_backpressure_test",
+          "test_name": "opq_edge_stuck_low_backpressure_test",
+          "report_case_id": "CORNER_OPQ_204_edge_stuck_low_backpressure_test",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -3161,8 +8810,8 @@
           }
         },
         {
-          "case_id": "opq_edge_max_hits_test",
-          "full_case_id": "opq_edge_max_hits_test",
+          "case_id": "CORNER_OPQ_205_edge_max_hits_test",
+          "full_case_id": "CORNER_OPQ_205_edge_max_hits_test",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Default-build maximum-hit packet shape on the live symbol path.",
@@ -3179,6 +8828,9 @@
             "MODE": "MERGING"
           },
           "bucket": "EDGE",
+          "legacy_test_name": "opq_edge_max_hits_test",
+          "test_name": "opq_edge_max_hits_test",
+          "report_case_id": "CORNER_OPQ_205_edge_max_hits_test",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -3320,8 +8972,8 @@
           }
         },
         {
-          "case_id": "opq_edge_toggle_backpressure_test",
-          "full_case_id": "opq_edge_toggle_backpressure_test",
+          "case_id": "CORNER_OPQ_206_edge_toggle_backpressure_test",
+          "full_case_id": "CORNER_OPQ_206_edge_toggle_backpressure_test",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Single-cycle ready toggling at the egress interface.",
@@ -3338,6 +8990,9 @@
             "MODE": "MERGING"
           },
           "bucket": "EDGE",
+          "legacy_test_name": "opq_edge_toggle_backpressure_test",
+          "test_name": "opq_edge_toggle_backpressure_test",
+          "report_case_id": "CORNER_OPQ_206_edge_toggle_backpressure_test",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -3514,8 +9169,9 @@
       "merge_trace": [
         {
           "step": 1,
-          "case_id": "opq_prof_stress_test",
-          "full_case_id": "opq_prof_stress_test",
+          "case_id": "COMBO_OPQ_301_prof_stress_test",
+          "full_case_id": "COMBO_OPQ_301_prof_stress_test",
+          "legacy_test_name": "opq_prof_stress_test",
           "merged_total_after_case": {
             "branch": {
               "pct": 71.35
@@ -3542,8 +9198,9 @@
         },
         {
           "step": 2,
-          "case_id": "opq_prof_lane_skew_test",
-          "full_case_id": "opq_prof_lane_skew_test",
+          "case_id": "COMBO_OPQ_302_prof_lane_skew_test",
+          "full_case_id": "COMBO_OPQ_302_prof_lane_skew_test",
+          "legacy_test_name": "opq_prof_lane_skew_test",
           "merged_total_after_case": {
             "branch": {
               "pct": 71.35
@@ -3570,8 +9227,9 @@
         },
         {
           "step": 3,
-          "case_id": "opq_prof_whole_frame_skew_test",
-          "full_case_id": "opq_prof_whole_frame_skew_test",
+          "case_id": "COMBO_OPQ_303_prof_whole_frame_skew_test",
+          "full_case_id": "COMBO_OPQ_303_prof_whole_frame_skew_test",
+          "legacy_test_name": "opq_prof_whole_frame_skew_test",
           "merged_total_after_case": {
             "branch": {
               "pct": 71.73
@@ -3598,8 +9256,9 @@
         },
         {
           "step": 4,
-          "case_id": "opq_prof_missing_empty_frame_test",
-          "full_case_id": "opq_prof_missing_empty_frame_test",
+          "case_id": "COMBO_OPQ_304_prof_missing_empty_frame_test",
+          "full_case_id": "COMBO_OPQ_304_prof_missing_empty_frame_test",
+          "legacy_test_name": "opq_prof_missing_empty_frame_test",
           "merged_total_after_case": {
             "branch": {
               "pct": 71.73
@@ -3625,10 +9284,16 @@
           }
         }
       ],
+      "ordered_case_ids": [
+        "COMBO_OPQ_301_prof_stress_test",
+        "COMBO_OPQ_302_prof_lane_skew_test",
+        "COMBO_OPQ_303_prof_whole_frame_skew_test",
+        "COMBO_OPQ_304_prof_missing_empty_frame_test"
+      ],
       "cases": [
         {
-          "case_id": "opq_prof_stress_test",
-          "full_case_id": "opq_prof_stress_test",
+          "case_id": "COMBO_OPQ_301_prof_stress_test",
+          "full_case_id": "COMBO_OPQ_301_prof_stress_test",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Short soak with repeated long FEB whole-frame traffic.",
@@ -3645,6 +9310,9 @@
             "MODE": "MERGING"
           },
           "bucket": "PROF",
+          "legacy_test_name": "opq_prof_stress_test",
+          "test_name": "opq_prof_stress_test",
+          "report_case_id": "COMBO_OPQ_301_prof_stress_test",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -3786,8 +9454,8 @@
           }
         },
         {
-          "case_id": "opq_prof_lane_skew_test",
-          "full_case_id": "opq_prof_lane_skew_test",
+          "case_id": "COMBO_OPQ_302_prof_lane_skew_test",
+          "full_case_id": "COMBO_OPQ_302_prof_lane_skew_test",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Deterministic two-lane skew with repeated long frames.",
@@ -3804,6 +9472,9 @@
             "MODE": "MERGING"
           },
           "bucket": "PROF",
+          "legacy_test_name": "opq_prof_lane_skew_test",
+          "test_name": "opq_prof_lane_skew_test",
+          "report_case_id": "COMBO_OPQ_302_prof_lane_skew_test",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -3945,8 +9616,8 @@
           }
         },
         {
-          "case_id": "opq_prof_whole_frame_skew_test",
-          "full_case_id": "opq_prof_whole_frame_skew_test",
+          "case_id": "COMBO_OPQ_303_prof_whole_frame_skew_test",
+          "full_case_id": "COMBO_OPQ_303_prof_whole_frame_skew_test",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Whole-frame skew where activity alternates with legal empty frames.",
@@ -3963,6 +9634,9 @@
             "MODE": "MERGING"
           },
           "bucket": "PROF",
+          "legacy_test_name": "opq_prof_whole_frame_skew_test",
+          "test_name": "opq_prof_whole_frame_skew_test",
+          "report_case_id": "COMBO_OPQ_303_prof_whole_frame_skew_test",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -4104,8 +9778,8 @@
           }
         },
         {
-          "case_id": "opq_prof_missing_empty_frame_test",
-          "full_case_id": "opq_prof_missing_empty_frame_test",
+          "case_id": "COMBO_OPQ_304_prof_missing_empty_frame_test",
+          "full_case_id": "COMBO_OPQ_304_prof_missing_empty_frame_test",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Uneven per-lane frame-count stress on the active 2-lane harness contract.",
@@ -4122,6 +9796,9 @@
             "MODE": "MERGING"
           },
           "bucket": "PROF",
+          "legacy_test_name": "opq_prof_missing_empty_frame_test",
+          "test_name": "opq_prof_missing_empty_frame_test",
+          "report_case_id": "COMBO_OPQ_304_prof_missing_empty_frame_test",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -4298,8 +9975,9 @@
       "merge_trace": [
         {
           "step": 1,
-          "case_id": "opq_error_lane_mask_test",
-          "full_case_id": "opq_error_lane_mask_test",
+          "case_id": "CORNER_OPQ_401_error_lane_mask_test",
+          "full_case_id": "CORNER_OPQ_401_error_lane_mask_test",
+          "legacy_test_name": "opq_error_lane_mask_test",
           "merged_total_after_case": {
             "branch": {
               "pct": 35.67
@@ -4326,8 +10004,9 @@
         },
         {
           "step": 2,
-          "case_id": "opq_error_lane_mask_single_hit_test",
-          "full_case_id": "opq_error_lane_mask_single_hit_test",
+          "case_id": "CORNER_OPQ_402_error_lane_mask_single_hit_test",
+          "full_case_id": "CORNER_OPQ_402_error_lane_mask_single_hit_test",
+          "legacy_test_name": "opq_error_lane_mask_single_hit_test",
           "merged_total_after_case": {
             "branch": {
               "pct": 35.67
@@ -4354,8 +10033,9 @@
         },
         {
           "step": 3,
-          "case_id": "opq_error_lane_mask_burst_test",
-          "full_case_id": "opq_error_lane_mask_burst_test",
+          "case_id": "CORNER_OPQ_403_error_lane_mask_burst_test",
+          "full_case_id": "CORNER_OPQ_403_error_lane_mask_burst_test",
+          "legacy_test_name": "opq_error_lane_mask_burst_test",
           "merged_total_after_case": {
             "branch": {
               "pct": 35.67
@@ -4382,8 +10062,9 @@
         },
         {
           "step": 4,
-          "case_id": "opq_error_lane_mask_recovery_test",
-          "full_case_id": "opq_error_lane_mask_recovery_test",
+          "case_id": "CORNER_OPQ_404_error_lane_mask_recovery_test",
+          "full_case_id": "CORNER_OPQ_404_error_lane_mask_recovery_test",
+          "legacy_test_name": "opq_error_lane_mask_recovery_test",
           "merged_total_after_case": {
             "branch": {
               "pct": 72.51
@@ -4410,8 +10091,9 @@
         },
         {
           "step": 5,
-          "case_id": "opq_error_subheader_mask_recovery_test",
-          "full_case_id": "opq_error_subheader_mask_recovery_test",
+          "case_id": "CORNER_OPQ_405_error_subheader_mask_recovery_test",
+          "full_case_id": "CORNER_OPQ_405_error_subheader_mask_recovery_test",
+          "legacy_test_name": "opq_error_subheader_mask_recovery_test",
           "merged_total_after_case": {
             "branch": {
               "pct": 76.41
@@ -4438,8 +10120,9 @@
         },
         {
           "step": 6,
-          "case_id": "opq_error_counter_clear_test",
-          "full_case_id": "opq_error_counter_clear_test",
+          "case_id": "CORNER_OPQ_406_error_counter_clear_test",
+          "full_case_id": "CORNER_OPQ_406_error_counter_clear_test",
+          "legacy_test_name": "opq_error_counter_clear_test",
           "merged_total_after_case": {
             "branch": {
               "pct": 76.61
@@ -4465,10 +10148,18 @@
           }
         }
       ],
+      "ordered_case_ids": [
+        "CORNER_OPQ_401_error_lane_mask_test",
+        "CORNER_OPQ_402_error_lane_mask_single_hit_test",
+        "CORNER_OPQ_403_error_lane_mask_burst_test",
+        "CORNER_OPQ_404_error_lane_mask_recovery_test",
+        "CORNER_OPQ_405_error_subheader_mask_recovery_test",
+        "CORNER_OPQ_406_error_counter_clear_test"
+      ],
       "cases": [
         {
-          "case_id": "opq_error_lane_mask_test",
-          "full_case_id": "opq_error_lane_mask_test",
+          "case_id": "CORNER_OPQ_401_error_lane_mask_test",
+          "full_case_id": "CORNER_OPQ_401_error_lane_mask_test",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Packet-boundary lane masking with multi-hit packets.",
@@ -4485,6 +10176,9 @@
             "MODE": "MERGING"
           },
           "bucket": "ERROR",
+          "legacy_test_name": "opq_error_lane_mask_test",
+          "test_name": "opq_error_lane_mask_test",
+          "report_case_id": "CORNER_OPQ_401_error_lane_mask_test",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -4622,8 +10316,8 @@
           }
         },
         {
-          "case_id": "opq_error_lane_mask_single_hit_test",
-          "full_case_id": "opq_error_lane_mask_single_hit_test",
+          "case_id": "CORNER_OPQ_402_error_lane_mask_single_hit_test",
+          "full_case_id": "CORNER_OPQ_402_error_lane_mask_single_hit_test",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Minimal masked-drop packet on the active native-SV path.",
@@ -4640,6 +10334,9 @@
             "MODE": "MERGING"
           },
           "bucket": "ERROR",
+          "legacy_test_name": "opq_error_lane_mask_single_hit_test",
+          "test_name": "opq_error_lane_mask_single_hit_test",
+          "report_case_id": "CORNER_OPQ_402_error_lane_mask_single_hit_test",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -4777,8 +10474,8 @@
           }
         },
         {
-          "case_id": "opq_error_lane_mask_burst_test",
-          "full_case_id": "opq_error_lane_mask_burst_test",
+          "case_id": "CORNER_OPQ_403_error_lane_mask_burst_test",
+          "full_case_id": "CORNER_OPQ_403_error_lane_mask_burst_test",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Burst masked-drop traffic across several packets.",
@@ -4795,6 +10492,9 @@
             "MODE": "MERGING"
           },
           "bucket": "ERROR",
+          "legacy_test_name": "opq_error_lane_mask_burst_test",
+          "test_name": "opq_error_lane_mask_burst_test",
+          "report_case_id": "CORNER_OPQ_403_error_lane_mask_burst_test",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -4932,8 +10632,8 @@
           }
         },
         {
-          "case_id": "opq_error_lane_mask_recovery_test",
-          "full_case_id": "opq_error_lane_mask_recovery_test",
+          "case_id": "CORNER_OPQ_404_error_lane_mask_recovery_test",
+          "full_case_id": "CORNER_OPQ_404_error_lane_mask_recovery_test",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Mask all active lanes, accumulate drops, then clear the mask and resume healthy traffic.",
@@ -4950,6 +10650,9 @@
             "MODE": "MERGING"
           },
           "bucket": "ERROR",
+          "legacy_test_name": "opq_error_lane_mask_recovery_test",
+          "test_name": "opq_error_lane_mask_recovery_test",
+          "report_case_id": "CORNER_OPQ_404_error_lane_mask_recovery_test",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -5091,8 +10794,8 @@
           }
         },
         {
-          "case_id": "opq_error_subheader_mask_recovery_test",
-          "full_case_id": "opq_error_subheader_mask_recovery_test",
+          "case_id": "CORNER_OPQ_405_error_subheader_mask_recovery_test",
+          "full_case_id": "CORNER_OPQ_405_error_subheader_mask_recovery_test",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Inject a malformed subheader, then follow with a legal recovery frame on both active lanes.",
@@ -5109,6 +10812,9 @@
             "MODE": "MERGING"
           },
           "bucket": "ERROR",
+          "legacy_test_name": "opq_error_subheader_mask_recovery_test",
+          "test_name": "opq_error_subheader_mask_recovery_test",
+          "report_case_id": "CORNER_OPQ_405_error_subheader_mask_recovery_test",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -5250,8 +10956,8 @@
           }
         },
         {
-          "case_id": "opq_error_counter_clear_test",
-          "full_case_id": "opq_error_counter_clear_test",
+          "case_id": "CORNER_OPQ_406_error_counter_clear_test",
+          "full_case_id": "CORNER_OPQ_406_error_counter_clear_test",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Runtime counter clear after drop-producing traffic.",
@@ -5268,6 +10974,9 @@
             "MODE": "MERGING"
           },
           "bucket": "ERROR",
+          "legacy_test_name": "opq_error_counter_clear_test",
+          "test_name": "opq_error_counter_clear_test",
+          "report_case_id": "CORNER_OPQ_406_error_counter_clear_test",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -5440,8 +11149,9 @@
       "merge_trace": [
         {
           "step": 1,
-          "case_id": "opq_cross_bp_credit_test",
-          "full_case_id": "opq_cross_bp_credit_test",
+          "case_id": "COMBO_OPQ_501_cross_bp_credit_test",
+          "full_case_id": "COMBO_OPQ_501_cross_bp_credit_test",
+          "legacy_test_name": "opq_cross_bp_credit_test",
           "merged_total_after_case": {
             "branch": {
               "pct": 71.35
@@ -5468,8 +11178,9 @@
         },
         {
           "step": 2,
-          "case_id": "opq_cross_drr_allowance_test",
-          "full_case_id": "opq_cross_drr_allowance_test",
+          "case_id": "COMBO_OPQ_502_cross_drr_allowance_test",
+          "full_case_id": "COMBO_OPQ_502_cross_drr_allowance_test",
+          "legacy_test_name": "opq_cross_drr_allowance_test",
           "merged_total_after_case": {
             "branch": {
               "pct": 74.46
@@ -5496,8 +11207,9 @@
         },
         {
           "step": 3,
-          "case_id": "opq_cross_drr_idle_lane_test",
-          "full_case_id": "opq_cross_drr_idle_lane_test",
+          "case_id": "COMBO_OPQ_503_cross_drr_idle_lane_test",
+          "full_case_id": "COMBO_OPQ_503_cross_drr_idle_lane_test",
+          "legacy_test_name": "opq_cross_drr_idle_lane_test",
           "merged_total_after_case": {
             "branch": {
               "pct": 74.66
@@ -5524,8 +11236,9 @@
         },
         {
           "step": 4,
-          "case_id": "opq_cross_drr_zero_allowance_test",
-          "full_case_id": "opq_cross_drr_zero_allowance_test",
+          "case_id": "COMBO_OPQ_504_cross_drr_zero_allowance_test",
+          "full_case_id": "COMBO_OPQ_504_cross_drr_zero_allowance_test",
+          "legacy_test_name": "opq_cross_drr_zero_allowance_test",
           "merged_total_after_case": {
             "branch": {
               "pct": 74.85
@@ -5552,8 +11265,9 @@
         },
         {
           "step": 5,
-          "case_id": "opq_cross_drr_short_allowance_test",
-          "full_case_id": "opq_cross_drr_short_allowance_test",
+          "case_id": "COMBO_OPQ_505_cross_drr_short_allowance_test",
+          "full_case_id": "COMBO_OPQ_505_cross_drr_short_allowance_test",
+          "legacy_test_name": "opq_cross_drr_short_allowance_test",
           "merged_total_after_case": {
             "branch": {
               "pct": 74.85
@@ -5579,10 +11293,17 @@
           }
         }
       ],
+      "ordered_case_ids": [
+        "COMBO_OPQ_501_cross_bp_credit_test",
+        "COMBO_OPQ_502_cross_drr_allowance_test",
+        "COMBO_OPQ_503_cross_drr_idle_lane_test",
+        "COMBO_OPQ_504_cross_drr_zero_allowance_test",
+        "COMBO_OPQ_505_cross_drr_short_allowance_test"
+      ],
       "cases": [
         {
-          "case_id": "opq_cross_bp_credit_test",
-          "full_case_id": "opq_cross_bp_credit_test",
+          "case_id": "COMBO_OPQ_501_cross_bp_credit_test",
+          "full_case_id": "COMBO_OPQ_501_cross_bp_credit_test",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Backpressure crossed with credit restoration on FEB whole-frame traffic.",
@@ -5599,6 +11320,9 @@
             "MODE": "MERGING"
           },
           "bucket": "CROSS",
+          "legacy_test_name": "opq_cross_bp_credit_test",
+          "test_name": "opq_cross_bp_credit_test",
+          "report_case_id": "COMBO_OPQ_501_cross_bp_credit_test",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -5740,8 +11464,8 @@
           }
         },
         {
-          "case_id": "opq_cross_drr_allowance_test",
-          "full_case_id": "opq_cross_drr_allowance_test",
+          "case_id": "COMBO_OPQ_502_cross_drr_allowance_test",
+          "full_case_id": "COMBO_OPQ_502_cross_drr_allowance_test",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Runtime DRR allowance programming with asymmetric lane service.",
@@ -5758,6 +11482,9 @@
             "MODE": "MERGING"
           },
           "bucket": "CROSS",
+          "legacy_test_name": "opq_cross_drr_allowance_test",
+          "test_name": "opq_cross_drr_allowance_test",
+          "report_case_id": "COMBO_OPQ_502_cross_drr_allowance_test",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -5899,8 +11626,8 @@
           }
         },
         {
-          "case_id": "opq_cross_drr_idle_lane_test",
-          "full_case_id": "opq_cross_drr_idle_lane_test",
+          "case_id": "COMBO_OPQ_503_cross_drr_idle_lane_test",
+          "full_case_id": "COMBO_OPQ_503_cross_drr_idle_lane_test",
           "method": "D",
           "observed_txn": 1,
           "scenario": "One hit-idle peer lane that still emits legal empty-frame cadence.",
@@ -5917,6 +11644,9 @@
             "MODE": "MERGING"
           },
           "bucket": "CROSS",
+          "legacy_test_name": "opq_cross_drr_idle_lane_test",
+          "test_name": "opq_cross_drr_idle_lane_test",
+          "report_case_id": "COMBO_OPQ_503_cross_drr_idle_lane_test",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -6058,8 +11788,8 @@
           }
         },
         {
-          "case_id": "opq_cross_drr_zero_allowance_test",
-          "full_case_id": "opq_cross_drr_zero_allowance_test",
+          "case_id": "COMBO_OPQ_504_cross_drr_zero_allowance_test",
+          "full_case_id": "COMBO_OPQ_504_cross_drr_zero_allowance_test",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Zero-allowance lane starvation followed by reload and resumed service.",
@@ -6076,6 +11806,9 @@
             "MODE": "MERGING"
           },
           "bucket": "CROSS",
+          "legacy_test_name": "opq_cross_drr_zero_allowance_test",
+          "test_name": "opq_cross_drr_zero_allowance_test",
+          "report_case_id": "COMBO_OPQ_504_cross_drr_zero_allowance_test",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -6217,8 +11950,8 @@
           }
         },
         {
-          "case_id": "opq_cross_drr_short_allowance_test",
-          "full_case_id": "opq_cross_drr_short_allowance_test",
+          "case_id": "COMBO_OPQ_505_cross_drr_short_allowance_test",
+          "full_case_id": "COMBO_OPQ_505_cross_drr_short_allowance_test",
           "method": "D",
           "observed_txn": 1,
           "scenario": "Short-quantum reload with repeated service handoff.",
@@ -6235,6 +11968,9 @@
             "MODE": "MERGING"
           },
           "bucket": "CROSS",
+          "legacy_test_name": "opq_cross_drr_short_allowance_test",
+          "test_name": "opq_cross_drr_short_allowance_test",
+          "report_case_id": "COMBO_OPQ_505_cross_drr_short_allowance_test",
           "implemented": true,
           "passed": true,
           "log_summary": {
@@ -6423,6 +12159,10 @@
       "effort": "practical",
       "iter_cap": null,
       "payload_cap": null,
+      "limitations": [
+        "PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.",
+        "opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow."
+      ],
       "implemented": true,
       "passed": false,
       "code_coverage": {
@@ -6490,6 +12230,11 @@
       "effort": "practical",
       "iter_cap": null,
       "payload_cap": null,
+      "limitations": [
+        "PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.",
+        "opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow.",
+        "This run appends two extra tail sequences after the 24 promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases."
+      ],
       "implemented": true,
       "passed": false,
       "code_coverage": {

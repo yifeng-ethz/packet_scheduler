@@ -11,4 +11,4 @@ if [[ "${dut_impl}" != "native_sv" ]]; then
 fi
 
 python3 "${SCRIPT_DIR}/build_dv_report_json.py"
-python3 /home/yifeng/.codex/skills/dv-workflow/scripts/dv_report_gen.py --tb "${TB_DIR}"
+python3 "${SCRIPT_DIR}/dv_report_gen_local.py" --tb "${TB_DIR}"

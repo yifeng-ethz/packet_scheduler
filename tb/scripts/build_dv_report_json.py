@@ -321,6 +321,46 @@ EXCLUDED_CASES = [
     "opq_cross_drr_bursty_random_test",
 ]
 
+BUCKET_FRAME_BUCKET_ORDER = ["BASIC", "EDGE", "PROF", "ERROR", "CROSS"]
+BUCKET_FRAME_LEGACY_ORDER = [
+    ("BASIC", "opq_basic_smoke_test"),
+    ("BASIC", "opq_basic_ts_boundary_test"),
+    ("BASIC", "opq_basic_feb_packet_contract_test"),
+    ("BASIC", "opq_basic_subheader_shape_test"),
+    ("EDGE", "opq_edge_backpressure_test"),
+    ("EDGE", "opq_edge_always_ready_test"),
+    ("EDGE", "opq_edge_ready_medium_profile_test"),
+    ("EDGE", "opq_edge_stuck_low_backpressure_test"),
+    ("EDGE", "opq_edge_max_hits_test"),
+    ("EDGE", "opq_edge_toggle_backpressure_test"),
+    ("PROF", "opq_prof_stress_test"),
+    ("PROF", "opq_prof_lane_skew_test"),
+    ("PROF", "opq_prof_whole_frame_skew_test"),
+    ("PROF", "opq_prof_missing_empty_frame_test"),
+    ("ERROR", "opq_error_lane_mask_test"),
+    ("ERROR", "opq_error_lane_mask_single_hit_test"),
+    ("ERROR", "opq_error_lane_mask_burst_test"),
+    ("ERROR", "opq_error_lane_mask_recovery_test"),
+    ("ERROR", "opq_error_subheader_mask_recovery_test"),
+    ("CROSS", "opq_cross_bp_credit_test"),
+    ("CROSS", "opq_cross_drr_allowance_test"),
+    ("CROSS", "opq_cross_drr_idle_lane_test"),
+    ("CROSS", "opq_cross_drr_zero_allowance_test"),
+    ("CROSS", "opq_cross_drr_short_allowance_test"),
+]
+ALL_BUCKETS_FRAME_EXTRA_TAIL = [
+    {
+        "bucket": "PROF",
+        "legacy_step_name": "extra_prof_seq",
+        "description": "extra whole-frame skew tail beyond the promoted default-build matrix",
+    },
+    {
+        "bucket": "ERROR",
+        "legacy_step_name": "extra_err_seq",
+        "description": "extra subheader-recovery tail beyond the promoted default-build matrix",
+    },
+]
+
 REPORT_CASE_TYPE = {
     "BASIC": "STD",
     "PARAM": "COMBO",
@@ -352,6 +392,10 @@ SIGNOFF_RUN_SPECS = [
         "effort": "practical",
         "iter_cap": None,
         "payload_cap": None,
+        "limitations": [
+            "PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.",
+            "opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow.",
+        ],
     },
     {
         "run_id": "all_buckets_frame_native_sv",
@@ -364,6 +408,11 @@ SIGNOFF_RUN_SPECS = [
         "effort": "practical",
         "iter_cap": None,
         "payload_cap": None,
+        "limitations": [
+            "PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.",
+            "opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow.",
+            "This run appends two extra tail sequences after the 24 promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases.",
+        ],
     },
 ]
 
@@ -492,7 +541,7 @@ def extract_log_summary(log_path: Path) -> tuple[bool, bool, dict]:
     return True, engine_ok, summary if pass_ok else summary
 
 
-def stage_report_artifacts(case_ids: list[str]) -> None:
+def stage_report_artifacts(case_artifacts: list[dict]) -> None:
     REPORT_LOG_DIR.mkdir(parents=True, exist_ok=True)
     REPORT_COV_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -501,11 +550,13 @@ def stage_report_artifacts(case_ids: list[str]) -> None:
             if child.is_symlink() or child.is_file():
                 child.unlink()
 
-    for case_id in case_ids:
-        src_log = SIM_LOG_DIR / f"{case_id}.log"
-        src_ucdb = resolve_ucdb_path(case_id)
-        dst_log = REPORT_LOG_DIR / f"{case_id}_{RTL_VARIANT}_s{SEED}.log"
-        dst_ucdb = REPORT_COV_DIR / f"{case_id}_s{SEED}.ucdb"
+    for case_artifact in case_artifacts:
+        legacy_name = case_artifact["legacy_test_name"]
+        report_case_id = case_artifact["report_case_id"]
+        src_log = SIM_LOG_DIR / f"{legacy_name}.log"
+        src_ucdb = resolve_ucdb_path(legacy_name)
+        dst_log = REPORT_LOG_DIR / f"{report_case_id}_{RTL_VARIANT}_s{SEED}.log"
+        dst_ucdb = REPORT_COV_DIR / f"{report_case_id}_s{SEED}.ucdb"
         if src_log.is_file():
             dst_log.symlink_to(Path("..") / ".." / "sim_runs" / "logs" / src_log.name)
         if src_ucdb is not None and src_ucdb.is_file():
@@ -552,6 +603,9 @@ def build() -> dict:
     WORK_DIR.mkdir(parents=True, exist_ok=True)
 
     all_case_ids: list[str] = []
+    all_cases: list[dict] = []
+    report_artifacts: list[dict] = []
+    report_case_id_by_legacy: dict[str, str] = {}
     bucket_payloads: OrderedDict[str, dict] = OrderedDict()
     bucket_summary: list[dict] = []
     failed_cases: list[str] = []
@@ -572,30 +626,42 @@ def build() -> dict:
         for step, base_case in enumerate(cases, start=1):
             case = dict(base_case)
             case["bucket"] = bucket_name
-            case_id = case["full_case_id"]
+            legacy_test_name = case["full_case_id"]
             report_case_num = REPORT_CASE_BASE[bucket_name] + step - 1
-            report_case_desc = case_id.removeprefix("opq_")
-            case["legacy_test_name"] = case_id
-            case["report_case_id"] = (
+            report_case_desc = legacy_test_name.removeprefix("opq_")
+            report_case_id = (
                 f"{REPORT_CASE_TYPE[bucket_name]}_OPQ_{report_case_num:03d}_{report_case_desc}"
             )
-            all_case_ids.append(case_id)
-            log_path = SIM_LOG_DIR / f"{case_id}.log"
-            ucdb_path = resolve_ucdb_path(case_id)
+            case["legacy_test_name"] = legacy_test_name
+            case["test_name"] = legacy_test_name
+            case["report_case_id"] = report_case_id
+            case["case_id"] = report_case_id
+            case["full_case_id"] = report_case_id
+            report_case_id_by_legacy[legacy_test_name] = report_case_id
+            report_artifacts.append(
+                {
+                    "legacy_test_name": legacy_test_name,
+                    "report_case_id": report_case_id,
+                }
+            )
+            all_case_ids.append(report_case_id)
+            log_path = SIM_LOG_DIR / f"{legacy_test_name}.log"
+            ucdb_path = resolve_ucdb_path(legacy_test_name)
             log_exists, engine_ok, log_summary = extract_log_summary(log_path)
             has_ucdb = ucdb_path is not None
             implemented = log_exists and has_ucdb
             if not implemented:
-                unimplemented_cases.append(case_id)
+                unimplemented_cases.append(report_case_id)
                 case["implemented"] = False
                 case["passed"] = False
                 case["log_summary"] = log_summary
                 bucket_cases.append(case)
-                failed_cases.append(case_id)
+                all_cases.append(case)
+                failed_cases.append(report_case_id)
                 continue
 
             if not engine_ok:
-                stale_artifacts.append(case_id)
+                stale_artifacts.append(report_case_id)
 
             standalone_cov = code_cov_for_ucdb(ucdb_path)
             case["implemented"] = True
@@ -617,8 +683,9 @@ def build() -> dict:
                 merge_trace.append(
                     {
                         "step": step,
-                        "case_id": case_id,
-                        "full_case_id": case_id,
+                        "case_id": report_case_id,
+                        "full_case_id": report_case_id,
+                        "legacy_test_name": legacy_test_name,
                         "merged_total_after_case": flatten_pct(merged_after),
                     }
                 )
@@ -628,9 +695,10 @@ def build() -> dict:
                 case["bucket_gain_by_case"] = flatten_pct({metric: {"pct": 0.0} for metric in METRIC_MAP.values()})
                 case["bucket_merged_total_after_case"] = flatten_pct(bucket_merged_cov_before or {})
                 case["bucket_gain_per_txn"] = dict(case["bucket_gain_by_case"])
-                failed_cases.append(case_id)
+                failed_cases.append(report_case_id)
 
             bucket_cases.append(case)
+            all_cases.append(case)
 
         bucket_merged_cov = bucket_merged_cov_before or {metric: {"pct": 0.0} for metric in METRIC_MAP.values()}
         bucket_functional_cov = {"pct": 0.0, "evidenced": evidenced_cases, "planned": len(cases)}
@@ -651,6 +719,7 @@ def build() -> dict:
             "merged_bucket_total": flatten_pct(bucket_merged_cov),
             "functional_coverage": bucket_functional_cov,
             "merge_trace": merge_trace,
+            "ordered_case_ids": [case["full_case_id"] for case in bucket_cases],
             "cases": bucket_cases,
         }
         bucket_payloads[bucket_name] = bucket_payload
@@ -662,11 +731,12 @@ def build() -> dict:
                 "merged_bucket_total": flatten_pct(bucket_merged_cov),
                 "merged_all_buckets_total_after_bucket": flatten_pct(global_after_bucket or {}),
                 "functional_coverage": bucket_functional_cov,
+                "ordered_case_ids": [case["full_case_id"] for case in bucket_cases],
             }
         )
         global_merged_cov_before = global_after_bucket
 
-    stage_report_artifacts(all_case_ids)
+    stage_report_artifacts(report_artifacts)
 
     merged_total_cov = flatten_pct(global_merged_cov_before or {})
     total_functional_cov = {"pct": 0.0, "evidenced": all_passed_cases, "planned": len(all_case_ids)}
@@ -677,6 +747,14 @@ def build() -> dict:
         total_functional_cov["planned"] = len(all_case_ids)
 
     signoff_runs = build_signoff_runs()
+    bucket_frame_order = [
+        {
+            "bucket": bucket_name,
+            "report_case_id": report_case_id_by_legacy[legacy_name],
+            "legacy_test_name": legacy_name,
+        }
+        for bucket_name, legacy_name in BUCKET_FRAME_LEGACY_ORDER
+    ]
 
     return {
         "report_title": "packet_scheduler ordered_priority_queue native_sv",
@@ -694,6 +772,28 @@ def build() -> dict:
         "case_id_policy": {
             "mode": "alias_map",
             "summary": "DV report keeps the live UVM class names as evidence anchors and carries stable report_case_id aliases in JSON.",
+            "aliases": [
+                {
+                    "bucket": case["bucket"],
+                    "report_case_id": case["report_case_id"],
+                    "legacy_test_name": case["legacy_test_name"],
+                }
+                for case in all_cases
+            ],
+        },
+        "coverage_category_status": {
+            "supported_with_targets": {
+                "stmt": "supported in the native-SV Questa flow; tracked against the 95% workflow target",
+                "branch": "supported in the native-SV Questa flow; tracked against the 90% workflow target",
+                "fsm_state": "supported in the native-SV Questa flow; tracked against the 95% workflow target",
+                "fsm_trans": "supported in the native-SV Questa flow; tracked against the 90% workflow target",
+                "toggle": "supported in the native-SV Questa flow; tracked against the 80% workflow target",
+            },
+            "supported_without_hard_target": {
+                "cond": "supported in the native-SV Questa flow and reported explicitly even though the workflow does not impose a fixed threshold",
+                "expr": "supported in the native-SV Questa flow and reported explicitly even though the workflow does not impose a fixed threshold",
+            },
+            "unsupported": {},
         },
         "failed_cases": failed_cases,
         "implementation_summary": {
@@ -708,7 +808,31 @@ def build() -> dict:
             "mode_scope": "MERGING mode only is claimed in the active native-SV report",
             "n_shd_scope": "native-SV signoff claim covers OPQ_N_SHD = 128 / 256 / 512 only",
             "four_lane_status": "4-lane native-SV remains out of signoff scope until the sparse-frame cadence bug in BUG_HISTORY.md is closed",
+            "continuous_frame_scope": "continuous-frame baselines currently cover the default-build promoted matrix only; PARAM build points require separate elaboration and are excluded from no-restart baselines",
         },
+        "execution_modes": {
+            "isolated": {
+                "bucket_order": list(BUCKET_CASES.keys()),
+                "per_bucket_case_order": {
+                    bucket_name: [case["full_case_id"] for case in bucket_payload["cases"]]
+                    for bucket_name, bucket_payload in bucket_payloads.items()
+                },
+            },
+            "bucket_frame": {
+                "run_id": "bucket_frame_native_sv",
+                "bucket_order": BUCKET_FRAME_BUCKET_ORDER,
+                "ordered_steps": bucket_frame_order,
+                "limitations": SIGNOFF_RUN_SPECS[0]["limitations"],
+            },
+            "all_buckets_frame": {
+                "run_id": "all_buckets_frame_native_sv",
+                "bucket_order": BUCKET_FRAME_BUCKET_ORDER,
+                "ordered_steps": bucket_frame_order,
+                "extra_tail_steps": ALL_BUCKETS_FRAME_EXTRA_TAIL,
+                "limitations": SIGNOFF_RUN_SPECS[1]["limitations"],
+            },
+        },
+        "cases": all_cases,
         "bucket_summary": bucket_summary,
         "buckets": bucket_payloads,
         "totals": {

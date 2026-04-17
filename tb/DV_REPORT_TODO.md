@@ -49,11 +49,10 @@ comparison path, but it must not contribute to final signoff evidence.
         `opq_cross_drr_bursty_random_test`,
         `opq_error_header_mask_recovery_test`,
         `opq_error_ftable_overflow_test`
-- [ ] Write the explicit non-claims in `DV_REPORT.json` / `DV_COV.md` so the
+- [x] Write the explicit non-claims in `DV_REPORT.json` / `DV_COV.md` so the
       dashboard does not imply closure on unsupported sweeps.
-      Status: `DV_REPORT.json` now carries structured signoff scope and
-      exclusions; top-level `DV_COV.md` still needs the same scope surfaced
-      directly on the dashboard page.
+      Status: both generated top-level pages now surface signoff scope,
+      exclusions, and current continuous-frame non-claims directly from JSON.
 
 ## 2. Create The Mandatory dv-workflow Report Scaffold
 
@@ -67,16 +66,19 @@ comparison path, but it must not contribute to final signoff evidence.
       - `packet_scheduler/tb/REPORT/txn_growth/`
 - [x] Add a repo-local wrapper to regenerate the report, for example
       `packet_scheduler/tb/scripts/gen_dv_report.sh`, which calls
-      `~/.codex/skills/dv-workflow/scripts/dv_report_gen.py --tb packet_scheduler/tb`.
+      the repo-local `packet_scheduler/tb/scripts/dv_report_gen_local.py`
+      wrapper after rebuilding `DV_REPORT.json`.
 - [x] Keep `DV_REPORT.md` one-screen-per-bucket and move per-case detail into
       `REPORT/`.
 
 ## 3. Normalize Case Inventory And Naming
 
-- [ ] Convert the promoted testcase catalog into stable report case IDs that
+- [x] Convert the promoted testcase catalog into stable report case IDs that
       follow the `TYPE_MODULE_ID_description` rule from `dv-workflow`.
-- [ ] Decide whether the UVM class names will be renamed, or whether the report
+- [x] Decide whether the UVM class names will be renamed, or whether the report
       will carry an alias map from legacy test names to compliant case IDs.
+      Decision: keep live UVM testcase names as evidence anchors and publish a
+      generated alias map to stable report case IDs.
 - [x] Build the per-bucket promoted list in JSON for:
       - `DV_BASIC`
       - `DV_PARAM`
@@ -113,7 +115,7 @@ comparison path, but it must not contribute to final signoff evidence.
       - ordered incremental bucket gain
       - ordered merged total after the case
       - per-transaction gain for random tests
-- [ ] Populate `DV_COV.md` with the required per-bucket ordering and merged
+- [x] Populate `DV_COV.md` with the required per-bucket ordering and merged
       totals for:
       - statement
       - branch
@@ -121,17 +123,17 @@ comparison path, but it must not contribute to final signoff evidence.
       - expression
       - FSM state / transition
       - toggle
-- [ ] Document unsupported categories explicitly instead of silently omitting
+- [x] Document unsupported categories explicitly instead of silently omitting
       them.
-- [ ] Preserve traceability from each bucket total back to the per-case rows in
+- [x] Preserve traceability from each bucket total back to the per-case rows in
       `REPORT/cases/` and `REPORT/buckets/`.
 - [ ] Capture coverage-hole disposition: real gap, justified exclusion,
       redundant case, or needs-new-test.
 
 ## 6. Implement Continuous-Frame Baselines
 
-- [ ] Define explicit bucket order and case order for `bucket_frame`.
-- [ ] Define explicit bucket order and case order for `all_buckets_frame`.
+- [x] Define explicit bucket order and case order for `bucket_frame`.
+- [x] Define explicit bucket order and case order for `all_buckets_frame`.
 - [x] Add runners for no-restart execution; the current scripts only cover
       isolated execution.
 - [x] Verify the scoreboard, reset handling, counters, and sequence plumbing can
@@ -185,22 +187,22 @@ comparison path, but it must not contribute to final signoff evidence.
 
 ## 10. Generate And Review The Final Report
 
-- [ ] Generate the report tree from `DV_REPORT.json`.
-- [ ] Verify that `DV_REPORT.md` is a chief-architect dashboard, not a testcase
+- [x] Generate the report tree from `DV_REPORT.json`.
+- [x] Verify that `DV_REPORT.md` is a chief-architect dashboard, not a testcase
       dump.
 - [ ] Verify that every bucket summary count matches the JSON and real evidence.
-- [ ] Verify that every case link resolves to an actual log, UCDB, and case
+- [x] Verify that every case link resolves to an actual log, UCDB, and case
       detail page.
-- [ ] Verify that `DV_COV.md` and `DV_REPORT.md` agree on bucket totals and
+- [x] Verify that `DV_COV.md` and `DV_REPORT.md` agree on bucket totals and
       execution-mode baselines.
 - [ ] Run one final native-SV regression pass before calling the report closed.
 
 ## Recommended Execution Order
 
-- [ ] Phase 1: freeze scope, create `DV_REPORT.json`, and add the generator
+- [x] Phase 1: freeze scope, create `DV_REPORT.json`, and add the generator
       wrapper.
-- [ ] Phase 2: rerun isolated promoted cases and populate per-case evidence.
-- [ ] Phase 3: compute incremental coverage and fill `DV_COV.md`.
+- [x] Phase 2: rerun isolated promoted cases and populate per-case evidence.
+- [x] Phase 3: compute incremental coverage and fill `DV_COV.md`.
 - [ ] Phase 4: implement `bucket_frame` and `all_buckets_frame`.
 - [ ] Phase 5: close or explicitly defer the open probe-only SV bugs.
 - [ ] Phase 6: generate `DV_REPORT.md` / `REPORT/` and review for signoff.

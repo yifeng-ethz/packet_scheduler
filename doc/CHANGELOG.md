@@ -69,6 +69,12 @@ Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 - **Verification / Coverage**: expanded the native covergroup model with configuration, frame/subheader shape, backpressure mode, CSR region access, credit snapshots, and lane/frame-table drop coverage. The promoted merged closure run uses the default configuration plus the reduced-depth overflow bucket (`OPQ_PAGE_RAM_DEPTH=512`) and reached `82.74%` total covergroup coverage on the current model.
 - **Verification / Probes**: added non-promoted probe tests for timestamp-boundary and larger burst-hit cases in the current tree. They are intentionally not part of the promoted closure set yet, because they expose remaining monolithic DUT limitations rather than stable signoff behavior.
 
+## 26.3.14.0417
+
+- **Packaging / Versioning**: aligned the active `packet_scheduler/VERSION`, catalog `_hw.tcl` revision, and native-SV CSR META identity stamp on `26.3.14.0417` so the packaged IP version no longer lags the exercised native-SV DUT image.
+- **Verification Reporting**: promoted the OPQ native-SV report flow to stable report case IDs with an explicit alias map back to the live UVM testcase names, plus generated signoff-scope / non-claim sections on the dashboard pages.
+- **Verification Reporting**: recorded the actual no-restart `bucket_frame` / `all_buckets_frame` ordering and limitations in generated markdown so the current continuous-frame evidence is explicit about default-build-only scope and the extra tail stress steps.
+
 ## 26.2.0.0413
 
 - **RTL / Packaging**: added a real Avalon-MM CSR slave to the monolithic OPQ. The packaged IP now exposes the common Mu3e `UID + META` identity header at CSR words `0x000/0x001`, a software `LANE_MASK` control register, a `CTRL` clear pulse, status/capability words, and a per-lane counter window.

@@ -1,35 +1,54 @@
 # ❌ bucket_frame_native_sv
 
-**Kind:** `bucket_frame` &nbsp; **Build:** `native_sv` &nbsp; **Bucket:** `-` &nbsp; **Sequence:** `OPQ_BUCKET_FRAME_NATIVE_SV`
+**Kind:** `bucket_frame` &nbsp; **Build:** `native_sv` &nbsp; **Sequence:** `OPQ_BUCKET_FRAME_NATIVE_SV`
 
 ## Summary
-
-<!-- field legend:
-  case_count              = number of plan cases composed into this run
-  effort                  = practical (capped per case) or extensive (full planned stress)
-  iter_cap, payload_cap   = practical-mode budget caps
-  txns                    = total transactions driven through the DUT in this run
-  functional_cross_pct    = functional coverage against DV_CROSS.md (percent)
-  queued_overlap          = transactions enqueued before the previous drained
-  counter_checks_failed   = scoreboard counter mismatches observed (0 is required for pass)
-  unexpected_outputs      = outputs the scoreboard did not predict
--->
 
 | status | field | value |
 |:---:|---|---|
 | ℹ️ | case_count | `24` |
 | ℹ️ | effort | `practical` |
-| ℹ️ | iter_cap | `None` |
-| ℹ️ | payload_cap | `None` |
 | ℹ️ | txns | `202` |
 | ❌ | functional_cross_pct | `78.11` |
-| ℹ️ | queued_overlap | `0` |
 | ❌ | counter_checks_failed | `1` |
 | ✅ | unexpected_outputs | `0` |
+| ⚠️ | limitation | PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime. |
+| ⚠️ | limitation | opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow. |
+
+## Execution Order
+
+### bucket_frame
+
+- bucket_order: `BASIC`, `EDGE`, `PROF`, `ERROR`, `CROSS`
+- ordered_steps:
+  `BASIC` -> [`STD_OPQ_001_basic_smoke_test`](../cases/STD_OPQ_001_basic_smoke_test.md) (`opq_basic_smoke_test`)
+  `BASIC` -> [`STD_OPQ_002_basic_ts_boundary_test`](../cases/STD_OPQ_002_basic_ts_boundary_test.md) (`opq_basic_ts_boundary_test`)
+  `BASIC` -> [`STD_OPQ_004_basic_feb_packet_contract_test`](../cases/STD_OPQ_004_basic_feb_packet_contract_test.md) (`opq_basic_feb_packet_contract_test`)
+  `BASIC` -> [`STD_OPQ_003_basic_subheader_shape_test`](../cases/STD_OPQ_003_basic_subheader_shape_test.md) (`opq_basic_subheader_shape_test`)
+  `EDGE` -> [`CORNER_OPQ_201_edge_backpressure_test`](../cases/CORNER_OPQ_201_edge_backpressure_test.md) (`opq_edge_backpressure_test`)
+  `EDGE` -> [`CORNER_OPQ_202_edge_always_ready_test`](../cases/CORNER_OPQ_202_edge_always_ready_test.md) (`opq_edge_always_ready_test`)
+  `EDGE` -> [`CORNER_OPQ_203_edge_ready_medium_profile_test`](../cases/CORNER_OPQ_203_edge_ready_medium_profile_test.md) (`opq_edge_ready_medium_profile_test`)
+  `EDGE` -> [`CORNER_OPQ_204_edge_stuck_low_backpressure_test`](../cases/CORNER_OPQ_204_edge_stuck_low_backpressure_test.md) (`opq_edge_stuck_low_backpressure_test`)
+  `EDGE` -> [`CORNER_OPQ_205_edge_max_hits_test`](../cases/CORNER_OPQ_205_edge_max_hits_test.md) (`opq_edge_max_hits_test`)
+  `EDGE` -> [`CORNER_OPQ_206_edge_toggle_backpressure_test`](../cases/CORNER_OPQ_206_edge_toggle_backpressure_test.md) (`opq_edge_toggle_backpressure_test`)
+  `PROF` -> [`COMBO_OPQ_301_prof_stress_test`](../cases/COMBO_OPQ_301_prof_stress_test.md) (`opq_prof_stress_test`)
+  `PROF` -> [`COMBO_OPQ_302_prof_lane_skew_test`](../cases/COMBO_OPQ_302_prof_lane_skew_test.md) (`opq_prof_lane_skew_test`)
+  `PROF` -> [`COMBO_OPQ_303_prof_whole_frame_skew_test`](../cases/COMBO_OPQ_303_prof_whole_frame_skew_test.md) (`opq_prof_whole_frame_skew_test`)
+  `PROF` -> [`COMBO_OPQ_304_prof_missing_empty_frame_test`](../cases/COMBO_OPQ_304_prof_missing_empty_frame_test.md) (`opq_prof_missing_empty_frame_test`)
+  `ERROR` -> [`CORNER_OPQ_401_error_lane_mask_test`](../cases/CORNER_OPQ_401_error_lane_mask_test.md) (`opq_error_lane_mask_test`)
+  `ERROR` -> [`CORNER_OPQ_402_error_lane_mask_single_hit_test`](../cases/CORNER_OPQ_402_error_lane_mask_single_hit_test.md) (`opq_error_lane_mask_single_hit_test`)
+  `ERROR` -> [`CORNER_OPQ_403_error_lane_mask_burst_test`](../cases/CORNER_OPQ_403_error_lane_mask_burst_test.md) (`opq_error_lane_mask_burst_test`)
+  `ERROR` -> [`CORNER_OPQ_404_error_lane_mask_recovery_test`](../cases/CORNER_OPQ_404_error_lane_mask_recovery_test.md) (`opq_error_lane_mask_recovery_test`)
+  `ERROR` -> [`CORNER_OPQ_405_error_subheader_mask_recovery_test`](../cases/CORNER_OPQ_405_error_subheader_mask_recovery_test.md) (`opq_error_subheader_mask_recovery_test`)
+  `CROSS` -> [`COMBO_OPQ_501_cross_bp_credit_test`](../cases/COMBO_OPQ_501_cross_bp_credit_test.md) (`opq_cross_bp_credit_test`)
+  `CROSS` -> [`COMBO_OPQ_502_cross_drr_allowance_test`](../cases/COMBO_OPQ_502_cross_drr_allowance_test.md) (`opq_cross_drr_allowance_test`)
+  `CROSS` -> [`COMBO_OPQ_503_cross_drr_idle_lane_test`](../cases/COMBO_OPQ_503_cross_drr_idle_lane_test.md) (`opq_cross_drr_idle_lane_test`)
+  `CROSS` -> [`COMBO_OPQ_504_cross_drr_zero_allowance_test`](../cases/COMBO_OPQ_504_cross_drr_zero_allowance_test.md) (`opq_cross_drr_zero_allowance_test`)
+  `CROSS` -> [`COMBO_OPQ_505_cross_drr_short_allowance_test`](../cases/COMBO_OPQ_505_cross_drr_short_allowance_test.md) (`opq_cross_drr_short_allowance_test`)
+- limitation: PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.
+- limitation: opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow.
 
 ## Code coverage
-
-<!-- merged code coverage produced by this single run (not ordered-merged into any bucket). -->
 
 | metric | pct |
 |---|---|
@@ -42,9 +61,6 @@
 | toggle | 54.54 |
 
 ## Transaction growth curve
-
-<!-- each row is one transaction step: which planned case fired, current functional-cross percent, -->
-<!-- delta_bins = number of new cross bins hit at this step; reason = scoreboard checkpoint trigger. -->
 
 ❓ no curve data available for this run.
 
