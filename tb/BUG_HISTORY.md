@@ -22,7 +22,7 @@
 - Fix status:
   - open
 - Fix commit:
-  - `6b9ed41` `Fix native SV OPQ CSR plane and CSR proof traffic`
+  - pending
 
 
 ## 2026-04-17 Native SV empty-frame drain replays trailer-only packets
@@ -84,4 +84,4 @@
 - Fix status:
   - fixed
 - Fix commit:
-  - pending
+  - `6b9ed41` `Fix native SV OPQ CSR plane and CSR proof traffic`
