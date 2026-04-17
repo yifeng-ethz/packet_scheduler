@@ -152,15 +152,16 @@ comparison path, but it must not contribute to final signoff evidence.
 
 - [x] Identify which promoted cases are random and require checkpoint growth
       curves.
-      Result: the active promoted native-SV signoff set is directed-only, so
-      there are no promoted random cases that require checkpoint UCDB growth
-      tracking in the current report.
+      Result: `opq_cross_mixed_bucket_random_soak_test` is now a promoted
+      native-SV random signoff case and is recorded as such in the generated
+      report set.
 - [x] Add checkpoint-UCDB collection for those cases.
-      Result: not applicable for the current promoted set because there are no
-      promoted random cases.
+      Result: the current flow still saves only the final UCDB for
+      `opq_cross_mixed_bucket_random_soak_test`; the required txn-growth page
+      exists and explicitly records the missing checkpoint-UCDB limitation.
 - [x] Generate `REPORT/txn_growth/<case_id>.md` for each promoted random case.
-      Result: the generated `REPORT/txn_growth/README.md` now states the
-      directed-only status explicitly.
+      Result: `REPORT/txn_growth/COMBO_OPQ_507_cross_mixed_bucket_random_soak_test.md`
+      is generated and linked from `REPORT/txn_growth/README.md`.
 - [x] If checkpoint UCDBs are not yet practical, create the required pages
       anyway and state the limitation explicitly until the flow is implemented.
 
