@@ -1,6 +1,9 @@
 class opq_frame_signoff_base_test extends opq_base_test;
   `uvm_component_utils(opq_frame_signoff_base_test)
 
+  bit [15:0] no_restart_next_pkg_cnt_base[OPQ_N_LANE];
+  bit [47:0] no_restart_next_frame_ts_base;
+
   function new(string name = "opq_frame_signoff_base_test", uvm_component parent = null);
     super.new(name, parent);
   endfunction
@@ -17,9 +20,44 @@ class opq_frame_signoff_base_test extends opq_base_test;
     return 2500us;
   endfunction
 
+  task automatic reset_no_restart_identity();
+    no_restart_next_frame_ts_base = '0;
+    foreach (no_restart_next_pkg_cnt_base[lane]) begin
+      no_restart_next_pkg_cnt_base[lane] = '0;
+    end
+  endtask
+
+  task automatic configure_no_restart_sequence(opq_virtual_sequence_base seq);
+    seq.configure_continuous_frame(no_restart_next_pkg_cnt_base, no_restart_next_frame_ts_base);
+    `uvm_info(get_type_name(), $sformatf(
+      "No-restart identity for %s: frame_ts_base=0x%012h lane0_pkg_base=%0d lane1_pkg_base=%0d",
+      seq.get_name(),
+      no_restart_next_frame_ts_base,
+      no_restart_next_pkg_cnt_base[0],
+      (OPQ_N_LANE > 1) ? no_restart_next_pkg_cnt_base[1] : '0
+    ), UVM_LOW)
+  endtask
+
+  task automatic advance_no_restart_sequence(opq_virtual_sequence_base seq);
+    bit [47:0] frame_duration_cycles;
+    int unsigned frame_slots_emitted;
+
+    frame_duration_cycles = 48'(OPQ_N_SHD * 16);
+    frame_slots_emitted = seq.get_continuous_frame_slots_emitted();
+    foreach (no_restart_next_pkg_cnt_base[lane]) begin
+      no_restart_next_pkg_cnt_base[lane] = seq.get_next_pkg_cnt_base(lane);
+    end
+    if (seq.continuous_frame_emits_egress_frames()) begin
+      no_restart_next_frame_ts_base = no_restart_next_frame_ts_base +
+        (frame_duration_cycles * frame_slots_emitted);
+    end
+  endtask
+
   task automatic run_vseq(opq_virtual_sequence_base seq, time inter_case_gap = 2us);
+    configure_no_restart_sequence(seq);
     `uvm_info(get_type_name(), $sformatf("Starting no-restart case %s", seq.get_name()), UVM_LOW)
     seq.start(env.vseqr);
+    advance_no_restart_sequence(seq);
     wait_for_credit_restore($sformatf("%s_credit_restore", seq.get_name()));
     #(inter_case_gap);
   endtask
@@ -43,6 +81,7 @@ class opq_frame_signoff_base_test extends opq_base_test;
     bp_item.repeat_count = repeat_count;
     bp_seq.items.push_back(bp_item);
 
+    configure_no_restart_sequence(seq);
     fork
       seq.start(env.vseqr);
       begin
@@ -50,6 +89,7 @@ class opq_frame_signoff_base_test extends opq_base_test;
         bp_seq.start(env.vseqr.egress_seqr);
       end
     join
+    advance_no_restart_sequence(seq);
     wait_for_credit_restore($sformatf("%s_credit_restore", seq.get_name()));
     #2us;
   endtask
@@ -62,8 +102,10 @@ class opq_frame_signoff_base_test extends opq_base_test;
     mask_word[OPQ_N_LANE-1:0] = {OPQ_N_LANE{1'b1}};
     csr_write32(OPQ_CSR_WORD_LANE_MASK, mask_word);
     $cast(seq, seq_type.create_object($sformatf("masked_seq_%0t", $time)));
+    configure_no_restart_sequence(seq);
     `uvm_info(get_type_name(), $sformatf("Starting no-restart case %s", seq.get_name()), UVM_LOW)
     seq.start(env.vseqr);
+    advance_no_restart_sequence(seq);
     #5us;
     csr_write32(OPQ_CSR_WORD_LANE_MASK, 32'h0000_0000);
     wait_for_credit_restore($sformatf("%s_credit_restore", seq.get_name()));
@@ -145,8 +187,10 @@ class opq_frame_signoff_base_test extends opq_base_test;
     csr_write32(OPQ_CSR_WORD_LANE_MASK, mask_word);
     masked_seq = opq_masked_drop_virtual_sequence::type_id::create("masked_seq");
     recovery_seq = opq_basic_virtual_sequence::type_id::create("recovery_seq");
+    configure_no_restart_sequence(masked_seq);
     `uvm_info(get_type_name(), $sformatf("Starting no-restart case %s", masked_seq.get_name()), UVM_LOW)
     masked_seq.start(env.vseqr);
+    advance_no_restart_sequence(masked_seq);
     #5us;
     csr_write32(OPQ_CSR_WORD_LANE_MASK, 32'h0000_0000);
     wait_for_credit_restore($sformatf("%s_credit_restore", masked_seq.get_name()));
@@ -172,6 +216,7 @@ class opq_frame_signoff_base_test extends opq_base_test;
     bp_seq.items.push_back(bp_item);
     soak_seq = opq_soak_virtual_sequence::type_id::create("bp_credit_seq");
     soak_seq.frame_count = 6;
+    configure_no_restart_sequence(soak_seq);
     fork
       soak_seq.start(env.vseqr);
       begin
@@ -179,6 +224,7 @@ class opq_frame_signoff_base_test extends opq_base_test;
         bp_seq.start(env.vseqr.egress_seqr);
       end
     join
+    advance_no_restart_sequence(soak_seq);
     wait_for_credit_restore("bp_credit_seq_credit_restore");
     #2us;
 
@@ -216,6 +262,7 @@ class opq_frame_signoff_base_test extends opq_base_test;
   endtask
 
   task automatic run_promoted_default_build_matrix();
+    reset_no_restart_identity();
     csr_clear_counters();
     csr_write32(OPQ_CSR_WORD_LANE_MASK, 32'h0000_0000);
     run_basic_bucket();

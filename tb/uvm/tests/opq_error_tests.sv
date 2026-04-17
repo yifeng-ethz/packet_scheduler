@@ -463,12 +463,8 @@ class opq_error_subheader_mask_recovery_test extends opq_base_test;
   virtual task run_post_sequence_checks();
     super.run_post_sequence_checks();
     for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
-      sample_lane_credit_snapshot(lane, 1'b1);
-      sample_lane_drop_snapshot(lane);
+      check_lane_no_drop_and_credit(lane);
     end
-    expect_csr_value("ft_drop_hdr", OPQ_CSR_WORD_FT_DROP_HDR, 0);
-    expect_csr_value("ft_drop_shd", OPQ_CSR_WORD_FT_DROP_SHD, 0);
-    expect_csr_value("ft_drop_hit", OPQ_CSR_WORD_FT_DROP_HIT, 0);
-    sample_frame_table_drop_snapshot();
+    check_frame_table_counts();
   endtask
 endclass

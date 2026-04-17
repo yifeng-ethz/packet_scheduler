@@ -45,8 +45,76 @@ class opq_virtual_sequence_base extends uvm_sequence #(uvm_sequence_item);
 
   static bit [63:0] next_debug_hit_id = 64'd1;
 
+  bit continuous_frame_mode;
+  bit [15:0] continuous_pkg_cnt_base[OPQ_N_LANE];
+  bit [15:0] continuous_next_pkg_cnt_base[OPQ_N_LANE];
+  bit [47:0] continuous_frame_ts_base;
+  bit        continuous_lane_seen[OPQ_N_LANE];
+  int unsigned continuous_frame_slots_emitted;
+
   function new(string name = "opq_virtual_sequence_base");
     super.new(name);
+    reset_continuous_frame_context();
+  endfunction
+
+  function void reset_continuous_frame_context();
+    continuous_frame_mode = 1'b0;
+    continuous_frame_ts_base = '0;
+    continuous_frame_slots_emitted = 0;
+    foreach (continuous_pkg_cnt_base[i]) begin
+      continuous_pkg_cnt_base[i] = '0;
+      continuous_next_pkg_cnt_base[i] = '0;
+      continuous_lane_seen[i] = 1'b0;
+    end
+  endfunction
+
+  function void configure_continuous_frame(
+    input bit [15:0] pkg_cnt_base[OPQ_N_LANE],
+    input bit [47:0] frame_ts_base
+  );
+    reset_continuous_frame_context();
+    continuous_frame_mode = 1'b1;
+    continuous_frame_ts_base = frame_ts_base;
+    foreach (continuous_pkg_cnt_base[i]) begin
+      continuous_pkg_cnt_base[i] = pkg_cnt_base[i];
+      continuous_next_pkg_cnt_base[i] = pkg_cnt_base[i];
+    end
+  endfunction
+
+  function automatic bit [15:0] get_next_pkg_cnt_base(int lane_id);
+    return continuous_next_pkg_cnt_base[lane_id];
+  endfunction
+
+  function automatic int unsigned get_continuous_frame_slots_emitted();
+    return continuous_frame_slots_emitted;
+  endfunction
+
+  virtual function bit continuous_frame_emits_egress_frames();
+    return 1'b1;
+  endfunction
+
+  function automatic opq_frame_item finalize_frame_item(
+    opq_frame_item tr,
+    bit [15:0] local_pkg_cnt
+  );
+    int lane_id;
+    bit [7:0] shd_ts_offset;
+
+    lane_id = tr.lane_id;
+    if (continuous_frame_mode) begin
+      tr.frame_ts = tr.frame_ts + continuous_frame_ts_base;
+      tr.pkg_cnt = tr.pkg_cnt + continuous_pkg_cnt_base[lane_id];
+      shd_ts_offset = continuous_frame_ts_base[11:4];
+      foreach (tr.subheaders[i]) begin
+        tr.subheaders[i].shd_ts = tr.subheaders[i].shd_ts + shd_ts_offset;
+      end
+      if ((int'(local_pkg_cnt) + 1) > continuous_frame_slots_emitted) begin
+        continuous_frame_slots_emitted = int'(local_pkg_cnt) + 1;
+      end
+      continuous_lane_seen[lane_id] = 1'b1;
+      continuous_next_pkg_cnt_base[lane_id] = tr.pkg_cnt + 16'd1;
+    end
+    return tr;
   endfunction
 
   function automatic bit [7:0] abs_shd_ts(bit [47:0] frame_ts, int unsigned shd_slot_offset);
@@ -100,7 +168,7 @@ class opq_virtual_sequence_base extends uvm_sequence #(uvm_sequence_item);
       tr.subheaders.push_back(shd);
     end
 
-    return tr;
+    return finalize_frame_item(tr, pkg_cnt);
   endfunction
 
   function automatic opq_frame_item build_single_subheader_frame(
@@ -133,7 +201,7 @@ class opq_virtual_sequence_base extends uvm_sequence #(uvm_sequence_item);
       shd.hits.push_back(hit_desc);
     end
     tr.subheaders.push_back(shd);
-    return tr;
+    return finalize_frame_item(tr, pkg_cnt);
   endfunction
 
   function automatic opq_frame_item build_sparse_frame(
@@ -175,7 +243,7 @@ class opq_virtual_sequence_base extends uvm_sequence #(uvm_sequence_item);
       tr.subheaders.push_back(shd);
     end
 
-    return tr;
+    return finalize_frame_item(tr, pkg_cnt);
   endfunction
 
   function automatic opq_frame_item build_dense_frame(
@@ -218,7 +286,7 @@ class opq_virtual_sequence_base extends uvm_sequence #(uvm_sequence_item);
       tr.subheaders.push_back(shd);
     end
 
-    return tr;
+    return finalize_frame_item(tr, pkg_cnt);
   endfunction
 
   task automatic start_lane_frames(ref opq_frame_item lane0_frames[$], ref opq_frame_item lane1_frames[$]);
@@ -704,6 +772,10 @@ class opq_masked_drop_virtual_sequence extends opq_virtual_sequence_base;
     super.new(name);
   endfunction
 
+  virtual function bit continuous_frame_emits_egress_frames();
+    return 1'b0;
+  endfunction
+
   task body();
     opq_frame_item lane0_frames[$];
     opq_frame_item lane1_frames[$];
@@ -724,6 +796,10 @@ class opq_single_hit_masked_drop_virtual_sequence extends opq_virtual_sequence_b
 
   function new(string name = "opq_single_hit_masked_drop_virtual_sequence");
     super.new(name);
+  endfunction
+
+  virtual function bit continuous_frame_emits_egress_frames();
+    return 1'b0;
   endfunction
 
   task body();
@@ -757,6 +833,10 @@ class opq_burst_masked_drop_virtual_sequence extends opq_virtual_sequence_base;
     frame_count = 3;
     subheaders_per_frame = 4;
     hit_count_per_subheader = 8;
+  endfunction
+
+  virtual function bit continuous_frame_emits_egress_frames();
+    return 1'b0;
   endfunction
 
   task body();
@@ -877,7 +957,7 @@ class opq_subheader_error_recovery_virtual_sequence extends opq_virtual_sequence
     good_shd.shd_ts = 8'h02;
     tr.subheaders.push_back(good_shd);
 
-    return tr;
+    return finalize_frame_item(tr, pkg_cnt);
   endfunction
 
   task body();
