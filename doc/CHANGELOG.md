@@ -7,6 +7,12 @@ Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 - **Verification / Native-SV Formal SVA**: fixed the native ingress and block-mover SVA timing model to match the real DUT sampling points. Ingress pointer/write assertions now check the same-sampled `*_we`/`*_wptr` contract, and the mover/page-writer assertions now compare the registered page-RAM outputs against the previous cycle's selected source instead of the current combinational arbiter state.
 - **Verification / Fallback Status**: the default simulation-backed packet-formal plane status is now coherent on this host: ingress passes on `opq_basic_smoke_test` plus `opq_error_subheader_mask_recovery_test` at `N_SHD=256` / `TICKET_FIFO_DEPTH=512`, mover passes on the directed DRR tests, and egress passes on the directed backpressure tests. Intentionally contract-breaking ingress recovery cases (`opq_error_header_mask_recovery_test`, `opq_error_header_word_mask_recovery_test`) are explicitly left in the probe-only set instead of polluting the default fallback result.
 
+## 26.3.18.0418
+
+- **RTL / Native-SV Overwrite Recovery**: fixed the basic-presenter frame-table overwrite path so reduced-depth overwrite pressure no longer replays corrupted resident data at egress. The native-SV presenter now detects self-oversize frames before enqueue, flushes unread overwritten residents out of its metadata queue, and suppresses their completion bookkeeping instead of letting stale page-RAM contents drain as accepted traffic.
+- **RTL / Native-SV FT Drop Accounting**: wired frame-table overwrite-drop accounting from the monolithic presenter into the native-SV DUT CSR plane. `FT_DROP_HDR/SHD/HIT` counters now increment on the same overwrite / oversize events that retire resident metadata, which closes the reduced-depth `opq_error_ftable_overflow_test` contract on the live signoff path.
+- **Verification / Reduced-Depth Error Closure**: the isolated `OPQ_PAGE_RAM_DEPTH=512` overflow repro now passes cleanly with no malformed accepted egress, and guard reruns of `opq_basic_smoke_test` plus `opq_edge_stuck_low_backpressure_test` remain green after the overwrite/drop fix.
+
 ## 26.3.16.0417
 
 - **Verification / Bucket Promotion**: promoted additional native-SV passing cases into the active report inventory and no-restart baseline. The current directed signoff set now includes `opq_basic_single_active_lane_test`, `opq_edge_burst_restart_profile_test`, `opq_prof_long_soak_test`, and `opq_cross_idle_lane_backpressure_test`, and the fixed `bucket_frame` ordering expands from 24 to 28 composed steps.

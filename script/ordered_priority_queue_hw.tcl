@@ -37,15 +37,15 @@ proc is_power_of_two {value} {
 }
 
 # ────────────────────────────────────────────────────────────────────────────
-# Identity constants — packaged 2026-04-17
+# Identity constants — packaged 2026-04-18
 # ────────────────────────────────────────────────────────────────────────────
 # UID = ASCII "OPQM" (Ordered Priority Queue, Monolithic) = 0x4F50514D
 set IP_UID_DEFAULT_CONST        1330663757
 set VERSION_MAJOR_DEFAULT_CONST 26
 set VERSION_MINOR_DEFAULT_CONST 3
-set VERSION_PATCH_DEFAULT_CONST 15
-set BUILD_DEFAULT_CONST         417
-set VERSION_DATE_DEFAULT_CONST  20260417
+set VERSION_PATCH_DEFAULT_CONST 18
+set BUILD_DEFAULT_CONST         418
+set VERSION_DATE_DEFAULT_CONST  20260418
 # 32-bit packaged provenance stamp for this release family
 set VERSION_GIT_DEFAULT_CONST   192520084
 set INSTANCE_ID_DEFAULT_CONST   0

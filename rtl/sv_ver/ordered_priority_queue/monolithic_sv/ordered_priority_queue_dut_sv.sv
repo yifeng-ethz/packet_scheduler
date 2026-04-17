@@ -186,6 +186,10 @@ module ordered_priority_queue_dut_sv (
   logic native_new_frame_dbg;
   logic native_ft_wr_page_dbg;
   logic [15:0] native_ft_wr_hit_len_dbg;
+  logic native_ft_drop_valid_dbg;
+  logic [31:0] native_ft_drop_hdr_dbg;
+  logic [31:0] native_ft_drop_shd_dbg;
+  logic [31:0] native_ft_drop_hit_dbg;
   logic native_page_allocator_active_dbg;
   logic native_arbiter_active_dbg;
 
@@ -411,6 +415,10 @@ module ordered_priority_queue_dut_sv (
   assign native_new_frame_dbg = u_native.write_head_active_dbg && (u_native.write_meta_flow_dbg == 3'd0);
   assign native_ft_wr_page_dbg = u_native.write_page_active_dbg && u_native.page_we_dbg;
   assign native_ft_wr_hit_len_dbg = u_native.page_wdata_dbg[23:8];
+  assign native_ft_drop_valid_dbg = u_native.ft_drop_valid_dbg;
+  assign native_ft_drop_hdr_dbg = u_native.ft_drop_hdr_cnt_dbg;
+  assign native_ft_drop_shd_dbg = u_native.ft_drop_shd_cnt_dbg;
+  assign native_ft_drop_hit_dbg = u_native.ft_drop_hit_cnt_dbg;
   assign native_page_allocator_active_dbg = u_native.fetch_ticket_active_dbg ||
     u_native.write_head_active_dbg || u_native.write_tail_active_dbg || u_native.write_page_active_dbg;
   assign native_arbiter_active_dbg = |native_drr_req_dbg || |u_native.block_path_i.b2p_arb.sel_mask;
@@ -584,6 +592,11 @@ module ordered_priority_queue_dut_sv (
         if (native_ft_wr_page_dbg) begin
           csr_ft_wr_shd_cnt <= sat_add32(csr_ft_wr_shd_cnt, 32'd1);
           csr_ft_wr_hit_cnt <= sat_add32(csr_ft_wr_hit_cnt, {16'd0, native_ft_wr_hit_len_dbg});
+        end
+        if (native_ft_drop_valid_dbg) begin
+          csr_ft_drop_hdr_cnt <= sat_add32(csr_ft_drop_hdr_cnt, native_ft_drop_hdr_dbg);
+          csr_ft_drop_shd_cnt <= sat_add32(csr_ft_drop_shd_cnt, native_ft_drop_shd_dbg);
+          csr_ft_drop_hit_cnt <= sat_add32(csr_ft_drop_hit_cnt, native_ft_drop_hit_dbg);
         end
 
         csr_ft_rd_in_packet_v = csr_ft_rd_in_packet;

@@ -119,6 +119,10 @@ module ordered_priority_queue_monolithic_sv #(
   logic packet_complete_pulse_dbg;
   logic [1:0] packet_complete_presenter_delay_dbg;
   logic packet_complete_presenter_dbg;
+  logic ft_drop_valid_dbg;
+  logic [31:0] ft_drop_hdr_cnt_dbg;
+  logic [31:0] ft_drop_shd_cnt_dbg;
+  logic [31:0] ft_drop_hit_cnt_dbg;
 
   for (genvar m = 0; m < N_LANE; m++) begin : g_storage
     ticket_fifo #(
@@ -336,6 +340,10 @@ module ordered_priority_queue_monolithic_sv #(
     .packet_complete_i(packet_complete_presenter_dbg),
     .page_ram_rd_addr_o(page_ram_rd_addr_dbg),
     .page_ram_rd_data_i(page_ram_rd_data_dbg),
+    .ft_drop_valid_o(ft_drop_valid_dbg),
+    .ft_drop_hdr_cnt_o(ft_drop_hdr_cnt_dbg),
+    .ft_drop_shd_cnt_o(ft_drop_shd_cnt_dbg),
+    .ft_drop_hit_cnt_o(ft_drop_hit_cnt_dbg),
     .aso_egress_data(aso_egress_data),
     .aso_egress_valid(aso_egress_valid),
     .aso_egress_ready(aso_egress_ready),
