@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_sv
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.10
-// Date    : 20260414
-// Change  : Align native SV top defaults and staged blocks with the packaged OPQ release
+// Version : 26.3.13
+// Date    : 20260417
+// Change  : Wire the VHDL-style end-of-frame flush ack into the native SV staging path
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_sv #(
@@ -80,6 +80,8 @@ module ordered_priority_queue_monolithic_sv #(
   logic [N_LANE-1:0][47:0] ingress_running_ts_dbg;
   logic [N_LANE-1:0][5:0] ingress_dt_type_dbg;
   logic [N_LANE-1:0][15:0] ingress_feb_id_dbg;
+  logic [N_LANE-1:0] ingress_alert_eop_dbg;
+  logic [N_LANE-1:0] ingress_eop_flush_ack_dbg;
   logic [N_LANE-1:0][LANE_FIFO_ADDR_WIDTH-1:0] lane_credit_update;
   logic [N_LANE-1:0] lane_credit_update_valid;
   logic [N_LANE-1:0][TICKET_FIFO_ADDR_WIDTH-1:0] ticket_credit_update;
@@ -112,6 +114,9 @@ module ordered_priority_queue_monolithic_sv #(
   logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_wr_data_dbg;
   logic [PAGE_RAM_ADDR_WIDTH-1:0] page_ram_rd_addr_dbg;
   logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_rd_data_dbg;
+  logic packet_complete_pulse_dbg;
+  logic [1:0] packet_complete_presenter_delay_dbg;
+  logic packet_complete_presenter_dbg;
 
   for (genvar m = 0; m < N_LANE; m++) begin : g_storage
     ticket_fifo #(
@@ -182,6 +187,8 @@ module ordered_priority_queue_monolithic_sv #(
       .running_ts_dbg(ingress_running_ts_dbg[g]),
       .dt_type_dbg(ingress_dt_type_dbg[g]),
       .feb_id_dbg(ingress_feb_id_dbg[g]),
+      .alert_eop_state_o(ingress_alert_eop_dbg[g]),
+      .eop_flush_ack_i(ingress_eop_flush_ack_dbg[g]),
       .d_clk(d_clk),
       .d_reset(d_reset)
     );
@@ -206,6 +213,7 @@ module ordered_priority_queue_monolithic_sv #(
   ) page_allocator_i (
     .ingress_ticket_wptr(ingress_ticket_wptr),
     .ticket_fifos_rd_data_i(ticket_fifos_rd_data),
+    .ingress_alert_eop_i(ingress_alert_eop_dbg),
     .dt_type0(ingress_dt_type_dbg[0]),
     .feb_id0(ingress_feb_id_dbg[0]),
     .ingress_running_ts0(ingress_running_ts_dbg[0]),
@@ -215,6 +223,7 @@ module ordered_priority_queue_monolithic_sv #(
     .handle_waddr_o(handle_waddr_dbg),
     .handle_we_o(handle_we_dbg),
     .handle_wptr_o(handle_wptr_dbg),
+    .eop_flush_ack_o(ingress_eop_flush_ack_dbg),
     .page_we_o(page_we_dbg),
     .page_waddr_o(page_waddr_dbg),
     .page_wdata_o(page_wdata_dbg),
@@ -229,6 +238,7 @@ module ordered_priority_queue_monolithic_sv #(
     .frame_start_addr_o(frame_start_addr_dbg),
     .frame_shr_cnt_this_o(frame_shr_cnt_this_dbg),
     .frame_hit_cnt_this_o(frame_hit_cnt_this_dbg),
+    .packet_complete_pulse_o(packet_complete_pulse_dbg),
     .d_clk(d_clk),
     .d_reset(d_reset)
   );
@@ -278,6 +288,34 @@ module ordered_priority_queue_monolithic_sv #(
     .q(page_ram_rd_data_dbg)
   );
 
+  always_ff @(posedge d_clk) begin : proc_presenter_packet_complete_delay
+    if (d_reset) begin
+      packet_complete_presenter_delay_dbg <= '0;
+    end else begin
+      packet_complete_presenter_delay_dbg[0] <= packet_complete_pulse_dbg;
+      packet_complete_presenter_delay_dbg[1] <= packet_complete_presenter_delay_dbg[0];
+    end
+  end
+
+  assign packet_complete_presenter_dbg = packet_complete_presenter_delay_dbg[1];
+
+  always_ff @(posedge d_clk) begin : proc_native_trace
+    if ($test$plusargs("OPQ_NATIVE_TRACE_WR") && page_ram_we_dbg) begin
+      $display("[opq_native_wr] t=%0t addr=0x%0h data=0x%010h", $time, page_ram_wr_addr_dbg, page_ram_wr_data_dbg);
+    end
+    if ($test$plusargs("OPQ_NATIVE_TRACE_PKT")) begin
+      if (write_head_active_dbg && (write_meta_flow_dbg == 3'd0)) begin
+        $display("[opq_native_pkt] t=%0t new_frame addr=0x%0h shd_this=0x%0h hit_this=0x%0h", $time, frame_start_addr_dbg, frame_shr_cnt_this_dbg, frame_hit_cnt_this_dbg);
+      end
+      if (packet_complete_pulse_dbg) begin
+        $display("[opq_native_pkt] t=%0t alloc_complete", $time);
+      end
+      if (packet_complete_presenter_dbg) begin
+        $display("[opq_native_pkt] t=%0t presenter_complete", $time);
+      end
+    end
+  end
+
   ordered_priority_queue_monolithic_basic_presenter #(
     .N_LANE(N_LANE),
     .PAGE_RAM_DEPTH(PAGE_RAM_DEPTH),
@@ -291,7 +329,7 @@ module ordered_priority_queue_monolithic_sv #(
     .new_frame_raw_addr_i(frame_start_addr_dbg),
     .frame_shr_cnt_this_i(frame_shr_cnt_this_dbg),
     .frame_hit_cnt_this_i(frame_hit_cnt_this_dbg),
-    .packet_complete_i(write_tail_active_dbg && (write_meta_flow_dbg == 3'd3)),
+    .packet_complete_i(packet_complete_presenter_dbg),
     .page_ram_rd_addr_o(page_ram_rd_addr_dbg),
     .page_ram_rd_data_i(page_ram_rd_data_dbg),
     .aso_egress_data(aso_egress_data),

@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_basic_presenter
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.10
-// Date    : 20260414
-// Change  : Carry presenter timing and default-contract fixes into the native SV staging path
+// Version : 26.3.11
+// Date    : 20260417
+// Change  : Retire the trailer on time so the native basic presenter does not leak an extra tail beat
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_basic_presenter #(
@@ -67,22 +67,48 @@ module ordered_priority_queue_monolithic_basic_presenter #(
   logic [PAGE_RAM_DATA_WIDTH-1:0] output_data;
   page_ram_addr_t pkt_rd_word_cnt;
   page_ram_addr_t packet_length;
+  page_ram_addr_t launch_word_cnt;
   logic is_new_pkt_head;
   logic is_new_pkt_complete;
   logic output_is_trailer;
+  logic launch_is_trailer;
   logic advance_output_pipe;
+  logic retire_pending;
+  logic [PAGE_RAM_DATA_WIDTH-1:0] launch_data;
 
   always_comb begin
     is_new_pkt_head = (meta_wptr != meta_rptr);
     is_new_pkt_complete = (meta_pkt_wcnt != meta_pkt_rcnt);
     packet_length = meta_len[meta_rptr];
+    output_data = output_data_pipe[EGRESS_DELAY-1];
     output_is_trailer = 1'b0;
     if ((output_data[35:32] == 4'b0001) && (output_data[7:0] == K284)) begin
       output_is_trailer = 1'b1;
     end else if (packet_length == pkt_rd_word_cnt) begin
       output_is_trailer = 1'b1;
     end
+
     advance_output_pipe = aso_egress_ready || !output_data_valid[EGRESS_DELAY];
+    launch_word_cnt = pkt_rd_word_cnt;
+    if (output_data_valid[EGRESS_DELAY] && aso_egress_ready) begin
+      launch_word_cnt = pkt_rd_word_cnt + page_ram_addr_t'(1);
+    end
+
+    launch_data = output_data;
+    if (advance_output_pipe) begin
+      if (EGRESS_DELAY > 1) begin
+        launch_data = output_data_pipe[EGRESS_DELAY-2];
+      end else begin
+        launch_data = page_ram_rd_data_i;
+      end
+    end
+
+    launch_is_trailer = 1'b0;
+    if ((launch_data[35:32] == 4'b0001) && (launch_data[7:0] == K284)) begin
+      launch_is_trailer = 1'b1;
+    end else if (packet_length == launch_word_cnt) begin
+      launch_is_trailer = 1'b1;
+    end
 
     page_ram_rd_addr_o = page_ram_rptr;
 
@@ -90,7 +116,6 @@ module ordered_priority_queue_monolithic_basic_presenter #(
     if (presenter_state == FTABLE_PRESENTER_PRESENTING) begin
       aso_egress_valid = output_data_valid[EGRESS_DELAY];
     end
-    output_data = output_data_pipe[EGRESS_DELAY-1];
     aso_egress_data = output_data[PAGE_RAM_RD_WIDTH-1:0];
     aso_egress_startofpacket = aso_egress_valid && (output_data[35:32] == 4'b0001) && (output_data[7:0] == K285);
     aso_egress_endofpacket = aso_egress_valid && (output_data[35:32] == 4'b0001) && (output_data[7:0] == K284);
@@ -124,36 +149,45 @@ module ordered_priority_queue_monolithic_basic_presenter #(
           presenter_state <= FTABLE_PRESENTER_PRESENTING;
           page_ram_rptr <= meta_addr[meta_rptr];
           pkt_rd_word_cnt <= '0;
+          retire_pending <= 1'b0;
         end
       end
 
       FTABLE_PRESENTER_PRESENTING: begin
-        output_data_valid[0] <= 1'b1;
-        if (output_data_valid[EGRESS_DELAY] && aso_egress_ready) begin
-          pkt_rd_word_cnt <= pkt_rd_word_cnt + page_ram_addr_t'(1);
-        end
-        for (int i = 0; i < EGRESS_DELAY; i++) begin
-          output_data_valid[i+1] <= output_data_valid[i];
-        end
-        if (advance_output_pipe) begin
-          output_data_pipe[0] <= page_ram_rd_data_i;
-          for (int i = 0; i < EGRESS_DELAY-1; i++) begin
-            output_data_pipe[i+1] <= output_data_pipe[i];
-          end
-          page_ram_rptr <= page_ram_rptr + page_ram_addr_t'(1);
-        end
-
-        if (aso_egress_ready) begin
-          if (output_is_trailer) begin
+        if (retire_pending) begin
+          if (output_data_valid[EGRESS_DELAY] && aso_egress_ready) begin
             presenter_state <= FTABLE_PRESENTER_IDLE;
             output_data_valid <= '0;
             meta_pkt_rcnt <= meta_pkt_rcnt + meta_ptr_t'(1);
             meta_rptr <= meta_rptr + meta_ptr_t'(1);
+            retire_pending <= 1'b0;
           end
-        end else if (output_data_valid[EGRESS_DELAY]) begin
-          presenter_state <= FTABLE_PRESENTER_RESTART;
-          page_ram_rptr <= page_ram_rptr - page_ram_addr_t'(EGRESS_DELAY + 1);
-          output_data_valid <= '0;
+        end else begin
+          output_data_valid[0] <= 1'b1;
+          if (output_data_valid[EGRESS_DELAY] && aso_egress_ready) begin
+            pkt_rd_word_cnt <= pkt_rd_word_cnt + page_ram_addr_t'(1);
+          end
+          for (int i = 0; i < EGRESS_DELAY; i++) begin
+            output_data_valid[i+1] <= output_data_valid[i];
+          end
+          if (advance_output_pipe) begin
+            output_data_pipe[0] <= page_ram_rd_data_i;
+            for (int i = 0; i < EGRESS_DELAY-1; i++) begin
+              output_data_pipe[i+1] <= output_data_pipe[i];
+            end
+            page_ram_rptr <= page_ram_rptr + page_ram_addr_t'(1);
+          end
+
+          if (advance_output_pipe && launch_is_trailer) begin
+            output_data_valid <= '0;
+            output_data_valid[EGRESS_DELAY] <= 1'b1;
+            retire_pending <= 1'b1;
+          end else if (!aso_egress_ready && output_data_valid[EGRESS_DELAY]) begin
+            presenter_state <= FTABLE_PRESENTER_RESTART;
+            page_ram_rptr <= page_ram_rptr - page_ram_addr_t'(EGRESS_DELAY + 1);
+            output_data_valid <= '0;
+            retire_pending <= 1'b0;
+          end
         end
       end
 
@@ -196,6 +230,7 @@ module ordered_priority_queue_monolithic_basic_presenter #(
         output_data_pipe[i] <= '0;
       end
       pkt_rd_word_cnt <= '0;
+      retire_pending <= 1'b0;
     end
   end
 

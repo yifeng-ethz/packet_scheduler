@@ -1,8 +1,8 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_ingress_parser
-// Version : 26.0.0
-// Date    : 20260413
-// Change  : Extract monolithic ingress parser lane from VHDL into standalone SV
+// Version : 26.3.13
+// Date    : 20260417
+// Change  : Port the allocator flush-ack path so trailer alerts clear on empty-frame drains
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_ingress_parser #(
@@ -46,6 +46,8 @@ module ordered_priority_queue_monolithic_ingress_parser #(
   output logic [47:0]                                       running_ts_dbg,
   output logic [5:0]                                        dt_type_dbg,
   output logic [15:0]                                       feb_id_dbg,
+  output logic                                              alert_eop_state_o,
+  input  logic                                              eop_flush_ack_i,
   input  logic                                              d_clk,
   input  logic                                              d_reset
 );
@@ -197,6 +199,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
     running_ts_dbg = ingress_parser.running_ts;
     dt_type_dbg = ingress_parser.dt_type;
     feb_id_dbg = ingress_parser.feb_id;
+    alert_eop_state_o = ingress_parser.alert_eop;
   end
 
   always_ff @(posedge d_clk) begin : proc_ingress_parser
@@ -208,6 +211,9 @@ module ordered_priority_queue_monolithic_ingress_parser #(
     end
     if (ticket_credit_update_valid) begin
       ingress_parser.ticket_credit <= ingress_parser.ticket_credit + ticket_credit_update;
+    end
+    if (eop_flush_ack_i) begin
+      ingress_parser.alert_eop <= 1'b0;
     end
 
     unique case (ingress_parser_state)

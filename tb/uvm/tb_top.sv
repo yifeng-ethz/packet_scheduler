@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 // IP Name   : tb_top
 // Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
-// Revision  : 0.3 - add DRR arbiter SVA for the VHDL monolithic DUT path
+// Revision  : 0.4 - allow standalone OPQ UVM runs against the 4-lane VHDL image
 // Description:
 //   Top-level mixed-language OPQ UVM harness wrapper.
 //------------------------------------------------------------------------------
@@ -29,6 +29,12 @@ module tb_top;
     d_reset = 1'b0;
   end
 
+  initial begin
+    if (OPQ_N_LANE != 2 && OPQ_N_LANE != 4) begin
+      $fatal(1, "Unsupported OPQ_N_LANE=%0d in packet_scheduler/tb/uvm", OPQ_N_LANE);
+    end
+  end
+
   genvar i;
   generate
     for (i = 0; i < OPQ_N_LANE; i++) begin : gen_if_rst
@@ -40,13 +46,19 @@ module tb_top;
   assign drop_if.reset = d_reset;
 
 `ifndef OPQ_USE_NATIVE_SV
-  generate
-    for (i = 0; i < OPQ_N_LANE; i++) begin : gen_drop_tap
-      assign drop_if.valid[i] = dut.u_vhdl.u_impl.dbg_drop_valid[i];
+  if (OPQ_N_LANE == 2) begin : gen_drop_tap_2lane
+    for (i = 0; i < OPQ_N_LANE; i++) begin : gen_drop_lane
+      assign drop_if.valid[i] = gen_dut_2lane.dut.u_vhdl.u_impl.dbg_drop_valid[i];
       assign drop_if.shd_drop_cnt[i] = drop_if.valid[i] ? 16'd1 : 16'd0;
-      assign drop_if.hit_drop_cnt[i] = drop_if.valid[i] ? dut.u_vhdl.u_impl.dbg_drop_hit_cnt[(i*16) +: 16] : 16'd0;
+      assign drop_if.hit_drop_cnt[i] = drop_if.valid[i] ? gen_dut_2lane.dut.u_vhdl.u_impl.dbg_drop_hit_cnt[(i*16) +: 16] : 16'd0;
     end
-  endgenerate
+  end else begin : gen_drop_tap_4lane
+    for (i = 0; i < OPQ_N_LANE; i++) begin : gen_drop_lane
+      assign drop_if.valid[i] = gen_dut_4lane.dut4.u_impl.dbg_drop_valid[i];
+      assign drop_if.shd_drop_cnt[i] = drop_if.valid[i] ? 16'd1 : 16'd0;
+      assign drop_if.hit_drop_cnt[i] = drop_if.valid[i] ? gen_dut_4lane.dut4.u_impl.dbg_drop_hit_cnt[(i*16) +: 16] : 16'd0;
+    end
+  end
 `else
   generate
     for (i = 0; i < OPQ_N_LANE; i++) begin : gen_drop_tap_stub
@@ -57,36 +69,126 @@ module tb_top;
   endgenerate
 `endif
 
-  ordered_priority_queue_dut_sv dut (
-    .asi_ingress_0_data(ingress_if[0].data),
-    .asi_ingress_0_valid(ingress_if[0].valid),
-    .asi_ingress_0_channel(ingress_if[0].channel),
-    .asi_ingress_0_startofpacket(ingress_if[0].startofpacket),
-    .asi_ingress_0_endofpacket(ingress_if[0].endofpacket),
-    .asi_ingress_0_error(ingress_if[0].error),
-    .asi_ingress_1_data(ingress_if[1].data),
-    .asi_ingress_1_valid(ingress_if[1].valid),
-    .asi_ingress_1_channel(ingress_if[1].channel),
-    .asi_ingress_1_startofpacket(ingress_if[1].startofpacket),
-    .asi_ingress_1_endofpacket(ingress_if[1].endofpacket),
-    .asi_ingress_1_error(ingress_if[1].error),
-    .aso_egress_data(egress_if.data),
-    .aso_egress_valid(egress_if.valid),
-    .aso_egress_ready(egress_if.ready),
-    .aso_egress_startofpacket(egress_if.startofpacket),
-    .aso_egress_endofpacket(egress_if.endofpacket),
-    .aso_egress_error(egress_if.error),
-    .avs_csr_address(csr_if.address),
-    .avs_csr_read(csr_if.read),
-    .avs_csr_write(csr_if.write),
-    .avs_csr_writedata(csr_if.writedata),
-    .avs_csr_readdata(csr_if.readdata),
-    .avs_csr_readdatavalid(csr_if.readdatavalid),
-    .avs_csr_waitrequest(csr_if.waitrequest),
-    .avs_csr_burstcount(csr_if.burstcount),
-    .d_clk(d_clk),
-    .d_reset(d_reset)
-  );
+  if (OPQ_N_LANE == 2) begin : gen_dut_2lane
+    ordered_priority_queue_dut_sv dut (
+      .asi_ingress_0_data(ingress_if[0].data),
+      .asi_ingress_0_valid(ingress_if[0].valid),
+      .asi_ingress_0_channel(ingress_if[0].channel),
+      .asi_ingress_0_startofpacket(ingress_if[0].startofpacket),
+      .asi_ingress_0_endofpacket(ingress_if[0].endofpacket),
+      .asi_ingress_0_error(ingress_if[0].error),
+      .asi_ingress_1_data(ingress_if[1].data),
+      .asi_ingress_1_valid(ingress_if[1].valid),
+      .asi_ingress_1_channel(ingress_if[1].channel),
+      .asi_ingress_1_startofpacket(ingress_if[1].startofpacket),
+      .asi_ingress_1_endofpacket(ingress_if[1].endofpacket),
+      .asi_ingress_1_error(ingress_if[1].error),
+      .aso_egress_data(egress_if.data),
+      .aso_egress_valid(egress_if.valid),
+      .aso_egress_ready(egress_if.ready),
+      .aso_egress_startofpacket(egress_if.startofpacket),
+      .aso_egress_endofpacket(egress_if.endofpacket),
+      .aso_egress_error(egress_if.error),
+      .avs_csr_address(csr_if.address),
+      .avs_csr_read(csr_if.read),
+      .avs_csr_write(csr_if.write),
+      .avs_csr_writedata(csr_if.writedata),
+      .avs_csr_readdata(csr_if.readdata),
+      .avs_csr_readdatavalid(csr_if.readdatavalid),
+      .avs_csr_waitrequest(csr_if.waitrequest),
+      .avs_csr_burstcount(csr_if.burstcount),
+      .d_clk(d_clk),
+      .d_reset(d_reset)
+    );
+  end else begin : gen_dut_4lane
+`ifdef OPQ_USE_NATIVE_SV
+    ordered_priority_queue_dut_sv dut4 (
+      .asi_ingress_0_data(ingress_if[0].data),
+      .asi_ingress_0_valid(ingress_if[0].valid),
+      .asi_ingress_0_channel(ingress_if[0].channel),
+      .asi_ingress_0_startofpacket(ingress_if[0].startofpacket),
+      .asi_ingress_0_endofpacket(ingress_if[0].endofpacket),
+      .asi_ingress_0_error(ingress_if[0].error),
+      .asi_ingress_1_data(ingress_if[1].data),
+      .asi_ingress_1_valid(ingress_if[1].valid),
+      .asi_ingress_1_channel(ingress_if[1].channel),
+      .asi_ingress_1_startofpacket(ingress_if[1].startofpacket),
+      .asi_ingress_1_endofpacket(ingress_if[1].endofpacket),
+      .asi_ingress_1_error(ingress_if[1].error),
+      .asi_ingress_2_data(ingress_if[2].data),
+      .asi_ingress_2_valid(ingress_if[2].valid),
+      .asi_ingress_2_channel(ingress_if[2].channel),
+      .asi_ingress_2_startofpacket(ingress_if[2].startofpacket),
+      .asi_ingress_2_endofpacket(ingress_if[2].endofpacket),
+      .asi_ingress_2_error(ingress_if[2].error),
+      .asi_ingress_3_data(ingress_if[3].data),
+      .asi_ingress_3_valid(ingress_if[3].valid),
+      .asi_ingress_3_channel(ingress_if[3].channel),
+      .asi_ingress_3_startofpacket(ingress_if[3].startofpacket),
+      .asi_ingress_3_endofpacket(ingress_if[3].endofpacket),
+      .asi_ingress_3_error(ingress_if[3].error),
+      .aso_egress_data(egress_if.data),
+      .aso_egress_valid(egress_if.valid),
+      .aso_egress_ready(egress_if.ready),
+      .aso_egress_startofpacket(egress_if.startofpacket),
+      .aso_egress_endofpacket(egress_if.endofpacket),
+      .aso_egress_error(egress_if.error),
+      .avs_csr_address(csr_if.address),
+      .avs_csr_read(csr_if.read),
+      .avs_csr_write(csr_if.write),
+      .avs_csr_writedata(csr_if.writedata),
+      .avs_csr_readdata(csr_if.readdata),
+      .avs_csr_readdatavalid(csr_if.readdatavalid),
+      .avs_csr_waitrequest(csr_if.waitrequest),
+      .avs_csr_burstcount(csr_if.burstcount),
+      .d_clk(d_clk),
+      .d_reset(d_reset)
+    );
+`else
+    ordered_priority_queue_dut4 dut4 (
+      .asi_ingress_0_data(ingress_if[0].data),
+      .asi_ingress_0_valid(ingress_if[0].valid),
+      .asi_ingress_0_channel(ingress_if[0].channel),
+      .asi_ingress_0_startofpacket(ingress_if[0].startofpacket),
+      .asi_ingress_0_endofpacket(ingress_if[0].endofpacket),
+      .asi_ingress_0_error(ingress_if[0].error),
+      .asi_ingress_1_data(ingress_if[1].data),
+      .asi_ingress_1_valid(ingress_if[1].valid),
+      .asi_ingress_1_channel(ingress_if[1].channel),
+      .asi_ingress_1_startofpacket(ingress_if[1].startofpacket),
+      .asi_ingress_1_endofpacket(ingress_if[1].endofpacket),
+      .asi_ingress_1_error(ingress_if[1].error),
+      .asi_ingress_2_data(ingress_if[2].data),
+      .asi_ingress_2_valid(ingress_if[2].valid),
+      .asi_ingress_2_channel(ingress_if[2].channel),
+      .asi_ingress_2_startofpacket(ingress_if[2].startofpacket),
+      .asi_ingress_2_endofpacket(ingress_if[2].endofpacket),
+      .asi_ingress_2_error(ingress_if[2].error),
+      .asi_ingress_3_data(ingress_if[3].data),
+      .asi_ingress_3_valid(ingress_if[3].valid),
+      .asi_ingress_3_channel(ingress_if[3].channel),
+      .asi_ingress_3_startofpacket(ingress_if[3].startofpacket),
+      .asi_ingress_3_endofpacket(ingress_if[3].endofpacket),
+      .asi_ingress_3_error(ingress_if[3].error),
+      .aso_egress_data(egress_if.data),
+      .aso_egress_valid(egress_if.valid),
+      .aso_egress_ready(egress_if.ready),
+      .aso_egress_startofpacket(egress_if.startofpacket),
+      .aso_egress_endofpacket(egress_if.endofpacket),
+      .aso_egress_error(egress_if.error),
+      .avs_csr_address(csr_if.address),
+      .avs_csr_read(csr_if.read),
+      .avs_csr_write(csr_if.write),
+      .avs_csr_writedata(csr_if.writedata),
+      .avs_csr_readdata(csr_if.readdata),
+      .avs_csr_readdatavalid(csr_if.readdatavalid),
+      .avs_csr_waitrequest(csr_if.waitrequest),
+      .avs_csr_burstcount(csr_if.burstcount),
+      .d_clk(d_clk),
+      .d_reset(d_reset)
+    );
+`endif
+  end
 
   generate
     for (i = 0; i < OPQ_N_LANE; i++) begin : gen_ingress_sva
@@ -135,29 +237,52 @@ module tb_top;
   );
 
 `ifndef OPQ_USE_NATIVE_SV
-  opq_drr_sva #(
-    .N_LANE(OPQ_N_LANE)
-  ) drr_sva (
-    .clk(d_clk),
-    .reset(d_reset),
-    .req_raw(dut.u_vhdl.u_impl.b2p_arb_req),
-    .req_eligible(dut.u_vhdl.u_impl.b2p_arb_req_eligible),
-    .gnt(dut.u_vhdl.u_impl.b2p_arb_gnt),
-    .sel_mask(dut.u_vhdl.u_impl.b2p_arb_sel_mask_dbg),
-    .lock_event(dut.u_vhdl.u_impl.b2p_arb_lock_event),
-    .defer_event(dut.u_vhdl.u_impl.b2p_arb_defer_event),
-    .locked(dut.u_vhdl.u_impl.b2p_arb_locked),
-    .pa_write(dut.u_vhdl.u_impl.b2p_arb_pa_write)
-  );
+  if (OPQ_N_LANE == 2) begin : gen_drr_sva_2lane
+    opq_drr_sva #(
+      .N_LANE(OPQ_N_LANE)
+    ) drr_sva (
+      .clk(d_clk),
+      .reset(d_reset),
+      .req_raw(gen_dut_2lane.dut.u_vhdl.u_impl.b2p_arb_req),
+      .req_eligible(gen_dut_2lane.dut.u_vhdl.u_impl.b2p_arb_req_eligible),
+      .gnt(gen_dut_2lane.dut.u_vhdl.u_impl.b2p_arb_gnt),
+      .sel_mask(gen_dut_2lane.dut.u_vhdl.u_impl.b2p_arb_sel_mask_dbg),
+      .lock_event(gen_dut_2lane.dut.u_vhdl.u_impl.b2p_arb_lock_event),
+      .defer_event(gen_dut_2lane.dut.u_vhdl.u_impl.b2p_arb_defer_event),
+      .locked(gen_dut_2lane.dut.u_vhdl.u_impl.b2p_arb_locked),
+      .pa_write(gen_dut_2lane.dut.u_vhdl.u_impl.b2p_arb_pa_write)
+    );
+  end else begin : gen_drr_sva_4lane
+    opq_drr_sva #(
+      .N_LANE(OPQ_N_LANE)
+    ) drr_sva (
+      .clk(d_clk),
+      .reset(d_reset),
+      .req_raw(gen_dut_4lane.dut4.u_impl.b2p_arb_req),
+      .req_eligible(gen_dut_4lane.dut4.u_impl.b2p_arb_req_eligible),
+      .gnt(gen_dut_4lane.dut4.u_impl.b2p_arb_gnt),
+      .sel_mask(gen_dut_4lane.dut4.u_impl.b2p_arb_sel_mask_dbg),
+      .lock_event(gen_dut_4lane.dut4.u_impl.b2p_arb_lock_event),
+      .defer_event(gen_dut_4lane.dut4.u_impl.b2p_arb_defer_event),
+      .locked(gen_dut_4lane.dut4.u_impl.b2p_arb_locked),
+      .pa_write(gen_dut_4lane.dut4.u_impl.b2p_arb_pa_write)
+    );
+  end
 `endif
+
+  generate
+    for (i = 0; i < OPQ_N_LANE; i++) begin : gen_cfg_db
+      initial begin
+        uvm_config_db#(virtual opq_ingress_if)::set(null, "*", $sformatf("ingress_vif_%0d", i), ingress_if[i]);
+      end
+    end
+  endgenerate
 
   initial begin
     opq_dut_cfg dut_cfg;
 
     csr_if.idle();
     dut_cfg = opq_dut_cfg::type_id::create("dut_cfg");
-    uvm_config_db#(virtual opq_ingress_if)::set(null, "*", "ingress_vif_0", ingress_if[0]);
-    uvm_config_db#(virtual opq_ingress_if)::set(null, "*", "ingress_vif_1", ingress_if[1]);
     uvm_config_db#(virtual opq_egress_if)::set(null, "*", "egress_vif", egress_if);
     uvm_config_db#(virtual opq_csr_if)::set(null, "*", "csr_vif", csr_if);
     uvm_config_db#(virtual opq_drop_if #(OPQ_N_LANE))::set(null, "*", "drop_vif", drop_if);
