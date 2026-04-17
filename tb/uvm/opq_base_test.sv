@@ -61,6 +61,12 @@ class opq_base_test extends uvm_test;
     env.coverage.sample_csr_access(1'b0, addr);
   endtask
 
+  task automatic csr_peek32(bit [8:0] addr, output bit [31:0] data);
+    logic [31:0] data_v;
+    csr_vif.read32(addr, data_v);
+    data = data_v;
+  endtask
+
   task automatic csr_clear_counters();
     csr_write32(OPQ_CSR_WORD_CTRL, 32'h0000_0001);
   endtask
@@ -180,25 +186,34 @@ class opq_base_test extends uvm_test;
 
   task automatic check_lane_drop_accounting_and_credit(int lane_id, bit require_full_credit = 1'b1);
     bit [8:0] lane_base;
+    bit [31:0] drop_hdr_word;
     bit [31:0] drop_shd_word;
     bit [31:0] drop_hit_word;
+    int unsigned accepted_hdr_cnt;
     lane_base = OPQ_CSR_LANE_REGION_BASE + lane_id * OPQ_CSR_LANE_REGION_STRIDE;
+    csr_read32(lane_base + 9'h006, drop_hdr_word);
     csr_read32(lane_base + 9'h007, drop_shd_word);
     csr_read32(lane_base + 9'h008, drop_hit_word);
     env.scoreboard.apply_lane_drop_totals(lane_id, drop_shd_word, drop_hit_word);
+    accepted_hdr_cnt = env.scoreboard.get_expected_lane_hdr_cnt(lane_id);
+    if (drop_hdr_word <= accepted_hdr_cnt) begin
+      accepted_hdr_cnt -= drop_hdr_word;
+    end else begin
+      accepted_hdr_cnt = 0;
+    end
     expect_csr_value($sformatf("lane%0d_wr_hdr", lane_id), lane_base + 9'h000,
-      env.scoreboard.get_expected_lane_hdr_cnt(lane_id));
+      accepted_hdr_cnt);
     expect_csr_value($sformatf("lane%0d_wr_shd", lane_id), lane_base + 9'h001,
       env.scoreboard.get_accepted_lane_shd_cnt(lane_id));
     expect_csr_value($sformatf("lane%0d_wr_hit", lane_id), lane_base + 9'h002,
       env.scoreboard.get_accepted_lane_hit_cnt(lane_id));
     expect_csr_value($sformatf("lane%0d_rd_hdr", lane_id), lane_base + 9'h003,
-      env.scoreboard.get_expected_lane_hdr_cnt(lane_id));
+      accepted_hdr_cnt);
     expect_csr_value($sformatf("lane%0d_rd_shd", lane_id), lane_base + 9'h004,
       env.scoreboard.get_accepted_lane_shd_cnt(lane_id));
     expect_csr_value($sformatf("lane%0d_rd_hit", lane_id), lane_base + 9'h005,
       env.scoreboard.get_accepted_lane_hit_cnt(lane_id));
-    expect_csr_value($sformatf("lane%0d_drop_hdr", lane_id), lane_base + 9'h006, 0);
+    expect_csr_value($sformatf("lane%0d_drop_hdr", lane_id), lane_base + 9'h006, drop_hdr_word);
     expect_csr_value($sformatf("lane%0d_drop_shd", lane_id), lane_base + 9'h007,
       env.scoreboard.get_dropped_lane_shd_cnt(lane_id));
     expect_csr_value($sformatf("lane%0d_drop_hit", lane_id), lane_base + 9'h008,
@@ -379,6 +394,54 @@ class opq_base_test extends uvm_test;
         sample_lane_credit_snapshot(lane, 1'b0);
       end
     end
+  endtask
+
+  task automatic wait_for_credit_restore(
+    string tag = "drain",
+    time timeout_t = 500us,
+    time poll_t = 500ns
+  );
+    bit drained;
+    int stable_samples;
+    time deadline;
+
+    deadline = $time + timeout_t;
+    stable_samples = 0;
+
+    while ($time < deadline) begin
+      drained = 1'b1;
+      for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+        bit [8:0] lane_base;
+        bit [31:0] lane_credit_word;
+        bit [31:0] ticket_credit_word;
+
+        lane_base = OPQ_CSR_LANE_REGION_BASE + lane * OPQ_CSR_LANE_REGION_STRIDE;
+        csr_peek32(lane_base + 9'h009, lane_credit_word);
+        csr_peek32(lane_base + 9'h00A, ticket_credit_word);
+        if ((lane_credit_word != OPQ_LANE_FIFO_MAX_CREDIT) ||
+            (ticket_credit_word != OPQ_TICKET_FIFO_MAX_CREDIT)) begin
+          drained = 1'b0;
+          break;
+        end
+      end
+
+      if (drained) begin
+        stable_samples++;
+        if (stable_samples >= 2) begin
+          return;
+        end
+      end else begin
+        stable_samples = 0;
+      end
+
+      #(poll_t);
+    end
+
+    `uvm_error(get_type_name(), $sformatf(
+      "%s timed out waiting for lane/ticket credit restore after %0t",
+      tag, timeout_t
+    ))
+    poll_lane_credits(4, 500ns);
   endtask
 
   task run_phase(uvm_phase phase);

@@ -22,6 +22,7 @@ class opq_env extends uvm_env;
   opq_scoreboard scoreboard;
   opq_coverage coverage;
   opq_virtual_sequencer vseqr;
+  uvm_tlm_analysis_fifo #(opq_frame_item) ingress_frame_fifo[OPQ_N_LANE];
 
   function new(string name = "opq_env", uvm_component parent = null);
     super.new(name, parent);
@@ -52,6 +53,7 @@ class opq_env extends uvm_env;
       ingress_agent[i].vif = ingress_vif[i];
       ingress_agent[i].lane_id = i;
       ingress_agent[i].is_active = UVM_ACTIVE;
+      ingress_frame_fifo[i] = new($sformatf("ingress_frame_fifo_%0d", i), this);
     end
 
     egress_agent = opq_egress_agent::type_id::create("egress_agent", this);
@@ -66,6 +68,7 @@ class opq_env extends uvm_env;
       ingress_agent[i].drv.frame_ap.connect(coverage.frame_imp);
       ingress_agent[i].mon.ap.connect(scoreboard.ingress_imp);
       ingress_agent[i].mon.ap.connect(coverage.ingress_imp);
+      ingress_agent[i].mon.frame_ap.connect(ingress_frame_fifo[i].analysis_export);
       vseqr.ingress_seqr[i] = ingress_agent[i].seqr;
     end
     egress_agent.mon.ap.connect(scoreboard.egress_imp);
@@ -74,4 +77,12 @@ class opq_env extends uvm_env;
     drop_monitor.ap.connect(scoreboard.drop_imp);
     vseqr.egress_seqr = egress_agent.seqr;
   endfunction
+
+  // Future hybrid tests can consume monitored ingress frames lane-by-lane
+  // without depending on the monitor's internal capture state.
+  virtual task wait_monitored_ingress_frame(int unsigned lane, output opq_frame_item frame);
+    if (lane >= OPQ_N_LANE)
+      `uvm_fatal(get_type_name(), $sformatf("wait_monitored_ingress_frame lane=%0d out of range", lane))
+    ingress_frame_fifo[lane].get(frame);
+  endtask
 endclass

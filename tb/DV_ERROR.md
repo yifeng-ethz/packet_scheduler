@@ -12,6 +12,7 @@
 `DV_ERROR` holds the currently supported runtime error/control cases:
 
 - lane masking
+- recovery after masking / malformed subheader suppression
 - counter-clear behavior
 
 This bucket also carries non-promoted reproducers when they expose real DUT
@@ -26,6 +27,8 @@ recovery gaps.
 | `opq_error_lane_mask_test` | Packet-boundary lane masking with per-lane drop-counter checks | Passing |
 | `opq_error_lane_mask_single_hit_test` | Minimal masked-drop packet to close one-hit counter behavior | Passing |
 | `opq_error_lane_mask_burst_test` | Multi-hit masked-drop packet to close burst counter behavior | Passing |
+| `opq_error_lane_mask_recovery_test` | Mask, drop, then clear the mask and expect clean recovery on the next legal FEB packets | Passing |
+| `opq_error_subheader_mask_recovery_test` | Malformed subheader suppression followed by a legal recovery frame | Passing |
 | `opq_error_counter_clear_test` | Runtime counter clear semantics | Passing |
 
 ---
@@ -34,8 +37,8 @@ recovery gaps.
 
 | Test | Purpose | Current status |
 |------|---------|----------------|
+| `opq_error_header_mask_recovery_test` | Malformed preamble/header suppression followed by a legal recovery frame | Open repro: the native-SV ingress parser still loses the recovery frame timestamp context after a header-error mask path, producing ghost/missing hits with low-byte-only timestamps |
 | `opq_error_ftable_overflow_test` | Reduced-depth forced overwrite / frame-table drop accounting | Open repro: forced overwrite still produces malformed accepted egress beats under always-stall backpressure, so the testcase is useful bug evidence but not promotable signoff coverage today |
-| `opq_error_lane_mask_recovery_test` | Mask, drop, then clear the mask and expect clean recovery | Open repro: lane-mask clear does not recover as expected; masked headers remain counted as drops and no clean egress packet returns |
 
 ---
 
@@ -44,5 +47,5 @@ recovery gaps.
 The archived error matrix remains the source for later closure of:
 
 - reset-in-state
-- malformed / truncated packet paths
+- malformed header / truncated packet paths beyond the current subheader recovery closure
 - broader recovery-after-drop cases

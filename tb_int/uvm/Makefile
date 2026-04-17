@@ -64,12 +64,12 @@ MGLS_LICENSE_FILE := $(TB_LICENSE_CHAIN)
 export MGLS_LICENSE_FILE
 
 ALT_RAM_SRCS := \
-	$(PKT_DIR)/rtl/vendor/alt_ram/frame_table.v \
-	$(PKT_DIR)/rtl/vendor/alt_ram/handle_fifo.v \
-	$(PKT_DIR)/rtl/vendor/alt_ram/lane_fifo.v \
-	$(PKT_DIR)/rtl/vendor/alt_ram/page_ram.v \
-	$(PKT_DIR)/rtl/vendor/alt_ram/ticket_fifo.v \
-	$(PKT_DIR)/rtl/vendor/alt_ram/tile_fifo.v
+	$(PKT_DIR)/rtl/sv_ver/vendor/alt_ram/frame_table.v \
+	$(PKT_DIR)/rtl/sv_ver/vendor/alt_ram/handle_fifo.v \
+	$(PKT_DIR)/rtl/sv_ver/vendor/alt_ram/lane_fifo.v \
+	$(PKT_DIR)/rtl/sv_ver/vendor/alt_ram/page_ram.v \
+	$(PKT_DIR)/rtl/sv_ver/vendor/alt_ram/ticket_fifo.v \
+	$(PKT_DIR)/rtl/sv_ver/vendor/alt_ram/tile_fifo.v
 
 # lpm library (needed by mts_processor: LPM_COUNTER, LPM_MULT, LPM_DIVIDE)
 LPM_SRCS := \
@@ -95,14 +95,14 @@ MTS_VHDL_SRCS := \
 	$(MTS_DIR)/mts_processor.vhd
 
 RBCAM_V_SRCS := \
-	$(RBCAM_DIR)/b2o_encoder.v
+	$(RBCAM_DIR)/rtl/b2o_encoder.v
 RBCAM_VHDL_SRCS := \
-	$(RBCAM_DIR)/cam_helper_pkg.vhd \
-	$(RBCAM_DIR)/alt_simple_dpram.vhd \
+	$(RBCAM_DIR)/rtl/cam_helper_pkg.vhd \
+	$(RBCAM_DIR)/rtl/alt_simple_dpram.vhd \
 	$(RBCAM_DIR)/cam_mem_blk_a5.vhd \
 	$(RBCAM_DIR)/cam_mem_a5.vhd \
-	$(RBCAM_DIR)/alt_fifo/scfifo_w40d256.vhd \
-	$(RBCAM_DIR)/alt_fifo/cmd_fifo/cmd_fifo.vhd \
+	$(RBCAM_DIR)/rtl/alt_fifo/scfifo_w40d256.vhd \
+	$(RBCAM_DIR)/rtl/alt_fifo/cmd_fifo/cmd_fifo.vhd \
 	$(RBCAM_DIR)/addr_enc_logic_small.vhd \
 	$(RBCAM_DIR)/addr_enc_logic_partitioned.vhd \
 	$(RBCAM_DIR)/ring_buffer_cam_v2_core.vhd \

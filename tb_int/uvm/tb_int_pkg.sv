@@ -28,6 +28,42 @@ package tb_int_pkg;
     `uvm_analysis_imp_decl(_stage_d)
     `uvm_analysis_imp_decl(_stage_e)
 
+    localparam bit [7:0] K285 = 8'hBC;
+    localparam bit [7:0] K284 = 8'h9C;
+    localparam bit [8:0] OPQ_CSR_WORD_UID            = 9'h000;
+    localparam bit [8:0] OPQ_CSR_WORD_META           = 9'h001;
+    localparam bit [8:0] OPQ_CSR_WORD_LANE_MASK      = 9'h002;
+    localparam bit [8:0] OPQ_CSR_WORD_CTRL           = 9'h003;
+    localparam bit [8:0] OPQ_CSR_WORD_STATUS         = 9'h004;
+    localparam bit [8:0] OPQ_CSR_WORD_CAP            = 9'h005;
+    localparam bit [8:0] OPQ_CSR_WORD_FT_WR_HDR      = 9'h008;
+    localparam bit [8:0] OPQ_CSR_WORD_FT_WR_SHD      = 9'h009;
+    localparam bit [8:0] OPQ_CSR_WORD_FT_WR_HIT      = 9'h00A;
+    localparam bit [8:0] OPQ_CSR_WORD_FT_RD_HDR      = 9'h00B;
+    localparam bit [8:0] OPQ_CSR_WORD_FT_RD_SHD      = 9'h00C;
+    localparam bit [8:0] OPQ_CSR_WORD_FT_RD_HIT      = 9'h00D;
+    localparam bit [8:0] OPQ_CSR_WORD_FT_DROP_HDR    = 9'h00E;
+    localparam bit [8:0] OPQ_CSR_WORD_FT_DROP_SHD    = 9'h00F;
+    localparam bit [8:0] OPQ_CSR_WORD_FT_DROP_HIT    = 9'h010;
+    localparam bit [8:0] OPQ_CSR_LANE_REGION_BASE    = 9'h040;
+    localparam bit [8:0] OPQ_CSR_LANE_REGION_STRIDE  = 9'h010;
+    localparam bit [3:0] OPQ_CSR_LANE_WORD_WR_HDR    = 4'h0;
+    localparam bit [3:0] OPQ_CSR_LANE_WORD_WR_SHD    = 4'h1;
+    localparam bit [3:0] OPQ_CSR_LANE_WORD_WR_HIT    = 4'h2;
+    localparam bit [3:0] OPQ_CSR_LANE_WORD_RD_HDR    = 4'h3;
+    localparam bit [3:0] OPQ_CSR_LANE_WORD_RD_SHD    = 4'h4;
+    localparam bit [3:0] OPQ_CSR_LANE_WORD_RD_HIT    = 4'h5;
+    localparam bit [3:0] OPQ_CSR_LANE_WORD_DROP_HDR  = 4'h6;
+    localparam bit [3:0] OPQ_CSR_LANE_WORD_DROP_SHD  = 4'h7;
+    localparam bit [3:0] OPQ_CSR_LANE_WORD_DROP_HIT  = 4'h8;
+    localparam bit [3:0] OPQ_CSR_LANE_WORD_LANE_CREDIT   = 4'h9;
+    localparam bit [3:0] OPQ_CSR_LANE_WORD_TICKET_CREDIT = 4'hA;
+    localparam bit [3:0] OPQ_CSR_LANE_WORD_DRR_ALLOWANCE = 4'hB;
+    localparam bit [3:0] OPQ_CSR_LANE_WORD_DRR_QUANTUM   = 4'hC;
+    localparam bit [3:0] OPQ_CSR_LANE_WORD_DRR_GRANT_CNT = 4'hD;
+    localparam bit [3:0] OPQ_CSR_LANE_WORD_DRR_BEAT_CNT  = 4'hE;
+    localparam bit [3:0] OPQ_CSR_LANE_WORD_DRR_DEFER_CNT = 4'hF;
+
     // -----------------------------------------------------------------------
     // Config object
     // -----------------------------------------------------------------------
@@ -288,6 +324,99 @@ package tb_int_pkg;
 
         function new(string name = "tb_int_egress_event");
             super.new(name);
+        endfunction
+    endclass
+
+    // -----------------------------------------------------------------------
+    // Reusable frame-level TLM item for the FEB/OPQ framed contract.
+    // This is the capture/replay hook alongside the existing direct pin path:
+    // stage-C or stage-D can lift real framed beats into one object per frame,
+    // while tb_int keeps the direct pin-wiggle path into OPQ intact.
+    // -----------------------------------------------------------------------
+    class tb_int_frame_hit_desc extends uvm_object;
+        bit [31:0] payload_word;
+
+        `uvm_object_utils_begin(tb_int_frame_hit_desc)
+            `uvm_field_int(payload_word, UVM_DEFAULT)
+        `uvm_object_utils_end
+
+        function new(string name = "tb_int_frame_hit_desc");
+            super.new(name);
+            payload_word = '0;
+        endfunction
+    endclass
+
+    class tb_int_frame_subheader_desc extends uvm_object;
+        bit [7:0] shd_ts;
+        tb_int_frame_hit_desc hits[$];
+
+        `uvm_object_utils_begin(tb_int_frame_subheader_desc)
+            `uvm_field_int(shd_ts, UVM_DEFAULT)
+            `uvm_field_queue_object(hits, UVM_DEFAULT)
+        `uvm_object_utils_end
+
+        function new(string name = "tb_int_frame_subheader_desc");
+            super.new(name);
+            shd_ts = '0;
+        endfunction
+
+        function int unsigned hit_count();
+            return hits.size();
+        endfunction
+    endclass
+
+    class tb_int_frame_item extends uvm_sequence_item;
+        byte                       stage_tag;
+        int                        lane_id;
+        bit [1:0]                  channel;
+        bit [47:0]                 frame_ts;
+        bit [15:0]                 pkg_cnt;
+        bit [5:0]                  dt_type;
+        bit [15:0]                 feb_id;
+        bit                        whole_frame_packet;
+        time                       first_abs_ts;
+        time                       last_abs_ts;
+        tb_int_frame_subheader_desc subheaders[$];
+
+        `uvm_object_utils_begin(tb_int_frame_item)
+            `uvm_field_int(stage_tag, UVM_DEFAULT)
+            `uvm_field_int(lane_id, UVM_DEFAULT)
+            `uvm_field_int(channel, UVM_DEFAULT)
+            `uvm_field_int(frame_ts, UVM_DEFAULT)
+            `uvm_field_int(pkg_cnt, UVM_DEFAULT)
+            `uvm_field_int(dt_type, UVM_DEFAULT)
+            `uvm_field_int(feb_id, UVM_DEFAULT)
+            `uvm_field_int(whole_frame_packet, UVM_DEFAULT)
+            `uvm_field_int(first_abs_ts, UVM_DEFAULT)
+            `uvm_field_int(last_abs_ts, UVM_DEFAULT)
+            `uvm_field_queue_object(subheaders, UVM_DEFAULT)
+        `uvm_object_utils_end
+
+        function new(string name = "tb_int_frame_item");
+            super.new(name);
+            stage_tag = 8'h3F;
+            lane_id = -1;
+            channel = '0;
+            frame_ts = '0;
+            pkg_cnt = '0;
+            dt_type = '0;
+            feb_id = '0;
+            whole_frame_packet = 1'b1;
+            first_abs_ts = 0;
+            last_abs_ts = 0;
+        endfunction
+
+        function bit [15:0] frame_subh_count_bits();
+            return subheaders.size();
+        endfunction
+
+        function bit [15:0] frame_hit_count_bits();
+            int unsigned total_hits;
+
+            total_hits = 0;
+            foreach (subheaders[i])
+                total_hits += subheaders[i].hit_count();
+            return total_hits[15:0];
         endfunction
     endclass
 
@@ -1068,13 +1197,16 @@ package tb_int_pkg;
         return int'(d[25:22]);
     endfunction
 
-    // Exact A->H0 identity preserved across frame_rcv_ip. This keeps the
-    // full set of fields that survive the raw MuTRiG word -> hit_type0
-    // conversion instead of collapsing onto the generic (channel, t_fine)
-    // bucket used for the later stage-pair ledgers.
+    // Project the raw stage-A MuTRiG storage word onto the parser-visible
+    // hit_type0 payload observed at H0. Long mode preserves the payload
+    // fields directly; short mode keeps channel/TCC/T_Fine only and zeroes
+    // the lower parser fields.
     typedef bit [40:0] hit_ah0_key_t;
 
-    function automatic hit_ah0_key_t extract_key_stage_a_h0(bit [47:0] p);
+    function automatic hit_ah0_key_t extract_key_stage_a_h0(bit [47:0] p,
+                                                             bit short_mode);
+        if (short_mode)
+            return {p[47:43], p[41:27], p[26:22], 15'b0, 1'b0};
         return {p[47:43], p[41:27], p[26:22], p[19:5], p[20]};
     endfunction
 
@@ -2081,7 +2213,7 @@ package tb_int_pkg;
             n_stage_a_per_lane[lane_idx]++;
             k      = extract_key_stage_a(ev.payload);
             kb     = {k.channel, k.t_fine};
-            ah0_kb = extract_key_stage_a_h0(ev.payload);
+            ah0_kb = extract_key_stage_a_h0(ev.payload, cfg.emu_cfg[lane_idx].short_mode);
             obs = tb_int_hit_obs::type_id::create("a_obs");
             obs.key            = k;
             obs.lane_id        = lane_idx;
@@ -3122,6 +3254,8 @@ package tb_int_pkg;
             int unsigned d_subheaders_total;
             int unsigned d_frames_total;
             int unsigned d_trailers_total;
+            bit          allow_sparse_source_lanes;
+            bit          lane_requires_source_activity [4];
 
             super.report_phase(phase);
             reconcile();
@@ -3145,6 +3279,14 @@ package tb_int_pkg;
             d_subheaders_total = 0;
             d_frames_total     = 0;
             d_trailers_total   = 0;
+            allow_sparse_source_lanes = 1'b0;
+            foreach (cfg.emu_cfg[i]) begin
+                lane_requires_source_activity[i] = 1'b0;
+                if (cfg.emu_cfg[i].cluster_cross_asic)
+                    allow_sparse_source_lanes = 1'b1;
+                else if (cfg.emu_cfg[i].enable && (cfg.emu_cfg[i].hit_mode == 2'b01))
+                    lane_requires_source_activity[i] = 1'b1;
+            end
 
             foreach (h0_parser[i]) begin
                 h0_hits_total     += h0_parser[i].n_hits;
@@ -3540,25 +3682,54 @@ package tb_int_pkg;
                 end
             end
 
+            if (allow_sparse_source_lanes) begin
+                `uvm_info("TB_INT_SB",
+                          "cluster_cross_asic profile active: source-side per-lane silence checks are mode-aware",
+                          UVM_LOW)
+            end
             foreach (n_stage_a_per_lane[i]) begin
-                if (n_stage_a_per_lane[i] == 0)
-                    `uvm_error("TB_INT_SB",
-                               $sformatf("stage A lane %0d silent (per-lane hit count 0)", i))
+                if (n_stage_a_per_lane[i] == 0) begin
+                    if (lane_requires_source_activity[i])
+                        `uvm_error("TB_INT_SB",
+                                   $sformatf("stage A lane %0d silent (per-lane hit count 0)", i))
+                    else if (cfg.emu_cfg[i].enable)
+                        `uvm_info("TB_INT_SB",
+                                  $sformatf("stage A lane %0d silent but allowed by the case profile", i),
+                                  UVM_LOW)
+                end
             end
             foreach (n_stage_h0_beats_per_lane[i]) begin
-                if (n_stage_h0_beats_per_lane[i] == 0)
-                    `uvm_error("TB_INT_SB",
-                               $sformatf("stage H0 lane %0d silent (per-lane beat count 0)", i))
+                if (n_stage_h0_beats_per_lane[i] == 0) begin
+                    if (n_stage_a_per_lane[i] > 0)
+                        `uvm_error("TB_INT_SB",
+                                   $sformatf("stage H0 lane %0d silent (per-lane beat count 0)", i))
+                    else if (cfg.emu_cfg[i].enable)
+                        `uvm_info("TB_INT_SB",
+                                  $sformatf("stage H0 lane %0d silent because stage A saw no hits", i),
+                                  UVM_LOW)
+                end
             end
             foreach (n_stage_h0_frames_per_lane[i]) begin
-                if (n_stage_h0_frames_per_lane[i] == 0)
-                    `uvm_error("TB_INT_SB",
-                               $sformatf("stage H0 lane %0d emitted no frame heads", i))
+                if (n_stage_h0_frames_per_lane[i] == 0) begin
+                    if (n_stage_a_per_lane[i] > 0)
+                        `uvm_error("TB_INT_SB",
+                                   $sformatf("stage H0 lane %0d emitted no frame heads", i))
+                    else if (cfg.emu_cfg[i].enable)
+                        `uvm_info("TB_INT_SB",
+                                  $sformatf("stage H0 lane %0d emitted no frame heads because stage A saw no hits", i),
+                                  UVM_LOW)
+                end
             end
             foreach (n_stage_h1_beats_per_lane[i]) begin
-                if (n_stage_h1_beats_per_lane[i] == 0)
-                    `uvm_error("TB_INT_SB",
-                               $sformatf("stage H1 lane %0d silent (per-lane beat count 0)", i))
+                if (n_stage_h1_beats_per_lane[i] == 0) begin
+                    if (n_stage_h0_beats_per_lane[i] > 0)
+                        `uvm_error("TB_INT_SB",
+                                   $sformatf("stage H1 lane %0d silent (per-lane beat count 0)", i))
+                    else if (cfg.emu_cfg[i].enable)
+                        `uvm_info("TB_INT_SB",
+                                  $sformatf("stage H1 lane %0d silent because stage H0 saw no hits", i),
+                                  UVM_LOW)
+                end
             end
             foreach (n_stage_b_beats_per_lane[i]) begin
                 if (n_stage_b_beats_per_lane[i] == 0)
@@ -3885,6 +4056,212 @@ package tb_int_pkg;
     endclass
 
     // -----------------------------------------------------------------------
+    // Framed-beat to frame-item bridge for stage C / stage D capture.
+    // This preserves a reusable TLM path from the real FEB frame contract
+    // while keeping the direct pin-level OPQ path active for tb_int.
+    // -----------------------------------------------------------------------
+    class tb_int_ingress_frame_bridge extends uvm_component;
+        `uvm_component_utils(tb_int_ingress_frame_bridge)
+
+        uvm_analysis_imp#(tb_int_ingress_event, tb_int_ingress_frame_bridge) ingress_imp;
+        uvm_analysis_port#(tb_int_frame_item) ap;
+
+        string             stage_name;
+        int                lane_id;
+        tb_int_frame_item  curr_frame;
+        int unsigned       header_words_seen;
+        int                active_subheader_idx;
+        int unsigned       hit_words_left;
+        bit [31:0]         frame_ts_hi32;
+        int unsigned       n_frames_built;
+        int unsigned       n_orphan_beats;
+        int unsigned       n_capture_err;
+
+        function new(string name, uvm_component parent);
+            super.new(name, parent);
+            stage_name = "?";
+            lane_id = -1;
+            reset_state();
+        endfunction
+
+        virtual function void build_phase(uvm_phase phase);
+            super.build_phase(phase);
+            ingress_imp = new("ingress_imp", this);
+            ap = new("ap", this);
+        endfunction
+
+        function automatic bit is_preamble(bit [35:0] data);
+            return (data[35:32] == 4'b0001) && (data[7:0] == K285);
+        endfunction
+
+        function automatic bit is_subheader(bit [35:0] data);
+            return (data[35:32] == 4'b0001) && (data[7:0] == 8'hF7);
+        endfunction
+
+        function automatic bit is_trailer(bit [35:0] data);
+            return (data[35:32] == 4'b0001) && (data[7:0] == 8'h9C);
+        endfunction
+
+        function automatic bit is_hit_word(bit [35:0] data);
+            return (data[35:32] == 4'b0000);
+        endfunction
+
+        function automatic void note_capture_err(string msg);
+            n_capture_err++;
+            `uvm_warning("FRAME_TLM", $sformatf("%s lane=%0d %s", stage_name, lane_id, msg));
+        endfunction
+
+        function automatic void reset_state();
+            curr_frame = null;
+            header_words_seen = 0;
+            active_subheader_idx = -1;
+            hit_words_left = 0;
+            frame_ts_hi32 = '0;
+        endfunction
+
+        function automatic void start_frame(tb_int_ingress_event ev);
+            if (curr_frame != null) begin
+                note_capture_err("new SOP arrived before trailer; dropping partial frame");
+                reset_state();
+            end
+
+            curr_frame = tb_int_frame_item::type_id::create(
+                $sformatf("%s_lane%0d_frame_%0d", stage_name, lane_id, n_frames_built)
+            );
+            if (stage_name == "C")
+                curr_frame.stage_tag = "C";
+            else if (stage_name == "D")
+                curr_frame.stage_tag = "D";
+            else
+                curr_frame.stage_tag = 8'h3F;
+            curr_frame.lane_id = ev.lane_id;
+            curr_frame.channel = ev.channel;
+            curr_frame.dt_type = ev.data[31:26];
+            curr_frame.feb_id = ev.data[23:8];
+            curr_frame.whole_frame_packet = 1'b1;
+            curr_frame.first_abs_ts = ev.abs_ts;
+            curr_frame.last_abs_ts = ev.abs_ts;
+            header_words_seen = 0;
+            active_subheader_idx = -1;
+            hit_words_left = 0;
+            frame_ts_hi32 = '0;
+        endfunction
+
+        function automatic void emit_frame(time abs_ts);
+            tb_int_frame_item frame_clone;
+
+            if (curr_frame == null) begin
+                return;
+            end
+            curr_frame.last_abs_ts = abs_ts;
+            $cast(frame_clone, curr_frame.clone());
+            ap.write(frame_clone);
+            n_frames_built++;
+            reset_state();
+        endfunction
+
+        virtual function void write(tb_int_ingress_event ev);
+            if (curr_frame == null) begin
+                if (is_preamble(ev.data)) begin
+                    start_frame(ev);
+                end else begin
+                    n_orphan_beats++;
+                end
+                return;
+            end
+
+            if (is_preamble(ev.data)) begin
+                start_frame(ev);
+                return;
+            end
+
+            curr_frame.last_abs_ts = ev.abs_ts;
+
+            if (header_words_seen < 4) begin
+                case (header_words_seen)
+                    0: frame_ts_hi32 = ev.data[31:0];
+                    1: begin
+                        curr_frame.frame_ts = {frame_ts_hi32, ev.data[31:16]};
+                        curr_frame.pkg_cnt  = ev.data[15:0];
+                    end
+                    default: begin
+                    end
+                endcase
+                header_words_seen++;
+                if (ev.eop) begin
+                    note_capture_err("frame terminated during header words");
+                end
+                return;
+            end
+
+            if (is_trailer(ev.data)) begin
+                if (hit_words_left != 0) begin
+                    note_capture_err("trailer arrived with hit words still pending");
+                end
+                emit_frame(ev.abs_ts);
+                return;
+            end
+
+            if (is_subheader(ev.data)) begin
+                tb_int_frame_subheader_desc shd;
+
+                if (hit_words_left != 0) begin
+                    note_capture_err("new subheader arrived before previous hit payloads completed");
+                end
+                shd = tb_int_frame_subheader_desc::type_id::create(
+                    $sformatf("%s_lane%0d_shd_%0d", stage_name, lane_id, curr_frame.subheaders.size())
+                );
+                shd.shd_ts = ev.data[31:24];
+                curr_frame.subheaders.push_back(shd);
+                active_subheader_idx = curr_frame.subheaders.size() - 1;
+                hit_words_left = ev.data[15:8];
+                if (ev.eop && !is_trailer(ev.data)) begin
+                    note_capture_err("subheader beat asserted EOP without trailer");
+                end
+                return;
+            end
+
+            if (is_hit_word(ev.data)) begin
+                tb_int_frame_hit_desc hit_desc;
+
+                if (hit_words_left == 0 || active_subheader_idx < 0 ||
+                    active_subheader_idx >= curr_frame.subheaders.size()) begin
+                    note_capture_err($sformatf("hit beat without active subheader data=0x%09h", ev.data));
+                    return;
+                end
+                hit_desc = tb_int_frame_hit_desc::type_id::create(
+                    $sformatf("%s_lane%0d_hit_%0d_%0d",
+                              stage_name, lane_id, active_subheader_idx,
+                              curr_frame.subheaders[active_subheader_idx].hits.size())
+                );
+                hit_desc.payload_word = ev.data[31:0];
+                curr_frame.subheaders[active_subheader_idx].hits.push_back(hit_desc);
+                hit_words_left--;
+                if (ev.eop) begin
+                    note_capture_err("hit beat asserted EOP without trailer");
+                end
+                return;
+            end
+
+            note_capture_err($sformatf("unclassified beat data=0x%09h", ev.data));
+        endfunction
+
+        virtual function void report_phase(uvm_phase phase);
+            super.report_phase(phase);
+            `uvm_info("FRAME_TLM",
+                      $sformatf("%s lane=%0d tlm_frames=%0d capture_err=%0d",
+                                stage_name, lane_id, n_frames_built, n_capture_err),
+                      UVM_LOW)
+            if (n_orphan_beats != 0) begin
+                `uvm_info("FRAME_TLM",
+                          $sformatf("%s lane=%0d orphan_beats=%0d",
+                                    stage_name, lane_id, n_orphan_beats),
+                          UVM_LOW)
+            end
+        endfunction
+    endclass
+
+    // -----------------------------------------------------------------------
     // Run control agent (sequencer + driver + item)
     // -----------------------------------------------------------------------
     typedef enum bit [1:0] { RC_PREPARE, RC_START, RC_END } rc_op_e;
@@ -4105,6 +4482,10 @@ package tb_int_pkg;
         tb_int_stage_c_monitor  stage_c [4];
         tb_int_stage_d_monitor  stage_d [4];
         tb_int_stage_e_monitor  stage_e;
+        tb_int_ingress_frame_bridge stage_c_tlm[4];
+        tb_int_ingress_frame_bridge stage_d_tlm[4];
+        uvm_tlm_analysis_fifo#(tb_int_frame_item) stage_c_frame_fifo[4];
+        uvm_tlm_analysis_fifo#(tb_int_frame_item) stage_d_frame_fifo[4];
 
         function new(string name, uvm_component parent);
             super.new(name, parent);
@@ -4166,6 +4547,11 @@ package tb_int_pkg;
                         this, "", $sformatf("stage_c_lane%0d_if", i), stage_c[i].vif))
                     `uvm_fatal("ENV",
                                $sformatf("stage_c_lane%0d_if not found in config db", i))
+                stage_c_tlm[i] = tb_int_ingress_frame_bridge::type_id::create(
+                                     $sformatf("stage_c_tlm_%0d", i), this);
+                stage_c_tlm[i].stage_name = "C";
+                stage_c_tlm[i].lane_id = i;
+                stage_c_frame_fifo[i] = new($sformatf("stage_c_frame_fifo_%0d", i), this);
             end
             foreach (stage_d[i]) begin
                 stage_d[i] = tb_int_stage_d_monitor::type_id::create(
@@ -4175,6 +4561,11 @@ package tb_int_pkg;
                         this, "", $sformatf("stage_d_lane%0d_if", i), stage_d[i].vif))
                     `uvm_fatal("ENV",
                                $sformatf("stage_d_lane%0d_if not found in config db", i))
+                stage_d_tlm[i] = tb_int_ingress_frame_bridge::type_id::create(
+                                     $sformatf("stage_d_tlm_%0d", i), this);
+                stage_d_tlm[i].stage_name = "D";
+                stage_d_tlm[i].lane_id = i;
+                stage_d_frame_fifo[i] = new($sformatf("stage_d_frame_fifo_%0d", i), this);
             end
             stage_e = tb_int_stage_e_monitor::type_id::create("stage_e", this);
             if (!uvm_config_db#(virtual opq_egress_if)::get(
@@ -4188,10 +4579,32 @@ package tb_int_pkg;
             foreach (stage_h0[i]) stage_h0[i].ap.connect(sb.stage_h0_imp);
             foreach (stage_h1[i]) stage_h1[i].ap.connect(sb.stage_h1_imp);
             foreach (stage_b[i,j]) stage_b[i][j].ap.connect(sb.stage_b_imp);
-            foreach (stage_c[i]) stage_c[i].ap.connect(sb.stage_c_imp);
-            foreach (stage_d[i]) stage_d[i].ap.connect(sb.stage_d_imp);
+            foreach (stage_c[i]) begin
+                stage_c[i].ap.connect(sb.stage_c_imp);
+                stage_c[i].ap.connect(stage_c_tlm[i].ingress_imp);
+                stage_c_tlm[i].ap.connect(stage_c_frame_fifo[i].analysis_export);
+            end
+            foreach (stage_d[i]) begin
+                stage_d[i].ap.connect(sb.stage_d_imp);
+                stage_d[i].ap.connect(stage_d_tlm[i].ingress_imp);
+                stage_d_tlm[i].ap.connect(stage_d_frame_fifo[i].analysis_export);
+            end
             stage_e.ap.connect(sb.stage_e_imp);
         endfunction
+
+        // Hybrid FEB->OPQ tests can block on the real stage-C/stage-D frame
+        // contract here without touching the monitor internals directly.
+        virtual task wait_stage_c_frame(int unsigned lane, output tb_int_frame_item frame);
+            if (lane >= 4)
+                `uvm_fatal("ENV", $sformatf("wait_stage_c_frame lane=%0d out of range", lane))
+            stage_c_frame_fifo[lane].get(frame);
+        endtask
+
+        virtual task wait_stage_d_frame(int unsigned lane, output tb_int_frame_item frame);
+            if (lane >= 4)
+                `uvm_fatal("ENV", $sformatf("wait_stage_d_frame lane=%0d out of range", lane))
+            stage_d_frame_fifo[lane].get(frame);
+        endtask
     endclass
 
     // -----------------------------------------------------------------------
@@ -4247,6 +4660,7 @@ package tb_int_pkg;
         `uvm_component_utils(tb_int_base_test)
         tb_int_env env;
         tb_int_cfg cfg;
+        virtual opq_csr_if csr_vif;
         virtual emut_avmm_csr_if.drv emu_csr_vif[4];
 
         function new(string name, uvm_component parent);
@@ -4264,6 +4678,8 @@ package tb_int_pkg;
             cfg = make_cfg();
             uvm_config_db#(tb_int_cfg)::set(this, "env", "cfg", cfg);
             env = tb_int_env::type_id::create("env", this);
+            if (!uvm_config_db#(virtual opq_csr_if)::get(this, "", "csr_if", csr_vif))
+                `uvm_fatal("TB_INT_CFG", "csr_if not found in config db")
             foreach (emu_csr_vif[i]) begin
                 if (!uvm_config_db#(virtual emut_avmm_csr_if.drv)::get(
                         this, "", $sformatf("emu_csr_lane%0d_if", i), emu_csr_vif[i]))
@@ -4328,6 +4744,106 @@ package tb_int_pkg;
                           UVM_LOW)
         endtask
 
+        task automatic opq_csr_read(bit [8:0] address,
+                                    output bit [31:0] readdata,
+                                    input string what = "");
+            logic [31:0] rd;
+            if (csr_vif == null)
+                `uvm_fatal("TB_INT_CFG", "csr_if is null")
+            csr_vif.read32(address, rd);
+            readdata = rd;
+            if (what != "")
+                `uvm_info("TB_INT_OPQ_CSR",
+                          $sformatf("read %s addr=0x%03h data=0x%08h",
+                                    what, address, readdata),
+                          UVM_LOW)
+        endtask
+
+        task automatic dump_opq_csr_snapshot(string tag = "post_run");
+            bit [31:0] uid_word;
+            bit [31:0] meta_word;
+            bit [31:0] lane_mask_word;
+            bit [31:0] status_word;
+            bit [31:0] cap_word;
+            bit [31:0] ft_wr_hdr;
+            bit [31:0] ft_wr_shd;
+            bit [31:0] ft_wr_hit;
+            bit [31:0] ft_rd_hdr;
+            bit [31:0] ft_rd_shd;
+            bit [31:0] ft_rd_hit;
+            bit [31:0] ft_drop_hdr;
+            bit [31:0] ft_drop_shd;
+            bit [31:0] ft_drop_hit;
+
+            opq_csr_read(OPQ_CSR_WORD_UID, uid_word, {tag, ".uid"});
+            opq_csr_read(OPQ_CSR_WORD_META, meta_word, {tag, ".meta"});
+            opq_csr_read(OPQ_CSR_WORD_LANE_MASK, lane_mask_word, {tag, ".lane_mask"});
+            opq_csr_read(OPQ_CSR_WORD_STATUS, status_word, {tag, ".status"});
+            opq_csr_read(OPQ_CSR_WORD_CAP, cap_word, {tag, ".cap"});
+            opq_csr_read(OPQ_CSR_WORD_FT_WR_HDR, ft_wr_hdr, {tag, ".ft_wr_hdr"});
+            opq_csr_read(OPQ_CSR_WORD_FT_WR_SHD, ft_wr_shd, {tag, ".ft_wr_shd"});
+            opq_csr_read(OPQ_CSR_WORD_FT_WR_HIT, ft_wr_hit, {tag, ".ft_wr_hit"});
+            opq_csr_read(OPQ_CSR_WORD_FT_RD_HDR, ft_rd_hdr, {tag, ".ft_rd_hdr"});
+            opq_csr_read(OPQ_CSR_WORD_FT_RD_SHD, ft_rd_shd, {tag, ".ft_rd_shd"});
+            opq_csr_read(OPQ_CSR_WORD_FT_RD_HIT, ft_rd_hit, {tag, ".ft_rd_hit"});
+            opq_csr_read(OPQ_CSR_WORD_FT_DROP_HDR, ft_drop_hdr, {tag, ".ft_drop_hdr"});
+            opq_csr_read(OPQ_CSR_WORD_FT_DROP_SHD, ft_drop_shd, {tag, ".ft_drop_shd"});
+            opq_csr_read(OPQ_CSR_WORD_FT_DROP_HIT, ft_drop_hit, {tag, ".ft_drop_hit"});
+            `uvm_info("TB_INT_OPQ_CSR",
+                      $sformatf("%s summary uid=0x%08h meta=0x%08h lane_mask=0x%08h status=0x%08h cap=0x%08h ft_wr=(%0d,%0d,%0d) ft_rd=(%0d,%0d,%0d) ft_drop=(%0d,%0d,%0d)",
+                                tag, uid_word, meta_word, lane_mask_word, status_word, cap_word,
+                                ft_wr_hdr, ft_wr_shd, ft_wr_hit,
+                                ft_rd_hdr, ft_rd_shd, ft_rd_hit,
+                                ft_drop_hdr, ft_drop_shd, ft_drop_hit),
+                      UVM_NONE)
+            for (int lane = 0; lane < cfg.opq_n_lane; lane++) begin
+                bit [8:0] lane_base;
+                bit [31:0] wr_hdr;
+                bit [31:0] wr_shd;
+                bit [31:0] wr_hit;
+                bit [31:0] rd_hdr;
+                bit [31:0] rd_shd;
+                bit [31:0] rd_hit;
+                bit [31:0] drop_hdr;
+                bit [31:0] drop_shd;
+                bit [31:0] drop_hit;
+                bit [31:0] lane_credit;
+                bit [31:0] ticket_credit;
+                bit [31:0] drr_allowance;
+                bit [31:0] drr_quantum;
+                bit [31:0] drr_grant_cnt;
+                bit [31:0] drr_beat_cnt;
+                bit [31:0] drr_defer_cnt;
+
+                lane_base = OPQ_CSR_LANE_REGION_BASE + lane * OPQ_CSR_LANE_REGION_STRIDE;
+                opq_csr_read(lane_base + OPQ_CSR_LANE_WORD_WR_HDR, wr_hdr);
+                opq_csr_read(lane_base + OPQ_CSR_LANE_WORD_WR_SHD, wr_shd);
+                opq_csr_read(lane_base + OPQ_CSR_LANE_WORD_WR_HIT, wr_hit);
+                opq_csr_read(lane_base + OPQ_CSR_LANE_WORD_RD_HDR, rd_hdr);
+                opq_csr_read(lane_base + OPQ_CSR_LANE_WORD_RD_SHD, rd_shd);
+                opq_csr_read(lane_base + OPQ_CSR_LANE_WORD_RD_HIT, rd_hit);
+                opq_csr_read(lane_base + OPQ_CSR_LANE_WORD_DROP_HDR, drop_hdr);
+                opq_csr_read(lane_base + OPQ_CSR_LANE_WORD_DROP_SHD, drop_shd);
+                opq_csr_read(lane_base + OPQ_CSR_LANE_WORD_DROP_HIT, drop_hit);
+                opq_csr_read(lane_base + OPQ_CSR_LANE_WORD_LANE_CREDIT, lane_credit);
+                opq_csr_read(lane_base + OPQ_CSR_LANE_WORD_TICKET_CREDIT, ticket_credit);
+                opq_csr_read(lane_base + OPQ_CSR_LANE_WORD_DRR_ALLOWANCE, drr_allowance);
+                opq_csr_read(lane_base + OPQ_CSR_LANE_WORD_DRR_QUANTUM, drr_quantum);
+                opq_csr_read(lane_base + OPQ_CSR_LANE_WORD_DRR_GRANT_CNT, drr_grant_cnt);
+                opq_csr_read(lane_base + OPQ_CSR_LANE_WORD_DRR_BEAT_CNT, drr_beat_cnt);
+                opq_csr_read(lane_base + OPQ_CSR_LANE_WORD_DRR_DEFER_CNT, drr_defer_cnt);
+                `uvm_info("TB_INT_OPQ_CSR",
+                          $sformatf("%s lane%0d wr=(%0d,%0d,%0d) rd=(%0d,%0d,%0d) drop=(%0d,%0d,%0d) credit=(lane=%0d,ticket=%0d) drr=(allow=%0d,quantum=%0d,grant=%0d,beat=%0d,defer=%0d)",
+                                    tag, lane,
+                                    wr_hdr, wr_shd, wr_hit,
+                                    rd_hdr, rd_shd, rd_hit,
+                                    drop_hdr, drop_shd, drop_hit,
+                                    lane_credit, ticket_credit,
+                                    drr_allowance, drr_quantum, drr_grant_cnt, drr_beat_cnt, drr_defer_cnt),
+                          UVM_NONE)
+            end
+        endtask
+
         task automatic program_emulator_lane(int unsigned lane,
                                              tb_int_emut_cfg lane_cfg,
                                              bit verify_readback = 1'b1);
@@ -4374,6 +4890,9 @@ package tb_int_pkg;
         virtual task configure_before_run();
         endtask
 
+        virtual task check_after_run();
+        endtask
+
         virtual task run_phase(uvm_phase phase);
             tb_int_base_vseq vseq;
             phase.raise_objection(this);
@@ -4382,6 +4901,7 @@ package tb_int_pkg;
             vseq = tb_int_base_vseq::type_id::create("vseq");
             vseq.run_cycles = cfg.smoke_run_cycles;
             vseq.start(env.rc_agent.sqr);
+            check_after_run();
             phase.drop_objection(this);
         endtask
     endclass
@@ -4692,6 +5212,10 @@ package tb_int_pkg;
             `uvm_info("TB_INT_LONGRUN", cfg.describe_longrun(), UVM_NONE)
             foreach (cfg.emu_cfg[i])
                 program_emulator_lane(i, cfg.emu_cfg[i], 1'b1);
+        endtask
+
+        virtual task check_after_run();
+            dump_opq_csr_snapshot($sformatf("longrun_case%0d", cfg.longrun_case_id));
         endtask
     endclass
 

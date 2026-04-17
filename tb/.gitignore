@@ -1,3 +1,5 @@
 rtl_gen_monolithic/
 sim_runs/
 uvm/build/
+uvm/logs/
+uvm/cov_after/

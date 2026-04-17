@@ -53,7 +53,9 @@ class opq_coverage extends uvm_component;
   endgroup
 
   covergroup cg_frame with function sample(int lane, int subh_cnt, int hit_cnt, int pre_gap, bit [7:0] first_shd_ts);
-    coverpoint lane { bins lane0 = {0}; bins lane1 = {1}; }
+    coverpoint lane {
+      bins active_lanes[] = {[0:OPQ_N_LANE-1]};
+    }
     coverpoint subh_cnt {
       bins one = {1};
       bins few = {[2:4]};
@@ -139,9 +141,8 @@ class opq_coverage extends uvm_component;
     }
     coverpoint lane {
       bins none = {-1};
-      bins lane0 = {0};
-      bins lane1 = {1};
-      illegal_bins other = default;
+      bins active_lanes[] = {[0:OPQ_N_LANE-1]};
+      bins inactive = default;
     }
     coverpoint word_idx {
       bins meta_words[] = {[0:5]};
@@ -164,7 +165,7 @@ class opq_coverage extends uvm_component;
         (binsof(region.identity) ||
          binsof(region.control) ||
          binsof(region.ftable)) &&
-        (binsof(lane.lane0) || binsof(lane.lane1));
+        binsof(lane.active_lanes);
       ignore_bins lane_regions_none =
         (binsof(region.lane_cnt) ||
          binsof(region.credit) ||
@@ -175,8 +176,7 @@ class opq_coverage extends uvm_component;
 
   covergroup cg_credit with function sample(int lane, int lane_credit, int ticket_credit);
     coverpoint lane {
-      bins lane0 = {0};
-      bins lane1 = {1};
+      bins active_lanes[] = {[0:OPQ_N_LANE-1]};
     }
     coverpoint lane_credit {
       bins tight = {[0:32]};
@@ -199,8 +199,8 @@ class opq_coverage extends uvm_component;
     }
     coverpoint lane {
       bins none = {-1};
-      bins lane0 = {0};
-      bins lane1 = {1};
+      bins active_lanes[] = {[0:OPQ_N_LANE-1]};
+      bins inactive = default;
     }
     coverpoint hdr_cnt {
       bins zero = {0};

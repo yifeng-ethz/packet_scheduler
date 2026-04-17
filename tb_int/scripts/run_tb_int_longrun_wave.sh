@@ -14,6 +14,7 @@
 #   COUNT=16
 #
 # Environment knobs:
+#   SKIP_COMPILE=0
 #   MAX_PARALLEL=16
 #   TEST=tb_int_longrun_sanity_test
 #   TB_INT_EXTRA_DEFINES='+define+TB_INT_FAST_RBCAM'
@@ -28,6 +29,7 @@ SIM_DIR="${TB_INT_DIR}/sim_runs/longrun"
 
 START_CASE_ID="${1:-1}"
 COUNT="${2:-16}"
+SKIP_COMPILE="${SKIP_COMPILE:-0}"
 MAX_PARALLEL="${MAX_PARALLEL:-16}"
 TEST="${TEST:-tb_int_longrun_sanity_test}"
 TB_INT_EXTRA_DEFINES="${TB_INT_EXTRA_DEFINES:-}"
@@ -36,8 +38,10 @@ RUN_DO='quietly set NumericStdNoWarnings 1; quietly set StdArithNoWarnings 1; ru
 
 mkdir -p "${SIM_DIR}"
 
-echo ">>> compile once"
-make -C "${UVM_DIR}" compile TB_INT_EXTRA_DEFINES="${TB_INT_EXTRA_DEFINES}"
+if [[ "${SKIP_COMPILE}" != "1" ]]; then
+  echo ">>> compile once"
+  make -C "${UVM_DIR}" compile TB_INT_EXTRA_DEFINES="${TB_INT_EXTRA_DEFINES}"
+fi
 
 pids=()
 case_ids=()

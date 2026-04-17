@@ -23,8 +23,11 @@ package opq_pkg;
 `ifndef OPQ_TICKET_FIFO_DEPTH
 `define OPQ_TICKET_FIFO_DEPTH 256
 `endif
+`ifndef OPQ_N_LANE
+`define OPQ_N_LANE 2
+`endif
 
-  localparam int OPQ_N_LANE = 2;
+  localparam int OPQ_N_LANE = `OPQ_N_LANE;
   localparam int OPQ_INGRESS_WIDTH = 36;
   localparam int OPQ_CHANNEL_WIDTH = 2;
   localparam int OPQ_PAGE_RAM_RD_WIDTH = 36;
@@ -139,30 +142,36 @@ package opq_pkg;
   class opq_hit_desc extends uvm_object;
     rand bit [31:0] payload_word;
     bit [63:0] debug_hit_id;
+    bit [2:0]  error_bits;
 
     `uvm_object_utils_begin(opq_hit_desc)
       `uvm_field_int(payload_word, UVM_DEFAULT)
       `uvm_field_int(debug_hit_id, UVM_DEFAULT)
+      `uvm_field_int(error_bits, UVM_DEFAULT)
     `uvm_object_utils_end
 
     function new(string name = "opq_hit_desc");
       super.new(name);
       payload_word = '0;
       debug_hit_id = '0;
+      error_bits = '0;
     endfunction
   endclass
 
   class opq_subheader_desc extends uvm_object;
     rand bit [7:0] shd_ts;
     rand opq_hit_desc hits[$];
+    bit [2:0] error_bits;
 
     `uvm_object_utils_begin(opq_subheader_desc)
       `uvm_field_int(shd_ts, UVM_DEFAULT)
+      `uvm_field_int(error_bits, UVM_DEFAULT)
       `uvm_field_queue_object(hits, UVM_DEFAULT)
     `uvm_object_utils_end
 
     function new(string name = "opq_subheader_desc");
       super.new(name);
+      error_bits = '0;
     endfunction
 
     function int unsigned hit_count();
@@ -178,6 +187,10 @@ package opq_pkg;
     rand bit [5:0] dt_type;
     rand bit [15:0] feb_id;
     rand int unsigned pre_gap_cycles;
+    bit [2:0] preamble_error_bits;
+    bit whole_frame_packet;
+    bit omit_trailer;
+    bit suppress_scoreboard_frame;
     opq_subheader_desc subheaders[$];
 
     constraint c_lane_range { lane_id < OPQ_N_LANE; }
@@ -191,6 +204,10 @@ package opq_pkg;
       `uvm_field_int(dt_type, UVM_DEFAULT)
       `uvm_field_int(feb_id, UVM_DEFAULT)
       `uvm_field_int(pre_gap_cycles, UVM_DEFAULT)
+      `uvm_field_int(preamble_error_bits, UVM_DEFAULT)
+      `uvm_field_int(whole_frame_packet, UVM_DEFAULT)
+      `uvm_field_int(omit_trailer, UVM_DEFAULT)
+      `uvm_field_int(suppress_scoreboard_frame, UVM_DEFAULT)
       `uvm_field_queue_object(subheaders, UVM_DEFAULT)
     `uvm_object_utils_end
 
@@ -199,6 +216,10 @@ package opq_pkg;
       dt_type = 6'b000001;
       feb_id = 16'h0001;
       pre_gap_cycles = 0;
+      preamble_error_bits = '0;
+      whole_frame_packet = 1'b1;
+      omit_trailer = 1'b0;
+      suppress_scoreboard_frame = 1'b0;
     endfunction
 
     function bit [15:0] frame_subh_count_bits();
@@ -311,6 +332,7 @@ package opq_pkg;
     bit check_feb_contract;
     bit require_egress_preamble;
     bit allow_drop_accounting;
+    bit allow_unmatched_ingress_preamble;
     int unsigned min_sop_count;
 
     `uvm_object_utils_begin(opq_scoreboard_cfg)
@@ -318,6 +340,7 @@ package opq_pkg;
       `uvm_field_int(check_feb_contract, UVM_DEFAULT)
       `uvm_field_int(require_egress_preamble, UVM_DEFAULT)
       `uvm_field_int(allow_drop_accounting, UVM_DEFAULT)
+      `uvm_field_int(allow_unmatched_ingress_preamble, UVM_DEFAULT)
       `uvm_field_int(min_sop_count, UVM_DEFAULT)
     `uvm_object_utils_end
 
@@ -327,6 +350,7 @@ package opq_pkg;
       check_feb_contract = 1'b1;
       require_egress_preamble = 1'b0;
       allow_drop_accounting = 1'b0;
+      allow_unmatched_ingress_preamble = 1'b0;
       min_sop_count = 0;
     endfunction
   endclass

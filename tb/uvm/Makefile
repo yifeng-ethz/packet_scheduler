@@ -4,7 +4,6 @@
 TB_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 PKT_DIR := $(abspath $(TB_DIR)/../..)
 REPO_ROOT := $(abspath $(PKT_DIR)/..)
-RTL_GEN_DIR := $(abspath $(PKT_DIR)/tb/rtl_gen_monolithic)
 BUILD_DIR := $(abspath $(TB_DIR)/build)
 
 QUESTA_PREFER_FE ?= 0
@@ -44,6 +43,7 @@ DPI_CPP_PATH ?= /usr/bin/gcc
 OPQ_PAGE_RAM_DEPTH ?= 65536
 OPQ_N_SHD ?= 256
 OPQ_TICKET_FIFO_DEPTH ?= 256
+OPQ_N_LANE ?= 2
 
 QUARTUS_SH ?= /data1/intelFPGA_pro/23.1/quartus/bin/quartus_sh
 QUARTUS_ROOTDIR := /data1/intelFPGA_pro/23.1/quartus
@@ -51,11 +51,12 @@ UVM_DEFINES ?= +define+UVM_NO_DPI
 UVM_DEFINES += +define+OPQ_PAGE_RAM_DEPTH=$(OPQ_PAGE_RAM_DEPTH)
 UVM_DEFINES += +define+OPQ_N_SHD=$(OPQ_N_SHD)
 UVM_DEFINES += +define+OPQ_TICKET_FIFO_DEPTH=$(OPQ_TICKET_FIFO_DEPTH)
+UVM_DEFINES += +define+OPQ_N_LANE=$(OPQ_N_LANE)
 TEST ?= opq_basic_smoke_test
 COV ?= 0
 COV_CODE ?= sbecft
 RUN_DO ?= run -all; quit -f
-DUT_IMPL ?= vhdl
+DUT_IMPL ?= native_sv
 
 LM_LICENSE_FILE := $(TB_LICENSE_CHAIN)
 export LM_LICENSE_FILE
@@ -67,24 +68,36 @@ SALT_LICENSE_SERVER := $(ETH_MENTOR_SERVER)
 export SALT_LICENSE_SERVER
 endif
 
+ifeq ($(OPQ_N_LANE),4)
+RTL_GEN_DIR := $(abspath $(PKT_DIR)/tb/rtl_gen_monolithic_4lane)
+VHDL_SRCS := \
+	$(RTL_GEN_DIR)/ordered_priority_queue_dut4_impl.vhd \
+	$(RTL_GEN_DIR)/ordered_priority_queue_dut4.vhd
+else
+RTL_GEN_DIR := $(abspath $(PKT_DIR)/tb/rtl_gen_monolithic)
+VHDL_SRCS := \
+	$(RTL_GEN_DIR)/ordered_priority_queue_dut_impl.vhd \
+	$(RTL_GEN_DIR)/ordered_priority_queue_dut.vhd
+endif
+
 ALT_RAM_SRCS := \
-	$(PKT_DIR)/rtl/vendor/alt_ram/frame_table.v \
-	$(PKT_DIR)/rtl/vendor/alt_ram/handle_fifo.v \
-	$(PKT_DIR)/rtl/vendor/alt_ram/lane_fifo.v \
-	$(PKT_DIR)/rtl/vendor/alt_ram/page_ram.v \
-	$(PKT_DIR)/rtl/vendor/alt_ram/ticket_fifo.v \
-	$(PKT_DIR)/rtl/vendor/alt_ram/tile_fifo.v
+	$(PKT_DIR)/rtl/sv_ver/vendor/alt_ram/frame_table.v \
+	$(PKT_DIR)/rtl/sv_ver/vendor/alt_ram/handle_fifo.v \
+	$(PKT_DIR)/rtl/sv_ver/vendor/alt_ram/lane_fifo.v \
+	$(PKT_DIR)/rtl/sv_ver/vendor/alt_ram/page_ram.v \
+	$(PKT_DIR)/rtl/sv_ver/vendor/alt_ram/ticket_fifo.v \
+	$(PKT_DIR)/rtl/sv_ver/vendor/alt_ram/tile_fifo.v
 
 SV_SRCS := \
 	$(UVM_SRC)/uvm_pkg.sv \
-	$(PKT_DIR)/rtl/ordered_priority_queue/monolithic_sv/ordered_priority_queue_dut_sv.sv \
-	$(PKT_DIR)/rtl/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv \
-	$(PKT_DIR)/rtl/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv \
-	$(PKT_DIR)/rtl/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_block_path.sv \
-	$(PKT_DIR)/rtl/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_tracker.sv \
-	$(PKT_DIR)/rtl/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_presenter.sv \
-	$(PKT_DIR)/rtl/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv \
-	$(PKT_DIR)/rtl/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic.sv \
+	$(PKT_DIR)/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_dut_sv.sv \
+	$(PKT_DIR)/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv \
+	$(PKT_DIR)/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv \
+	$(PKT_DIR)/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_block_path.sv \
+	$(PKT_DIR)/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_tracker.sv \
+	$(PKT_DIR)/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_presenter.sv \
+	$(PKT_DIR)/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv \
+	$(PKT_DIR)/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic.sv \
 	$(TB_DIR)/opq_if.sv \
 	$(TB_DIR)/opq_pkg.sv \
 	$(TB_DIR)/opq_env_pkg.sv \
@@ -94,10 +107,6 @@ SV_SRCS := \
 	$(TB_DIR)/sva/opq_csr_sva.sv \
 	$(TB_DIR)/sva/opq_drr_sva.sv \
 	$(TB_DIR)/tb_top.sv
-
-VHDL_SRCS := \
-	$(RTL_GEN_DIR)/ordered_priority_queue_dut_impl.vhd \
-	$(RTL_GEN_DIR)/ordered_priority_queue_dut.vhd
 
 ifeq ($(DUT_IMPL),native_sv)
 UVM_DEFINES += +define+OPQ_USE_NATIVE_SV
@@ -117,7 +126,11 @@ endif
 all: run
 
 gen_dut:
+ifeq ($(OPQ_N_LANE),4)
+	QUARTUS_SH=$(QUARTUS_SH) QUARTUS_ROOTDIR=$(QUARTUS_ROOTDIR) OPQ_N_SHD=$(OPQ_N_SHD) OPQ_TICKET_FIFO_DEPTH=$(OPQ_TICKET_FIFO_DEPTH) OPQ_PAGE_RAM_DEPTH=$(OPQ_PAGE_RAM_DEPTH) $(PKT_DIR)/tb_int/scripts/gen_monolithic_dut_4lane.sh $(RTL_GEN_DIR)
+else
 	QUARTUS_SH=$(QUARTUS_SH) QUARTUS_ROOTDIR=$(QUARTUS_ROOTDIR) OPQ_N_SHD=$(OPQ_N_SHD) OPQ_TICKET_FIFO_DEPTH=$(OPQ_TICKET_FIFO_DEPTH) $(TB_DIR)/scripts/gen_monolithic_dut.sh $(RTL_GEN_DIR)
+endif
 
 prepare:
 	rm -rf $(BUILD_DIR)
@@ -170,7 +183,7 @@ run_cov: compile
 	cd $(BUILD_DIR) && $(VSIM) $(VSIM_FLAGS) -c work.tb_top +UVM_TESTNAME=$(TEST) -do "coverage save -onexit opq_$(TEST).ucdb; $(RUN_DO)"
 
 lint:
-	python3 $(PKT_DIR)/legacy/tb/lint/lint_opq.py
+	python3 $(PKT_DIR)/tb/legacy/tb/lint/lint_opq.py
 
 lint_src: gen_dut prepare
 	$(VCOM) $(VCOM_FLAGS) -lint=full -check_synthesis $(VHDL_SRCS)

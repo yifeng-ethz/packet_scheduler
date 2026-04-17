@@ -1,17 +1,17 @@
 # DV Plan: ordered_priority_queue (monolithic)
 
-**DUT:** `packet_scheduler/rtl/ordered_priority_queue/monolithic/ordered_priority_queue.terp.vhd`  
-**Packaging:** `packet_scheduler/ordered_priority_queue_hw.tcl`  
+**DUT:** `packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic.sv`  
+**Packaging:** `packet_scheduler/script/ordered_priority_queue_hw.tcl`  
 **Author:** Yifeng Wang (yifenwan@phys.ethz.ch)  
 **Date:** 2026-04-14  
-**Status:** Active current-tree plan for the monolithic VHDL DUT and the live `packet_scheduler/tb/uvm` harness.
+**Status:** Active current-tree plan for the native monolithic SystemVerilog DUT and the live `packet_scheduler/tb/uvm` harness. The legacy monolithic VHDL image remains a behavioral reference only and does not count as signoff evidence.
 
 ---
 
 ## 1. Purpose
 
 This document surfaces the still-valid verification intent from
-`packet_scheduler/legacy/tb/DV_PLAN.md` into the current tree, then narrows it
+`packet_scheduler/tb/legacy/tb/DV_PLAN.md` into the current tree, then narrows it
 to what the live harness can actually execute and close today.
 
 The core contract remains the same:
@@ -82,9 +82,12 @@ revision and current harness.
 The live harness is documented in `packet_scheduler/tb/DV_HARNESS.md`. The
 current implementation scope is intentionally narrower than the archived plan:
 
-- DUT implementation under signoff is the monolithic VHDL core
+- DUT implementation under signoff is the native monolithic SystemVerilog core
 - mixed-language UVM harness in `packet_scheduler/tb/uvm`
 - active lane count in the current harness is `OPQ_N_LANE=2`
+- 4-lane native-SV execution exists for debug/integration work but is
+  explicitly out of signoff scope until the sparse-frame cadence bug in
+  `BUG_HISTORY.md` is closed
 - build-time sweep knobs that already work today:
   - `OPQ_N_SHD = 128 / 256 / 512`
   - derived or explicit `OPQ_TICKET_FIFO_DEPTH`
@@ -107,10 +110,10 @@ matching script wrappers under `packet_scheduler/tb/scripts/`.
 
 | Bucket | Markdown | Wrapper | Current promoted tests | Contract exercised |
 |--------|----------|---------|------------------------|--------------------|
-| `DV_BASIC` | `DV_BASIC.md` | `run_basic.sh` | `opq_basic_smoke_test`, `opq_basic_ts_boundary_test`, `opq_basic_subheader_shape_test` | End-to-end hit preservation, full-ts boundary behavior, subheader shape, zero-drop healthy path |
+| `DV_BASIC` | `DV_BASIC.md` | `run_basic.sh` | `opq_basic_smoke_test`, `opq_basic_ts_boundary_test`, `opq_basic_subheader_shape_test`, `opq_basic_feb_packet_contract_test` | End-to-end hit preservation, full-ts boundary behavior, subheader shape, native FEB whole-frame contract, zero-drop healthy path |
 | `DV_PARAM` | `DV_PARAM.md` | `run_param.sh` | `opq_basic_smoke_test`, `opq_basic_ts_boundary_test`, `opq_edge_max_hits_test` across `N_SHD=128/256/512` | Compile / elaboration-time configuration sweep for the active harness |
 | `DV_EDGE` | `DV_EDGE.md` | `run_edge.sh` | `opq_edge_backpressure_test`, `opq_edge_always_ready_test`, `opq_edge_ready_medium_profile_test`, `opq_edge_stuck_low_backpressure_test`, `opq_edge_max_hits_test`, `opq_edge_toggle_backpressure_test` | Backpressure restart, always-ready baseline, medium/stuck-low ready profiles, max-hit packet shape, short-toggle ready behavior |
-| `DV_PROF` | `DV_PROF.md` | `run_perf.sh` | `opq_prof_stress_test`, `opq_prof_lane_skew_test` | Sustained traffic without drop, lane skew under the healthy contract |
+| `DV_PROF` | `DV_PROF.md` | `run_perf.sh` | `opq_prof_stress_test`, `opq_prof_lane_skew_test`, `opq_prof_whole_frame_skew_test`, `opq_prof_missing_empty_frame_test` | Sustained traffic without drop, lane skew, whole-frame cadence skew, and sparse-frame residency under the healthy 2-lane contract |
 | `DV_ERROR` | `DV_ERROR.md` | `run_error.sh` | `opq_error_lane_mask_test`, `opq_error_lane_mask_single_hit_test`, `opq_error_lane_mask_burst_test`, `opq_error_counter_clear_test` | Mask-at-boundary and CSR clear semantics across single-hit and burst packets on the current promoted path |
 | `DV_CROSS` | `DV_CROSS.md` | `run_cross.sh` | `opq_cross_bp_credit_test`, `opq_cross_drr_allowance_test`, `opq_cross_drr_idle_lane_test`, `opq_cross_drr_zero_allowance_test`, `opq_cross_drr_short_allowance_test` | Backpressure × credit, block-level DRR allowance/defer accounting, empty-frame-cadence idle lane, zero/short allowance behavior |
 
@@ -135,6 +138,9 @@ These checks are currently valid and rerun against the live DUT:
   - currently green at `N_SHD=128`, `256`, and `512`
 - `opq_basic_subheader_shape_test`
   - validates sparse, mixed hit-count subheader framing on the healthy path
+- `opq_basic_feb_packet_contract_test`
+  - validates the native FEB whole-frame packet contract
+  - checks monitor-side reconstruction from the real ingress pins
 - `opq_edge_backpressure_test`
   - validates presenter restart behavior under periodic stall
 - `opq_edge_always_ready_test`
@@ -152,6 +158,11 @@ These checks are currently valid and rerun against the live DUT:
   - validates short soak behavior on the live harness
 - `opq_prof_lane_skew_test`
   - validates sustained two-lane skew without data loss
+- `opq_prof_whole_frame_skew_test`
+  - validates whole-frame skew with alternating active and empty FEB frames
+- `opq_prof_missing_empty_frame_test`
+  - validates uneven per-lane frame counts on the active 2-lane harness
+  - remains separate from the open 4-lane sparse-frame cadence bug
 - `opq_error_lane_mask_test`
   - validates packet-boundary lane mask control and per-lane drop counters
 - `opq_error_lane_mask_single_hit_test`
@@ -175,9 +186,16 @@ These checks are currently valid and rerun against the live DUT:
   - validates repeated short-quantum reload behavior and service fairness on the
     directed path
 - `opq_error_lane_mask_recovery_test`
+  - promoted signoff testcase
+  - validates clean recovery after the active-lane mask is cleared
+- `opq_error_subheader_mask_recovery_test`
+  - promoted signoff testcase
+  - validates that a malformed subheader is masked without poisoning the next
+    legal FEB packet
+- `opq_error_header_mask_recovery_test`
   - implemented as a probe, not a promoted signoff test
-  - currently exposes an open recovery bug: clearing `LANE_MASK` after a
-    masked-drop phase does not restore clean traffic as expected
+  - currently exposes an open parser recovery bug: a header-error masked frame
+    still corrupts the timestamp context of the next legal frame
 - `opq_error_ftable_overflow_test`
   - implemented as a probe, not a promoted signoff test
   - currently exposes an open overwrite/presenter bug: forced overwrite under
@@ -254,7 +272,7 @@ states which items are really closed and which are still backlog.
 | Formal section separate from directed/random | Implemented in plan | `DV_FORMAL.md` |
 | Realistic FEB-like driver contract derived from frontend frame format | Implemented at FEB-frame contract level, not yet the full `online_dpv2` IP chain | `DV_HARNESS.md`, packet builders in `opq_pkg.sv` |
 | Full `online_dpv2` FEB datapath in the active harness | Open backlog | not yet wired into the current-tree harness |
-| Full native-SV rewrite with same architecture and source-level SVA ownership | Partial / open | `rtl/ordered_priority_queue/monolithic_sv`, not yet full signoff replacement |
+| Full native-SV rewrite with same architecture and source-level SVA ownership | Partial / open | `rtl/sv_ver/ordered_priority_queue/monolithic_sv`, not yet full signoff replacement |
 | Non-default `N_SHD` sweep | `DV_BASIC` signoff sweep | build-time config randomization + wrapper defines | Implemented / green at `128/256/512` on the basic trilogy | Medium | Medium |
 
 ### Current coverage snapshot

@@ -2,9 +2,18 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DUT_IMPL="${DUT_IMPL:-native_sv}"
 
-if [[ "$#" -eq 0 ]]; then
-  set -- opq_cross_drr_bursty_random_test opq_error_lane_mask_recovery_test opq_error_ftable_overflow_test
+if [[ "${DUT_IMPL}" != "native_sv" ]]; then
+  echo "run_probes.sh only supports DUT_IMPL=native_sv (got ${DUT_IMPL})" >&2
+  exit 1
 fi
 
-"${SCRIPT_DIR}/run_uvm.sh" "$@"
+if [[ "$#" -eq 0 ]]; then
+  set -- \
+    opq_cross_drr_bursty_random_test \
+    opq_error_header_mask_recovery_test \
+    opq_error_ftable_overflow_test
+fi
+
+DUT_IMPL="${DUT_IMPL}" "${SCRIPT_DIR}/run_uvm.sh" "$@"

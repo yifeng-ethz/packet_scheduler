@@ -32,7 +32,7 @@ TCL_FILE="${OUT_DIR}/gen_monolithic_dut4.tcl"
 cat > "${TCL_FILE}" <<TCL
 lappend auto_path "\$::env(QUARTUS_ROOTDIR)/../ip/altera/common/hw_tcl_packages"
 package require -exact altera_terp 1.0
-set template_file [file normalize {${PKT_DIR}/rtl/ordered_priority_queue/monolithic/ordered_priority_queue.terp.vhd}]
+set template_file [file normalize {${PKT_DIR}/rtl/legacy/ordered_priority_queue/monolithic/ordered_priority_queue.terp.vhd}]
 set template [read [open \$template_file r]]
 set params(n_lane) 4
 set params(fifos_names) [list "ticket_fifo" "lane_fifo" "handle_fifo"]

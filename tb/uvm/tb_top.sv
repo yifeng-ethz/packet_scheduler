@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // IP Name   : tb_top
 // Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
-// Revision  : 0.4 - allow standalone OPQ UVM runs against the 4-lane VHDL image
+// Revision  : 0.5 - default standalone OPQ UVM signoff to the native monolithic SV DUT
 // Description:
-//   Top-level mixed-language OPQ UVM harness wrapper.
+//   Top-level OPQ UVM harness wrapper with native monolithic SV as the default signoff target.
 //------------------------------------------------------------------------------
 `timescale 1ns/1ps
 
@@ -83,6 +83,18 @@ module tb_top;
       .asi_ingress_1_startofpacket(ingress_if[1].startofpacket),
       .asi_ingress_1_endofpacket(ingress_if[1].endofpacket),
       .asi_ingress_1_error(ingress_if[1].error),
+      .asi_ingress_2_data('0),
+      .asi_ingress_2_valid('0),
+      .asi_ingress_2_channel('0),
+      .asi_ingress_2_startofpacket('0),
+      .asi_ingress_2_endofpacket('0),
+      .asi_ingress_2_error('0),
+      .asi_ingress_3_data('0),
+      .asi_ingress_3_valid('0),
+      .asi_ingress_3_channel('0),
+      .asi_ingress_3_startofpacket('0),
+      .asi_ingress_3_endofpacket('0),
+      .asi_ingress_3_error('0),
       .aso_egress_data(egress_if.data),
       .aso_egress_valid(egress_if.valid),
       .aso_egress_ready(egress_if.ready),

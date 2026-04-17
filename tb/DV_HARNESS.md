@@ -3,14 +3,15 @@
 **Harness root:** `packet_scheduler/tb/uvm`  
 **Author:** Yifeng Wang (yifenwan@phys.ethz.ch)  
 **Date:** 2026-04-14  
-**Status:** Active current-tree harness description.
+**Status:** Active current-tree harness description for native-SV signoff.
 
 ---
 
 ## 1. Topology
 
-The current harness is a mixed-language UVM environment around the monolithic
-VHDL DUT.
+The current harness is a mixed-language UVM environment whose signoff target is
+the monolithic native SystemVerilog DUT. The archived VHDL image remains a
+reference/debug path only.
 
 - `tb_top.sv`
   - clock / reset generation
@@ -49,8 +50,10 @@ The harness today supports these build-time sweeps cleanly:
 
 Current harness limits:
 
-- `OPQ_N_LANE` is fixed to `2` in the checked-in live harness
-- the current `tb_top.sv` wiring is not yet a general `N_LANE` generator
+- signoff scope is `OPQ_N_LANE=2`
+- the current `tb_top.sv` wiring supports `2` and `4` lanes, but 4-lane
+  native-SV remains a non-claim until the sparse-frame cadence bug recorded in
+  `BUG_HISTORY.md` is closed
 - width sweeps beyond the default 36-bit symbol path are not yet wired into the
   live harness contract
 
@@ -146,6 +149,7 @@ The active testcase files are:
 - `tests/opq_prof_tests.sv`
 - `tests/opq_error_tests.sv`
 - `tests/opq_cross_tests.sv`
+- `tests/opq_frame_signoff_tests.sv`
 
 The wrapper scripts are:
 
@@ -157,9 +161,20 @@ The wrapper scripts are:
 - `scripts/run_cross.sh`
 - `scripts/run_probes.sh`
 - `scripts/run_cov_closure.sh`
+- `scripts/run_frame_signoff.sh`
 
-The current promoted signoff subset is still tracked separately in
-`packet_scheduler/doc/VERIFICATION_SIGNOFF.md`.
+The active promoted native-SV signoff scope is tracked in
+`packet_scheduler/doc/SIGNOFF.md`, `packet_scheduler/tb/DV_REPORT.md`, and
+`packet_scheduler/tb/DV_REPORT.json`.
+
+All promoted wrapper scripts now default to `DUT_IMPL=native_sv` and fail fast
+if another DUT implementation is requested for signoff/report generation.
+
+The native-SV no-restart signoff runner now composes promoted cases with
+explicit credit-restore checkpoints between cases instead of only fixed idle
+delays. That tightened the harness and confirmed a real DUT bug: current
+`bucket_frame` / `all_buckets_frame` runs still fail because lane/ticket credit
+does not return to the fully drained state under no-reset mixed-case traffic.
 
 ---
 
@@ -226,5 +241,8 @@ future signoff bucket, but not yet a promoted closure point.
 - the active monolithic VHDL DUT still has an open accepted-count /
   frame-table-metadata bug under asymmetric bursty DRR traffic; the harness is
   exposing it correctly
+- the native-SV `bucket_frame` / `all_buckets_frame` baselines now exist, but
+  they still expose the open no-reset drain / credit-restore bug recorded in
+  `BUG_HISTORY.md`
 
 These are real harness limitations and must remain explicit in the plan.

@@ -1,5 +1,32 @@
 # OPQ Bug History
 
+## 2026-04-17 Native-SV no-restart signoff run does not restore lane/ticket credit
+
+- First seen:
+  - `packet_scheduler/tb/uvm` `TEST=opq_bucket_frame_native_sv_test OPQ_N_LANE=2 DUT_IMPL=native_sv`
+  - `packet_scheduler/tb/uvm` `TEST=opq_all_buckets_frame_native_sv_test OPQ_N_LANE=2 DUT_IMPL=native_sv`
+- Symptom:
+  - the generated `bucket_frame` / `all_buckets_frame` signoff runs now exist and both fail under native SV
+  - the original failing evidence showed severe end-of-run mismatch:
+    - `bucket_frame`: `expected=3770 actual=4 missing=3766 ghost=0`
+    - `all_buckets_frame`: `expected=3788 actual=4 missing=3784 ghost=0`
+  - after tightening the harness so each composed case waits for full credit restore, the no-restart runner now times out case-by-case on the restore check itself, for example:
+    - `basic_seq_4336314000_credit_restore timed out waiting for lane/ticket credit restore`
+    - `soak_seq_credit_restore timed out waiting for lane/ticket credit restore`
+    - `whole_frame_seq_credit_restore timed out waiting for lane/ticket credit restore`
+- Root cause status:
+  - open
+  - this is not just a placeholder-report problem or a blind-gap harness issue anymore; the native-SV DUT does not return to the fully drained credit state after composed no-reset traffic
+  - the failure appears before final scoreboard closure and leaves lane/ticket credits stuck low, so later cases accumulate expected hits that never emerge at egress
+- Candidate fixes:
+  - add focused assertions or debug counters around lane-credit return, ticket-credit return, and frame-table empty/ownership handoff under no-reset case chaining
+  - reduce the continuous-frame runner to the strict `dv-workflow` practical composition if any composed case is still over-driving beyond its intended one-transaction baseline
+  - fix the native-SV presenter / frame-table / allocator drain path if credit does not restore even under the tightened case-by-case drain checkpoints
+- Fix status:
+  - open
+- Fix commit:
+  - pending
+
 ## 2026-04-17 SWB 4-lane sparse-frame cadence drops later hits
 
 - First seen:
@@ -85,3 +112,23 @@
   - fixed
 - Fix commit:
   - `6b9ed41` `Fix native SV OPQ CSR plane and CSR proof traffic`
+
+## 2026-04-17 Header-error mask path corrupts the next legal frame timestamp
+
+- First seen:
+  - `packet_scheduler/tb/uvm` `TEST=opq_error_header_mask_recovery_test OPQ_N_LANE=2 DUT_IMPL=native_sv`
+- Symptom:
+  - a malformed preamble/header frame is masked as intended, but the next legal recovery frame emerges with hits at the correct payload words and the wrong timestamp base
+  - observed failure is `expected=4 actual=4 missing=4 ghost=4`, with ghost hits reconstructed at `ts=0x10` instead of the legal recovery timestamp `0x1010`
+  - the ingress monitor also reports `capture_err=1` on the malformed frame, which is expected for the truncated stimulus and not the root cause of the timestamp corruption
+- Root cause status:
+  - open
+  - the native-SV ingress parser still mishandles the header-error recovery path after `INGRESS_PARSER_MASK_PKT_EXTENDED`
+  - reasserting `alert_sop` on the next legal preamble was necessary but not sufficient; the recovery frame still reaches the downstream path with stale timestamp context
+- Candidate fixes:
+  - complete the `MASK_PKT_EXTENDED` recovery reinitialization so the next legal header rebuilds the full timestamp/ticket context exactly as the idle path does
+  - add a focused assertion on header-error recovery so stale frame timestamp state is caught at the parser boundary instead of later at egress
+- Fix status:
+  - open
+- Fix commit:
+  - pending

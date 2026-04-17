@@ -72,6 +72,11 @@ module tb_int_top;
     initial begin
         rc_if.run_state  = RC_STATE_IDLE;
         rc_if.run_enable = 1'b0;
+        csr_if.address   = '0;
+        csr_if.read      = 1'b0;
+        csr_if.write     = 1'b0;
+        csr_if.writedata = '0;
+        csr_if.burstcount = 1'b0;
         emu_csr_if[0].address   = '0; emu_csr_if[0].read = 1'b0; emu_csr_if[0].write = 1'b0; emu_csr_if[0].writedata = '0;
         emu_csr_if[1].address   = '0; emu_csr_if[1].read = 1'b0; emu_csr_if[1].write = 1'b0; emu_csr_if[1].writedata = '0;
         emu_csr_if[2].address   = '0; emu_csr_if[2].read = 1'b0; emu_csr_if[2].write = 1'b0; emu_csr_if[2].writedata = '0;
@@ -276,12 +281,6 @@ module tb_int_top;
     assign stage_a3_if.mutrig_ch   = 3'd0;
 
     assign egress_if.ready = 1'b1;      // always-ready by default
-
-    assign csr_if.address   = '0;
-    assign csr_if.read      = 1'b0;
-    assign csr_if.write     = 1'b0;
-    assign csr_if.writedata = '0;
-    assign csr_if.burstcount = 1'b0;
 
     // rc_if.run_state / run_enable are driven by run_control_driver in
     // tb_int_pkg. They also get deterministic IDLE defaults above so the OPQ

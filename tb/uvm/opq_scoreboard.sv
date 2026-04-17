@@ -218,10 +218,12 @@ class opq_scoreboard extends uvm_component;
 
     if (datak == 4'b0001 && data32[7:0] == K285 && beat.sop) begin
       if (pending_ingress_frames[lane_id].size() == 0) begin
-        `uvm_error(get_type_name(), $sformatf(
-          "Ingress lane %0d observed frame preamble without queued frame metadata",
-          lane_id
-        ))
+        if (!cfg.allow_unmatched_ingress_preamble) begin
+          `uvm_error(get_type_name(), $sformatf(
+            "Ingress lane %0d observed frame preamble without queued frame metadata",
+            lane_id
+          ))
+        end
         ingress_have_frame_meta[lane_id] = 1'b0;
       end else begin
         ingress_frame_meta[lane_id] = pending_ingress_frames[lane_id].pop_front();

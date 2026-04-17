@@ -118,6 +118,81 @@ interface opq_csr_if #(parameter int ADDR_W = 9) (
     logic              readdatavalid;
     logic              waitrequest;
     logic              burstcount;
+
+    task automatic idle();
+        address    <= '0;
+        read       <= 1'b0;
+        write      <= 1'b0;
+        writedata  <= '0;
+        burstcount <= 1'b0;
+    endtask
+
+    task automatic wait_reset_release();
+        while (rst === 1'b1) begin
+            idle();
+            @(posedge clk);
+        end
+    endtask
+
+    task automatic write32(input logic [ADDR_W-1:0] addr,
+                           input logic [31:0] data);
+        int timeout_cycles;
+        wait_reset_release();
+        address    <= addr;
+        writedata  <= data;
+        burstcount <= 1'b1;
+        read       <= 1'b0;
+        write      <= 1'b1;
+        timeout_cycles = 0;
+        do begin
+            @(posedge clk);
+            timeout_cycles++;
+            if (timeout_cycles > 64)
+                $fatal(1, "TB_INT_OPQ_CSR write timeout addr=0x%0h", addr);
+        end while (waitrequest === 1'b1);
+        idle();
+    endtask
+
+    task automatic read32(input logic [ADDR_W-1:0] addr,
+                          output logic [31:0] data);
+        int timeout_cycles;
+        wait_reset_release();
+        timeout_cycles = 0;
+        while (readdatavalid === 1'b1) begin
+            @(posedge clk);
+            timeout_cycles++;
+            if (timeout_cycles > 64)
+                $fatal(1, "TB_INT_OPQ_CSR stale readvalid timeout before addr=0x%0h", addr);
+        end
+        address    <= addr;
+        writedata  <= '0;
+        burstcount <= 1'b1;
+        write      <= 1'b0;
+        read       <= 1'b1;
+        timeout_cycles = 0;
+        do begin
+            @(posedge clk);
+            timeout_cycles++;
+            if (timeout_cycles > 64)
+                $fatal(1, "TB_INT_OPQ_CSR read accept timeout addr=0x%0h", addr);
+            #1step;
+        end while (waitrequest === 1'b1);
+        if (readdatavalid === 1'b1) begin
+            data = readdata;
+            idle();
+            return;
+        end
+        timeout_cycles = 0;
+        while (readdatavalid !== 1'b1) begin
+            @(posedge clk);
+            timeout_cycles++;
+            if (timeout_cycles > 64)
+                $fatal(1, "TB_INT_OPQ_CSR read data timeout addr=0x%0h", addr);
+            #1step;
+        end
+        data = readdata;
+        idle();
+    endtask
 endinterface
 
 interface emut_avmm_csr_if #(parameter int ADDR_W = 4) (

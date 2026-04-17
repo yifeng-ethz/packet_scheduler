@@ -16,4 +16,5 @@ package opq_env_pkg;
   `include "tests/opq_prof_tests.sv"
   `include "tests/opq_error_tests.sv"
   `include "tests/opq_cross_tests.sv"
+  `include "tests/opq_frame_signoff_tests.sv"
 endpackage

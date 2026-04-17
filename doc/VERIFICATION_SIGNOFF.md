@@ -1,5 +1,9 @@
-# Verification Signoff
+# Legacy Verification Signoff Note
 Author: Yifeng Wang (yifenwan@phys.ethz.ch)
+
+> Superseded by `packet_scheduler/doc/SIGNOFF.md`. This file is kept as the
+> longer narrative note from the pre-cleanup flow and still contains useful
+> rationale, but the active signoff dashboard is now `SIGNOFF.md`.
 
 ## Scope
 
@@ -8,7 +12,7 @@ This note defines the current standalone DV signoff expectations for
 `rtl/ordered_priority_queue/monolithic/ordered_priority_queue.terp.vhd`.
 
 On 2026-04-13 the old `tb/` and `uvm/` harnesses were archived under
-`packet_scheduler/legacy/`. Those files remain useful as intent capture and bug
+`packet_scheduler/tb/legacy/`. Those files remain useful as intent capture and bug
 history, but they are not current signoff evidence.
 
 ## Source Material Reviewed
@@ -18,8 +22,8 @@ history, but they are not current signoff evidence.
 - `packet_scheduler/tb/DV_PARAM.md`
 - `packet_scheduler/tb/DV_PROBE.md`
 - `packet_scheduler/tb/DV_FORMAL.md`
-- `packet_scheduler/legacy/tb/DV_PLAN.md`
-- `packet_scheduler/legacy/tb/DV_HARNESS.md`
+- `packet_scheduler/tb/legacy/tb/DV_PLAN.md`
+- `packet_scheduler/tb/legacy/tb/DV_HARNESS.md`
 - `slow-control_hub/doc/VERIFICATION_SIGNOFF.md`
 - Claude skills `dv-workflow` and `rtl-lint`
 

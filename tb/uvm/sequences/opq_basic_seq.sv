@@ -801,6 +801,110 @@ class opq_burst_masked_drop_virtual_sequence extends opq_virtual_sequence_base;
   endtask
 endclass
 
+class opq_header_error_recovery_virtual_sequence extends opq_virtual_sequence_base;
+  `uvm_object_utils(opq_header_error_recovery_virtual_sequence)
+
+  function new(string name = "opq_header_error_recovery_virtual_sequence");
+    super.new(name);
+  endfunction
+
+  task body();
+    opq_frame_item lane0_frames[$];
+    opq_frame_item lane1_frames[$];
+    bit [31:0] lane0_hits[$];
+    bit [31:0] lane1_hits[$];
+    bit [47:0] ts_step;
+    opq_frame_item bad_frame;
+
+    ts_step = OPQ_N_SHD * 16;
+    lane0_hits = {32'h7C00_0001, 32'h7C00_0002};
+    lane1_hits = {32'h7D00_0001, 32'h7D00_0002};
+
+    bad_frame = build_frame("lane0_hdr_err", 0, 48'd0, 16'd0, 0, 0, 0, '0, '0, 0);
+    bad_frame.preamble_error_bits = 3'b100;
+    bad_frame.omit_trailer = 1'b1;
+    bad_frame.suppress_scoreboard_frame = 1'b1;
+    lane0_frames.push_back(bad_frame);
+
+    bad_frame = build_frame("lane1_hdr_err", 1, 48'd0, 16'd0, 0, 0, 0, '0, '0, 0);
+    bad_frame.preamble_error_bits = 3'b100;
+    bad_frame.omit_trailer = 1'b1;
+    bad_frame.suppress_scoreboard_frame = 1'b1;
+    lane1_frames.push_back(bad_frame);
+
+    lane0_frames.push_back(build_single_subheader_frame(
+      "lane0_hdr_recovery", 0, ts_step, 16'd1, 8'h01, 0, lane0_hits
+    ));
+    lane1_frames.push_back(build_single_subheader_frame(
+      "lane1_hdr_recovery", 1, ts_step, 16'd1, 8'h01, 0, lane1_hits
+    ));
+
+    start_lane_frames(lane0_frames, lane1_frames);
+  endtask
+endclass
+
+class opq_subheader_error_recovery_virtual_sequence extends opq_virtual_sequence_base;
+  `uvm_object_utils(opq_subheader_error_recovery_virtual_sequence)
+
+  function new(string name = "opq_subheader_error_recovery_virtual_sequence");
+    super.new(name);
+  endfunction
+
+  function automatic opq_frame_item build_subheader_error_frame(
+    string name,
+    int lane_id,
+    bit [47:0] frame_ts,
+    bit [15:0] pkg_cnt,
+    int unsigned pre_gap_cycles
+  );
+    opq_frame_item tr;
+    opq_subheader_desc bad_shd;
+    opq_subheader_desc good_shd;
+
+    tr = opq_frame_item::type_id::create(name);
+    tr.lane_id = lane_id;
+    tr.channel = lane_id[1:0];
+    tr.frame_ts = frame_ts;
+    tr.pkg_cnt = pkg_cnt;
+    tr.pre_gap_cycles = pre_gap_cycles;
+
+    bad_shd = opq_subheader_desc::type_id::create({name, "_bad_shd"});
+    bad_shd.shd_ts = 8'h01;
+    bad_shd.error_bits = 3'b010;
+    tr.subheaders.push_back(bad_shd);
+
+    good_shd = opq_subheader_desc::type_id::create({name, "_good_shd"});
+    good_shd.shd_ts = 8'h02;
+    tr.subheaders.push_back(good_shd);
+
+    return tr;
+  endfunction
+
+  task body();
+    opq_frame_item lane0_frames[$];
+    opq_frame_item lane1_frames[$];
+    bit [31:0] lane0_hits[$];
+    bit [31:0] lane1_hits[$];
+    bit [47:0] ts_step;
+
+    ts_step = OPQ_N_SHD * 16;
+    lane0_hits = {32'h7E00_0001};
+    lane1_hits = {32'h7F00_0001};
+
+    lane0_frames.push_back(build_subheader_error_frame("lane0_shd_err", 0, 48'd0, 16'd0, 0));
+    lane1_frames.push_back(build_subheader_error_frame("lane1_shd_err", 1, 48'd0, 16'd0, 0));
+
+    lane0_frames.push_back(build_single_subheader_frame(
+      "lane0_shd_recovery", 0, ts_step, 16'd1, 8'h03, OPQ_MIN_SOP_GAP_CYCLES, lane0_hits
+    ));
+    lane1_frames.push_back(build_single_subheader_frame(
+      "lane1_shd_recovery", 1, ts_step, 16'd1, 8'h03, OPQ_MIN_SOP_GAP_CYCLES, lane1_hits
+    ));
+
+    start_lane_frames(lane0_frames, lane1_frames);
+  endtask
+endclass
+
 class opq_soak_virtual_sequence extends opq_virtual_sequence_base;
   `uvm_object_utils(opq_soak_virtual_sequence)
 

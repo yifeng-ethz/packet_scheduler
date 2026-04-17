@@ -25,7 +25,7 @@ The runner for this bucket is `packet_scheduler/tb/scripts/run_probes.sh`.
 | Test | Purpose | Current status |
 |------|---------|----------------|
 | `opq_cross_drr_bursty_random_test` | Constrained-random hot-lane / cold-lane DRR stress with periodic egress stalls | Open repro: still exposes presenter stall-boundary corruption and repeated subheaders under asymmetric block sizes |
-| `opq_error_lane_mask_recovery_test` | Mask all lanes, accumulate drops, then clear the mask and expect clean recovery | Open repro: lane-mask clear does not yet restore clean traffic on the active DUT path |
+| `opq_error_header_mask_recovery_test` | Inject a malformed preamble/header, then expect the next legal FEB frame to recover cleanly | Open repro: the next legal frame currently emerges with corrupted timestamp context after the header-error mask path |
 | `opq_error_ftable_overflow_test` | Reduced-depth forced overwrite with always-stall egress to exercise frame-table drop accounting | Open repro: forced overwrite still produces malformed accepted egress beats |
 
 ---
@@ -37,7 +37,7 @@ not:
 
 - `cg_drop` on frame-table overwrite paths
 - `cg_drr` hot-lane defer-heavy behavior
-- replay of recovery-after-drop sequences
+- replay of malformed-header recovery sequences
 - assertion firing points that should later move from probe-only to green
 
 Probe coverage is diagnostic evidence, not closure evidence.

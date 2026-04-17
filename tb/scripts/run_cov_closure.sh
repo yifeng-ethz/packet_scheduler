@@ -15,17 +15,25 @@ fi
 
 if [[ "$#" -eq 0 ]]; then
   TESTS=(
+    opq_basic_smoke_test
+    opq_basic_ts_boundary_test
+    opq_basic_feb_packet_contract_test
     opq_basic_subheader_shape_test
     opq_edge_backpressure_test
     opq_edge_always_ready_test
     opq_edge_ready_medium_profile_test
     opq_edge_stuck_low_backpressure_test
+    opq_edge_max_hits_test
     opq_edge_toggle_backpressure_test
     opq_prof_stress_test
     opq_prof_lane_skew_test
+    opq_prof_whole_frame_skew_test
+    opq_prof_missing_empty_frame_test
     opq_error_lane_mask_test
     opq_error_lane_mask_single_hit_test
     opq_error_lane_mask_burst_test
+    opq_error_lane_mask_recovery_test
+    opq_error_subheader_mask_recovery_test
     opq_error_counter_clear_test
     opq_cross_bp_credit_test
     opq_cross_drr_allowance_test
@@ -40,8 +48,9 @@ fi
 rm -rf "${COV_DIR}"
 mkdir -p "${COV_DIR}"
 
-COV_ENABLE=1 "${SCRIPT_DIR}/run_uvm.sh" "${TESTS[@]}"
-OPQ_N_SHD_LIST=128,256,512 COV_ENABLE=1 "${SCRIPT_DIR}/run_param.sh" \
+OPQ_N_SHD=256 OPQ_TICKET_FIFO_DEPTH=512 COV_ENABLE=1 DUT_IMPL="${DUT_IMPL:-native_sv}" \
+  "${SCRIPT_DIR}/run_uvm.sh" "${TESTS[@]}"
+OPQ_N_SHD_LIST=128,512 COV_ENABLE=1 DUT_IMPL="${DUT_IMPL:-native_sv}" "${SCRIPT_DIR}/run_param.sh" \
   opq_basic_smoke_test \
   opq_basic_ts_boundary_test \
   opq_edge_max_hits_test

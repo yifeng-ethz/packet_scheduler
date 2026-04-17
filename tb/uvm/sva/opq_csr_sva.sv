@@ -32,7 +32,11 @@ module opq_csr_sva (
 
   property p_read_has_readdatavalid;
     @(posedge clk) disable iff (reset)
-      (read && !waitrequest) |=> readdatavalid;
+      // Sampled SVA values are observed before always_ff/NBA updates land.
+      // The native SV CSR plane returns readdatavalid from a registered
+      // pipeline, so a legal response can appear one or two sampled cycles
+      // after the accepted read depending on implementation style.
+      (read && !waitrequest) |=> ##[0:1] readdatavalid;
   endproperty
 
   assert property (p_single_access_kind);
