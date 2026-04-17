@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_block_path
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.10
-// Date    : 20260414
-// Change  : Carry mover priming, beat accounting, and default-contract fixes into the native SV staging path
+// Version : 26.3.14
+// Date    : 20260417
+// Change  : Restore VHDL-style configurable DRR allowance and defer accounting in the native SV staging path
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_block_path #(
@@ -37,6 +37,8 @@ module ordered_priority_queue_monolithic_block_path #(
   input  logic                                             page_allocator_page_we_i,
   input  logic [PAGE_RAM_ADDR_WIDTH-1:0]                   page_allocator_page_waddr_i,
   input  logic [PAGE_RAM_DATA_WIDTH-1:0]                   page_allocator_page_wdata_i,
+  input  logic [N_LANE-1:0][9:0]                           drr_allowance_i,
+  input  logic [N_LANE-1:0]                                drr_allowance_reload_i,
   output logic [N_LANE-1:0][HANDLE_FIFO_ADDR_WIDTH-1:0]    handle_fifos_rd_addr_o,
   output logic [N_LANE-1:0][LANE_FIFO_ADDR_WIDTH-1:0]      lane_fifos_rd_addr_o,
   output logic [N_LANE-1:0][LANE_FIFO_ADDR_WIDTH-1:0]      lane_credit_update_o,
@@ -74,6 +76,20 @@ module ordered_priority_queue_monolithic_block_path #(
         return result2[N_LANE-1:0];
       end
       return result2[2*N_LANE-1:N_LANE];
+    end
+  endfunction
+
+  function automatic logic [9:0] sat_add_quantum(
+    input logic [9:0] lhs,
+    input logic [9:0] rhs
+  );
+    logic [10:0] sum_v;
+    begin
+      sum_v = {1'b0, lhs} + {1'b0, rhs};
+      if (sum_v[10]) begin
+        return QUANTUM_MAX;
+      end
+      return sum_v[9:0];
     end
   endfunction
 
@@ -159,8 +175,11 @@ module ordered_priority_queue_monolithic_block_path #(
   logic [N_LANE-1:0] handle_fifo_is_q_valid;
   handle_t           handle_fifo_if_rd_handle [N_LANE];
   logic [N_LANE-1:0] handle_fifo_if_rd_flag;
-  logic [N_LANE-1:0] b2p_arb_req;
+  logic [N_LANE-1:0] b2p_arb_req_raw;
+  logic [N_LANE-1:0] b2p_arb_req_eligible;
   logic [N_LANE-1:0] b2p_arb_gnt;
+  logic [N_LANE-1:0] drr_lock_event_dbg;
+  logic [N_LANE-1:0] drr_defer_event_dbg;
   quantum_t          b2p_arb_quantum_update_if_updating;
   arbiter_state_t    arbiter_state;
   b2p_arb_t          b2p_arb;
@@ -170,6 +189,10 @@ module ordered_priority_queue_monolithic_block_path #(
   logic [$clog2(N_LANE)-1:0] grant_code;
 
   always_comb begin : proc_block_mover_comb
+    logic pa_writing_v;
+
+    pa_writing_v = page_allocator_write_page_i || page_allocator_write_head_i ||
+      page_allocator_write_tail_i || page_allocator_page_we_i;
     for (int i = 0; i < N_LANE; i++) begin
       handle_fifo_is_pending_handle[i] = 1'b0;
       handle_fifo_is_pending_handle_valid[i] = 1'b0;
@@ -203,10 +226,16 @@ module ordered_priority_queue_monolithic_block_path #(
         lane_fifos_rd_addr_o[i] = block_mover[i].handle.src + lane_fifo_addr_t'(block_mover[i].word_wr_cnt);
       end
 
-      b2p_arb_req[i] = block_mover[i].page_wreq;
-      if ((QUANTUM_MAX - b2p_arb.quantum[i]) >= QUANTUM_PER_SUBFRAME) begin
-        b2p_arb_quantum_update_if_updating[i] = QUANTUM_PER_SUBFRAME;
-      end else if (b2p_arb_gnt[i] && b2p_arb_req[i]) begin
+      b2p_arb_req_raw[i] = block_mover[i].page_wreq && !pa_writing_v;
+      if (b2p_arb.quantum[i] >= 10'(block_mover[i].handle.blk_len)) begin
+        b2p_arb_req_eligible[i] = b2p_arb_req_raw[i];
+      end else begin
+        b2p_arb_req_eligible[i] = 1'b0;
+      end
+
+      if ((QUANTUM_MAX - b2p_arb.quantum[i]) >= drr_allowance_i[i]) begin
+        b2p_arb_quantum_update_if_updating[i] = drr_allowance_i[i];
+      end else if (b2p_arb_gnt[i] && b2p_arb_req_raw[i]) begin
         b2p_arb_quantum_update_if_updating[i] = QUANTUM_MAX - b2p_arb.quantum[i] + 10'd1;
       end else begin
         b2p_arb_quantum_update_if_updating[i] = QUANTUM_MAX - b2p_arb.quantum[i];
@@ -215,11 +244,11 @@ module ordered_priority_queue_monolithic_block_path #(
   end
 
   always_comb begin : proc_b2p_arbiter_comb
-    b2p_arb_gnt = rr_grant(b2p_arb_req, b2p_arb.priority_mask);
+    b2p_arb_gnt = rr_grant(b2p_arb_req_eligible, b2p_arb.priority_mask);
     if (arbiter_state == ARBITER_LOCKED) begin
       b2p_arb_gnt = b2p_arb.sel_mask;
     end
-    if (page_allocator_write_page_i) begin
+    if (page_allocator_write_page_i || page_allocator_write_head_i || page_allocator_write_tail_i || page_allocator_page_we_i) begin
       b2p_arb_gnt = '0;
     end
 
@@ -250,6 +279,8 @@ module ordered_priority_queue_monolithic_block_path #(
   end
 
   always_ff @(posedge d_clk) begin : proc_block_mover_and_arbiter
+    drr_lock_event_dbg <= '0;
+    drr_defer_event_dbg <= '0;
     for (int i = 0; i < N_LANE; i++) begin
       block_mover[i].page_wreq <= 1'b0;
       block_mover[i].lane_credit_update_valid <= 1'b0;
@@ -336,24 +367,32 @@ module ordered_priority_queue_monolithic_block_path #(
     end
 
     for (int i = 0; i < N_LANE; i++) begin
-      if (b2p_arb_gnt[i] && b2p_arb_req[i]) begin
-        b2p_arb.quantum[i] <= b2p_arb.quantum[i] - 10'd1;
-      end
-      if (fetch_ticket_active_i && !tk_future_i[i]) begin
-        b2p_arb.quantum[i] <= b2p_arb.quantum[i] + b2p_arb_quantum_update_if_updating[i];
-        if (b2p_arb_gnt[i] && b2p_arb_req[i]) begin
-          b2p_arb.quantum[i] <= b2p_arb.quantum[i] - 10'd1 + b2p_arb_quantum_update_if_updating[i];
+      if (b2p_arb_gnt[i] && b2p_arb_req_raw[i]) begin
+        if (b2p_arb.quantum[i] > 10'd0) begin
+          b2p_arb.quantum[i] <= b2p_arb.quantum[i] - 10'd1;
+        end else begin
+          b2p_arb.quantum[i] <= '0;
         end
+      end
+      if (drr_allowance_reload_i[i]) begin
+        b2p_arb.quantum[i] <= drr_allowance_i[i];
       end
     end
 
     unique case (arbiter_state)
       ARBITER_IDLE: begin
-        if (|b2p_arb_req) begin
+        if (|b2p_arb_req_raw) begin
           if (|b2p_arb_gnt) begin
             b2p_arb.sel_mask <= b2p_arb_gnt;
             arbiter_state <= ARBITER_LOCKED;
+            drr_lock_event_dbg <= b2p_arb_gnt;
           end else begin
+            for (int i = 0; i < N_LANE; i++) begin
+              if (b2p_arb_req_raw[i] && !drr_allowance_reload_i[i]) begin
+                b2p_arb.quantum[i] <= sat_add_quantum(b2p_arb.quantum[i], drr_allowance_i[i]);
+                drr_defer_event_dbg[i] <= 1'b1;
+              end
+            end
             arbiter_state <= ARBITER_LOCKING;
           end
         end
@@ -363,16 +402,24 @@ module ordered_priority_queue_monolithic_block_path #(
         if (|b2p_arb_gnt) begin
           b2p_arb.sel_mask <= b2p_arb_gnt;
           arbiter_state <= ARBITER_LOCKED;
+          drr_lock_event_dbg <= b2p_arb_gnt;
+        end else if (|b2p_arb_req_raw) begin
+          for (int i = 0; i < N_LANE; i++) begin
+            if (b2p_arb_req_raw[i] && !drr_allowance_reload_i[i]) begin
+              b2p_arb.quantum[i] <= sat_add_quantum(b2p_arb.quantum[i], drr_allowance_i[i]);
+              drr_defer_event_dbg[i] <= 1'b1;
+            end
+          end
         end
       end
 
       ARBITER_LOCKED: begin
         for (int i = 0; i < N_LANE; i++) begin
-          if (b2p_arb.sel_mask[i] && !b2p_arb_req[i]) begin
+          if (b2p_arb.sel_mask[i] && !b2p_arb_req_raw[i]) begin
             arbiter_state <= ARBITER_IDLE;
             b2p_arb.priority_mask <= {b2p_arb.sel_mask[N_LANE-2:0], b2p_arb.sel_mask[N_LANE-1]};
           end
-          if ((b2p_arb.quantum[i] == 10'd1) && b2p_arb_gnt[i] && b2p_arb_req[i]) begin
+          if ((b2p_arb.quantum[i] == 10'd1) && b2p_arb_gnt[i] && b2p_arb_req_raw[i]) begin
             arbiter_state <= ARBITER_IDLE;
           end
         end

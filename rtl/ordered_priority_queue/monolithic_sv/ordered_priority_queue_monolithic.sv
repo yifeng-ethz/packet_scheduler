@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_sv
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.13
+// Version : 26.3.14
 // Date    : 20260417
-// Change  : Wire the VHDL-style end-of-frame flush ack into the native SV staging path
+// Change  : Add native DRR configuration hooks so the SV wrapper can expose a VHDL-compatible CSR plane
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_sv #(
@@ -55,6 +55,8 @@ module ordered_priority_queue_monolithic_sv #(
   output logic                                                           aso_egress_startofpacket,
   output logic                                                           aso_egress_endofpacket,
   output logic [2:0]                                                     aso_egress_error,
+  input  logic [N_LANE-1:0][9:0]                                         cfg_drr_allowance_i,
+  input  logic [N_LANE-1:0]                                              cfg_drr_allowance_reload_i,
   input  logic                                                           d_clk,
   input  logic                                                           d_reset
 );
@@ -265,6 +267,8 @@ module ordered_priority_queue_monolithic_sv #(
     .page_allocator_page_we_i(page_we_dbg),
     .page_allocator_page_waddr_i(page_waddr_dbg),
     .page_allocator_page_wdata_i(page_wdata_dbg),
+    .drr_allowance_i(cfg_drr_allowance_i),
+    .drr_allowance_reload_i(cfg_drr_allowance_reload_i),
     .handle_fifos_rd_addr_o(handle_fifos_rd_addr),
     .lane_fifos_rd_addr_o(lane_fifos_rd_addr),
     .lane_credit_update_o(lane_credit_update),
