@@ -13,6 +13,7 @@
 | ✅ | counter_checks_failed | `0` |
 | ✅ | unexpected_outputs | `0` |
 | ⚠️ | limitation | PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime. |
+| ⚠️ | limitation | opq_error_ftable_overflow_test is isolated-only evidence because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration. |
 | ⚠️ | limitation | opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow. |
 | ⚠️ | limitation | opq_cross_mixed_bucket_random_soak_test is isolated-only evidence; it intentionally randomizes across buckets rather than serving as the fixed promoted no-restart baseline. |
 
@@ -51,6 +52,7 @@
   `CROSS` -> [`COMBO_OPQ_505_cross_drr_short_allowance_test`](../cases/COMBO_OPQ_505_cross_drr_short_allowance_test.md) (`opq_cross_drr_short_allowance_test`)
   `CROSS` -> [`COMBO_OPQ_506_cross_idle_lane_backpressure_test`](../cases/COMBO_OPQ_506_cross_idle_lane_backpressure_test.md) (`opq_cross_idle_lane_backpressure_test`)
 - limitation: PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.
+- limitation: opq_error_ftable_overflow_test is isolated-only evidence because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration.
 - limitation: opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow.
 - limitation: opq_cross_mixed_bucket_random_soak_test is isolated-only evidence; it intentionally randomizes across buckets rather than serving as the fixed promoted no-restart baseline.
 

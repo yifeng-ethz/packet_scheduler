@@ -3,7 +3,7 @@
 **Companion to:** `DV_PLAN.md`, `DV_HARNESS.md`  
 **Author:** Yifeng Wang (yifenwan@phys.ethz.ch)  
 **Date:** 2026-04-14  
-**Status:** Active current-tree bucket for passing control/error cases, plus explicit open probes for the remaining overwrite and recovery bugs.
+**Status:** Active current-tree bucket for passing control/error cases, including the reduced-depth overwrite closure, plus explicit open probes for the remaining recovery bugs.
 
 ---
 
@@ -30,6 +30,7 @@ recovery gaps.
 | `opq_error_lane_mask_recovery_test` | Mask, drop, then clear the mask and expect clean recovery on the next legal FEB packets | Passing |
 | `opq_error_subheader_mask_recovery_test` | Malformed subheader suppression followed by a legal recovery frame | Passing |
 | `opq_error_counter_clear_test` | Runtime counter clear semantics | Passing |
+| `opq_error_ftable_overflow_test` | Reduced-depth `OPQ_PAGE_RAM_DEPTH=512` overwrite pressure under hard egress stall | Passing in isolated native-SV evidence; promoted as a separate elaboration point, not part of the fixed no-restart baseline |
 
 ---
 

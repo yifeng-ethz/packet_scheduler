@@ -63,6 +63,7 @@ def case_entry(
     primary_checks: str,
     contract_anchor: str,
     n_shd: int = 256,
+    page_ram_depth: int = 65536,
     effort: str = "practical",
     method: str = "D",
     observed_txn: int = 1,
@@ -85,7 +86,7 @@ def case_entry(
             "OPQ_N_LANE": 2,
             "OPQ_N_SHD": n_shd,
             "OPQ_TICKET_FIFO_DEPTH": ticket_fifo_depth,
-            "OPQ_PAGE_RAM_DEPTH": 65536,
+            "OPQ_PAGE_RAM_DEPTH": page_ram_depth,
             "MODE": "MERGING",
         },
     }
@@ -296,6 +297,13 @@ BUCKET_CASES = OrderedDict(
                     "Visible CSR counter reset semantics and post-clear clean state.",
                     "DV_ERROR counter-clear closure.",
                 ),
+                case_entry(
+                    "opq_error_ftable_overflow_test",
+                    "Reduced-depth overwrite pressure under hard egress stall on the native-SV presenter path.",
+                    "Frame-table drop counters increment, overwritten residents are suppressed, and no malformed accepted egress escapes under overwrite pressure.",
+                    "DV_ERROR reduced-depth overwrite / flush-atomicity closure.",
+                    page_ram_depth=512,
+                ),
             ],
         ),
         (
@@ -352,7 +360,6 @@ BUCKET_CASES = OrderedDict(
 )
 
 EXCLUDED_CASES = [
-    "opq_error_ftable_overflow_test",
     "opq_error_header_mask_recovery_test",
     "opq_error_header_word_mask_recovery_test",
     "opq_cross_drr_bursty_random_test",
@@ -474,6 +481,7 @@ SIGNOFF_RUN_SPECS = [
         "payload_cap": None,
         "limitations": [
             "PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.",
+            "opq_error_ftable_overflow_test is isolated-only evidence because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration.",
             "opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow.",
             "opq_cross_mixed_bucket_random_soak_test is isolated-only evidence; it intentionally randomizes across buckets rather than serving as the fixed promoted no-restart baseline.",
         ],
@@ -491,6 +499,7 @@ SIGNOFF_RUN_SPECS = [
         "payload_cap": None,
         "limitations": [
             "PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.",
+            "opq_error_ftable_overflow_test is isolated-only evidence because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration.",
             "opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow.",
             "opq_cross_mixed_bucket_random_soak_test is isolated-only evidence; it intentionally randomizes across buckets rather than serving as the fixed promoted no-restart baseline.",
             "This run appends two extra tail sequences after the 28 promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases.",
@@ -954,7 +963,7 @@ def build() -> dict:
             "mode_scope": "MERGING mode only is claimed in the active native-SV report",
             "n_shd_scope": "native-SV signoff claim covers OPQ_N_SHD = 128 / 256 / 512 only",
             "four_lane_status": "4-lane native-SV remains out of signoff scope until the sparse-frame cadence bug in BUG_HISTORY.md is closed",
-            "continuous_frame_scope": "continuous-frame baselines currently cover the default-build promoted matrix only; PARAM build points require separate elaboration and are excluded from no-restart baselines",
+            "continuous_frame_scope": "continuous-frame baselines currently cover the default-build promoted matrix only; PARAM build points and the reduced-depth overflow point require separate elaboration and are excluded from no-restart baselines",
         },
         "execution_modes": {
             "isolated": {

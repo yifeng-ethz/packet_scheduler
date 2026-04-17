@@ -1,6 +1,6 @@
 # ✅ DV Report — packet_scheduler ordered_priority_queue native_sv
 
-**DUT:** `ordered_priority_queue_monolithic_sv` &nbsp; **Date:** `2026-04-17` &nbsp; **RTL variant:** `after` &nbsp; **Seed:** `1`
+**DUT:** `ordered_priority_queue_monolithic_sv` &nbsp; **Date:** `2026-04-18` &nbsp; **RTL variant:** `after` &nbsp; **Seed:** `1`
 
 This page is the chief-architect dashboard. All per-case evidence lives under [`REPORT/`](REPORT/README.md).
 
@@ -10,7 +10,7 @@ This page is the chief-architect dashboard. All per-case evidence lives under [`
 |:---:|---|---|
 | ✅ | failed_cases | `0` |
 | ✅ | signoff_runs_with_failures | `0` |
-| ⚠️ | catalog_backlog_cases | `957` |
+| ⚠️ | catalog_backlog_cases | `956` |
 | ✅ | unimplemented_cases | `0` |
 | ✅ | stale_artifacts | `0` |
 
@@ -22,16 +22,16 @@ This page is the chief-architect dashboard. All per-case evidence lives under [`
 | OPQ_N_LANE | `2` |
 | OPQ_N_SHD | `128`, `256`, `512` |
 | MODE | `MERGING` |
-| probe_only_exclusions | `opq_error_ftable_overflow_test`, `opq_error_header_mask_recovery_test`, `opq_error_header_word_mask_recovery_test`, `opq_cross_drr_bursty_random_test` |
+| probe_only_exclusions | `opq_error_header_mask_recovery_test`, `opq_error_header_word_mask_recovery_test`, `opq_cross_drr_bursty_random_test` |
 
 ## Non-Claims
 
 - lane scope: native-SV signoff claim is OPQ_N_LANE=2 only
-- excluded probe cases: `opq_error_ftable_overflow_test`, `opq_error_header_mask_recovery_test`, `opq_error_header_word_mask_recovery_test`, `opq_cross_drr_bursty_random_test`
+- excluded probe cases: `opq_error_header_mask_recovery_test`, `opq_error_header_word_mask_recovery_test`, `opq_cross_drr_bursty_random_test`
 - mode scope: MERGING mode only is claimed in the active native-SV report
 - n shd scope: native-SV signoff claim covers OPQ_N_SHD = 128 / 256 / 512 only
 - four lane status: 4-lane native-SV remains out of signoff scope until the sparse-frame cadence bug in BUG_HISTORY.md is closed
-- continuous frame scope: continuous-frame baselines currently cover the default-build promoted matrix only; PARAM build points require separate elaboration and are excluded from no-restart baselines
+- continuous frame scope: continuous-frame baselines currently cover the default-build promoted matrix only; PARAM build points and the reduced-depth overflow point require separate elaboration and are excluded from no-restart baselines
 
 ## Bucket Summary
 
@@ -41,25 +41,25 @@ This page is the chief-architect dashboard. All per-case evidence lives under [`
 | ⚠️ | [`PARAM`](REPORT/buckets/PARAM.md) | 180 | 6 | 6 | 174 | stmt=84.28, branch=72.12, cond=48.15, expr=70.91, fsm_state=85.71, fsm_trans=43.75, toggle=46.76 | 67.37% (6/6) |
 | ⚠️ | [`EDGE`](REPORT/buckets/EDGE.md) | 168 | 7 | 7 | 161 | stmt=83.58, branch=71.54, cond=47.09, expr=69.09, fsm_state=85.71, fsm_trans=43.75, toggle=43.87 | 71.5% (7/7) |
 | ⚠️ | [`PROF`](REPORT/buckets/PROF.md) | 168 | 5 | 5 | 163 | stmt=83.80, branch=71.54, cond=46.03, expr=69.09, fsm_state=85.71, fsm_trans=43.75, toggle=44.68 | 64.37% (5/5) |
-| ⚠️ | [`ERROR`](REPORT/buckets/ERROR.md) | 166 | 6 | 6 | 160 | stmt=86.54, branch=76.61, cond=50.26, expr=74.55, fsm_state=91.43, fsm_trans=48.75, toggle=41.13 | 66.33% (6/6) |
+| ⚠️ | [`ERROR`](REPORT/buckets/ERROR.md) | 166 | 7 | 7 | 159 | stmt=85.44, branch=76.11, cond=53.88, expr=69.44, fsm_state=91.43, fsm_trans=48.75, toggle=46.04 | 71.26% (7/7) |
 | ⚠️ | [`CROSS`](REPORT/buckets/CROSS.md) | 165 | 7 | 7 | 158 | stmt=86.65, branch=75.73, cond=54.76, expr=81.82, fsm_state=88.57, fsm_trans=46.25, toggle=64.10 | 77.51% (7/7) |
 
 ## Totals
 
 | status | metric | pct | target |
 |:---:|---|---|---|
-| ⚠️ | stmt | 88.54 | 95.0 |
-| ⚠️ | branch | 78.85 | 90.0 |
-| ℹ️ | cond | 58.99 | - |
-| ℹ️ | expr | 87.27 | - |
+| ⚠️ | stmt | 87.54 | 95.0 |
+| ⚠️ | branch | 76.97 | 90.0 |
+| ℹ️ | cond | 58.49 | - |
+| ℹ️ | expr | 83.05 | - |
 | ⚠️ | fsm_state | 94.29 | 95.0 |
 | ⚠️ | fsm_trans | 51.25 | 90.0 |
-| ⚠️ | toggle | 65.16 | 80.0 |
+| ⚠️ | toggle | 62.26 | 80.0 |
 
 - catalog_planned_cases: `993`
-- promoted_signoff_cases: `36`
-- evidenced_promoted_cases: `36`
-- promoted functional coverage: `89.76% (36/36)`
+- promoted_signoff_cases: `37`
+- evidenced_promoted_cases: `37`
+- promoted functional coverage: `90.71% (37/37)`
 
 ## Cross / Continuous-Frame Signoff
 

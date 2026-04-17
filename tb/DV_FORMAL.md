@@ -1030,7 +1030,11 @@ installation:
   elaboration top for the translated frame-table tracker/presenter
   path, and the current default fallback stress suite passes:
   `opq_edge_toggle_backpressure_test` and
-  `opq_edge_stuck_low_backpressure_test`.
+  `opq_edge_stuck_low_backpressure_test`. The reduced-depth
+  `opq_error_ftable_overflow_test` flush-atomicity companion also now
+  passes as promoted isolated evidence, but it is not part of the
+  default fallback suite because it requires a separate
+  `OPQ_PAGE_RAM_DEPTH=512` elaboration point.
 
 Current ingress probe classification:
 
@@ -1065,7 +1069,7 @@ but they do not yet execute a real proof engine on this host.
 | §3.2 credit conservation | `opq_edge_backpressure_test`, `opq_edge_toggle_backpressure_test` |
 | §4.2 page-RAM exclusion | any `opq_cross_drr_*` + `opq_error_*` |
 | §5.1 DRR legality | `opq_cross_drr_allowance_test`, `opq_cross_drr_bursty_random_test` |
-| §6.1–6.2 flush atomicity | `opq_error_ftable_overflow_test` |
+| §6.1–6.2 flush atomicity | `opq_error_ftable_overflow_test` (promoted isolated reduced-depth point) |
 | §7.3.3–7.3.5 backpressure + flush | `opq_edge_backpressure_test` × `opq_error_ftable_overflow_test` hybrid (TODO to add as a directed case) |
 | §8.1–8.2 end-to-end integrity | `opq_cross_*` continuous-frame baselines |
 

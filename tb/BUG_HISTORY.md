@@ -15,7 +15,7 @@ Class legend:
 | [BUG-005-R](#bug-005-r-header-error-mask-path-corrupts-the-next-legal-frame-timestamp) | R | open | `opq_error_header_mask_recovery_test` | `pending` | Header-error mask recovery still leaks stale timestamp context into the next legal frame. |
 | [BUG-006-H](#bug-006-h-native-sv-no-restart-signoff-accounting-broke-continuous-frame-closure) | H | fixed | `opq_bucket_frame_native_sv_test`, `opq_all_buckets_frame_native_sv_test` | `b799f94` | No-restart signoff reused frame identity and miscounted malformed subheaders. |
 | [BUG-007-R](#bug-007-r-swb-4-lane-sparse-frame-cadence-drops-later-hits) | R | open | `opq_prof_missing_empty_frame_test` @ `OPQ_N_LANE=4` | `pending` | Unmasked quiescent lanes can block later active-lane traffic when empty-frame cadence is absent. |
-| [BUG-008-R](#bug-008-r-forced-overwrite-path-still-emits-malformed-accepted-egress-and-no-frame-table-drop-accounting) | R | open | `opq_error_ftable_overflow_test` | `pending` | Reduced-depth forced overwrite under always-stall still corrupts accepted egress and leaves frame-table drop counters at zero. |
+| [BUG-008-R](#bug-008-r-forced-overwrite-path-still-emits-malformed-accepted-egress-and-no-frame-table-drop-accounting) | R | fixed | `opq_error_ftable_overflow_test` | `41948b1` | Reduced-depth forced overwrite under always-stall corrupted accepted egress and hid frame-table drop events until the native-SV presenter and CSR path were fixed. |
 | [BUG-009-R](#bug-009-r-bursty-drr-stall-boundary-path-still-corrupts-egress-ordering-and-lacks-late-drop-identity) | R | open | `opq_cross_drr_bursty_random_test` | `pending` | Bursty DRR plus periodic stall still trips contract assertions and large ghost/missing-hit drift. |
 | [BUG-010-R](#bug-010-r-header-word-recovery-path-still-corrupts-the-next-legal-frame) | R | open | `opq_error_header_word_mask_recovery_test` | `pending` | Header-word error injection still corrupts the next legal timestamp base and cannot stay in no-restart signoff. |
 | [BUG-011-R](#bug-011-r-chained-malformed-subheader-recovery-is-not-composable-in-mixed-bucket-soak) | R | open | `opq_cross_mixed_bucket_random_soak_test` | `pending` | Isolated malformed-subheader recovery is green, but chained mixed-soak recovery still breaks no-restart framing. |
@@ -160,18 +160,17 @@ Class legend:
   - the reduced-depth forced-overwrite probe should accumulate non-zero frame-table drop counters under always-stall backpressure, but instead emits malformed accepted egress while leaving frame-table drop accounting at zero
   - current probe failure ends with `Expected non-zero frame-table drop counters during forced egress stall overflow run`
   - the same run reports repeated `opq_hit3_contract_sva` failures and `lane0/1 observed drop events=0 dropped_hits=0`
-- Root cause status:
-  - open
-  - the native-SV overwrite path still loses contract coherence between frame-table drop accounting and presenter/egress behavior when reduced-depth overwrite pressure collides with hard egress stall
-- Blocking reason:
-  - kept probe-only because neither per-hit integrity nor drop-counter closure is trustworthy enough for promoted signoff until the overwrite/presenter bug is fixed
-- Candidate fixes:
-  - root-cause tracker/presenter behavior when frame-table overwrite collides with always-stall backpressure
-  - add late-drop observability that can tie dropped residents to concrete frame-table counters and egress suppression
+- Root cause:
+  - the native-SV basic presenter computed the incoming frame length through the truncated page-RAM address type before checking for oversize, so a frame larger than `PAGE_RAM_DEPTH` could wrap its stored length and still enter the presenter metadata queue
+  - the same presenter path had no overwrite-drop plan for unread residents, so always-stall overwrite pressure could leave resident metadata pointing at page-RAM contents that had already been overwritten
+  - `ordered_priority_queue_dut_sv.sv` never accumulated the presenter's frame-table drop pulses into the visible `FT_DROP_HDR/SHD/HIT` CSRs, so the overflow path also looked silent in software-visible accounting
 - Fix status:
-  - open
+  - fixed
+- Runtime / coverage context:
+  - `opq_error_ftable_overflow_test` now passes as promoted isolated native-SV evidence at `OPQ_PAGE_RAM_DEPTH=512`, with non-zero `FT_DROP_*` counters and no malformed accepted egress
+  - the testcase remains isolated-only in signoff because that reduced-depth overflow point requires separate elaboration and is not part of the fixed default-build no-restart baseline
 - Commit:
-  - pending
+  - `41948b1` `Fix OPQ native-SV overwrite drop accounting`
 
 ### BUG-009-R: Bursty DRR stall-boundary path still corrupts egress ordering and lacks late-drop identity
 - First seen in:

@@ -13,6 +13,7 @@
 | ✅ | counter_checks_failed | `0` |
 | ✅ | unexpected_outputs | `0` |
 | ⚠️ | limitation | PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime. |
+| ⚠️ | limitation | opq_error_ftable_overflow_test is isolated-only evidence because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration. |
 | ⚠️ | limitation | opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow. |
 | ⚠️ | limitation | opq_cross_mixed_bucket_random_soak_test is isolated-only evidence; it intentionally randomizes across buckets rather than serving as the fixed promoted no-restart baseline. |
 | ⚠️ | limitation | This run appends two extra tail sequences after the 28 promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases. |
@@ -54,6 +55,7 @@
 - extra_tail: `PROF` -> `extra_prof_seq` (extra whole-frame skew tail beyond the promoted default-build matrix)
 - extra_tail: `ERROR` -> `extra_err_seq` (extra subheader-recovery tail beyond the promoted default-build matrix)
 - limitation: PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.
+- limitation: opq_error_ftable_overflow_test is isolated-only evidence because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration.
 - limitation: opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow.
 - limitation: opq_cross_mixed_bucket_random_soak_test is isolated-only evidence; it intentionally randomizes across buckets rather than serving as the fixed promoted no-restart baseline.
 - limitation: This run appends two extra tail sequences after the 28 promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases.

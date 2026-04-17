@@ -48,8 +48,7 @@ comparison path, but it must not contribute to final signoff evidence.
       - probe-only exclusions that remain outside signoff:
         `opq_cross_drr_bursty_random_test`,
         `opq_error_header_mask_recovery_test`,
-        `opq_error_header_word_mask_recovery_test`,
-        `opq_error_ftable_overflow_test`
+        `opq_error_header_word_mask_recovery_test`
 - [x] Write the explicit non-claims in `DV_REPORT.json` / `DV_COV.md` so the
       dashboard does not imply closure on unsupported sweeps.
       Status: both generated top-level pages now surface signoff scope,
@@ -167,8 +166,14 @@ comparison path, but it must not contribute to final signoff evidence.
 
 ## 8. Close Native-SV DUT And Observability Blockers
 
-- [ ] Resolve the forced-overwrite / malformed-egress bug before promoting
+- [x] Resolve the forced-overwrite / malformed-egress bug before promoting
       `opq_error_ftable_overflow_test`.
+      Status: the reduced-depth `OPQ_PAGE_RAM_DEPTH=512` native-SV overflow
+      repro now passes cleanly with non-zero `FT_DROP_*` accounting and no
+      malformed accepted egress. The testcase is promoted as isolated-only
+      ERROR evidence because it requires a separate reduced-depth elaboration
+      point and is therefore still excluded from the fixed no-restart
+      baselines.
 - [ ] Resolve the bursty DRR stall-boundary corruption before promoting
       `opq_cross_drr_bursty_random_test`.
 - [ ] Resolve the chained header-word recovery corruption before promoting
