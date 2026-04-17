@@ -432,4 +432,37 @@ module ordered_priority_queue_monolithic_ingress_parser #(
   endproperty
   ap_alert_eop_clears_after_ticket_write: assert property (p_alert_eop_clears_after_ticket_write);
 
+`ifdef OPQ_ENABLE_NATIVE_FORMAL_INGRESS
+  opq_native_ingress_formal_sva #(
+    .LANE_FIFO_DEPTH(LANE_FIFO_DEPTH),
+    .TICKET_FIFO_DEPTH(TICKET_FIFO_DEPTH),
+    .LANE_FIFO_ADDR_WIDTH(LANE_FIFO_ADDR_WIDTH),
+    .TICKET_FIFO_ADDR_WIDTH(TICKET_FIFO_ADDR_WIDTH),
+    .TICKET_FIFO_DATA_WIDTH(TICKET_FIFO_DATA_WIDTH),
+    .TICKET_ALT_EOP_LOC(TICKET_ALT_EOP_LOC),
+    .TICKET_ALT_SOP_LOC(TICKET_ALT_SOP_LOC)
+  ) native_formal_sva_i (
+    .d_clk(d_clk),
+    .d_reset(d_reset),
+    .asi_ingress_valid(asi_ingress_valid),
+    .asi_ingress_startofpacket(asi_ingress_startofpacket),
+    .asi_ingress_endofpacket(asi_ingress_endofpacket),
+    .asi_ingress_data(asi_ingress_data),
+    .asi_ingress_error(asi_ingress_error),
+    .lane_credit_update(lane_credit_update),
+    .lane_credit_update_valid(lane_credit_update_valid),
+    .ticket_credit_update(ticket_credit_update),
+    .ticket_credit_update_valid(ticket_credit_update_valid),
+    .ticket_wdata(ticket_wdata),
+    .ticket_wptr(ticket_wptr),
+    .ticket_we(ticket_we),
+    .lane_wptr(lane_wptr),
+    .lane_we(lane_we),
+    .lane_credit_dbg(ingress_parser.lane_credit),
+    .ticket_credit_dbg(ingress_parser.ticket_credit),
+    .alert_eop_dbg(ingress_parser.alert_eop),
+    .eop_flush_ack_i(eop_flush_ack_i)
+  );
+`endif
+
 endmodule

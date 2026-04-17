@@ -4,7 +4,8 @@
 TB_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 PKT_DIR := $(abspath $(TB_DIR)/../..)
 REPO_ROOT := $(abspath $(PKT_DIR)/..)
-BUILD_DIR := $(abspath $(TB_DIR)/build)
+DEFAULT_BUILD_DIR := $(abspath $(TB_DIR)/build)
+BUILD_DIR ?= $(DEFAULT_BUILD_DIR)
 
 QUESTA_PREFER_FE ?= 0
 ifeq ($(QUESTA_PREFER_FE),1)
@@ -48,11 +49,36 @@ OPQ_N_LANE ?= 2
 QUARTUS_SH ?= /data1/intelFPGA_pro/23.1/quartus/bin/quartus_sh
 QUARTUS_ROOTDIR := /data1/intelFPGA_pro/23.1/quartus
 UVM_DEFINES ?= +define+UVM_NO_DPI
+FORMAL_SVA ?= 0
+FORMAL_STRICT ?= 0
+FORMAL_PLANE ?= all
+ifeq ($(FORMAL_SVA),1)
+UVM_DEFINES += +define+OPQ_ENABLE_NATIVE_FORMAL_SVA
+ifeq ($(FORMAL_PLANE),ingress)
+UVM_DEFINES += +define+OPQ_ENABLE_NATIVE_FORMAL_INGRESS
+endif
+ifeq ($(FORMAL_PLANE),mover)
+UVM_DEFINES += +define+OPQ_ENABLE_NATIVE_FORMAL_MOVER
+endif
+ifeq ($(FORMAL_PLANE),egress)
+UVM_DEFINES += +define+OPQ_ENABLE_NATIVE_FORMAL_EGRESS +define+OPQ_ENABLE_NATIVE_FORMAL_FTABLE
+endif
+ifeq ($(FORMAL_PLANE),all)
+UVM_DEFINES += +define+OPQ_ENABLE_NATIVE_FORMAL_INGRESS
+UVM_DEFINES += +define+OPQ_ENABLE_NATIVE_FORMAL_MOVER
+UVM_DEFINES += +define+OPQ_ENABLE_NATIVE_FORMAL_EGRESS
+UVM_DEFINES += +define+OPQ_ENABLE_NATIVE_FORMAL_FTABLE
+endif
+endif
+ifeq ($(FORMAL_STRICT),1)
+UVM_DEFINES += +define+OPQ_NATIVE_FORMAL_STRICT
+endif
 UVM_DEFINES += +define+OPQ_PAGE_RAM_DEPTH=$(OPQ_PAGE_RAM_DEPTH)
 UVM_DEFINES += +define+OPQ_N_SHD=$(OPQ_N_SHD)
 UVM_DEFINES += +define+OPQ_TICKET_FIFO_DEPTH=$(OPQ_TICKET_FIFO_DEPTH)
 UVM_DEFINES += +define+OPQ_N_LANE=$(OPQ_N_LANE)
 TEST ?= opq_basic_smoke_test
+TOP ?= tb_top
 COV ?= 0
 COV_CODE ?= sbecft
 RUN_DO ?= run -all; quit -f
@@ -107,6 +133,12 @@ SV_SRCS := \
 	$(TB_DIR)/sva/opq_hit3_contract_sva.sv \
 	$(TB_DIR)/sva/opq_csr_sva.sv \
 	$(TB_DIR)/sva/opq_drr_sva.sv \
+	$(TB_DIR)/sva/opq_native_ingress_formal_sva.sv \
+	$(TB_DIR)/sva/opq_native_block_path_formal_sva.sv \
+	$(TB_DIR)/sva/opq_native_basic_presenter_formal_sva.sv \
+	$(TB_DIR)/sva/opq_native_frame_table_formal_sva.sv \
+	$(TB_DIR)/formal/opq_formal_ingress_tb.sv \
+	$(TB_DIR)/formal/opq_formal_ftable_tb.sv \
 	$(TB_DIR)/tb_top.sv
 
 ifeq ($(DUT_IMPL),native_sv)
@@ -178,10 +210,10 @@ endif
 	$(VLOG) $(VLOG_FLAGS) $(SV_SRCS)
 
 run: compile
-	cd $(BUILD_DIR) && $(VSIM) $(VSIM_FLAGS) -c work.tb_top +UVM_TESTNAME=$(TEST) $(VSIM_PLUSARGS) -do "$(RUN_DO)"
+	cd $(BUILD_DIR) && $(VSIM) $(VSIM_FLAGS) -c work.$(TOP) +UVM_TESTNAME=$(TEST) $(VSIM_PLUSARGS) -do "$(RUN_DO)"
 
 run_cov: compile
-	cd $(BUILD_DIR) && $(VSIM) $(VSIM_FLAGS) -c work.tb_top +UVM_TESTNAME=$(TEST) $(VSIM_PLUSARGS) -do "coverage save -onexit opq_$(TEST).ucdb; $(RUN_DO)"
+	cd $(BUILD_DIR) && $(VSIM) $(VSIM_FLAGS) -c work.$(TOP) +UVM_TESTNAME=$(TEST) $(VSIM_PLUSARGS) -do "coverage save -onexit opq_$(TEST).ucdb; $(RUN_DO)"
 
 lint:
 	python3 $(PKT_DIR)/tb/legacy/tb/lint/lint_opq.py
@@ -190,7 +222,7 @@ lint_src: gen_dut prepare
 	$(VCOM) $(VCOM_FLAGS) -lint=full -check_synthesis $(VHDL_SRCS)
 
 lint_elab: compile
-	$(VOPT) $(VOPT_FLAGS) work.tb_top -o tb_top_opt
+	$(VOPT) $(VOPT_FLAGS) work.$(TOP) -o $(TOP)_opt
 
 license_diag:
 	@echo "QUESTA_HOME=$(QUESTA_HOME)"

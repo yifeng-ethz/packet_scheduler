@@ -461,4 +461,35 @@ module ordered_priority_queue_monolithic_block_path #(
     ap_abort_returns_credit: assert property (p_abort_returns_credit);
   end
 
+`ifdef OPQ_ENABLE_NATIVE_FORMAL_MOVER
+  opq_native_block_path_formal_sva #(
+    .N_LANE(N_LANE),
+    .LANE_FIFO_DEPTH(LANE_FIFO_DEPTH),
+    .PAGE_RAM_DEPTH(PAGE_RAM_DEPTH),
+    .PAGE_RAM_DATA_WIDTH(PAGE_RAM_DATA_WIDTH),
+    .LANE_FIFO_ADDR_WIDTH(LANE_FIFO_ADDR_WIDTH),
+    .PAGE_RAM_ADDR_WIDTH(PAGE_RAM_ADDR_WIDTH)
+  ) native_formal_sva_i (
+    .d_clk(d_clk),
+    .d_reset(d_reset),
+    .page_allocator_write_head_i(page_allocator_write_head_i),
+    .page_allocator_write_tail_i(page_allocator_write_tail_i),
+    .page_allocator_write_page_i(page_allocator_write_page_i),
+    .page_allocator_page_we_i(page_allocator_page_we_i),
+    .page_allocator_page_waddr_i(page_allocator_page_waddr_i),
+    .page_allocator_page_wdata_i(page_allocator_page_wdata_i),
+    .lane_fifos_rd_data_i(lane_fifos_rd_data_i),
+    .page_ram_we_o(page_ram_we_o),
+    .page_ram_wr_addr_o(page_ram_wr_addr_o),
+    .page_ram_wr_data_o(page_ram_wr_data_o),
+    .req_raw(b2p_arb_req_raw),
+    .req_eligible(b2p_arb_req_eligible),
+    .gnt(b2p_arb_gnt),
+    .sel_mask(b2p_arb.sel_mask),
+    .lock_event(drr_lock_event_dbg),
+    .defer_event(drr_defer_event_dbg),
+    .locked(arbiter_state == ARBITER_LOCKED)
+  );
+`endif
+
 endmodule

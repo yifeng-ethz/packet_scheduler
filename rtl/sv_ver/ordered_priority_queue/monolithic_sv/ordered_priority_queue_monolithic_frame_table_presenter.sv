@@ -357,4 +357,29 @@ module ordered_priority_queue_monolithic_frame_table_presenter #(
       (o_egress_valid && !i_egress_ready) |=> $stable(o_egress_data);
   endproperty
   ap_hold_output_stable_on_backpressure: assert property (p_hold_output_stable_on_backpressure);
+
+`ifdef OPQ_ENABLE_NATIVE_FORMAL_FTABLE
+  opq_native_frame_table_presenter_formal_sva #(
+    .N_TILE(N_TILE),
+    .TILE_FIFO_DEPTH(TILE_FIFO_DEPTH),
+    .PAGE_RAM_DEPTH(PAGE_RAM_DEPTH),
+    .PAGE_RAM_DATA_WIDTH(PAGE_RAM_DATA_WIDTH),
+    .TILE_PKT_CNT_WIDTH(TILE_PKT_CNT_WIDTH),
+    .EGRESS_DELAY(EGRESS_DELAY)
+  ) native_formal_sva_i (
+    .d_clk(d_clk),
+    .d_reset(d_reset),
+    .i_egress_ready(i_egress_ready),
+    .o_tile_rptr(o_tile_rptr),
+    .o_tile_pkt_rcnt(o_tile_pkt_rcnt),
+    .o_rseg_tile_index(o_rseg_tile_index),
+    .o_egress_valid(o_egress_valid),
+    .o_egress_data(o_egress_data),
+    .o_egress_startofpacket(o_egress_startofpacket),
+    .o_egress_endofpacket(o_egress_endofpacket),
+    .o_state(o_state),
+    .page_ram_rptr(page_ram_rptr),
+    .pkt_rd_word_cnt(pkt_rd_word_cnt)
+  );
+`endif
 endmodule

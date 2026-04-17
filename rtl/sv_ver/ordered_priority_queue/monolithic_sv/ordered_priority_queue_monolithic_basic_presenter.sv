@@ -220,4 +220,38 @@ module ordered_priority_queue_monolithic_basic_presenter #(
   endproperty
   ap_complete_without_head_never_advances: assert property (p_complete_without_head_never_advances);
 
+`ifdef OPQ_ENABLE_NATIVE_FORMAL_EGRESS
+  opq_native_basic_presenter_formal_sva #(
+    .PAGE_RAM_DEPTH(PAGE_RAM_DEPTH),
+    .PAGE_RAM_RD_WIDTH(PAGE_RAM_RD_WIDTH),
+    .PAGE_RAM_DATA_WIDTH(PAGE_RAM_DATA_WIDTH),
+    .PAGE_RAM_ADDR_WIDTH(PAGE_RAM_ADDR_WIDTH),
+    .META_ADDR_WIDTH(META_ADDR_WIDTH),
+    .EGRESS_DELAY(EGRESS_DELAY)
+  ) native_formal_sva_i (
+    .d_clk(d_clk),
+    .d_reset(d_reset),
+    .packet_complete_i(packet_complete_i),
+    .new_frame_valid_i(new_frame_valid_i),
+    .page_ram_rd_addr_o(page_ram_rd_addr_o),
+    .page_ram_rd_data_i(page_ram_rd_data_i),
+    .aso_egress_data(aso_egress_data),
+    .aso_egress_valid(aso_egress_valid),
+    .aso_egress_ready(aso_egress_ready),
+    .aso_egress_startofpacket(aso_egress_startofpacket),
+    .aso_egress_endofpacket(aso_egress_endofpacket),
+    .aso_egress_error(aso_egress_error),
+    .presenter_state(presenter_state),
+    .meta_wptr(meta_wptr),
+    .meta_rptr(meta_rptr),
+    .meta_pkt_wcnt(meta_pkt_wcnt),
+    .meta_pkt_rcnt(meta_pkt_rcnt),
+    .page_ram_rptr(page_ram_rptr),
+    .output_data_valid(output_data_valid),
+    .output_data(output_data),
+    .pkt_rd_word_cnt(pkt_rd_word_cnt),
+    .retire_pending(retire_pending)
+  );
+`endif
+
 endmodule

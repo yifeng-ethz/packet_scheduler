@@ -183,4 +183,26 @@ module ordered_priority_queue_monolithic_frame_table_tracker #(
     @(posedge d_clk) d_reset |=> (tracker_state == TRACKER_RESETTING);
   endproperty
   ap_reset_enters_tracker_resetting: assert property (p_reset_enters_tracker_resetting);
+
+`ifdef OPQ_ENABLE_NATIVE_FORMAL_FTABLE
+  opq_native_frame_table_tracker_formal_sva #(
+    .N_TILE(N_TILE),
+    .TILE_FIFO_DEPTH(TILE_FIFO_DEPTH),
+    .PAGE_RAM_DEPTH(PAGE_RAM_DEPTH),
+    .TILE_PKT_CNT_WIDTH(TILE_PKT_CNT_WIDTH)
+  ) native_formal_sva_i (
+    .d_clk(d_clk),
+    .d_reset(d_reset),
+    .i_update_ftable_valid(i_update_ftable_valid),
+    .i_update_ftable_tindex(i_update_ftable_tindex),
+    .i_flush_ftable_valid(i_flush_ftable_valid),
+    .i_tile_rptr(i_tile_rptr),
+    .i_tile_pkt_rcnt(i_tile_pkt_rcnt),
+    .o_tile_fifo_we(o_tile_fifo_we),
+    .o_tile_wptr(o_tile_wptr),
+    .o_tile_pkt_wcnt(o_tile_pkt_wcnt),
+    .o_trail_tid(o_trail_tid),
+    .o_body_tid(o_body_tid)
+  );
+`endif
 endmodule

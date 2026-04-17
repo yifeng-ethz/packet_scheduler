@@ -217,6 +217,46 @@ comparison path, but it must not contribute to final signoff evidence.
       execution-mode baselines.
 - [x] Run one final native-SV regression pass before calling the report closed.
 
+## 11. Execute The Packet-Formal Plan From `DV_FORMAL.md`
+
+- [x] Add the formal packet-shape plan as an explicit tracked workstream in the
+      live todo rather than leaving it only in `DV_FORMAL.md`.
+- [x] Land dedicated native-SV formal SVA for the **live signoff path**:
+      - ingress parser credit / packet-write coupling
+      - block mover / page-writer ownership
+      - basic presenter backpressure / packet-boundary checks
+      Status: implemented in `tb/uvm/sva/opq_native_*formal_sva.sv` and wired
+      into the standalone UVM compile list.
+- [x] Land dedicated formal SVA for the **standalone tiled path modules**:
+      - frame-table tracker flush / update ordering
+      - tiled presenter backpressure / packet-boundary checks
+      Status: implemented as standalone native-SV checker modules so the
+      assertions are present before the tiled path is promoted into the live
+      top.
+- [x] Add formal runner wrappers per `DV_FORMAL.md` section 10:
+      - `formal_ingress.sh`
+      - `formal_mover.sh`
+      - `formal_egress.sh`
+- [x] Run the first formal compile/elaboration round and record the current
+      host/tool status in `DV_FORMAL.md`.
+      Status on `2026-04-18`:
+      - `formal_ingress.sh`: compile/elab pass on `opq_formal_ingress_tb`
+      - `formal_mover.sh`: compile/elab pass
+      - `formal_egress.sh`: compile/elab pass, including the standalone
+        `opq_formal_ftable_tb` elaboration top
+      - blocker: `znformal` licenses are available, but this host does not
+        have a runnable `qverify` / `znformal` binary installed
+- [ ] Run the first actual formal proof round once the proof backend is
+      installed, then record any failing properties back into
+      `DV_FORMAL.md` and `BUG_HISTORY.md` when a real RTL issue is exposed.
+- [ ] Close the cross-module flush-under-backpressure proof for the tiled
+      frame-table path (`ap_flush_does_not_touch_live_page`,
+      `ap_tail_flush_preserves_head_region`) once the live native-SV top swaps
+      from `ordered_priority_queue_monolithic_basic_presenter` to the
+      frame-table tracker/presenter hookup. Today that cross-module flush proof
+      is structurally blocked because the active signoff top does not yet
+      instantiate the tiled presenter path.
+
 ## Recommended Execution Order
 
 - [x] Phase 1: freeze scope, create `DV_REPORT.json`, and add the generator
@@ -226,3 +266,5 @@ comparison path, but it must not contribute to final signoff evidence.
 - [x] Phase 4: implement `bucket_frame` and `all_buckets_frame`.
 - [x] Phase 5: close or explicitly defer the open probe-only SV bugs.
 - [x] Phase 6: generate `DV_REPORT.md` / `REPORT/` and review for signoff.
+- [ ] Phase 7: execute the `DV_FORMAL.md` packet-shape backlog, starting with
+      the live basic-presenter path and then the tiled frame-table swap-over.

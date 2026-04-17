@@ -63,6 +63,7 @@ run_one() {
   local test_name="$1"
   local log_file="${LOG_DIR}/${test_name}.log"
   local dut_impl="${DUT_IMPL:-native_sv}"
+  local build_dir="${BUILD_DIR:-${UVM_DIR}/build}"
   local page_ram_depth="${OPQ_PAGE_RAM_DEPTH:-65536}"
   local n_shd="${OPQ_N_SHD:-256}"
   local ticket_fifo_depth="${OPQ_TICKET_FIFO_DEPTH:-}"
@@ -77,8 +78,8 @@ run_one() {
 
   resolve_cov_src() {
     local -a candidates=(
-      "${UVM_DIR}/build/opq_${test_name}.ucdb"
-      "${UVM_DIR}/build/opq_opq_${test_name}.ucdb"
+      "${build_dir}/opq_${test_name}.ucdb"
+      "${build_dir}/opq_opq_${test_name}.ucdb"
     )
     local candidate
     for candidate in "${candidates[@]}"; do
@@ -111,6 +112,7 @@ run_one() {
   make_args+=("OPQ_PAGE_RAM_DEPTH=${page_ram_depth}")
   make_args+=("OPQ_N_SHD=${n_shd}")
   make_args+=("OPQ_TICKET_FIFO_DEPTH=${ticket_fifo_depth}")
+  make_args+=("BUILD_DIR=${build_dir}")
   if [[ "${COV_ENABLE:-0}" == "1" ]]; then
     target="run_cov"
     make_args+=("COV=1")
