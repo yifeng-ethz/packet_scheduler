@@ -184,10 +184,17 @@ module opq_oss_block_path_formal_tb;
     prev_page_ram_src_addr_comb_dbg_oss <= page_ram_src_addr_comb_dbg_oss;
     prev_page_ram_src_data_comb_dbg_oss <= page_ram_src_data_comb_dbg_oss;
 
-    if (!d_reset) begin
+    if (d_reset) begin
+      assume(!page_ram_we_o);
+      assume(page_ram_wr_addr_o == '0);
+      assume(page_ram_wr_data_o == '0);
+    end else begin
       assume(!(page_allocator_write_head_i && page_allocator_write_tail_i));
       assume(!(page_allocator_write_head_i && page_allocator_write_page_i));
       assume(!(page_allocator_write_tail_i && page_allocator_write_page_i));
+      if (!(&f_post_reset_sr)) begin
+        assume(!page_ram_we_o);
+      end
     end
 
     if (f_past_valid && (&f_post_reset_sr)) begin

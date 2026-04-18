@@ -1127,8 +1127,9 @@ Current OSS alternative status:
     the overwrite-drop scan from the OSS backend
   - `BUG-017-H`: mover proof still fails on sampled
     page-writer source-data equality even after exporting combinational
-    write-source mirrors, adding sampled source shadows, and extending
-    reset warmup, so this one now needs RTL-or-harness triage instead
+    write-source mirrors, adding sampled source shadows, tightening the
+    reset/output contract, and extending reset warmup, so this one now
+    needs RTL-or-harness triage instead
     of more proof-visibility cleanup
 - non-claim for the current OSS egress pass:
   - the unread-overwrite scan itself is not yet proven in the OSS path;

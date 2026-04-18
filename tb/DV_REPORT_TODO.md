@@ -310,8 +310,9 @@ comparison path, but it must not contribute to final signoff evidence.
         - `BUG-016-H`: closed for the current OSS egress subset; the
           live hold-under-backpressure presenter proof now passes
         - `BUG-017-H`: mover now has combinational write-source mirrors,
-          sampled source shadows, and longer reset warmup, but the
-          remaining failure is still sampled `page_ram_wr_data_o`
+          sampled source shadows, a stricter reset/output contract, and
+          longer reset warmup, but the remaining failure is still sampled
+          `page_ram_wr_data_o`
           equality
 - [ ] Close `BUG-015-H` by reworking the ingress OSS proof to sample
       phase-correct write/drop state all the way through the registered

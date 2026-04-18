@@ -383,7 +383,8 @@ Class legend:
     proof visibility with explicit packed movers/debug mirrors, and the
     old implicit-wire warnings are now gone from the OSS run
   - after that cleanup, the harness also gained combinational write-source
-    mirrors, sampled source shadows, and a longer reset warmup window, but
+    mirrors, sampled source shadows, a stricter reset/output contract, and
+    a longer reset warmup window, but
     the remaining `formal=sby_fail` is still narrowed to
     `page_ram_wr_data_o` equality against the sampled write source in
     `opq_oss_block_path_formal_tb.sv`
