@@ -51,9 +51,18 @@ module ordered_priority_queue_monolithic_block_path #(
   output logic [N_LANE-1:0]                                req_eligible_dbg_oss,
   output logic [N_LANE-1:0]                                gnt_dbg_oss,
   output logic [N_LANE-1:0]                                sel_mask_dbg_oss,
+  output logic [N_LANE-1:0]                                priority_mask_dbg_oss,
   output logic [N_LANE-1:0]                                lock_event_dbg_oss,
   output logic [N_LANE-1:0]                                defer_event_dbg_oss,
+  output logic [N_LANE-1:0]                                lock_req_raw_dbg_oss,
+  output logic [N_LANE-1:0]                                lock_req_eligible_dbg_oss,
+  output logic [N_LANE-1:0]                                defer_req_raw_dbg_oss,
+  output logic [N_LANE-1:0]                                defer_req_eligible_dbg_oss,
   output logic                                             locked_dbg_oss,
+  output logic                                             page_ram_src_is_pa_dbg_oss,
+  output logic [N_LANE-1:0]                                page_ram_src_lane_dbg_oss,
+  output logic [PAGE_RAM_ADDR_WIDTH-1:0]                   page_ram_src_addr_dbg_oss,
+  output logic [PAGE_RAM_DATA_WIDTH-1:0]                   page_ram_src_data_dbg_oss,
 `endif
   input  logic                                             d_clk,
   input  logic                                             d_reset
@@ -109,14 +118,6 @@ module ordered_priority_queue_monolithic_block_path #(
   typedef logic [HANDLE_FIFO_ADDR_WIDTH-1:0] handle_fifo_addr_t;
   typedef logic [MAX_PKT_LENGTH_BITS-1:0] pkt_length_t;
 
-  typedef struct packed {
-    lane_fifo_addr_t src;
-    page_ram_addr_t  dst;
-    pkt_length_t     blk_len;
-  } handle_t;
-
-  localparam handle_t HANDLE_REG_RESET = '0;
-
   typedef enum logic [2:0] {
     BLOCK_MOVER_IDLE,
     BLOCK_MOVER_PREP,
@@ -126,21 +127,6 @@ module ordered_priority_queue_monolithic_block_path #(
   } block_mover_state_t;
 
   typedef logic [FIFO_RD_DELAY:1][HANDLE_FIFO_ADDR_WIDTH-1:0] handle_rptr_d_t;
-
-  typedef struct packed {
-    pkt_length_t     word_wr_cnt;
-    handle_t         handle;
-    logic            flag;
-    handle_fifo_addr_t handle_rptr;
-    handle_rptr_d_t  handle_rptr_d;
-    page_ram_addr_t  page_wptr;
-    logic            page_wreq;
-    lane_fifo_addr_t lane_credit_update;
-    logic            lane_credit_update_valid;
-    logic            reset_done;
-  } block_mover_reg_t;
-
-  localparam block_mover_reg_t BLOCK_MOVER_REG_RESET = '0;
 
   typedef logic [N_LANE-1:0][9:0] quantum_t;
 
@@ -160,13 +146,26 @@ module ordered_priority_queue_monolithic_block_path #(
   localparam b2p_arb_t B2P_ARB_REG_RESET = '0;
 
   block_mover_state_t block_mover_state [N_LANE];
-  block_mover_reg_t   block_mover [N_LANE];
   logic [N_LANE-1:0][FIFO_RAW_DELAY:1] handle_fifo_is_pending_handle_d;
   logic [N_LANE-1:0] handle_fifo_is_pending_handle;
   logic [N_LANE-1:0] handle_fifo_is_pending_handle_valid;
   logic [N_LANE-1:0] handle_fifo_is_q_valid;
-  handle_t           handle_fifo_if_rd_handle [N_LANE];
+  lane_fifo_addr_t   handle_fifo_if_rd_src [N_LANE];
+  page_ram_addr_t    handle_fifo_if_rd_dst [N_LANE];
+  pkt_length_t       handle_fifo_if_rd_blk_len [N_LANE];
   logic [N_LANE-1:0] handle_fifo_if_rd_flag;
+  pkt_length_t       block_mover_word_wr_cnt [N_LANE];
+  lane_fifo_addr_t   block_mover_handle_src [N_LANE];
+  page_ram_addr_t    block_mover_handle_dst [N_LANE];
+  pkt_length_t       block_mover_handle_blk_len [N_LANE];
+  logic [N_LANE-1:0] block_mover_flag;
+  handle_fifo_addr_t block_mover_handle_rptr [N_LANE];
+  handle_rptr_d_t    block_mover_handle_rptr_d [N_LANE];
+  page_ram_addr_t    block_mover_page_wptr [N_LANE];
+  logic [N_LANE-1:0] block_mover_page_wreq;
+  lane_fifo_addr_t   block_mover_lane_credit_update [N_LANE];
+  logic [N_LANE-1:0] block_mover_lane_credit_update_valid;
+  logic [N_LANE-1:0] block_mover_reset_done;
   logic [N_LANE-1:0] b2p_arb_req_raw;
   logic [N_LANE-1:0] b2p_arb_req_eligible;
   logic [N_LANE-1:0] b2p_arb_gnt;
@@ -190,36 +189,36 @@ module ordered_priority_queue_monolithic_block_path #(
       handle_fifo_is_pending_handle_valid[i] = 1'b0;
       handle_fifo_is_q_valid[i] = 1'b0;
       lane_fifos_rd_addr_o[i] = '0;
-      handle_fifos_rd_addr_o[i] = block_mover[i].handle_rptr;
-      handle_fifo_if_rd_handle[i].src = handle_fifos_rd_data_i[i][HANDLE_SRC_HI:HANDLE_SRC_LO];
-      handle_fifo_if_rd_handle[i].dst = handle_fifos_rd_data_i[i][HANDLE_DST_HI:HANDLE_DST_LO];
-      handle_fifo_if_rd_handle[i].blk_len = handle_fifos_rd_data_i[i][HANDLE_LEN_HI:HANDLE_LEN_LO];
+      handle_fifos_rd_addr_o[i] = block_mover_handle_rptr[i];
+      handle_fifo_if_rd_src[i] = handle_fifos_rd_data_i[i][HANDLE_SRC_HI:HANDLE_SRC_LO];
+      handle_fifo_if_rd_dst[i] = handle_fifos_rd_data_i[i][HANDLE_DST_HI:HANDLE_DST_LO];
+      handle_fifo_if_rd_blk_len[i] = handle_fifos_rd_data_i[i][HANDLE_LEN_HI:HANDLE_LEN_LO];
       handle_fifo_if_rd_flag[i] = handle_fifos_rd_data_i[i][HANDLE_LENGTH];
-      lane_credit_update_o[i] = block_mover[i].lane_credit_update;
-      lane_credit_update_valid_o[i] = block_mover[i].lane_credit_update_valid;
+      lane_credit_update_o[i] = block_mover_lane_credit_update[i];
+      lane_credit_update_valid_o[i] = block_mover_lane_credit_update_valid[i];
 
-      if (handle_wptr_i[i] != block_mover[i].handle_rptr) begin
+      if (handle_wptr_i[i] != block_mover_handle_rptr[i]) begin
         handle_fifo_is_pending_handle[i] = 1'b1;
       end
-      if (handle_we_i[i] && ((handle_wptr_i[i] - handle_fifo_addr_t'(1)) == block_mover[i].handle_rptr)) begin
+      if (handle_we_i[i] && ((handle_wptr_i[i] - handle_fifo_addr_t'(1)) == block_mover_handle_rptr[i])) begin
         handle_fifo_is_pending_handle[i] = 1'b0;
       end
       if ((&handle_fifo_is_pending_handle_d[i]) && handle_fifo_is_pending_handle[i]) begin
         handle_fifo_is_pending_handle_valid[i] = 1'b1;
       end
-      if (block_mover[i].handle_rptr_d[FIFO_RD_DELAY] == block_mover[i].handle_rptr) begin
+      if (block_mover_handle_rptr_d[i][FIFO_RD_DELAY] == block_mover_handle_rptr[i]) begin
         handle_fifo_is_q_valid[i] = 1'b1;
       end
 
       if (b2p_arb_gnt[i]) begin
-        lane_fifos_rd_addr_o[i] = block_mover[i].handle.src + lane_fifo_addr_t'(block_mover[i].word_wr_cnt) +
+        lane_fifos_rd_addr_o[i] = block_mover_handle_src[i] + lane_fifo_addr_t'(block_mover_word_wr_cnt[i]) +
           lane_fifo_addr_t'(1);
       end else begin
-        lane_fifos_rd_addr_o[i] = block_mover[i].handle.src + lane_fifo_addr_t'(block_mover[i].word_wr_cnt);
+        lane_fifos_rd_addr_o[i] = block_mover_handle_src[i] + lane_fifo_addr_t'(block_mover_word_wr_cnt[i]);
       end
 
-      b2p_arb_req_raw[i] = block_mover[i].page_wreq && !pa_writing_v;
-      if (b2p_arb.quantum[i] >= 10'(block_mover[i].handle.blk_len)) begin
+      b2p_arb_req_raw[i] = block_mover_page_wreq[i] && !pa_writing_v;
+      if (b2p_arb.quantum[i] >= 10'(block_mover_handle_blk_len[i])) begin
         b2p_arb_req_eligible[i] = b2p_arb_req_raw[i];
       end else begin
         b2p_arb_req_eligible[i] = 1'b0;
@@ -256,9 +255,9 @@ module ordered_priority_queue_monolithic_block_path #(
     page_ram_wr_data_comb = '0;
 
     for (int i = 0; i < N_LANE; i++) begin
-      if ((grant_code == i[$clog2(N_LANE)-1:0]) && (|b2p_arb_gnt) && block_mover[i].page_wreq) begin
+      if ((grant_code == i[$clog2(N_LANE)-1:0]) && (|b2p_arb_gnt) && block_mover_page_wreq[i]) begin
         page_ram_we_comb = 1'b1;
-        page_ram_wr_addr_comb = block_mover[i].page_wptr + page_ram_addr_t'(block_mover[i].word_wr_cnt);
+        page_ram_wr_addr_comb = block_mover_page_wptr[i] + page_ram_addr_t'(block_mover_word_wr_cnt[i]);
         page_ram_wr_data_comb = lane_fifos_rd_data_i[i];
       end
     end
@@ -274,6 +273,7 @@ module ordered_priority_queue_monolithic_block_path #(
     req_eligible_dbg_oss = b2p_arb_req_eligible;
     gnt_dbg_oss = b2p_arb_gnt;
     sel_mask_dbg_oss = b2p_arb.sel_mask;
+    priority_mask_dbg_oss = b2p_arb.priority_mask;
     lock_event_dbg_oss = drr_lock_event_dbg;
     defer_event_dbg_oss = drr_defer_event_dbg;
     locked_dbg_oss = (arbiter_state == ARBITER_LOCKED);
@@ -283,16 +283,28 @@ module ordered_priority_queue_monolithic_block_path #(
   always_ff @(posedge d_clk) begin : proc_block_mover_and_arbiter
     drr_lock_event_dbg <= '0;
     drr_defer_event_dbg <= '0;
+`ifdef OPQ_OSS_FORMAL
+    lock_req_raw_dbg_oss <= '0;
+    lock_req_eligible_dbg_oss <= '0;
+    defer_req_raw_dbg_oss <= '0;
+    defer_req_eligible_dbg_oss <= '0;
+    page_ram_src_is_pa_dbg_oss <= 1'b0;
+    page_ram_src_lane_dbg_oss <= '0;
+    page_ram_src_addr_dbg_oss <= '0;
+    page_ram_src_data_dbg_oss <= '0;
+`endif
     for (int i = 0; i < N_LANE; i++) begin
-      block_mover[i].page_wreq <= 1'b0;
-      block_mover[i].lane_credit_update_valid <= 1'b0;
+      block_mover_page_wreq[i] <= 1'b0;
+      block_mover_lane_credit_update_valid[i] <= 1'b0;
 
       unique case (block_mover_state[i])
         BLOCK_MOVER_IDLE: begin
-          block_mover[i].word_wr_cnt <= '0;
+          block_mover_word_wr_cnt[i] <= '0;
           if (handle_fifo_is_pending_handle_valid[i] && handle_fifo_is_q_valid[i]) begin
-            block_mover[i].handle <= handle_fifo_if_rd_handle[i];
-            block_mover[i].flag <= handle_fifo_if_rd_flag[i];
+            block_mover_handle_src[i] <= handle_fifo_if_rd_src[i];
+            block_mover_handle_dst[i] <= handle_fifo_if_rd_dst[i];
+            block_mover_handle_blk_len[i] <= handle_fifo_if_rd_blk_len[i];
+            block_mover_flag[i] <= handle_fifo_if_rd_flag[i];
             if (!handle_fifo_if_rd_flag[i]) begin
               block_mover_state[i] <= BLOCK_MOVER_PREP;
             end else begin
@@ -304,37 +316,37 @@ module ordered_priority_queue_monolithic_block_path #(
         BLOCK_MOVER_PREP: begin
           // Prime the lane-FIFO read path first; the first page-RAM write starts
           // in WRITE_BLK on the following cycle once the source word is stable.
-          block_mover[i].page_wptr <= block_mover[i].handle.dst;
-          block_mover[i].page_wreq <= 1'b0;
+          block_mover_page_wptr[i] <= block_mover_handle_dst[i];
+          block_mover_page_wreq[i] <= 1'b0;
           block_mover_state[i] <= BLOCK_MOVER_WRITE_BLK;
         end
 
         BLOCK_MOVER_WRITE_BLK: begin
-          block_mover[i].page_wreq <= 1'b1;
-          if (block_mover[i].page_wreq && b2p_arb_gnt[i]) begin
-            block_mover[i].word_wr_cnt <= block_mover[i].word_wr_cnt + pkt_length_t'(1);
-            if ((block_mover[i].word_wr_cnt + pkt_length_t'(1)) == block_mover[i].handle.blk_len) begin
-              block_mover[i].lane_credit_update <= lane_fifo_addr_t'(block_mover[i].handle.blk_len);
-              block_mover[i].lane_credit_update_valid <= 1'b1;
-              block_mover[i].handle_rptr <= block_mover[i].handle_rptr + handle_fifo_addr_t'(1);
-              block_mover[i].page_wreq <= 1'b0;
+          block_mover_page_wreq[i] <= 1'b1;
+          if (block_mover_page_wreq[i] && b2p_arb_gnt[i]) begin
+            block_mover_word_wr_cnt[i] <= block_mover_word_wr_cnt[i] + pkt_length_t'(1);
+            if ((block_mover_word_wr_cnt[i] + pkt_length_t'(1)) == block_mover_handle_blk_len[i]) begin
+              block_mover_lane_credit_update[i] <= lane_fifo_addr_t'(block_mover_handle_blk_len[i]);
+              block_mover_lane_credit_update_valid[i] <= 1'b1;
+              block_mover_handle_rptr[i] <= block_mover_handle_rptr[i] + handle_fifo_addr_t'(1);
+              block_mover_page_wreq[i] <= 1'b0;
               block_mover_state[i] <= BLOCK_MOVER_IDLE;
             end
           end
         end
 
         BLOCK_MOVER_ABORT_WRITE_BLK: begin
-          block_mover[i].handle_rptr <= block_mover[i].handle_rptr + handle_fifo_addr_t'(1);
-          block_mover[i].lane_credit_update <= lane_fifo_addr_t'(block_mover[i].handle.blk_len);
-          block_mover[i].lane_credit_update_valid <= 1'b1;
+          block_mover_handle_rptr[i] <= block_mover_handle_rptr[i] + handle_fifo_addr_t'(1);
+          block_mover_lane_credit_update[i] <= lane_fifo_addr_t'(block_mover_handle_blk_len[i]);
+          block_mover_lane_credit_update_valid[i] <= 1'b1;
           block_mover_state[i] <= BLOCK_MOVER_IDLE;
         end
 
         BLOCK_MOVER_RESET: begin
-          if (!block_mover[i].reset_done) begin
-            block_mover[i].lane_credit_update <= lane_fifo_addr_t'(LANE_FIFO_MAX_CREDIT);
-            block_mover[i].lane_credit_update_valid <= 1'b1;
-            block_mover[i].reset_done <= 1'b1;
+          if (!block_mover_reset_done[i]) begin
+            block_mover_lane_credit_update[i] <= lane_fifo_addr_t'(LANE_FIFO_MAX_CREDIT);
+            block_mover_lane_credit_update_valid[i] <= 1'b1;
+            block_mover_reset_done[i] <= 1'b1;
           end else if (!d_reset) begin
             block_mover_state[i] <= BLOCK_MOVER_IDLE;
           end
@@ -345,8 +357,18 @@ module ordered_priority_queue_monolithic_block_path #(
       endcase
 
       if (d_reset) begin
-        block_mover[i] <= BLOCK_MOVER_REG_RESET;
-        block_mover[i].reset_done <= 1'b0;
+        block_mover_word_wr_cnt[i] <= '0;
+        block_mover_handle_src[i] <= '0;
+        block_mover_handle_dst[i] <= '0;
+        block_mover_handle_blk_len[i] <= '0;
+        block_mover_flag[i] <= 1'b0;
+        block_mover_handle_rptr[i] <= '0;
+        block_mover_handle_rptr_d[i] <= '0;
+        block_mover_page_wptr[i] <= '0;
+        block_mover_page_wreq[i] <= 1'b0;
+        block_mover_lane_credit_update[i] <= '0;
+        block_mover_lane_credit_update_valid[i] <= 1'b0;
+        block_mover_reset_done[i] <= 1'b0;
         block_mover_state[i] <= BLOCK_MOVER_RESET;
         handle_fifo_is_pending_handle_d[i] <= '0;
       end else begin
@@ -361,9 +383,9 @@ module ordered_priority_queue_monolithic_block_path #(
 
       for (int j = 1; j <= FIFO_RD_DELAY; j++) begin
         if (j == 1) begin
-          block_mover[i].handle_rptr_d[j] <= block_mover[i].handle_rptr;
+          block_mover_handle_rptr_d[i][j] <= block_mover_handle_rptr[i];
         end else begin
-          block_mover[i].handle_rptr_d[j] <= block_mover[i].handle_rptr_d[j-1];
+          block_mover_handle_rptr_d[i][j] <= block_mover_handle_rptr_d[i][j-1];
         end
       end
     end
@@ -384,18 +406,26 @@ module ordered_priority_queue_monolithic_block_path #(
     unique case (arbiter_state)
       ARBITER_IDLE: begin
         if (|b2p_arb_req_raw) begin
-          if (|b2p_arb_gnt) begin
-            b2p_arb.sel_mask <= b2p_arb_gnt;
-            arbiter_state <= ARBITER_LOCKED;
-            drr_lock_event_dbg <= b2p_arb_gnt;
-          end else begin
-            for (int i = 0; i < N_LANE; i++) begin
-              if (b2p_arb_req_raw[i] && !drr_allowance_reload_i[i]) begin
-                b2p_arb.quantum[i] <= sat_add_quantum(b2p_arb.quantum[i], drr_allowance_i[i]);
-                drr_defer_event_dbg[i] <= 1'b1;
-              end
+        if (|b2p_arb_gnt) begin
+          b2p_arb.sel_mask <= b2p_arb_gnt;
+          arbiter_state <= ARBITER_LOCKED;
+          drr_lock_event_dbg <= b2p_arb_gnt;
+`ifdef OPQ_OSS_FORMAL
+          lock_req_raw_dbg_oss <= b2p_arb_gnt & b2p_arb_req_raw;
+          lock_req_eligible_dbg_oss <= b2p_arb_gnt & b2p_arb_req_eligible;
+`endif
+        end else begin
+          for (int i = 0; i < N_LANE; i++) begin
+            if (b2p_arb_req_raw[i] && !drr_allowance_reload_i[i]) begin
+              b2p_arb.quantum[i] <= sat_add_quantum(b2p_arb.quantum[i], drr_allowance_i[i]);
+              drr_defer_event_dbg[i] <= 1'b1;
+`ifdef OPQ_OSS_FORMAL
+              defer_req_raw_dbg_oss[i] <= b2p_arb_req_raw[i];
+              defer_req_eligible_dbg_oss[i] <= b2p_arb_req_eligible[i];
+`endif
             end
-            arbiter_state <= ARBITER_LOCKING;
+          end
+          arbiter_state <= ARBITER_LOCKING;
           end
         end
       end
@@ -405,11 +435,19 @@ module ordered_priority_queue_monolithic_block_path #(
           b2p_arb.sel_mask <= b2p_arb_gnt;
           arbiter_state <= ARBITER_LOCKED;
           drr_lock_event_dbg <= b2p_arb_gnt;
+`ifdef OPQ_OSS_FORMAL
+          lock_req_raw_dbg_oss <= b2p_arb_gnt & b2p_arb_req_raw;
+          lock_req_eligible_dbg_oss <= b2p_arb_gnt & b2p_arb_req_eligible;
+`endif
         end else if (|b2p_arb_req_raw) begin
           for (int i = 0; i < N_LANE; i++) begin
             if (b2p_arb_req_raw[i] && !drr_allowance_reload_i[i]) begin
               b2p_arb.quantum[i] <= sat_add_quantum(b2p_arb.quantum[i], drr_allowance_i[i]);
               drr_defer_event_dbg[i] <= 1'b1;
+`ifdef OPQ_OSS_FORMAL
+              defer_req_raw_dbg_oss[i] <= b2p_arb_req_raw[i];
+              defer_req_eligible_dbg_oss[i] <= b2p_arb_req_eligible[i];
+`endif
             end
           end
         end
@@ -443,6 +481,17 @@ module ordered_priority_queue_monolithic_block_path #(
     page_ram_we_o <= page_ram_we_comb;
     page_ram_wr_addr_o <= page_ram_wr_addr_comb;
     page_ram_wr_data_o <= page_ram_wr_data_comb;
+`ifdef OPQ_OSS_FORMAL
+    if (page_ram_we_comb) begin
+      page_ram_src_addr_dbg_oss <= page_ram_wr_addr_comb;
+      page_ram_src_data_dbg_oss <= page_ram_wr_data_comb;
+      if (page_allocator_write_head_i || page_allocator_write_tail_i || page_allocator_write_page_i) begin
+        page_ram_src_is_pa_dbg_oss <= page_allocator_page_we_i;
+      end else begin
+        page_ram_src_lane_dbg_oss <= b2p_arb_gnt & {N_LANE{page_ram_we_comb}};
+      end
+    end
+`endif
 
     if (d_reset) begin
       b2p_arb <= B2P_ARB_REG_RESET;
@@ -454,6 +503,16 @@ module ordered_priority_queue_monolithic_block_path #(
       page_ram_we_o <= 1'b0;
       page_ram_wr_addr_o <= '0;
       page_ram_wr_data_o <= '0;
+`ifdef OPQ_OSS_FORMAL
+      lock_req_raw_dbg_oss <= '0;
+      lock_req_eligible_dbg_oss <= '0;
+      defer_req_raw_dbg_oss <= '0;
+      defer_req_eligible_dbg_oss <= '0;
+      page_ram_src_is_pa_dbg_oss <= 1'b0;
+      page_ram_src_lane_dbg_oss <= '0;
+      page_ram_src_addr_dbg_oss <= '0;
+      page_ram_src_data_dbg_oss <= '0;
+`endif
     end
   end
 

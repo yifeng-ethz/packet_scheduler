@@ -1118,14 +1118,18 @@ Current OSS alternative status:
   the ingress, mover, and egress jobs are now all truly scripted and
   execute real `sby` runs on this host
 - current remaining blockers are concrete and tracked:
-  - `BUG-015-H`: ingress proof now uses real credit debug mirrors, but
-    still false-fails on phase-sensitive write/drop checks that need a
-    cleaner sampled-state contract
+  - `BUG-015-H`: ingress proof now uses real credit debug mirrors,
+    sampled `*_issue_dbg_oss` / `credit_drop_*_decision_dbg_oss`
+    signals, and an explicit initial-reset contract, but it still
+    false-fails on the last output-to-decision implications for the
+    registered write/drop pulses
   - `BUG-016-H`: egress proof stops in Yosys SMT2 lowering on a reported
     logic loop in the overwrite-drop scan path
-  - `BUG-017-H`: mover proof now reaches Bitwuzla, but still fails on
-    page-writer / lock-event checks and needs phase cleanup plus RTL
-    triage before it can serve as a signoff proof slice
+  - `BUG-017-H`: mover proof now reaches Bitwuzla without the old
+    implicit-wire struct-field warnings, and temporal induction already
+    passes, but the remaining basecase still fails on sampled
+    page-writer source-data equality and needs one more phase cleanup
+    pass before it can serve as a signoff proof slice
 
 ---
 

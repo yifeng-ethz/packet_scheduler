@@ -61,6 +61,10 @@ module opq_oss_ingress_formal_tb;
   wire [15:0]                                                   feb_id_dbg;
   wire [LANE_FIFO_ADDR_WIDTH-1:0]                               lane_credit_dbg_oss;
   wire [TICKET_FIFO_ADDR_WIDTH-1:0]                             ticket_credit_dbg_oss;
+  wire                                                          lane_issue_dbg_oss;
+  wire                                                          ticket_issue_dbg_oss;
+  wire                                                          credit_drop_lane_decision_dbg_oss;
+  wire                                                          credit_drop_ticket_decision_dbg_oss;
   wire                                                          credit_drop_valid_o;
   wire                                                          credit_drop_lane_o;
   wire                                                          credit_drop_ticket_o;
@@ -119,6 +123,10 @@ module opq_oss_ingress_formal_tb;
     .feb_id_dbg(feb_id_dbg),
     .lane_credit_dbg_oss(lane_credit_dbg_oss),
     .ticket_credit_dbg_oss(ticket_credit_dbg_oss),
+    .lane_issue_dbg_oss(lane_issue_dbg_oss),
+    .ticket_issue_dbg_oss(ticket_issue_dbg_oss),
+    .credit_drop_lane_decision_dbg_oss(credit_drop_lane_decision_dbg_oss),
+    .credit_drop_ticket_decision_dbg_oss(credit_drop_ticket_decision_dbg_oss),
     .credit_drop_valid_o(credit_drop_valid_o),
     .credit_drop_lane_o(credit_drop_lane_o),
     .credit_drop_ticket_o(credit_drop_ticket_o),
@@ -132,6 +140,9 @@ module opq_oss_ingress_formal_tb;
 
   always @(posedge gclk) begin
     f_past_valid <= 1'b1;
+    if (!f_past_valid) begin
+      assume(d_reset);
+    end
     if (f_reset_sr != 2'b00) begin
       f_reset_sr <= {f_reset_sr[0], 1'b0};
     end
@@ -164,15 +175,20 @@ module opq_oss_ingress_formal_tb;
     if (f_past_valid && (&f_post_reset_sr)) begin
       assert(lane_credit_dbg_oss <= LANE_FIFO_MAX_CREDIT);
       assert(ticket_credit_dbg_oss <= TICKET_FIFO_MAX_CREDIT);
-
-      if ($past(ticket_credit_dbg_oss) == '0) begin
-        assert(!ticket_we);
+      if (ticket_we) begin
+        assert(ticket_issue_dbg_oss);
       end
-      if ($past(lane_credit_dbg_oss) == '0) begin
-        assert(!lane_we);
+      if (lane_we) begin
+        assert(lane_issue_dbg_oss);
+      end
+      if (credit_drop_lane_o) begin
+        assert(credit_drop_lane_decision_dbg_oss);
+      end
+      if (credit_drop_ticket_o) begin
+        assert(credit_drop_ticket_decision_dbg_oss);
       end
       if (credit_drop_valid_o) begin
-        assert(credit_drop_lane_o || credit_drop_ticket_o);
+        assert(credit_drop_lane_decision_dbg_oss || credit_drop_ticket_decision_dbg_oss);
       end
     end
 

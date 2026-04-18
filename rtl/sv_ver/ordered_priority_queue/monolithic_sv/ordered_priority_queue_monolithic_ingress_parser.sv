@@ -49,6 +49,10 @@ module ordered_priority_queue_monolithic_ingress_parser #(
 `ifdef OPQ_OSS_FORMAL
   output logic [LANE_FIFO_ADDR_WIDTH-1:0]                   lane_credit_dbg_oss,
   output logic [TICKET_FIFO_ADDR_WIDTH-1:0]                 ticket_credit_dbg_oss,
+  output logic                                              lane_issue_dbg_oss,
+  output logic                                              ticket_issue_dbg_oss,
+  output logic                                              credit_drop_lane_decision_dbg_oss,
+  output logic                                              credit_drop_ticket_decision_dbg_oss,
 `endif
   output logic                                              credit_drop_valid_o,
   output logic                                              credit_drop_lane_o,
@@ -199,6 +203,12 @@ module ordered_priority_queue_monolithic_ingress_parser #(
   always_ff @(posedge d_clk) begin : proc_ingress_parser
     ingress_parser.lane_we <= 1'b0;
     ingress_parser.ticket_we <= 1'b0;
+`ifdef OPQ_OSS_FORMAL
+    lane_issue_dbg_oss <= 1'b0;
+    ticket_issue_dbg_oss <= 1'b0;
+    credit_drop_lane_decision_dbg_oss <= 1'b0;
+    credit_drop_ticket_decision_dbg_oss <= 1'b0;
+`endif
     credit_drop_valid_o <= 1'b0;
     credit_drop_lane_o <= 1'b0;
     credit_drop_ticket_o <= 1'b0;
@@ -224,12 +234,18 @@ module ordered_priority_queue_monolithic_ingress_parser #(
             if (int'(ingress_parser_if_subheader_hit_cnt) >= int'(ingress_parser.lane_credit)) begin
               credit_drop_valid_o <= 1'b1;
               credit_drop_lane_o <= 1'b1;
+`ifdef OPQ_OSS_FORMAL
+              credit_drop_lane_decision_dbg_oss <= 1'b1;
+`endif
               credit_drop_shd_cnt_o <= 16'd1;
               credit_drop_hit_cnt_o <= {8'd0, ingress_parser_if_subheader_hit_cnt};
               ingress_parser_state <= INGRESS_PARSER_MASK_PKT;
             end else if (ingress_parser.ticket_credit == '0) begin
               credit_drop_valid_o <= 1'b1;
               credit_drop_ticket_o <= 1'b1;
+`ifdef OPQ_OSS_FORMAL
+              credit_drop_ticket_decision_dbg_oss <= 1'b1;
+`endif
               credit_drop_shd_cnt_o <= 16'd1;
               credit_drop_hit_cnt_o <= {8'd0, ingress_parser_if_subheader_hit_cnt};
               ingress_parser_state <= INGRESS_PARSER_MASK_PKT;
@@ -237,6 +253,9 @@ module ordered_priority_queue_monolithic_ingress_parser #(
               ingress_parser_state <= INGRESS_PARSER_WR_HITS;
             end else begin
               ingress_parser.ticket_we <= 1'b1;
+`ifdef OPQ_OSS_FORMAL
+              ticket_issue_dbg_oss <= 1'b1;
+`endif
               ingress_parser.ticket_wptr <= ingress_parser.ticket_wptr + TICKET_FIFO_ADDR_ONE_CONST;
               ingress_parser.ticket_wdata <= ingress_parser_if_write_ticket_data;
               if (ticket_credit_update_valid) begin
@@ -292,6 +311,9 @@ module ordered_priority_queue_monolithic_ingress_parser #(
               if (ingress_parser.ticket_credit != '0) begin
                 ingress_parser.alert_sop <= 1'b0;
                 ingress_parser.ticket_we <= 1'b1;
+`ifdef OPQ_OSS_FORMAL
+                ticket_issue_dbg_oss <= 1'b1;
+`endif
                 if (ticket_credit_update_valid) begin
                   ingress_parser.ticket_credit <= ingress_parser.ticket_credit + ticket_credit_update -
                     TICKET_FIFO_ADDR_ONE_CONST;
@@ -341,12 +363,18 @@ module ordered_priority_queue_monolithic_ingress_parser #(
             if (int'(ingress_parser_if_subheader_hit_cnt) >= int'(ingress_parser.lane_credit)) begin
               credit_drop_valid_o <= 1'b1;
               credit_drop_lane_o <= 1'b1;
+`ifdef OPQ_OSS_FORMAL
+              credit_drop_lane_decision_dbg_oss <= 1'b1;
+`endif
               credit_drop_shd_cnt_o <= 16'd1;
               credit_drop_hit_cnt_o <= {8'd0, ingress_parser_if_subheader_hit_cnt};
               ingress_parser_state <= INGRESS_PARSER_MASK_PKT;
             end else if (ingress_parser.ticket_credit == '0) begin
               credit_drop_valid_o <= 1'b1;
               credit_drop_ticket_o <= 1'b1;
+`ifdef OPQ_OSS_FORMAL
+              credit_drop_ticket_decision_dbg_oss <= 1'b1;
+`endif
               credit_drop_shd_cnt_o <= 16'd1;
               credit_drop_hit_cnt_o <= {8'd0, ingress_parser_if_subheader_hit_cnt};
               ingress_parser_state <= INGRESS_PARSER_MASK_PKT;
@@ -354,6 +382,9 @@ module ordered_priority_queue_monolithic_ingress_parser #(
               ingress_parser_state <= INGRESS_PARSER_WR_HITS;
             end else begin
               ingress_parser.ticket_we <= 1'b1;
+`ifdef OPQ_OSS_FORMAL
+              ticket_issue_dbg_oss <= 1'b1;
+`endif
               ingress_parser.ticket_wptr <= ingress_parser.ticket_wptr + TICKET_FIFO_ADDR_ONE_CONST;
               ingress_parser.ticket_wdata <= ingress_parser_if_write_ticket_data;
               ingress_parser.alert_eop <= 1'b0;
@@ -381,16 +412,22 @@ module ordered_priority_queue_monolithic_ingress_parser #(
           ingress_parser.lane_wdata <= ingress_parser_if_write_lane_data;
           ingress_parser.lane_wptr <= ingress_parser.lane_wptr + LANE_FIFO_ADDR_ONE_CONST;
           ingress_parser.lane_we <= 1'b1;
+`ifdef OPQ_OSS_FORMAL
+          lane_issue_dbg_oss <= 1'b1;
+`endif
         end else if (ingress_parser_shd_err) begin
           ingress_parser.error_lane_wr_early_term <= 1'b1;
         end
 
         if (asi_ingress_valid && !ingress_parser_hit_err) begin
-          if ((ingress_parser.lane_start_addr + ingress_parser.shd_len) ==
-              (ingress_parser.lane_wptr + LANE_FIFO_ADDR_ONE_CONST)) begin
-            ingress_parser.ticket_we <= 1'b1;
-            ingress_parser.ticket_wptr <= ingress_parser.ticket_wptr + TICKET_FIFO_ADDR_ONE_CONST;
-            ingress_parser.ticket_wdata <= ingress_parser_if_write_ticket_data;
+            if ((ingress_parser.lane_start_addr + ingress_parser.shd_len) ==
+                (ingress_parser.lane_wptr + LANE_FIFO_ADDR_ONE_CONST)) begin
+              ingress_parser.ticket_we <= 1'b1;
+`ifdef OPQ_OSS_FORMAL
+              ticket_issue_dbg_oss <= 1'b1;
+`endif
+              ingress_parser.ticket_wptr <= ingress_parser.ticket_wptr + TICKET_FIFO_ADDR_ONE_CONST;
+              ingress_parser.ticket_wdata <= ingress_parser_if_write_ticket_data;
             if (ticket_credit_update_valid) begin
               ingress_parser.ticket_credit <= ingress_parser.ticket_credit + ticket_credit_update -
                 TICKET_FIFO_ADDR_ONE_CONST;
@@ -438,6 +475,12 @@ module ordered_priority_queue_monolithic_ingress_parser #(
       credit_drop_ticket_o <= 1'b0;
       credit_drop_shd_cnt_o <= '0;
       credit_drop_hit_cnt_o <= '0;
+`ifdef OPQ_OSS_FORMAL
+      lane_issue_dbg_oss <= 1'b0;
+      ticket_issue_dbg_oss <= 1'b0;
+      credit_drop_lane_decision_dbg_oss <= 1'b0;
+      credit_drop_ticket_decision_dbg_oss <= 1'b0;
+`endif
     end
   end
 

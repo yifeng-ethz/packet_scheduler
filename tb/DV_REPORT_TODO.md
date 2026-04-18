@@ -304,20 +304,23 @@ comparison path, but it must not contribute to final signoff evidence.
       - first wrapper-managed `sby` round is captured in
         `tb/formal_runs/csv/formal_{ingress,mover,egress}_latest.csv`
       - current tracked blockers:
-        - `BUG-015-H`: ingress phase-sensitive write/drop checks still
-          false-fail after the credit-debug bridge
+        - `BUG-015-H`: ingress now has sampled decision mirrors plus an
+          explicit initial-reset contract, but the remaining
+          output-to-decision implications still false-fail
         - `BUG-016-H`: presenter SMT2 lowering reports a logic loop
-        - `BUG-017-H`: mover page-writer / lock-event checks now fail in
-          the first live OSS proof run
+        - `BUG-017-H`: mover no longer has the old implicit-wire
+          proof-visibility issue and now has induction green, but the
+          remaining basecase still fails on sampled page-writer
+          source-data equality
 - [ ] Close `BUG-015-H` by reworking the ingress OSS proof to sample
-      phase-correct write/drop state instead of inferring behavior from
-      unstable public pulses.
+      phase-correct write/drop state all the way through the registered
+      public outputs instead of only into intermediate decision mirrors.
 - [ ] Close `BUG-016-H` by rewriting or isolating the overwrite-drop scan
       so the basic-presenter OSS proof can reach actual hold-under-backpressure
       properties instead of stopping in Yosys lowering.
 - [ ] Close `BUG-017-H` by flattening or re-exporting the mover proof-visible
-      state enough to remove the remaining phase/implicit-wire mismatches in
-      `opq_oss_block_path`.
+      state enough to make the sampled page-writer source-data contract
+      basecase-clean in `opq_oss_block_path`.
 - [ ] Close the cross-module flush-under-backpressure proof for the tiled
       frame-table path (`ap_flush_does_not_touch_live_page`,
       `ap_tail_flush_preserves_head_region`) once the live native-SV top swaps

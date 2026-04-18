@@ -314,17 +314,21 @@ Class legend:
   - the first live `opq_oss_ingress` proof now parses, elaborates, and
     reaches the Bitwuzla engine, and the harness now uses explicit OSS
     credit debug mirrors instead of implicit hierarchical wires
+  - the `2026-04-18` follow-up rework also added sampled
+    `*_issue_dbg_oss` / `credit_drop_*_decision_dbg_oss` signals plus an
+    explicit initial-reset contract in the OSS harness
   - despite that cleanup, the proof still fails on the remaining
-    phase-sensitive checks around `lane_we`, `ticket_we`, and
-    `credit_drop_*`, so the blocker has narrowed from "no real sampled
-    state" to "the remaining write/drop phase contract is still not
-    represented cleanly enough for proof"
+    output-to-sampled-decision implications around `lane_we`,
+    `ticket_we`, and `credit_drop_valid_o`, so the blocker has narrowed
+    from "no real sampled state" to "the remaining registered-output
+    alignment still is not represented cleanly enough for proof"
 - Root cause status:
   - open
-  - the lightweight OSS harness still does not have the same internal
-    shadow sampling that the native Questa-side formal SVA uses for the
-    parser write/drop pulses, so several checks are still phase-wrong in
-    Yosys/SBY even after the credit-model cleanup
+  - the lightweight OSS harness now has sampled decision mirrors, but it
+    still does not fully match the internal shadow timing that the
+    native Questa-side formal SVA uses for the parser write/drop pulses,
+    so the last output-to-decision checks remain phase-wrong in
+    Yosys/SBY
 - Blocking reason:
   - kept as an open harness blocker because the ingress OSS proof has
     moved past parsing/tool readiness and the old fake credit model, and
@@ -385,32 +389,34 @@ Class legend:
 - Symptom:
   - the first live `opq_oss_block_path` proof now parses, elaborates,
     and reaches the Bitwuzla engine on this host
-  - the current wrapper-managed run records `formal=sby_fail`, with the
-    first failures on page-allocator write-data ownership and
-    `lock_event` origin checks in
+  - the `2026-04-18` follow-up flattening replaced the old struct-field
+    proof visibility with explicit packed movers/debug mirrors, and the
+    old implicit-wire warnings are now gone from the OSS run
+  - after that cleanup, temporal induction passes cleanly for the mover
+    slice, and the remaining `formal=sby_fail` is narrowed to the
+    basecase page-writer source-data equality in
     `opq_oss_block_path_formal_tb.sv`
 - Root cause status:
   - open
-  - the OSS mover slice needed several syntax bridges just to elaborate
-    the live block-path RTL, and the resulting proof still carries
-    Yosys-specific implicit-wire warnings on struct-field accesses
-  - that means the current failing assertions may still be a mix of real
-    phase bugs and proof-visibility mismatches rather than already being
-    signoff-quality RTL failures
+  - the OSS mover slice needed several syntax bridges and proof-visible
+    state flattening just to make the live block-path RTL trustworthy in
+    Yosys/SBY
+  - that visibility cleanup is now largely done, but the sampled
+    page-writer source-data mirror still does not align with the
+    registered `page_ram_wr_data_o` in the basecase trace, so the final
+    remaining failure is still treated as a proof/harness alignment
+    issue until the sampled write-source contract is tightened further
 - Blocking reason:
-  - mover is no longer blocked on "missing OSS harness", but it still
-    cannot serve as a trustworthy signoff proof until the proof-visible
-    state is flattened enough to remove the remaining phase/struct
-    ambiguity
+  - mover is no longer blocked on "missing OSS harness" or by the old
+    implicit-wire/struct-field ambiguity, but it still cannot serve as a
+    trustworthy signoff proof until the sampled page-writer source-data
+    contract is made basecase-clean
 - Candidate fixes:
-  - export flatter OSS debug mirrors for the mover page-writer source,
-    selected lane, and grant/defer/lock phase
-  - replace the remaining struct-field unpacking used only for proof
-    visibility with explicit packed buses or helper mirrors under
-    `OPQ_OSS_FORMAL`, then rerun the same `opq_oss_block_path` job
-  - once the proof-visible state is stable, decide whether the
-    page-writer and lock-event failures are real RTL bugs or only
-    harness timing mismatches
+  - retime the sampled page-writer source-data mirror so it is captured
+    in exactly the same phase as the registered `page_ram_wr_*` outputs
+  - once that final sampled-source contract is stable, rerun the same
+    `opq_oss_block_path` job to decide whether any remaining failure is
+    a real RTL bug or only residual harness timing mismatch
 - Fix status:
   - open
 - Commit:

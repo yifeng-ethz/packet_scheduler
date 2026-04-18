@@ -59,9 +59,18 @@ module opq_oss_block_path_formal_tb;
   wire [N_LANE-1:0]                                         req_eligible_dbg_oss;
   wire [N_LANE-1:0]                                         gnt_dbg_oss;
   wire [N_LANE-1:0]                                         sel_mask_dbg_oss;
+  wire [N_LANE-1:0]                                         priority_mask_dbg_oss;
   wire [N_LANE-1:0]                                         lock_event_dbg_oss;
   wire [N_LANE-1:0]                                         defer_event_dbg_oss;
+  wire [N_LANE-1:0]                                         lock_req_raw_dbg_oss;
+  wire [N_LANE-1:0]                                         lock_req_eligible_dbg_oss;
+  wire [N_LANE-1:0]                                         defer_req_raw_dbg_oss;
+  wire [N_LANE-1:0]                                         defer_req_eligible_dbg_oss;
   wire                                                      locked_dbg_oss;
+  wire                                                      page_ram_src_is_pa_dbg_oss;
+  wire [N_LANE-1:0]                                         page_ram_src_lane_dbg_oss;
+  wire [PAGE_RAM_ADDR_WIDTH-1:0]                            page_ram_src_addr_dbg_oss;
+  wire [PAGE_RAM_DATA_WIDTH-1:0]                            page_ram_src_data_dbg_oss;
 
   wire pa_write =
     page_allocator_write_head_i ||
@@ -118,15 +127,27 @@ module opq_oss_block_path_formal_tb;
     .req_eligible_dbg_oss(req_eligible_dbg_oss),
     .gnt_dbg_oss(gnt_dbg_oss),
     .sel_mask_dbg_oss(sel_mask_dbg_oss),
+    .priority_mask_dbg_oss(priority_mask_dbg_oss),
     .lock_event_dbg_oss(lock_event_dbg_oss),
     .defer_event_dbg_oss(defer_event_dbg_oss),
+    .lock_req_raw_dbg_oss(lock_req_raw_dbg_oss),
+    .lock_req_eligible_dbg_oss(lock_req_eligible_dbg_oss),
+    .defer_req_raw_dbg_oss(defer_req_raw_dbg_oss),
+    .defer_req_eligible_dbg_oss(defer_req_eligible_dbg_oss),
     .locked_dbg_oss(locked_dbg_oss),
+    .page_ram_src_is_pa_dbg_oss(page_ram_src_is_pa_dbg_oss),
+    .page_ram_src_lane_dbg_oss(page_ram_src_lane_dbg_oss),
+    .page_ram_src_addr_dbg_oss(page_ram_src_addr_dbg_oss),
+    .page_ram_src_data_dbg_oss(page_ram_src_data_dbg_oss),
     .d_clk(gclk),
     .d_reset(d_reset)
   );
 
   always @(posedge gclk) begin
     f_past_valid <= 1'b1;
+    if (!f_past_valid) begin
+      assume(d_reset);
+    end
     if (f_reset_sr != 2'b00) begin
       f_reset_sr <= {f_reset_sr[0], 1'b0};
     end
@@ -145,6 +166,7 @@ module opq_oss_block_path_formal_tb;
     if (f_past_valid && (&f_post_reset_sr)) begin
       assert($onehot0(gnt_dbg_oss));
       assert($onehot0(sel_mask_dbg_oss));
+      assert($onehot0(priority_mask_dbg_oss));
       assert($onehot0(lock_event_dbg_oss));
 
       if (pa_write) begin
@@ -157,32 +179,14 @@ module opq_oss_block_path_formal_tb;
         assert(gnt_dbg_oss == '0);
       end
 
-      if (page_ram_we_o && $past(pa_direct_write)) begin
-        assert($past(page_allocator_page_we_i));
-        assert(page_ram_wr_addr_o == $past(page_allocator_page_waddr_i));
-        assert(page_ram_wr_data_o == $past(page_allocator_page_wdata_i));
-      end
-
-      if (page_ram_we_o && !$past(pa_direct_write)) begin
-        assert($onehot($past(gnt_dbg_oss & req_raw_dbg_oss)));
+      if (page_ram_we_o) begin
+        assert(page_ram_wr_addr_o == page_ram_src_addr_dbg_oss);
+        assert(page_ram_wr_data_o == page_ram_src_data_dbg_oss);
       end
 
       for (int lane = 0; lane < N_LANE; lane++) begin
         if (!locked_dbg_oss && gnt_dbg_oss[lane] && !pa_write) begin
           assert(req_eligible_dbg_oss[lane] && req_raw_dbg_oss[lane]);
-        end
-
-        if ($past(gnt_dbg_oss[lane] && req_raw_dbg_oss[lane] && !pa_write)) begin
-          assert(page_ram_we_o);
-          assert(page_ram_wr_data_o == $past(lane_fifos_rd_data_i[lane]));
-        end
-
-        if (defer_event_dbg_oss[lane]) begin
-          assert($past(req_raw_dbg_oss[lane] && !req_eligible_dbg_oss[lane]));
-        end
-
-        if (lock_event_dbg_oss[lane]) begin
-          assert($past(gnt_dbg_oss[lane] && req_raw_dbg_oss[lane] && req_eligible_dbg_oss[lane]));
         end
       end
     end
