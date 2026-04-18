@@ -35,6 +35,7 @@ module opq_oss_ingress_formal_tb;
   (* gclk *) reg gclk;
   reg f_past_valid = 1'b0;
   reg [1:0] f_reset_sr = 2'b11;
+  reg [1:0] f_post_reset_sr = 2'b00;
 
   wire d_reset = f_reset_sr[1];
 
@@ -134,6 +135,11 @@ module opq_oss_ingress_formal_tb;
     if (f_reset_sr != 2'b00) begin
       f_reset_sr <= {f_reset_sr[0], 1'b0};
     end
+    if (d_reset) begin
+      f_post_reset_sr <= 2'b00;
+    end else begin
+      f_post_reset_sr <= {f_post_reset_sr[0], 1'b1};
+    end
 
     if (!d_reset) begin
       assume(!asi_ingress_startofpacket || asi_ingress_valid);
@@ -155,7 +161,7 @@ module opq_oss_ingress_formal_tb;
           TICKET_FIFO_MAX_CREDIT));
     end
 
-    if (f_past_valid && !$past(d_reset)) begin
+    if (f_past_valid && (&f_post_reset_sr)) begin
       assert(lane_credit_dbg_oss <= LANE_FIFO_MAX_CREDIT);
       assert(ticket_credit_dbg_oss <= TICKET_FIFO_MAX_CREDIT);
 
