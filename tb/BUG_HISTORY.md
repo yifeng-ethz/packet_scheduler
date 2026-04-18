@@ -25,7 +25,7 @@ Class legend:
 | [BUG-015-H](#bug-015-h-oss-ingress-sby-harness-still-false-fails-on-phase-sensitive-write-and-drop-checks) | H | fixed | `formal_ingress.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `1048b6c` | The ingress OSS proof now passes after the harness stopped consuming reset-warmup debug pulses and switched from phase-ambiguous credit-bus checks to pulse-level write/drop contracts. |
 | [BUG-016-H](#bug-016-h-oss-basic-presenter-sby-lowering-hits-a-logic-loop-in-the-overwrite-scan-path) | H | fixed | `formal_egress.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `f8448ac` | The OSS basic-presenter proof no longer dies in SMT2 lowering; the live Avalon-ST hold-under-backpressure slice now passes on the OSS subset. |
 | [BUG-017-H](#bug-017-h-oss-mover-sby-harness-now-reaches-proof-but-still-fails-on-arbiter-shape-invariants) | H | fixed | `formal_mover.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `de65125` | The live OSS mover proof now passes on the current block-path subset after the proof-clean arbiter view was exported and constrained. |
-| [BUG-018-H](#bug-018-h-extended-mixed-bucket-seconds-soak-exposes-chained-masked-drop-accounting-underrun) | H | open | `opq_cross_mixed_bucket_seconds_soak_test` on `2026-04-18` | `pending` | The old seconds-soak accounting underrun is fixed, and the presenter repair pushed the stretched rerun past the old early failure window, but a full promoted rerun is still pending before the earlier `opq_hit3_contract` report can be retired. |
+| [BUG-018-H](#bug-018-h-extended-mixed-bucket-seconds-soak-exposes-chained-masked-drop-accounting-underrun) | H | open | `opq_cross_mixed_bucket_seconds_soak_test` on `2026-04-18` | `pending` | The old seconds-soak accounting underrun is fixed, but the full stretched rerun still trips `opq_hit3_contract`, first around mixed step `191` and later in repeated PROF-heavy windows. |
 
 ## 2026-04-17
 
@@ -417,13 +417,12 @@ Class legend:
     reach much deeper chained traffic and then tripped the live
     `opq_hit3_contract` SVA instead:
     `hit word arrived without a pending non-empty sub-header`
-  - the first current reproducer appears around mixed-soak step `190`
-    (`mixed_idle_lane_bp_190`) and the same contract failure repeats
-    later in the run
-  - after the `BUG-014-R` presenter fix, an exploratory rerun advanced
-    through at least mixed-soak step `49` and about `3.0 ms` of sim time
-    without reproducing that earlier failure window, but the full
-    promoted-length rerun has not completed yet
+  - the full rerun on the `BUG-014-R` presenter fix gets much farther
+    than the earlier exploratory cutoff, but it still fails: the first
+    current hit is at `11.642702 ms`, just before `mixed_sparse_191`,
+    and later repeats around `mixed_soak_261`,
+    `mixed_whole_skew_275`, `mixed_whole_skew_418`, and again before
+    `mixed_whole_skew_435`
 - Root cause status:
   - open
   - isolated lane-mask and lane-mask-recovery cases are green, so the
@@ -434,9 +433,9 @@ Class legend:
     break under longer chained traffic
 - Blocking reason:
   - `opq_cross_mixed_bucket_seconds_soak_test` is intentionally kept
-    probe-only until the full stretched rerun is finished; the earlier
-    `opq_hit3_contract` evidence has improved after the presenter repair,
-    but it has not been retired honestly yet
+    probe-only because the full stretched rerun still produces real
+    `opq_hit3_contract` failures on the fixed presenter state; this is
+    no longer just a short-run uncertainty
 - Candidate fixes:
   - correlate the `opq_hit3_contract` failures against the mixed-step
     schedule and reconstruct the missing sub-header/hit sequence in the

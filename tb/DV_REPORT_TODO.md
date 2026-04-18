@@ -206,11 +206,14 @@ comparison path, but it must not contribute to final signoff evidence.
       `opq_cross_mixed_bucket_seconds_soak_test` before promoting the earlier
       extended mixed-soak screen into the live report set.
       Status on `2026-04-18` after the `BUG-014-R` presenter repair:
-      - an exploratory rerun advanced through at least mixed-soak step `49`
-        and about `3.0 ms` sim time without reproducing the earlier
-        `opq_hit3_contract` failure window
-      - keep this item open until the full stretched rerun completes on the
-        fixed presenter state
+      - a full stretched rerun still fails on the fixed presenter state
+      - earliest current hit is at `11.642702 ms`, immediately before
+        `mixed_sparse_191`
+      - later repeats are also seen around `mixed_soak_261`,
+        `mixed_whole_skew_275`, `mixed_whole_skew_418`, and before
+        `mixed_whole_skew_435`
+      - keep this item open as a real long-chain mixed-soak blocker, not
+        just a pending-length rerun
 - [x] Resolve the native-SV no-reset drain / credit-restore bug before calling
       `bucket_frame` or `all_buckets_frame` signoff closed.
 - [ ] Add enough late-drop observability to prove hit integrity on the bursty
