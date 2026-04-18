@@ -287,6 +287,12 @@ comparison path, but it must not contribute to final signoff evidence.
 - [ ] Add the first OSS-friendly formal harness subset for
       `FORMAL_BACKEND=sby`.
       Required before real SymbiYosys/Yosys/Bitwuzla proofs can run:
+      Status on `2026-04-18`:
+      - shared OSS tool stack is installed for all users at
+        `/data1/oss_formal`
+      - `FORMAL_BACKEND=sby` now reaches
+        `blocked_no_scripted_sby_flow` on this host instead of
+        `blocked_no_sby_toolchain`
       - replace the current Questa-oriented standalone elaboration tops
         with Yosys-acceptable harnesses
       - keep the plane mapping identical to the existing ingress/mover/egress

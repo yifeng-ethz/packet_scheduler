@@ -1083,8 +1083,16 @@ Current OSS alternative status:
 
 - the wrapper layer now also accepts `FORMAL_BACKEND=sby` with explicit
   `SBY_BIN`, `YOSYS_BIN`, and `BITWUZLA_BIN` hooks
-- this host currently has **none** of `sby`, `yosys`, or `bitwuzla`
-  installed in `PATH`
+- a shared OSS stack is now installed for all users under
+  `/data1/oss_formal`, with stable wrappers in `/data1/oss_formal/bin`
+  and a shell activation script at `/data1/oss_formal/activate.sh`
+- the OPQ wrapper layer also probes `/data1/oss_formal/bin/{sby,yosys,bitwuzla}`
+  directly, so `FORMAL_BACKEND=sby` works on this host without a
+  per-user shell setup
+- current host result with that shared install:
+  `compile=pass`, `elab=pass`,
+  `formal=blocked_no_scripted_sby_flow`,
+  `backend=sby+yosys+bitwuzla`
 - even after those binaries are installed, the current standalone tops
   are still **Questa-oriented elaboration tops**, not true Yosys/SBY
   proof harnesses: they use simulation timing constructs, and the live

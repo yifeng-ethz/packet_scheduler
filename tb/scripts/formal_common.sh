@@ -68,6 +68,8 @@ formal_find_sby() {
     candidates+=("${SBY_BIN}")
   fi
   candidates+=(
+    /data1/oss_formal/bin/sby
+    /data1/oss_formal/bin/symbiyosys
     sby
     symbiyosys
   )
@@ -96,6 +98,7 @@ formal_find_yosys() {
     candidates+=("${YOSYS_BIN}")
   fi
   candidates+=(
+    /data1/oss_formal/bin/yosys
     yosys
   )
 
@@ -123,6 +126,7 @@ formal_find_bitwuzla() {
     candidates+=("${BITWUZLA_BIN}")
   fi
   candidates+=(
+    /data1/oss_formal/bin/bitwuzla
     bitwuzla
   )
 
