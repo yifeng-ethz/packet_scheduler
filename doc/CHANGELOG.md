@@ -1,6 +1,12 @@
 # Changelog
 Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 
+## 26.3.19.0418
+
+- **RTL / Native-SV Drop Accounting**: exposed ingress parser credit-mask rejection pulses through the monolithic native-SV path and into the standalone CSR/debug surface. The live native-SV DUT now counts parser-side lane-credit and ticket-credit packet rejection in the same software-visible drop counters used by the report and the fallback stress harness.
+- **Verification / Formal-Like API**: stabilized wrapper-facing fallback testcase names for the future formal backend handoff. `formal_ingress.sh` and `formal_mover.sh` now run stable `opq_formal_like_*` entry tests, so switching from today's simulation-backed fallback to a later `FORMAL_BACKEND=qverify` flow can reuse the same plane wrappers, testcase names, and report wording.
+- **Verification / Probe Tracking**: recorded the current live egress flush-under-backpressure failure as open `BUG-014-R`. The default fallback egress summary stays green on the directed hold tests, while the aggressive `opq_formal_like_egress_flush_backpressure_stress_test` remains a targeted probe until the presenter/flush hold violation is fixed.
+
 ## 26.3.17.0418
 
 - **Verification / Formal Fallback API**: stabilized the no-backend packet-formal wrappers so the same `formal_ingress.sh`, `formal_mover.sh`, and `formal_egress.sh` entry points can serve both today's simulation-backed fallback and a future `qverify`/`znformal` backend. The shared wrapper layer now accepts `FORMAL_BACKEND=auto|stress|qverify` and `FORMAL_STRESS_TESTS` for targeted per-plane fallback runs without editing the scripts.

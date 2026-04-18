@@ -259,18 +259,24 @@ comparison path, but it must not contribute to final signoff evidence.
       points intact.
       Status on `2026-04-18`:
       - wrappers now support `FORMAL_BACKEND=auto|stress|qverify`
+      - wrappers now support `QVERIFY_BIN=/path/to/qverify` as the
+        backend handoff point once the proof binary is installed
       - wrappers now support `FORMAL_STRESS_TESTS` for targeted fallback runs
       - default fallback status:
         - ingress: pass on `opq_basic_smoke_test` +
-          `opq_error_subheader_mask_recovery_test` with
+          `opq_formal_like_ingress_recovery_stress_test` with
           `FORMAL_OPQ_N_SHD=256`, `FORMAL_OPQ_TICKET_FIFO_DEPTH=512`
         - mover: pass on
-          `opq_cross_drr_allowance_test`,
-          `opq_cross_drr_short_allowance_test`,
-          `opq_cross_bp_credit_test`
+          `opq_cross_bp_credit_test`,
+          `opq_formal_like_mover_drr_credit_stress_test`
         - egress: pass on
           `opq_edge_toggle_backpressure_test`,
           `opq_edge_stuck_low_backpressure_test`
+      - targeted probe status:
+        - `FORMAL_STRESS_TESTS=opq_formal_like_egress_flush_backpressure_stress_test`
+          currently fails on `opq_avst_egress_sva`
+          `p_hold_under_backpressure`; tracked in `BUG-014-R` and kept
+          probe-only
       - ingress probe-only exclusions:
         `opq_error_header_mask_recovery_test`,
         `opq_error_header_word_mask_recovery_test`

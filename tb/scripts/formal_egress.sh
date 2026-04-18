@@ -2,7 +2,7 @@
 #------------------------------------------------------------------------------
 # IP Name   : formal_egress
 # Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
-# Revision  : 0.1 - plane E/F packet-formal compile/elab wrapper
+# Revision  : 0.2 - keep the aggressive flush-under-backpressure case as a targeted probe-only fallback
 # Description:
 #   Executes the egress-side packet-formal readiness flow from DV_FORMAL
 #   plane E/F using an isolated build directory. This validates both the live

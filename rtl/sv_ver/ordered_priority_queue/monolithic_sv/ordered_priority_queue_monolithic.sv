@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_sv
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.14
-// Date    : 20260417
-// Change  : Add native DRR configuration hooks so the SV wrapper can expose a VHDL-compatible CSR plane
+// Version : 26.3.19
+// Date    : 20260418
+// Change  : Surface ingress credit-mask drop pulses for native-SV debug and DV accounting
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_sv #(
@@ -82,6 +82,11 @@ module ordered_priority_queue_monolithic_sv #(
   logic [N_LANE-1:0][47:0] ingress_running_ts_dbg;
   logic [N_LANE-1:0][5:0] ingress_dt_type_dbg;
   logic [N_LANE-1:0][15:0] ingress_feb_id_dbg;
+  logic [N_LANE-1:0] ingress_credit_drop_valid_dbg;
+  logic [N_LANE-1:0] ingress_credit_drop_lane_dbg;
+  logic [N_LANE-1:0] ingress_credit_drop_ticket_dbg;
+  logic [N_LANE-1:0][15:0] ingress_credit_drop_shd_cnt_dbg;
+  logic [N_LANE-1:0][15:0] ingress_credit_drop_hit_cnt_dbg;
   logic [N_LANE-1:0] ingress_alert_eop_dbg;
   logic [N_LANE-1:0] ingress_eop_flush_ack_dbg;
   logic [N_LANE-1:0][LANE_FIFO_ADDR_WIDTH-1:0] lane_credit_update;
@@ -193,6 +198,11 @@ module ordered_priority_queue_monolithic_sv #(
       .running_ts_dbg(ingress_running_ts_dbg[g]),
       .dt_type_dbg(ingress_dt_type_dbg[g]),
       .feb_id_dbg(ingress_feb_id_dbg[g]),
+      .credit_drop_valid_o(ingress_credit_drop_valid_dbg[g]),
+      .credit_drop_lane_o(ingress_credit_drop_lane_dbg[g]),
+      .credit_drop_ticket_o(ingress_credit_drop_ticket_dbg[g]),
+      .credit_drop_shd_cnt_o(ingress_credit_drop_shd_cnt_dbg[g]),
+      .credit_drop_hit_cnt_o(ingress_credit_drop_hit_cnt_dbg[g]),
       .alert_eop_state_o(ingress_alert_eop_dbg[g]),
       .eop_flush_ack_i(ingress_eop_flush_ack_dbg[g]),
       .d_clk(d_clk),

@@ -2,7 +2,7 @@
 #------------------------------------------------------------------------------
 # IP Name   : formal_ingress
 # Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
-# Revision  : 0.2 - separate default contract-preserving ingress stress from malformed probe-only cases
+# Revision  : 0.3 - use a stable wrapper-facing ingress fallback alias and keep malformed cases probe-only
 # Description:
 #   Executes the ingress-side packet-formal readiness flow from DV_FORMAL
 #   plane A/B using an isolated build directory.
@@ -21,5 +21,5 @@ formal_run_plane \
   "512" \
   "1024" \
   "Plane A/B ingress-parser packet-shape and credit invariants on the live native-SV path" \
-  "opq_basic_smoke_test opq_error_subheader_mask_recovery_test" \
+  "opq_basic_smoke_test opq_formal_like_ingress_recovery_stress_test" \
   "opq_error_header_mask_recovery_test opq_error_header_word_mask_recovery_test"

@@ -21,6 +21,7 @@ Class legend:
 | [BUG-011-R](#bug-011-r-chained-malformed-subheader-recovery-is-not-composable-in-mixed-bucket-soak) | R | open | `opq_cross_mixed_bucket_random_soak_test` | `pending` | Isolated malformed-subheader recovery is green, but chained mixed-soak recovery still breaks no-restart framing. |
 | [BUG-012-H](#bug-012-h-edge-medium-ready-profile-testcase-was-wired-as-always-ready) | H | fixed | promoted EDGE isolated rerun on `2026-04-17` | `cbb05e0` | The supposed medium-backpressure testcase never applied stalls and gave false evidence. |
 | [BUG-013-H](#bug-013-h-mixed-bucket-random-soak-was-reported-as-directed-and-omitted-txn-growth-traceability) | H | fixed | regenerated native-SV report on `2026-04-17` | `cbb05e0` | The promoted mixed-soak testcase was misclassified as directed and hid required random-case reporting. |
+| [BUG-014-R](#bug-014-r-formal-like-egress-flush-under-backpressure-violates-the-avalon-st-hold-contract) | R | open | `formal_egress.sh` targeted stress probe on `2026-04-18` | `pending` | Formal-like egress flush-under-backpressure breaks the live Avalon-ST hold contract while the presenter is flushing under deasserted `ready`. |
 
 ## 2026-04-17
 
@@ -260,3 +261,42 @@ Class legend:
   - the report now classifies `COMBO_OPQ_507_cross_mixed_bucket_random_soak_test` as random, records `observed_txn=64`, and generates the required `txn_growth` placeholder page until checkpoint UCDBs are implemented
 - Commit:
   - `cbb05e0` `Expand OPQ native-SV promoted coverage and mixed soak`
+
+### BUG-014-R: Formal-like egress flush-under-backpressure violates the Avalon-ST hold contract
+- First seen in:
+  - `packet_scheduler/tb/scripts/formal_egress.sh` with
+    `FORMAL_BACKEND=stress`
+    `FORMAL_STRESS_TESTS=opq_formal_like_egress_flush_backpressure_stress_test`
+    on `2026-04-18`
+- Symptom:
+  - the targeted formal-like egress probe fails with repeated
+    `opq_avst_egress_sva.sv` line `51`
+    `p_hold_under_backpressure` assertion hits while the test forces a
+    long flush window under deasserted output `ready`
+  - observed assertion timestamps in the first failing log include
+    `32302 ns`, `48374 ns`, and `64454 ns`
+  - the failure is specific to the aggressive flush-under-backpressure
+    edge; the default fallback egress suite
+    (`opq_edge_toggle_backpressure_test`,
+    `opq_edge_stuck_low_backpressure_test`) still passes cleanly
+- Root cause status:
+  - open
+  - the live native-SV basic-presenter path is still allowing accepted
+    output framing or payload state to change while `aso_out_valid` is
+    held against `aso_out_ready=0` and concurrent flush / overwrite
+    retirement logic is active
+- Blocking reason:
+  - kept probe-only and excluded from both the default fallback summary
+    and signoff evidence because the contract violation is on the live
+    output interface itself
+- Candidate fixes:
+  - preserve the presenter output-hold register contents across flush
+    and overwrite retirement so `valid`, `data`, `startofpacket`,
+    `endofpacket`, and `error` remain stable until acceptance
+  - add a focused internal presenter assertion that ties flush retire,
+    overwrite-drop bookkeeping, and the Avalon-ST hold shadow together
+    so this edge fails at the first illegal state transition
+- Fix status:
+  - open
+- Commit:
+  - pending

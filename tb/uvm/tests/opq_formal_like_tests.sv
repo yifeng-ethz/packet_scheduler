@@ -1,12 +1,31 @@
 //------------------------------------------------------------------------------
 // IP Name   : opq_formal_like_tests
 // Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
-// Revision  : 0.1 - simulation-backed packet-formal fallback probes
+// Revision  : 0.4 - keep stable wrapper-facing fallback test names for a later qverify backend swap
 // Description:
 //   Directed long-running stress tests that exercise the same packet-shape
 //   contracts as the dedicated formal SVA when a real proof backend is not
 //   available on the host.
 //------------------------------------------------------------------------------
+// These thin subclasses are the stable wrapper-facing entry points for the
+// current simulation-backed fallback. A later qverify/znformal flow can reuse
+// the same names while swapping in proof-oriented harness internals.
+class opq_formal_like_ingress_recovery_stress_test extends opq_error_subheader_mask_recovery_test;
+  `uvm_component_utils(opq_formal_like_ingress_recovery_stress_test)
+
+  function new(string name = "opq_formal_like_ingress_recovery_stress_test", uvm_component parent = null);
+    super.new(name, parent);
+  endfunction
+endclass
+
+class opq_formal_like_mover_drr_credit_stress_test extends opq_cross_drr_allowance_test;
+  `uvm_component_utils(opq_formal_like_mover_drr_credit_stress_test)
+
+  function new(string name = "opq_formal_like_mover_drr_credit_stress_test", uvm_component parent = null);
+    super.new(name, parent);
+  endfunction
+endclass
+
 class opq_formal_like_egress_flush_backpressure_stress_test extends opq_base_test;
   `uvm_component_utils(opq_formal_like_egress_flush_backpressure_stress_test)
 

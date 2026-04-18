@@ -1,8 +1,8 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_ingress_parser
-// Version : 26.3.13
-// Date    : 20260417
-// Change  : Port the allocator flush-ack path so trailer alerts clear on empty-frame drains
+// Version : 26.3.19
+// Date    : 20260418
+// Change  : Export credit-mask drop pulses so the native-SV path can account for parser-side packet rejection
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_ingress_parser #(
@@ -46,6 +46,11 @@ module ordered_priority_queue_monolithic_ingress_parser #(
   output logic [47:0]                                       running_ts_dbg,
   output logic [5:0]                                        dt_type_dbg,
   output logic [15:0]                                       feb_id_dbg,
+  output logic                                              credit_drop_valid_o,
+  output logic                                              credit_drop_lane_o,
+  output logic                                              credit_drop_ticket_o,
+  output logic [15:0]                                       credit_drop_shd_cnt_o,
+  output logic [15:0]                                       credit_drop_hit_cnt_o,
   output logic                                              alert_eop_state_o,
   input  logic                                              eop_flush_ack_i,
   input  logic                                              d_clk,
@@ -205,6 +210,11 @@ module ordered_priority_queue_monolithic_ingress_parser #(
   always_ff @(posedge d_clk) begin : proc_ingress_parser
     ingress_parser.lane_we <= 1'b0;
     ingress_parser.ticket_we <= 1'b0;
+    credit_drop_valid_o <= 1'b0;
+    credit_drop_lane_o <= 1'b0;
+    credit_drop_ticket_o <= 1'b0;
+    credit_drop_shd_cnt_o <= '0;
+    credit_drop_hit_cnt_o <= '0;
 
     if (lane_credit_update_valid) begin
       ingress_parser.lane_credit <= ingress_parser.lane_credit + lane_credit_update;
@@ -223,8 +233,16 @@ module ordered_priority_queue_monolithic_ingress_parser #(
             ingress_parser.running_ts[11:4] <= ingress_parser_if_subheader_shd_ts;
             ingress_parser.shd_len <= ingress_parser_if_subheader_hit_cnt;
             if (int'(ingress_parser_if_subheader_hit_cnt) >= int'(ingress_parser.lane_credit)) begin
+              credit_drop_valid_o <= 1'b1;
+              credit_drop_lane_o <= 1'b1;
+              credit_drop_shd_cnt_o <= 16'd1;
+              credit_drop_hit_cnt_o <= {8'd0, ingress_parser_if_subheader_hit_cnt};
               ingress_parser_state <= INGRESS_PARSER_MASK_PKT;
             end else if (ingress_parser.ticket_credit == '0) begin
+              credit_drop_valid_o <= 1'b1;
+              credit_drop_ticket_o <= 1'b1;
+              credit_drop_shd_cnt_o <= 16'd1;
+              credit_drop_hit_cnt_o <= {8'd0, ingress_parser_if_subheader_hit_cnt};
               ingress_parser_state <= INGRESS_PARSER_MASK_PKT;
             end else if (ingress_parser_if_subheader_hit_cnt != '0) begin
               ingress_parser_state <= INGRESS_PARSER_WR_HITS;
@@ -332,8 +350,16 @@ module ordered_priority_queue_monolithic_ingress_parser #(
             ingress_parser.running_ts[11:4] <= ingress_parser_if_subheader_shd_ts;
             ingress_parser.shd_len <= ingress_parser_if_subheader_hit_cnt;
             if (int'(ingress_parser_if_subheader_hit_cnt) >= int'(ingress_parser.lane_credit)) begin
+              credit_drop_valid_o <= 1'b1;
+              credit_drop_lane_o <= 1'b1;
+              credit_drop_shd_cnt_o <= 16'd1;
+              credit_drop_hit_cnt_o <= {8'd0, ingress_parser_if_subheader_hit_cnt};
               ingress_parser_state <= INGRESS_PARSER_MASK_PKT;
             end else if (ingress_parser.ticket_credit == '0) begin
+              credit_drop_valid_o <= 1'b1;
+              credit_drop_ticket_o <= 1'b1;
+              credit_drop_shd_cnt_o <= 16'd1;
+              credit_drop_hit_cnt_o <= {8'd0, ingress_parser_if_subheader_hit_cnt};
               ingress_parser_state <= INGRESS_PARSER_MASK_PKT;
             end else if (ingress_parser_if_subheader_hit_cnt != '0) begin
               ingress_parser_state <= INGRESS_PARSER_WR_HITS;
@@ -414,6 +440,11 @@ module ordered_priority_queue_monolithic_ingress_parser #(
       ingress_parser <= INGRESS_PARSER_REG_RESET;
       ingress_parser_state <= INGRESS_PARSER_RESET;
       update_header_ts_flow <= '0;
+      credit_drop_valid_o <= 1'b0;
+      credit_drop_lane_o <= 1'b0;
+      credit_drop_ticket_o <= 1'b0;
+      credit_drop_shd_cnt_o <= '0;
+      credit_drop_hit_cnt_o <= '0;
     end
   end
 

@@ -69,13 +69,19 @@ module tb_top;
     end
   end
 `else
-  generate
-    for (i = 0; i < OPQ_N_LANE; i++) begin : gen_drop_tap_stub
-      assign drop_if.valid[i] = 1'b0;
-      assign drop_if.shd_drop_cnt[i] = '0;
-      assign drop_if.hit_drop_cnt[i] = '0;
+  if (OPQ_N_LANE == 2) begin : gen_drop_tap_2lane_native
+    for (i = 0; i < OPQ_N_LANE; i++) begin : gen_drop_lane_native
+      assign drop_if.valid[i] = gen_dut_2lane.dut.native_drop_valid_dbg[i];
+      assign drop_if.shd_drop_cnt[i] = gen_dut_2lane.dut.native_drop_shd_dbg[i];
+      assign drop_if.hit_drop_cnt[i] = gen_dut_2lane.dut.native_drop_hit_dbg[i];
     end
-  endgenerate
+  end else begin : gen_drop_tap_4lane_native
+    for (i = 0; i < OPQ_N_LANE; i++) begin : gen_drop_lane_native
+      assign drop_if.valid[i] = gen_dut_4lane.dut4.native_drop_valid_dbg[i];
+      assign drop_if.shd_drop_cnt[i] = gen_dut_4lane.dut4.native_drop_shd_dbg[i];
+      assign drop_if.hit_drop_cnt[i] = gen_dut_4lane.dut4.native_drop_hit_dbg[i];
+    end
+  end
 `endif
 
   if (OPQ_N_LANE == 2) begin : gen_dut_2lane
