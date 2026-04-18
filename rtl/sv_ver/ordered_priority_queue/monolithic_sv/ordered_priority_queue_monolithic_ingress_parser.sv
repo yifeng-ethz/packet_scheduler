@@ -46,6 +46,10 @@ module ordered_priority_queue_monolithic_ingress_parser #(
   output logic [47:0]                                       running_ts_dbg,
   output logic [5:0]                                        dt_type_dbg,
   output logic [15:0]                                       feb_id_dbg,
+`ifdef OPQ_OSS_FORMAL
+  output logic [LANE_FIFO_ADDR_WIDTH-1:0]                   lane_credit_dbg_oss,
+  output logic [TICKET_FIFO_ADDR_WIDTH-1:0]                 ticket_credit_dbg_oss,
+`endif
   output logic                                              credit_drop_valid_o,
   output logic                                              credit_drop_lane_o,
   output logic                                              credit_drop_ticket_o,
@@ -185,6 +189,10 @@ module ordered_priority_queue_monolithic_ingress_parser #(
     running_ts_dbg = ingress_parser.running_ts;
     dt_type_dbg = ingress_parser.dt_type;
     feb_id_dbg = ingress_parser.feb_id;
+`ifdef OPQ_OSS_FORMAL
+    lane_credit_dbg_oss = ingress_parser.lane_credit;
+    ticket_credit_dbg_oss = ingress_parser.ticket_credit;
+`endif
     alert_eop_state_o = ingress_parser.alert_eop;
   end
 

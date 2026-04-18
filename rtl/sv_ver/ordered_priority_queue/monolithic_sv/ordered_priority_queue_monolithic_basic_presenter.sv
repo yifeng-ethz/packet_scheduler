@@ -225,6 +225,9 @@ module ordered_priority_queue_monolithic_basic_presenter #(
     meta_ptr_t scan_pkt_rcnt;
     bit stop_scan;
     integer scan_idx;
+    logic [31:0] scan_hdr_cnt;
+    logic [31:0] scan_shd_cnt;
+    logic [31:0] scan_hit_cnt;
 
     overwrite_head_accepted_or_accepting =
       (presenter_state == FTABLE_PRESENTER_PRESENTING) &&
@@ -240,12 +243,15 @@ module ordered_priority_queue_monolithic_basic_presenter #(
     scan_pkt_rcnt = meta_pkt_rcnt;
     stop_scan = 1'b0;
     scan_idx = 0;
+    scan_hdr_cnt = '0;
+    scan_shd_cnt = '0;
+    scan_hit_cnt = '0;
 
     if (new_frame_valid_i) begin
       if (new_frame_oversize) begin
-        overwrite_drop_hdr_cnt_next = 32'd1;
-        overwrite_drop_shd_cnt_next = extend32_shd(frame_shr_cnt_this_i);
-        overwrite_drop_hit_cnt_next = extend32_hit(frame_hit_cnt_this_i);
+        scan_hdr_cnt = 32'd1;
+        scan_shd_cnt = extend32_shd(frame_shr_cnt_this_i);
+        scan_hit_cnt = extend32_hit(frame_hit_cnt_this_i);
       end else begin
         for (scan_idx = 0; scan_idx < META_DEPTH; scan_idx = scan_idx + 1) begin
           if (!stop_scan && (scan_pkt_rcnt != meta_pkt_wcnt)) begin
@@ -258,9 +264,9 @@ module ordered_priority_queue_monolithic_basic_presenter #(
               if ((scan_rptr == meta_rptr) && overwrite_head_accepted_or_accepting) begin
                 stop_scan = 1'b1;
               end else begin
-                overwrite_drop_hdr_cnt_next = overwrite_drop_hdr_cnt_next + 32'd1;
-                overwrite_drop_shd_cnt_next = overwrite_drop_shd_cnt_next + extend32_shd(meta_shd_cnt[scan_rptr]);
-                overwrite_drop_hit_cnt_next = overwrite_drop_hit_cnt_next + extend32_hit(meta_hit_cnt[scan_rptr]);
+                scan_hdr_cnt = scan_hdr_cnt + 32'd1;
+                scan_shd_cnt = scan_shd_cnt + extend32_shd(meta_shd_cnt[scan_rptr]);
+                scan_hit_cnt = scan_hit_cnt + extend32_hit(meta_hit_cnt[scan_rptr]);
                 scan_rptr = scan_rptr + META_PTR_ONE_CONST;
                 scan_pkt_rcnt = scan_pkt_rcnt + META_PTR_ONE_CONST;
               end
@@ -274,10 +280,13 @@ module ordered_priority_queue_monolithic_basic_presenter #(
 
     overwrite_drop_rptr_next = scan_rptr;
     overwrite_drop_pkt_rcnt_next = scan_pkt_rcnt;
+    overwrite_drop_hdr_cnt_next = scan_hdr_cnt;
+    overwrite_drop_shd_cnt_next = scan_shd_cnt;
+    overwrite_drop_hit_cnt_next = scan_hit_cnt;
     overwrite_drop_valid_next =
-      (overwrite_drop_hdr_cnt_next != 0) ||
-      (overwrite_drop_shd_cnt_next != 0) ||
-      (overwrite_drop_hit_cnt_next != 0);
+      (scan_hdr_cnt != 0) ||
+      (scan_shd_cnt != 0) ||
+      (scan_hit_cnt != 0);
     overwrite_drop_flush_head = overwrite_drop_valid_next && !new_frame_oversize;
   end
 

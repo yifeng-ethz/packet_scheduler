@@ -1,0 +1,26 @@
+[tasks]
+prove
+cover
+
+[options]
+prove: mode prove
+prove: depth 20
+prove: multiclock on
+prove: wait on
+cover: mode cover
+cover: depth 20
+cover: multiclock on
+cover: wait on
+
+[engines]
+prove: smtbmc bitwuzla
+cover: smtbmc bitwuzla
+
+[script]
+read_verilog -formal -sv -DOPQ_OSS_FORMAL rtl/ordered_priority_queue_monolithic_block_path.sv
+read_verilog -formal -sv formal/opq_oss_block_path_formal_tb.sv
+prep -top opq_oss_block_path_formal_tb
+
+[files]
+rtl/ordered_priority_queue_monolithic_block_path.sv ../../rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_block_path.sv
+formal/opq_oss_block_path_formal_tb.sv ../uvm/formal/opq_oss_block_path_formal_tb.sv

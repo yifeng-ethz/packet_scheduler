@@ -1101,8 +1101,11 @@ Current OSS alternative status:
   - mover:
     `compile=pass`,
     `elab=pass`,
-    `formal=blocked_no_scripted_sby_flow`,
+    `formal=sby_fail`,
     `backend=sby+yosys+bitwuzla`
+    via `formal_mover.sh`
+    `FORMAL_BACKEND=sby`
+    `FORMAL_SBY_TASKS=prove`
   - egress:
     `compile=pass`,
     `elab=pass`,
@@ -1112,15 +1115,17 @@ Current OSS alternative status:
     `FORMAL_BACKEND=sby`
     `FORMAL_SBY_TASKS=prove`
 - the OSS path is therefore no longer just a backend/API handoff:
-  the first ingress and egress jobs are now truly scripted and execute
-  real `sby` runs on this host
+  the ingress, mover, and egress jobs are now all truly scripted and
+  execute real `sby` runs on this host
 - current remaining blockers are concrete and tracked:
-  - `BUG-015-H`: ingress proof still false-fails on registered public
-    output sampling before the intended internal contract is isolated
+  - `BUG-015-H`: ingress proof now uses real credit debug mirrors, but
+    still false-fails on phase-sensitive write/drop checks that need a
+    cleaner sampled-state contract
   - `BUG-016-H`: egress proof stops in Yosys SMT2 lowering on a reported
     logic loop in the overwrite-drop scan path
-  - mover still needs the first OSS-native harness, so that plane
-    remains `blocked_no_scripted_sby_flow`
+  - `BUG-017-H`: mover proof now reaches Bitwuzla, but still fails on
+    page-writer / lock-event checks and needs phase cleanup plus RTL
+    triage before it can serve as a signoff proof slice
 
 ---
 

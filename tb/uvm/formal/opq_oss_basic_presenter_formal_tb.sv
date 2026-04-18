@@ -29,7 +29,6 @@ module opq_oss_basic_presenter_formal_tb;
   reg f_past_valid = 1'b0;
   reg [1:0] f_reset_sr = 2'b11;
 
-  wire d_clk = gclk;
   wire d_reset = f_reset_sr[1];
 
   (* anyseq *) reg                                new_frame_valid_i;
@@ -105,7 +104,7 @@ module opq_oss_basic_presenter_formal_tb;
     .aso_egress_startofpacket(aso_egress_startofpacket),
     .aso_egress_endofpacket(aso_egress_endofpacket),
     .aso_egress_error(aso_egress_error),
-    .d_clk(d_clk),
+    .d_clk(gclk),
     .d_reset(d_reset)
   );
 

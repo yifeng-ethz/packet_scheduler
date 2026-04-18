@@ -291,10 +291,10 @@ comparison path, but it must not contribute to final signoff evidence.
         `/data1/oss_formal`
       - ingress wrapper now runs `opq_oss_ingress.sby` for real and
         records `formal=sby_fail`
+      - mover wrapper now runs `opq_oss_block_path.sby` for real and
+        records `formal=sby_fail`
       - egress wrapper now runs `opq_oss_basic_presenter.sby` for real and
         records `formal=sby_error`
-      - mover still has no OSS-native harness, so that plane remains
-        `blocked_no_scripted_sby_flow`
       - plane naming and wrapper entry points stayed stable
         (`formal_ingress.sh`, `formal_mover.sh`, `formal_egress.sh`)
 - [x] Run the first actual formal proof round once the proof backend is
@@ -304,17 +304,20 @@ comparison path, but it must not contribute to final signoff evidence.
       - first wrapper-managed `sby` round is captured in
         `tb/formal_runs/csv/formal_{ingress,mover,egress}_latest.csv`
       - current tracked blockers:
-        - `BUG-015-H`: ingress public-output sampling still false-fails
-          the first OSS proof
+        - `BUG-015-H`: ingress phase-sensitive write/drop checks still
+          false-fail after the credit-debug bridge
         - `BUG-016-H`: presenter SMT2 lowering reports a logic loop
-        - mover plane still needs its first OSS harness
+        - `BUG-017-H`: mover page-writer / lock-event checks now fail in
+          the first live OSS proof run
 - [ ] Close `BUG-015-H` by reworking the ingress OSS proof to sample
-      pre-update internal state instead of registered public outputs.
+      phase-correct write/drop state instead of inferring behavior from
+      unstable public pulses.
 - [ ] Close `BUG-016-H` by rewriting or isolating the overwrite-drop scan
       so the basic-presenter OSS proof can reach actual hold-under-backpressure
       properties instead of stopping in Yosys lowering.
-- [ ] Add the first mover OSS harness so `formal_mover.sh` no longer reports
-      `blocked_no_scripted_sby_flow`.
+- [ ] Close `BUG-017-H` by flattening or re-exporting the mover proof-visible
+      state enough to remove the remaining phase/implicit-wire mismatches in
+      `opq_oss_block_path`.
 - [ ] Close the cross-module flush-under-backpressure proof for the tiled
       frame-table path (`ap_flush_does_not_touch_live_page`,
       `ap_tail_flush_preserves_head_region`) once the live native-SV top swaps

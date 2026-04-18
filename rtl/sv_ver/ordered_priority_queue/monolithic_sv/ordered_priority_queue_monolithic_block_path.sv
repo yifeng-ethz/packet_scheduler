@@ -46,6 +46,15 @@ module ordered_priority_queue_monolithic_block_path #(
   output logic                                             page_ram_we_o,
   output logic [PAGE_RAM_ADDR_WIDTH-1:0]                   page_ram_wr_addr_o,
   output logic [PAGE_RAM_DATA_WIDTH-1:0]                   page_ram_wr_data_o,
+`ifdef OPQ_OSS_FORMAL
+  output logic [N_LANE-1:0]                                req_raw_dbg_oss,
+  output logic [N_LANE-1:0]                                req_eligible_dbg_oss,
+  output logic [N_LANE-1:0]                                gnt_dbg_oss,
+  output logic [N_LANE-1:0]                                sel_mask_dbg_oss,
+  output logic [N_LANE-1:0]                                lock_event_dbg_oss,
+  output logic [N_LANE-1:0]                                defer_event_dbg_oss,
+  output logic                                             locked_dbg_oss,
+`endif
   input  logic                                             d_clk,
   input  logic                                             d_reset
 );
@@ -73,9 +82,10 @@ module ordered_priority_queue_monolithic_block_path #(
       result1 = result0p5 + priority_mask;
       result2 = result0 & result1;
       if (|result2[N_LANE-1:0]) begin
-        return result2[N_LANE-1:0];
+        rr_grant = result2[N_LANE-1:0];
+      end else begin
+        rr_grant = result2[2*N_LANE-1:N_LANE];
       end
-      return result2[2*N_LANE-1:N_LANE];
     end
   endfunction
 
@@ -87,9 +97,10 @@ module ordered_priority_queue_monolithic_block_path #(
     begin
       sum_v = {1'b0, lhs} + {1'b0, rhs};
       if (sum_v[10]) begin
-        return QUANTUM_MAX;
+        sat_add_quantum = QUANTUM_MAX;
+      end else begin
+        sat_add_quantum = sum_v[9:0];
       end
-      return sum_v[9:0];
     end
   endfunction
 
@@ -104,11 +115,7 @@ module ordered_priority_queue_monolithic_block_path #(
     pkt_length_t     blk_len;
   } handle_t;
 
-  localparam handle_t HANDLE_REG_RESET = '{
-    src: '0,
-    dst: '0,
-    blk_len: '0
-  };
+  localparam handle_t HANDLE_REG_RESET = '0;
 
   typedef enum logic [2:0] {
     BLOCK_MOVER_IDLE,
@@ -118,9 +125,9 @@ module ordered_priority_queue_monolithic_block_path #(
     BLOCK_MOVER_RESET
   } block_mover_state_t;
 
-  typedef handle_fifo_addr_t handle_rptr_d_t [1:FIFO_RD_DELAY];
+  typedef logic [FIFO_RD_DELAY:1][HANDLE_FIFO_ADDR_WIDTH-1:0] handle_rptr_d_t;
 
-  typedef struct {
+  typedef struct packed {
     pkt_length_t     word_wr_cnt;
     handle_t         handle;
     logic            flag;
@@ -133,20 +140,9 @@ module ordered_priority_queue_monolithic_block_path #(
     logic            reset_done;
   } block_mover_reg_t;
 
-  localparam block_mover_reg_t BLOCK_MOVER_REG_RESET = '{
-    word_wr_cnt: '0,
-    handle: HANDLE_REG_RESET,
-    flag: 1'b0,
-    handle_rptr: '0,
-    handle_rptr_d: '{default:'0},
-    page_wptr: '0,
-    page_wreq: 1'b0,
-    lane_credit_update: '0,
-    lane_credit_update_valid: 1'b0,
-    reset_done: 1'b0
-  };
+  localparam block_mover_reg_t BLOCK_MOVER_REG_RESET = '0;
 
-  typedef logic [9:0] quantum_t [N_LANE];
+  typedef logic [N_LANE-1:0][9:0] quantum_t;
 
   typedef enum logic [1:0] {
     ARBITER_IDLE,
@@ -155,17 +151,13 @@ module ordered_priority_queue_monolithic_block_path #(
     ARBITER_RESET
   } arbiter_state_t;
 
-  typedef struct {
+  typedef struct packed {
     logic [N_LANE-1:0] sel_mask;
     logic [N_LANE-1:0] priority_mask;
     quantum_t          quantum;
   } b2p_arb_t;
 
-  localparam b2p_arb_t B2P_ARB_REG_RESET = '{
-    sel_mask: '0,
-    priority_mask: {{(N_LANE-1){1'b0}}, 1'b1},
-    quantum: '{default:QUANTUM_PER_SUBFRAME}
-  };
+  localparam b2p_arb_t B2P_ARB_REG_RESET = '0;
 
   block_mover_state_t block_mover_state [N_LANE];
   block_mover_reg_t   block_mover [N_LANE];
@@ -276,6 +268,16 @@ module ordered_priority_queue_monolithic_block_path #(
       page_ram_wr_addr_comb = page_allocator_page_waddr_i;
       page_ram_wr_data_comb = page_allocator_page_wdata_i;
     end
+
+`ifdef OPQ_OSS_FORMAL
+    req_raw_dbg_oss = b2p_arb_req_raw;
+    req_eligible_dbg_oss = b2p_arb_req_eligible;
+    gnt_dbg_oss = b2p_arb_gnt;
+    sel_mask_dbg_oss = b2p_arb.sel_mask;
+    lock_event_dbg_oss = drr_lock_event_dbg;
+    defer_event_dbg_oss = drr_defer_event_dbg;
+    locked_dbg_oss = (arbiter_state == ARBITER_LOCKED);
+`endif
   end
 
   always_ff @(posedge d_clk) begin : proc_block_mover_and_arbiter
@@ -427,6 +429,10 @@ module ordered_priority_queue_monolithic_block_path #(
 
       ARBITER_RESET: begin
         b2p_arb <= B2P_ARB_REG_RESET;
+        b2p_arb.priority_mask <= {{(N_LANE-1){1'b0}}, 1'b1};
+        for (int i = 0; i < N_LANE; i++) begin
+          b2p_arb.quantum[i] <= QUANTUM_PER_SUBFRAME;
+        end
         arbiter_state <= ARBITER_IDLE;
       end
 
@@ -440,6 +446,10 @@ module ordered_priority_queue_monolithic_block_path #(
 
     if (d_reset) begin
       b2p_arb <= B2P_ARB_REG_RESET;
+      b2p_arb.priority_mask <= {{(N_LANE-1){1'b0}}, 1'b1};
+      for (int i = 0; i < N_LANE; i++) begin
+        b2p_arb.quantum[i] <= QUANTUM_PER_SUBFRAME;
+      end
       arbiter_state <= ARBITER_RESET;
       page_ram_we_o <= 1'b0;
       page_ram_wr_addr_o <= '0;
@@ -447,6 +457,7 @@ module ordered_priority_queue_monolithic_block_path #(
     end
   end
 
+`ifndef OPQ_OSS_FORMAL
   for (genvar g = 0; g < N_LANE; g++) begin : g_block_path_sva
     property p_reset_enters_block_mover_reset;
       @(posedge d_clk) d_reset |=> (block_mover_state[g] == BLOCK_MOVER_RESET);
@@ -460,6 +471,7 @@ module ordered_priority_queue_monolithic_block_path #(
     endproperty
     ap_abort_returns_credit: assert property (p_abort_returns_credit);
   end
+`endif
 
 `ifdef OPQ_ENABLE_NATIVE_FORMAL_MOVER
   opq_native_block_path_formal_sva #(

@@ -22,8 +22,9 @@ Class legend:
 | [BUG-012-H](#bug-012-h-edge-medium-ready-profile-testcase-was-wired-as-always-ready) | H | fixed | promoted EDGE isolated rerun on `2026-04-17` | `cbb05e0` | The supposed medium-backpressure testcase never applied stalls and gave false evidence. |
 | [BUG-013-H](#bug-013-h-mixed-bucket-random-soak-was-reported-as-directed-and-omitted-txn-growth-traceability) | H | fixed | regenerated native-SV report on `2026-04-17` | `cbb05e0` | The promoted mixed-soak testcase was misclassified as directed and hid required random-case reporting. |
 | [BUG-014-R](#bug-014-r-formal-like-egress-flush-under-backpressure-violates-the-avalon-st-hold-contract) | R | open | `formal_egress.sh` targeted stress probe on `2026-04-18` | `pending` | Formal-like egress flush-under-backpressure breaks the live Avalon-ST hold contract while the presenter is flushing under deasserted `ready`. |
-| [BUG-015-H](#bug-015-h-oss-ingress-sby-harness-still-false-fails-on-registered-public-output-sampling) | H | open | `formal_ingress.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `pending` | The first Yosys/SBY ingress harness reaches proof, but public output checks still sample registered signals one phase early and fail before the intended internal contract is isolated. |
+| [BUG-015-H](#bug-015-h-oss-ingress-sby-harness-still-false-fails-on-phase-sensitive-write-and-drop-checks) | H | open | `formal_ingress.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `pending` | The ingress OSS proof now uses real credit debug mirrors, but the remaining write/drop checks still false-fail on phase-sensitive registered behavior. |
 | [BUG-016-H](#bug-016-h-oss-basic-presenter-sby-lowering-hits-a-logic-loop-in-the-overwrite-scan-path) | H | open | `formal_egress.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `pending` | The OSS basic-presenter proof harness compiles and elaborates, but Yosys SMT2 lowering stops on a reported logic loop in the overwrite-drop scan path. |
+| [BUG-017-H](#bug-017-h-oss-mover-sby-harness-now-reaches-proof-but-still-fails-on-page-writer-and-lock-event-phase-checks) | H | open | `formal_mover.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `pending` | The first live OSS mover proof now parses, elaborates, and reaches Bitwuzla, but page-writer ownership and lock-event checks still fail and need phase cleanup plus RTL triage. |
 
 ## 2026-04-17
 
@@ -303,7 +304,7 @@ Class legend:
 - Commit:
   - pending
 
-### BUG-015-H: OSS ingress SBY harness still false-fails on registered public output sampling
+### BUG-015-H: OSS ingress SBY harness still false-fails on phase-sensitive write and drop checks
 - First seen in:
   - `packet_scheduler/tb/scripts/formal_ingress.sh`
     `FORMAL_BACKEND=sby`
@@ -311,29 +312,31 @@ Class legend:
     on `2026-04-18`
 - Symptom:
   - the first live `opq_oss_ingress` proof now parses, elaborates, and
-    reaches the Bitwuzla engine, but the proof still fails on
-    public-output checks tied to `lane_we` / `ticket_we` and related
-    registered output behavior
-  - the failures move as those checks are peeled back, which is a strong
-    sign that the harness is sampling registered public outputs in the
-    active region before the DUT nonblocking updates have committed
+    reaches the Bitwuzla engine, and the harness now uses explicit OSS
+    credit debug mirrors instead of implicit hierarchical wires
+  - despite that cleanup, the proof still fails on the remaining
+    phase-sensitive checks around `lane_we`, `ticket_we`, and
+    `credit_drop_*`, so the blocker has narrowed from "no real sampled
+    state" to "the remaining write/drop phase contract is still not
+    represented cleanly enough for proof"
 - Root cause status:
   - open
-  - the lightweight OSS harness does not yet have the same internal
-    shadow sampling that the native Questa-side formal SVA uses, so
-    several "current cycle" checks on registered public outputs are
-    phase-wrong in Yosys/SBY
+  - the lightweight OSS harness still does not have the same internal
+    shadow sampling that the native Questa-side formal SVA uses for the
+    parser write/drop pulses, so several checks are still phase-wrong in
+    Yosys/SBY even after the credit-model cleanup
 - Blocking reason:
   - kept as an open harness blocker because the ingress OSS proof has
-    moved past parsing/tool readiness and now needs a cleaner sampling
-    strategy instead of more ad hoc weakening
+    moved past parsing/tool readiness and the old fake credit model, and
+    now needs a cleaner sampled write/drop strategy instead of more ad
+    hoc weakening
 - Candidate fixes:
   - export or bind a dedicated pre-update shadow for the ingress write
-    pointers / write pulses and reason codes, then assert against that
-    stable phase in the OSS harness
+    pulses and drop-reason codes, then assert against that stable phase
+    in the OSS harness
   - alternatively, add an OSS-only helper wrapper around the parser that
-    re-times the registered public outputs into proof-friendly sampled
-    state
+    re-times the registered write/drop outputs into proof-friendly
+    sampled state
 - Fix status:
   - open
 - Commit:
@@ -356,8 +359,9 @@ Class legend:
   - open
   - the current overwrite-drop scan coding style in
     `proc_overwrite_drop_plan` is still legal for simulation, but the
-    Yosys lowering path currently resolves it into a loop around the
-    generated mux structure instead of a clean feed-forward scan
+    Yosys lowering path still resolves it into a loop around the
+    generated mux structure instead of a clean feed-forward scan, even
+    after the first accumulator rewrite
 - Blocking reason:
   - the egress OSS proof cannot yet reach the actual hold-under-backpressure
     property because the backend stops during SMT2 lowering
@@ -367,6 +371,46 @@ Class legend:
   - or isolate the hold-under-backpressure proof in a reduced presenter
     wrapper that prunes the overwrite scan until the full lowering issue
     is resolved
+- Fix status:
+  - open
+- Commit:
+  - pending
+
+### BUG-017-H: OSS mover SBY harness now reaches proof but still fails on page-writer and lock-event phase checks
+- First seen in:
+  - `packet_scheduler/tb/scripts/formal_mover.sh`
+    `FORMAL_BACKEND=sby`
+    `FORMAL_SBY_TASKS=prove`
+    on `2026-04-18`
+- Symptom:
+  - the first live `opq_oss_block_path` proof now parses, elaborates,
+    and reaches the Bitwuzla engine on this host
+  - the current wrapper-managed run records `formal=sby_fail`, with the
+    first failures on page-allocator write-data ownership and
+    `lock_event` origin checks in
+    `opq_oss_block_path_formal_tb.sv`
+- Root cause status:
+  - open
+  - the OSS mover slice needed several syntax bridges just to elaborate
+    the live block-path RTL, and the resulting proof still carries
+    Yosys-specific implicit-wire warnings on struct-field accesses
+  - that means the current failing assertions may still be a mix of real
+    phase bugs and proof-visibility mismatches rather than already being
+    signoff-quality RTL failures
+- Blocking reason:
+  - mover is no longer blocked on "missing OSS harness", but it still
+    cannot serve as a trustworthy signoff proof until the proof-visible
+    state is flattened enough to remove the remaining phase/struct
+    ambiguity
+- Candidate fixes:
+  - export flatter OSS debug mirrors for the mover page-writer source,
+    selected lane, and grant/defer/lock phase
+  - replace the remaining struct-field unpacking used only for proof
+    visibility with explicit packed buses or helper mirrors under
+    `OPQ_OSS_FORMAL`, then rerun the same `opq_oss_block_path` job
+  - once the proof-visible state is stable, decide whether the
+    page-writer and lock-event failures are real RTL bugs or only
+    harness timing mismatches
 - Fix status:
   - open
 - Commit:

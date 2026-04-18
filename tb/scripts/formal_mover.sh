@@ -22,4 +22,5 @@ formal_run_plane \
   "2048" \
   "Plane C/D allocator, page-writer, and DRR block-mover invariants on the live native-SV path" \
   "opq_cross_bp_credit_test opq_formal_like_mover_drr_credit_stress_test" \
-  "opq_cross_drr_bursty_random_test"
+  "opq_cross_drr_bursty_random_test" \
+  "opq_oss_block_path"

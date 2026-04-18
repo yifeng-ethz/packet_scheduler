@@ -36,7 +36,6 @@ module opq_oss_ingress_formal_tb;
   reg f_past_valid = 1'b0;
   reg [1:0] f_reset_sr = 2'b11;
 
-  wire d_clk = gclk;
   wire d_reset = f_reset_sr[1];
 
   (* anyseq *) reg [INGRESS_DATA_WIDTH+INGRESS_DATAK_WIDTH-1:0] asi_ingress_data;
@@ -59,15 +58,14 @@ module opq_oss_ingress_formal_tb;
   wire [47:0]                                                   running_ts_dbg;
   wire [5:0]                                                    dt_type_dbg;
   wire [15:0]                                                   feb_id_dbg;
+  wire [LANE_FIFO_ADDR_WIDTH-1:0]                               lane_credit_dbg_oss;
+  wire [TICKET_FIFO_ADDR_WIDTH-1:0]                             ticket_credit_dbg_oss;
   wire                                                          credit_drop_valid_o;
   wire                                                          credit_drop_lane_o;
   wire                                                          credit_drop_ticket_o;
   wire [15:0]                                                   credit_drop_shd_cnt_o;
   wire [15:0]                                                   credit_drop_hit_cnt_o;
   wire                                                          alert_eop_state_o;
-
-  reg [TICKET_FIFO_ADDR_WIDTH:0]                                f_ticket_credit;
-  reg [LANE_FIFO_ADDR_WIDTH:0]                                  f_lane_credit;
 
   function automatic logic is_preamble_word(input logic [35:0] word_v);
     is_preamble_word = (word_v[35:32] == 4'b0001) && (word_v[7:0] == K285);
@@ -118,6 +116,8 @@ module opq_oss_ingress_formal_tb;
     .running_ts_dbg(running_ts_dbg),
     .dt_type_dbg(dt_type_dbg),
     .feb_id_dbg(feb_id_dbg),
+    .lane_credit_dbg_oss(lane_credit_dbg_oss),
+    .ticket_credit_dbg_oss(ticket_credit_dbg_oss),
     .credit_drop_valid_o(credit_drop_valid_o),
     .credit_drop_lane_o(credit_drop_lane_o),
     .credit_drop_ticket_o(credit_drop_ticket_o),
@@ -125,7 +125,7 @@ module opq_oss_ingress_formal_tb;
     .credit_drop_hit_cnt_o(credit_drop_hit_cnt_o),
     .alert_eop_state_o(alert_eop_state_o),
     .eop_flush_ack_i(eop_flush_ack_i),
-    .d_clk(d_clk),
+    .d_clk(gclk),
     .d_reset(d_reset)
   );
 
@@ -135,10 +135,7 @@ module opq_oss_ingress_formal_tb;
       f_reset_sr <= {f_reset_sr[0], 1'b0};
     end
 
-    if (d_reset) begin
-      f_ticket_credit <= TICKET_FIFO_MAX_CREDIT;
-      f_lane_credit <= LANE_FIFO_MAX_CREDIT;
-    end else begin
+    if (!d_reset) begin
       assume(!asi_ingress_startofpacket || asi_ingress_valid);
       assume(!asi_ingress_endofpacket || asi_ingress_valid);
       assume(asi_ingress_valid || (!asi_ingress_startofpacket && !asi_ingress_endofpacket));
@@ -148,33 +145,29 @@ module opq_oss_ingress_formal_tb;
         is_trailer_word(asi_ingress_data) ||
         (asi_ingress_startofpacket && is_preamble_word(asi_ingress_data)));
 
+      // Credit returns are modeled as an external environment contract. They
+      // may restore capacity but must not overflow the parser's credit pools.
       assume(!lane_credit_update_valid ||
-        (f_lane_credit + lane_credit_update - (lane_we ? 1'b1 : 1'b0) <= LANE_FIFO_MAX_CREDIT));
+        ({1'b0, lane_credit_dbg_oss} + {1'b0, lane_credit_update} <=
+          LANE_FIFO_MAX_CREDIT));
       assume(!ticket_credit_update_valid ||
-        (f_ticket_credit + ticket_credit_update - (ticket_we ? 1'b1 : 1'b0) <= TICKET_FIFO_MAX_CREDIT));
-      assume((f_lane_credit + (lane_credit_update_valid ? lane_credit_update : '0)) >=
-        (lane_we ? 1'b1 : 1'b0));
-      assume((f_ticket_credit + (ticket_credit_update_valid ? ticket_credit_update : '0)) >=
-        (ticket_we ? 1'b1 : 1'b0));
-
-      f_lane_credit <=
-        f_lane_credit +
-        (lane_credit_update_valid ? lane_credit_update : '0) -
-        (lane_we ? {{LANE_FIFO_ADDR_WIDTH{1'b0}}, 1'b1} : '0);
-      f_ticket_credit <=
-        f_ticket_credit +
-        (ticket_credit_update_valid ? ticket_credit_update : '0) -
-        (ticket_we ? {{TICKET_FIFO_ADDR_WIDTH{1'b0}}, 1'b1} : '0);
+        ({1'b0, ticket_credit_dbg_oss} + {1'b0, ticket_credit_update} <=
+          TICKET_FIFO_MAX_CREDIT));
     end
 
     if (f_past_valid && !$past(d_reset)) begin
-      if ($past(f_ticket_credit) == '0) begin
+      assert(lane_credit_dbg_oss <= LANE_FIFO_MAX_CREDIT);
+      assert(ticket_credit_dbg_oss <= TICKET_FIFO_MAX_CREDIT);
+
+      if ($past(ticket_credit_dbg_oss) == '0) begin
         assert(!ticket_we);
       end
-      if ($past(f_lane_credit) == '0) begin
+      if ($past(lane_credit_dbg_oss) == '0) begin
         assert(!lane_we);
       end
-
+      if (credit_drop_valid_o) begin
+        assert(credit_drop_lane_o || credit_drop_ticket_o);
+      end
     end
 
     cover(f_past_valid && ticket_we);
