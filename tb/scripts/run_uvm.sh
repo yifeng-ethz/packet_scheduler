@@ -125,8 +125,8 @@ run_one() {
   printf 'Running %s\n' "${test_name}"
 
   if {
-    printf '[run_uvm] DUT_IMPL=%s TEST=%s OPQ_N_LANE=%s OPQ_N_SHD=%s OPQ_TICKET_FIFO_DEPTH=%s OPQ_PAGE_RAM_DEPTH=%s COV_ENABLE=%s\n' \
-      "${dut_impl}" "${test_name}" "${OPQ_N_LANE:-2}" "${n_shd}" "${ticket_fifo_depth}" "${page_ram_depth}" "${COV_ENABLE:-0}";
+    printf '[run_uvm] DUT_IMPL=%s TEST=%s OPQ_N_LANE=%s OPQ_N_SHD=%s OPQ_TICKET_FIFO_DEPTH=%s OPQ_PAGE_RAM_DEPTH=%s COV_ENABLE=%s VSIM_PLUSARGS=%s\n' \
+      "${dut_impl}" "${test_name}" "${OPQ_N_LANE:-2}" "${n_shd}" "${ticket_fifo_depth}" "${page_ram_depth}" "${COV_ENABLE:-0}" "${VSIM_PLUSARGS:-}";
     make "${make_args[@]}" "${target}";
   } 2>&1 | tee "${log_file}"; then
     if [[ "${COV_ENABLE:-0}" == "1" ]]; then

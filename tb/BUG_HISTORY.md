@@ -24,7 +24,8 @@ Class legend:
 | [BUG-014-R](#bug-014-r-formal-like-egress-flush-under-backpressure-violates-the-avalon-st-hold-contract) | R | open | `formal_egress.sh` targeted stress probe on `2026-04-18` | `pending` | Formal-like egress flush-under-backpressure breaks the live Avalon-ST hold contract while the presenter is flushing under deasserted `ready`. |
 | [BUG-015-H](#bug-015-h-oss-ingress-sby-harness-still-false-fails-on-phase-sensitive-write-and-drop-checks) | H | open | `formal_ingress.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `pending` | The ingress OSS proof now uses explicit legal-state assumptions, but the remaining lane-credit and sampled-write checks still false-fail on registered behavior. |
 | [BUG-016-H](#bug-016-h-oss-basic-presenter-sby-lowering-hits-a-logic-loop-in-the-overwrite-scan-path) | H | fixed | `formal_egress.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `pending` | The OSS basic-presenter proof no longer dies in SMT2 lowering; the live Avalon-ST hold-under-backpressure slice now passes on the OSS subset. |
-| [BUG-017-H](#bug-017-h-oss-mover-sby-harness-now-reaches-proof-but-still-fails-on-page-writer-and-lock-event-phase-checks) | H | open | `formal_mover.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `pending` | The live OSS mover proof now reaches Bitwuzla with sampled source mirrors, but `page_ram_wr_data_o` ownership still fails and needs RTL/harness triage. |
+| [BUG-017-H](#bug-017-h-oss-mover-sby-harness-now-reaches-proof-but-still-fails-on-arbiter-shape-invariants) | H | open | `formal_mover.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `pending` | The live OSS mover proof no longer fails on page-writer data/address ownership, but it still fails on the proof-visible arbiter onehot/event shape invariants. |
+| [BUG-018-H](#bug-018-h-extended-mixed-bucket-seconds-soak-exposes-chained-masked-drop-accounting-underrun) | H | open | `opq_cross_mixed_bucket_seconds_soak_test` on `2026-04-18` | `pending` | The earlier extended mixed-soak screen trips drop-accounting underrun during chained ERROR steps after prior no-restart traffic. |
 
 ## 2026-04-17
 
@@ -370,7 +371,7 @@ Class legend:
 - Commit:
   - pending
 
-### BUG-017-H: OSS mover SBY harness now reaches proof but still fails on page-writer and lock-event phase checks
+### BUG-017-H: OSS mover SBY harness now reaches proof but still fails on arbiter-shape invariants
 - First seen in:
   - `packet_scheduler/tb/scripts/formal_mover.sh`
     `FORMAL_BACKEND=sby`
@@ -379,35 +380,73 @@ Class legend:
 - Symptom:
   - the first live `opq_oss_block_path` proof now parses, elaborates,
     and reaches the Bitwuzla engine on this host
-  - the `2026-04-18` follow-up flattening replaced the old struct-field
-    proof visibility with explicit packed movers/debug mirrors, and the
-    old implicit-wire warnings are now gone from the OSS run
-  - after that cleanup, the harness also gained combinational write-source
-    mirrors, sampled source shadows, a stricter reset/output contract, and
-    a longer reset warmup window, but
-    the remaining `formal=sby_fail` is still narrowed to
-    `page_ram_wr_data_o` equality against the sampled write source in
-    `opq_oss_block_path_formal_tb.sv`
+  - the old sampled `page_ram_wr_data_o` mismatch is now gone after
+    aligning the registered source mirror to the registered page-writer
+    outputs
+  - the current `2026-04-18` remaining failure is on the proof-visible
+    arbiter shape checks in `opq_oss_block_path_formal_tb.sv`:
+    `gnt_dbg_oss`, `sel_mask_dbg_oss`, and `lock_event_dbg_oss` still
+    violate the onehot/event invariants in basecase or induction
 - Root cause status:
   - open
   - the OSS mover slice needed several syntax bridges and proof-visible
     state flattening just to make the live block-path RTL trustworthy in
     Yosys/SBY
-  - that visibility cleanup is now largely done, but even the new
-    combinational write-source mirrors and sampled source shadows still do
-    not align cleanly with the registered `page_ram_wr_data_o`, so the
-    final remaining failure now needs explicit RTL-vs-harness triage
+  - page-writer ownership is now aligned well enough for proof, but the
+    arbiter debug/state contract still does not present a clean onehot
+    story to the OSS proof harness
 - Blocking reason:
-  - mover is no longer blocked on "missing OSS harness" or by the old
-    implicit-wire/struct-field ambiguity, but it still cannot serve as a
-    trustworthy signoff proof until the sampled page-writer source-data
-    contract is made basecase-clean
+  - mover is no longer blocked on missing OSS harness bring-up or on the
+    old page-writer data/address mismatch, but it still cannot serve as a
+    trustworthy signoff proof until the arbiter-shape invariants are made
+    proof-clean
 - Candidate fixes:
-  - retime the sampled page-writer source-data mirror so it is captured
-    in exactly the same phase as the registered `page_ram_wr_*` outputs
-  - once that final sampled-source contract is stable, rerun the same
-    `opq_oss_block_path` job to decide whether any remaining failure is
-    a real RTL bug or only residual harness timing mismatch
+  - either export a proof-clean registered arbiter state bundle under
+    `OPQ_OSS_FORMAL`, or relax the current harness so the proof focuses on
+    page-writer ownership and raw eligibility instead of secondary debug
+    event tagging
+  - once the arbiter-shape contract is stable, rerun the same
+    `opq_oss_block_path` job to decide whether any remaining failure is a
+    real RTL bug or only residual debug-bridge mismatch
+- Fix status:
+  - open
+- Commit:
+  - pending
+
+### BUG-018-H: Extended mixed-bucket seconds soak exposes chained masked-drop accounting underrun
+- First seen in:
+  - `packet_scheduler/tb/scripts/run_uvm.sh`
+    `TEST=opq_cross_mixed_bucket_seconds_soak_test`
+    `VSIM_PLUSARGS=+TB_CLK_PERIOD_NS=250`
+    on `2026-04-18`
+- Symptom:
+  - the earlier extended mixed-soak bug-hunt screen trips scoreboard
+    underruns during chained ERROR steps after prior PROF/BASIC/CROSS
+    traffic
+  - first reproducer hits at mixed-soak step `3`:
+    `Drop accounting underrun lane=0 shd_drop=1 hit_drop=1 source=monitor`
+    and the same for lane `1`
+  - the next chained masked-recovery ERROR step reproduces the same hole
+    again at step `5` with `hit_drop=2`
+- Root cause status:
+  - open
+  - isolated lane-mask and lane-mask-recovery cases are green, so the
+    underrun is specific to longer no-restart chaining rather than the
+    isolated drop path itself
+  - this currently looks like a no-restart drop-accounting handoff bug in
+    the scoreboard and/or native-SV drop observability path, not a fresh
+    isolated masked-drop functional failure
+- Blocking reason:
+  - `opq_cross_mixed_bucket_seconds_soak_test` is intentionally kept
+    probe-only; promoting it as CROSS evidence would hide a real chained
+    no-restart accounting failure
+- Candidate fixes:
+  - instrument the masked-drop expectation handoff across longer
+    mixed-bucket runs so the scoreboard can distinguish DUT drop-accounting
+    loss from stale no-restart bookkeeping
+  - if the monitor and CSR path stay consistent while the scoreboard still
+    underruns, repair the scoreboard no-restart drop-accounting state
+    machine and then rerun the same stretched mixed-soak screen
 - Fix status:
   - open
 - Commit:

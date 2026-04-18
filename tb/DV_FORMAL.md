@@ -1125,12 +1125,12 @@ Current OSS alternative status:
   - `BUG-016-H`: closed for the current OSS egress subset; the live
     Avalon-ST hold-under-backpressure slice now passes after isolating
     the overwrite-drop scan from the OSS backend
-  - `BUG-017-H`: mover proof still fails on sampled
-    page-writer source-data equality even after exporting combinational
-    write-source mirrors, adding sampled source shadows, tightening the
-    reset/output contract, and extending reset warmup, so this one now
-    needs RTL-or-harness triage instead
-    of more proof-visibility cleanup
+  - `BUG-017-H`: mover proof no longer fails on the sampled
+    page-writer data/address contract after aligning the registered
+    source mirror, but it still fails on the proof-visible arbiter-shape
+    invariants (`gnt_dbg_oss`, `sel_mask_dbg_oss`, `lock_event_dbg_oss`),
+    so the remaining blocker has moved from page-writer ownership to
+    arbiter-state modeling
 - non-claim for the current OSS egress pass:
   - the unread-overwrite scan itself is not yet proven in the OSS path;
     `OPQ_OSS_FORMAL` now isolates a feed-forward oversize-only drop

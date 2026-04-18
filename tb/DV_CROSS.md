@@ -29,7 +29,6 @@
 | `opq_cross_drr_short_allowance_test` | Short-quantum reload behavior with repeated directed service handoff | Passing |
 | `opq_cross_idle_lane_backpressure_test` | Idle-lane cadence crossed with periodic egress stalls on the active lane | Passing |
 | `opq_cross_mixed_bucket_random_soak_test` | Random mixed-bucket soak that chains safe BASIC/EDGE/PROF/ERROR/CROSS cases without restart | Passing |
-
 ---
 
 ## Open Probes
@@ -37,12 +36,14 @@
 | Test | Purpose | Current status |
 |------|---------|----------------|
 | `opq_cross_drr_bursty_random_test` | Constrained-random hot-lane / cold-lane DRR stress with periodic egress stalls | Open repro: still exposes the monolithic presenter stall-boundary bug and incomplete late-drop observability for promoted hit-integrity closure |
+| `opq_cross_mixed_bucket_seconds_soak_test` | Earlier extended mixed-bucket random soak with longer chained no-restart traffic and stretched simulated time | Open repro: fails early on chained masked-drop accounting underrun after prior PROF/BASIC/CROSS traffic; kept probe-only until the no-restart ERROR handoff is repaired |
 
 ---
 
 ## Extended Soak Evidence
 
 - `opq_cross_mixed_bucket_long_simtime_soak_test` passes with `+TB_CLK_PERIOD_NS=1000000 +OPQ_MIXED_SOAK_STEPS=64`, finishing at `2194139500 us` of sim time, which is about `36.6 minutes`, with `expected=5798 actual=5798 missing=0 ghost=0`.
+- `opq_cross_mixed_bucket_seconds_soak_test` is the earlier extended screen: with `+TB_CLK_PERIOD_NS=250`, it reproduces chained masked-drop accounting underrun by mixed-soak step `3` and step `5`, so it remains probe-only instead of promoted evidence.
 
 ---
 

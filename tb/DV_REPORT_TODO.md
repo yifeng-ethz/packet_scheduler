@@ -165,6 +165,17 @@ comparison path, but it must not contribute to final signoff evidence.
 - [x] Generate `REPORT/txn_growth/<case_id>.md` for each promoted random case.
       Result: `REPORT/txn_growth/COMBO_OPQ_507_cross_mixed_bucket_random_soak_test.md`
       is generated and linked from `REPORT/txn_growth/README.md`.
+- [x] Add an earlier extended mixed-bucket random soak run to the live closure
+      flow so long chained no-restart bugs are exercised before final signoff
+      report freeze, and keep it tracked as isolated-only evidence rather than
+      silently folding it into the fixed no-restart baseline.
+      Status on `2026-04-18`:
+      - implemented as `opq_cross_mixed_bucket_seconds_soak_test`
+      - canonical bug-hunt config uses `+TB_CLK_PERIOD_NS=250`
+      - current result is probe-only, not promoted:
+        `opq_cross_mixed_bucket_seconds_soak_test` reproduces chained
+        masked-drop accounting underrun by mixed-soak step `3` / `5`
+        after prior PROF/BASIC/CROSS traffic
 - [x] If checkpoint UCDBs are not yet practical, create the required pages
       anyway and state the limitation explicitly until the flow is implemented.
 
@@ -189,6 +200,9 @@ comparison path, but it must not contribute to final signoff evidence.
 - [ ] Resolve the chained malformed-subheader recovery corruption before adding
       `opq_error_subheader_mask_recovery_test` back into the mixed-bucket soak
       pool.
+- [ ] Resolve the chained masked-drop accounting underrun exposed by
+      `opq_cross_mixed_bucket_seconds_soak_test` before promoting the earlier
+      extended mixed-soak screen into the live report set.
 - [x] Resolve the native-SV no-reset drain / credit-restore bug before calling
       `bucket_frame` or `all_buckets_frame` signoff closed.
 - [ ] Add enough late-drop observability to prove hit integrity on the bursty
@@ -309,11 +323,11 @@ comparison path, but it must not contribute to final signoff evidence.
           lane-credit and `lane_issue_dbg_oss` checks still fail
         - `BUG-016-H`: closed for the current OSS egress subset; the
           live hold-under-backpressure presenter proof now passes
-        - `BUG-017-H`: mover now has combinational write-source mirrors,
-          sampled source shadows, a stricter reset/output contract, and
-          longer reset warmup, but the remaining failure is still sampled
-          `page_ram_wr_data_o`
-          equality
+        - `BUG-017-H`: mover no longer fails on sampled page-writer
+          data/address equality after aligning the registered source
+          mirror, but it still fails on the proof-visible arbiter-shape
+          invariants (`gnt_dbg_oss`, `sel_mask_dbg_oss`,
+          `lock_event_dbg_oss`)
 - [ ] Close `BUG-015-H` by reworking the ingress OSS proof to sample
       phase-correct write/drop state all the way through the registered
       public outputs, or by replacing the remaining local-state
@@ -326,9 +340,9 @@ comparison path, but it must not contribute to final signoff evidence.
       - the current OSS subset proves the live Avalon-ST hold contract
       - unread-overwrite scan proof remains a documented non-claim for
         the OSS subset and still needs a separate proof strategy later
-- [ ] Close `BUG-017-H` by flattening or re-exporting the mover proof-visible
-      state enough to make the sampled page-writer source-data contract
-      basecase-clean in `opq_oss_block_path`.
+- [ ] Close `BUG-017-H` by exporting or constraining a proof-clean arbiter
+      state bundle in `opq_oss_block_path` so the remaining onehot/event
+      invariants become basecase-clean after the page-writer ownership fix.
 - [ ] Close the cross-module flush-under-backpressure proof for the tiled
       frame-table path (`ap_flush_does_not_touch_live_page`,
       `ap_tail_flush_preserves_head_region`) once the live native-SV top swaps

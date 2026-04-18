@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_block_path
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.14
-// Date    : 20260417
-// Change  : Restore VHDL-style configurable DRR allowance and defer accounting in the native SV staging path
+// Version : 26.3.20
+// Date    : 20260418
+// Change  : Tighten the OSS-formal page-writer source classification without changing the native-SV datapath
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_block_path #(
@@ -288,8 +288,9 @@ module ordered_priority_queue_monolithic_block_path #(
     page_ram_src_addr_comb_dbg_oss = page_ram_wr_addr_comb;
     page_ram_src_data_comb_dbg_oss = page_ram_wr_data_comb;
     if (page_ram_we_comb) begin
-      if (page_allocator_write_head_i || page_allocator_write_tail_i || page_allocator_write_page_i) begin
-        page_ram_src_is_pa_comb_dbg_oss = page_allocator_page_we_i;
+      if (page_allocator_write_head_i || page_allocator_write_tail_i ||
+          page_allocator_write_page_i || page_allocator_page_we_i) begin
+        page_ram_src_is_pa_comb_dbg_oss = 1'b1;
       end else begin
         page_ram_src_lane_comb_dbg_oss = b2p_arb_gnt;
       end
@@ -305,10 +306,6 @@ module ordered_priority_queue_monolithic_block_path #(
     lock_req_eligible_dbg_oss <= '0;
     defer_req_raw_dbg_oss <= '0;
     defer_req_eligible_dbg_oss <= '0;
-    page_ram_src_is_pa_dbg_oss <= 1'b0;
-    page_ram_src_lane_dbg_oss <= '0;
-    page_ram_src_addr_dbg_oss <= '0;
-    page_ram_src_data_dbg_oss <= '0;
 `endif
     for (int i = 0; i < N_LANE; i++) begin
       block_mover_page_wreq[i] <= 1'b0;
@@ -502,8 +499,9 @@ module ordered_priority_queue_monolithic_block_path #(
     if (page_ram_we_comb) begin
       page_ram_src_addr_dbg_oss <= page_ram_wr_addr_comb;
       page_ram_src_data_dbg_oss <= page_ram_wr_data_comb;
-      if (page_allocator_write_head_i || page_allocator_write_tail_i || page_allocator_write_page_i) begin
-        page_ram_src_is_pa_dbg_oss <= page_allocator_page_we_i;
+      if (page_allocator_write_head_i || page_allocator_write_tail_i ||
+          page_allocator_write_page_i || page_allocator_page_we_i) begin
+        page_ram_src_is_pa_dbg_oss <= 1'b1;
       end else begin
         page_ram_src_lane_dbg_oss <= b2p_arb_gnt & {N_LANE{page_ram_we_comb}};
       end

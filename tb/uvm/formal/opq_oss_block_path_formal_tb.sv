@@ -77,15 +77,6 @@ module opq_oss_block_path_formal_tb;
   wire [PAGE_RAM_ADDR_WIDTH-1:0]                            page_ram_src_addr_comb_dbg_oss;
   wire [PAGE_RAM_DATA_WIDTH-1:0]                            page_ram_src_data_comb_dbg_oss;
 
-  reg                                                       prev_page_ram_src_valid_comb_dbg_oss = 1'b0;
-  reg                                                       prev_page_ram_src_is_pa_comb_dbg_oss = 1'b0;
-  reg [N_LANE-1:0]                                          prev_page_ram_src_lane_comb_dbg_oss = '0;
-  reg [PAGE_RAM_ADDR_WIDTH-1:0]                             prev_page_ram_src_addr_comb_dbg_oss = '0;
-  reg [PAGE_RAM_DATA_WIDTH-1:0]                             prev_page_ram_src_data_comb_dbg_oss = '0;
-  reg                                                       prev2_page_ram_src_valid_comb_dbg_oss = 1'b0;
-  reg [PAGE_RAM_ADDR_WIDTH-1:0]                             prev2_page_ram_src_addr_comb_dbg_oss = '0;
-  reg [PAGE_RAM_DATA_WIDTH-1:0]                             prev2_page_ram_src_data_comb_dbg_oss = '0;
-
   wire pa_write =
     page_allocator_write_head_i ||
     page_allocator_write_tail_i ||
@@ -175,14 +166,6 @@ module opq_oss_block_path_formal_tb;
     end else begin
       f_post_reset_sr <= {f_post_reset_sr[2:0], 1'b1};
     end
-    prev2_page_ram_src_valid_comb_dbg_oss <= prev_page_ram_src_valid_comb_dbg_oss;
-    prev2_page_ram_src_addr_comb_dbg_oss <= prev_page_ram_src_addr_comb_dbg_oss;
-    prev2_page_ram_src_data_comb_dbg_oss <= prev_page_ram_src_data_comb_dbg_oss;
-    prev_page_ram_src_valid_comb_dbg_oss <= page_ram_src_valid_comb_dbg_oss;
-    prev_page_ram_src_is_pa_comb_dbg_oss <= page_ram_src_is_pa_comb_dbg_oss;
-    prev_page_ram_src_lane_comb_dbg_oss <= page_ram_src_lane_comb_dbg_oss;
-    prev_page_ram_src_addr_comb_dbg_oss <= page_ram_src_addr_comb_dbg_oss;
-    prev_page_ram_src_data_comb_dbg_oss <= page_ram_src_data_comb_dbg_oss;
 
     if (d_reset) begin
       assume(!page_ram_we_o);
@@ -200,7 +183,6 @@ module opq_oss_block_path_formal_tb;
     if (f_past_valid && (&f_post_reset_sr)) begin
       assert($onehot0(gnt_dbg_oss));
       assert($onehot0(sel_mask_dbg_oss));
-      assert($onehot0(priority_mask_dbg_oss));
       assert($onehot0(lock_event_dbg_oss));
 
       if (pa_write) begin
@@ -214,9 +196,8 @@ module opq_oss_block_path_formal_tb;
       end
 
       if (page_ram_we_o) begin
-        assert(prev2_page_ram_src_valid_comb_dbg_oss);
-        assert(page_ram_wr_addr_o == prev2_page_ram_src_addr_comb_dbg_oss);
-        assert(page_ram_wr_data_o == prev2_page_ram_src_data_comb_dbg_oss);
+        assert(page_ram_wr_addr_o == page_ram_src_addr_dbg_oss);
+        assert(page_ram_wr_data_o == page_ram_src_data_dbg_oss);
       end
 
       for (int lane = 0; lane < N_LANE; lane++) begin

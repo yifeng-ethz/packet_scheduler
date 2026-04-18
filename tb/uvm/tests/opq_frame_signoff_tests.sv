@@ -772,3 +772,29 @@ class opq_cross_mixed_bucket_long_simtime_soak_test extends opq_cross_mixed_buck
     end
   endfunction
 endclass
+
+class opq_cross_mixed_bucket_seconds_soak_test extends opq_cross_mixed_bucket_random_soak_test;
+  `uvm_component_utils(opq_cross_mixed_bucket_seconds_soak_test)
+
+  localparam int unsigned SECONDS_SOAK_DWELL_CYCLES = 2_500_000;
+  localparam int unsigned SECONDS_SOAK_TIMEOUT_CYCLES = 2_500_000;
+
+  function new(string name = "opq_cross_mixed_bucket_seconds_soak_test", uvm_component parent = null);
+    int unsigned soak_iterations_plusarg;
+
+    super.new(name, parent);
+    soak_iterations = 512;
+    if ($value$plusargs("OPQ_MIXED_SOAK_STEPS=%d", soak_iterations_plusarg) &&
+        (soak_iterations_plusarg > 0)) begin
+      soak_iterations = soak_iterations_plusarg;
+    end
+  endfunction
+
+  virtual function time dwell_time();
+    return cycles_to_time(SECONDS_SOAK_DWELL_CYCLES);
+  endfunction
+
+  virtual function time credit_restore_timeout();
+    return cycles_to_time(SECONDS_SOAK_TIMEOUT_CYCLES);
+  endfunction
+endclass
