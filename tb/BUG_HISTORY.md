@@ -21,7 +21,7 @@ Class legend:
 | [BUG-011-R](#bug-011-r-chained-malformed-subheader-recovery-is-not-composable-in-mixed-bucket-soak) | R | open | `opq_cross_mixed_bucket_random_soak_test` | `pending` | Isolated malformed-subheader recovery is green, but chained mixed-soak recovery still breaks no-restart framing. |
 | [BUG-012-H](#bug-012-h-edge-medium-ready-profile-testcase-was-wired-as-always-ready) | H | fixed | promoted EDGE isolated rerun on `2026-04-17` | `cbb05e0` | The supposed medium-backpressure testcase never applied stalls and gave false evidence. |
 | [BUG-013-H](#bug-013-h-mixed-bucket-random-soak-was-reported-as-directed-and-omitted-txn-growth-traceability) | H | fixed | regenerated native-SV report on `2026-04-17` | `cbb05e0` | The promoted mixed-soak testcase was misclassified as directed and hid required random-case reporting. |
-| [BUG-014-R](#bug-014-r-formal-like-egress-flush-under-backpressure-violates-the-avalon-st-hold-contract) | R | fixed | `formal_egress.sh` targeted stress probe on `2026-04-18` | `pending` | Formal-like egress flush-under-backpressure no longer breaks the live Avalon-ST hold contract after the basic presenter preserves synchronous page-RAM return data across held `ready`. |
+| [BUG-014-R](#bug-014-r-formal-like-egress-flush-under-backpressure-violates-the-avalon-st-hold-contract) | R | fixed | `formal_egress.sh` targeted stress probe on `2026-04-18` | `dd6fe75` | Formal-like egress flush-under-backpressure no longer breaks the live Avalon-ST hold contract after the basic presenter preserves synchronous page-RAM return data across held `ready`. |
 | [BUG-015-H](#bug-015-h-oss-ingress-sby-harness-still-false-fails-on-phase-sensitive-write-and-drop-checks) | H | fixed | `formal_ingress.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `1048b6c` | The ingress OSS proof now passes after the harness stopped consuming reset-warmup debug pulses and switched from phase-ambiguous credit-bus checks to pulse-level write/drop contracts. |
 | [BUG-016-H](#bug-016-h-oss-basic-presenter-sby-lowering-hits-a-logic-loop-in-the-overwrite-scan-path) | H | fixed | `formal_egress.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `f8448ac` | The OSS basic-presenter proof no longer dies in SMT2 lowering; the live Avalon-ST hold-under-backpressure slice now passes on the OSS subset. |
 | [BUG-017-H](#bug-017-h-oss-mover-sby-harness-now-reaches-proof-but-still-fails-on-arbiter-shape-invariants) | H | fixed | `formal_mover.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `de65125` | The live OSS mover proof now passes on the current block-path subset after the proof-clean arbiter view was exported and constrained. |
@@ -308,7 +308,7 @@ Class legend:
 - Fix status:
   - fixed
 - Commit:
-  - pending
+  - `dd6fe75` `Fix OPQ presenter hold bug and close OSS formal slice`
 
 ### BUG-015-H: OSS ingress SBY harness still false-fails on phase-sensitive write and drop checks
 - First seen in:
