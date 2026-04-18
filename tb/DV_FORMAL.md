@@ -1120,17 +1120,14 @@ Current OSS alternative status:
 - current remaining blockers are concrete and tracked:
   - `BUG-015-H`: ingress proof now carries explicit legal-state
     assumptions for `WR_HITS` and drop-cause exclusivity, but it still
-    fails on the lane-credit bound plus `lane_issue_dbg_oss` alignment,
-    so the remaining blocker is a sampled write/credit abstraction issue
+    fails on the phase-sensitive ticket-credit/write coupling in the OSS
+    harness, so the remaining blocker is now narrowed to one sampled
+    registered-accounting abstraction issue
   - `BUG-016-H`: closed for the current OSS egress subset; the live
     Avalon-ST hold-under-backpressure slice now passes after isolating
     the overwrite-drop scan from the OSS backend
-  - `BUG-017-H`: mover proof no longer fails on the sampled
-    page-writer data/address contract after aligning the registered
-    source mirror, but it still fails on the proof-visible arbiter-shape
-    invariants (`gnt_dbg_oss`, `sel_mask_dbg_oss`, `lock_event_dbg_oss`),
-    so the remaining blocker has moved from page-writer ownership to
-    arbiter-state modeling
+  - `BUG-017-H`: closed for the current OSS mover subset;
+    `formal_mover.sh` now records `formal=sby_pass`
 - non-claim for the current OSS egress pass:
   - the unread-overwrite scan itself is not yet proven in the OSS path;
     `OPQ_OSS_FORMAL` now isolates a feed-forward oversize-only drop

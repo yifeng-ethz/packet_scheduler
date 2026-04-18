@@ -50,6 +50,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
   output logic [LANE_FIFO_ADDR_WIDTH-1:0]                   lane_credit_dbg_oss,
   output logic [TICKET_FIFO_ADDR_WIDTH-1:0]                 ticket_credit_dbg_oss,
   output logic [MAX_PKT_LENGTH_BITS-1:0]                    shd_len_dbg_oss,
+  output logic [2:0]                                        ingress_state_dbg_oss,
   output logic                                              lane_issue_dbg_oss,
   output logic                                              ticket_issue_dbg_oss,
   output logic                                              credit_drop_lane_decision_dbg_oss,
@@ -198,6 +199,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
     lane_credit_dbg_oss = ingress_parser.lane_credit;
     ticket_credit_dbg_oss = ingress_parser.ticket_credit;
     shd_len_dbg_oss = ingress_parser.shd_len;
+    ingress_state_dbg_oss = ingress_parser_state;
 `endif
     alert_eop_state_o = ingress_parser.alert_eop;
   end

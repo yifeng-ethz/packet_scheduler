@@ -22,10 +22,10 @@ Class legend:
 | [BUG-012-H](#bug-012-h-edge-medium-ready-profile-testcase-was-wired-as-always-ready) | H | fixed | promoted EDGE isolated rerun on `2026-04-17` | `cbb05e0` | The supposed medium-backpressure testcase never applied stalls and gave false evidence. |
 | [BUG-013-H](#bug-013-h-mixed-bucket-random-soak-was-reported-as-directed-and-omitted-txn-growth-traceability) | H | fixed | regenerated native-SV report on `2026-04-17` | `cbb05e0` | The promoted mixed-soak testcase was misclassified as directed and hid required random-case reporting. |
 | [BUG-014-R](#bug-014-r-formal-like-egress-flush-under-backpressure-violates-the-avalon-st-hold-contract) | R | open | `formal_egress.sh` targeted stress probe on `2026-04-18` | `pending` | Formal-like egress flush-under-backpressure breaks the live Avalon-ST hold contract while the presenter is flushing under deasserted `ready`. |
-| [BUG-015-H](#bug-015-h-oss-ingress-sby-harness-still-false-fails-on-phase-sensitive-write-and-drop-checks) | H | open | `formal_ingress.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `pending` | The ingress OSS proof now uses explicit legal-state assumptions, but the remaining lane-credit and sampled-write checks still false-fail on registered behavior. |
+| [BUG-015-H](#bug-015-h-oss-ingress-sby-harness-still-false-fails-on-phase-sensitive-write-and-drop-checks) | H | open | `formal_ingress.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `pending` | The ingress OSS proof now uses explicit legal-state assumptions, but the remaining blocker is the phase-sensitive ticket-credit/write coupling on registered behavior. |
 | [BUG-016-H](#bug-016-h-oss-basic-presenter-sby-lowering-hits-a-logic-loop-in-the-overwrite-scan-path) | H | fixed | `formal_egress.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `pending` | The OSS basic-presenter proof no longer dies in SMT2 lowering; the live Avalon-ST hold-under-backpressure slice now passes on the OSS subset. |
-| [BUG-017-H](#bug-017-h-oss-mover-sby-harness-now-reaches-proof-but-still-fails-on-arbiter-shape-invariants) | H | open | `formal_mover.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `pending` | The live OSS mover proof no longer fails on page-writer data/address ownership, but it still fails on the proof-visible arbiter onehot/event shape invariants. |
-| [BUG-018-H](#bug-018-h-extended-mixed-bucket-seconds-soak-exposes-chained-masked-drop-accounting-underrun) | H | open | `opq_cross_mixed_bucket_seconds_soak_test` on `2026-04-18` | `pending` | The earlier extended mixed-soak screen trips drop-accounting underrun during chained ERROR steps after prior no-restart traffic. |
+| [BUG-017-H](#bug-017-h-oss-mover-sby-harness-now-reaches-proof-but-still-fails-on-arbiter-shape-invariants) | H | fixed | `formal_mover.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `pending` | The live OSS mover proof now passes on the current block-path subset after the proof-clean arbiter view was exported and constrained. |
+| [BUG-018-H](#bug-018-h-extended-mixed-bucket-seconds-soak-exposes-chained-masked-drop-accounting-underrun) | H | open | `opq_cross_mixed_bucket_seconds_soak_test` on `2026-04-18` | `pending` | The old seconds-soak accounting underrun is fixed, but the earlier extended mixed-soak screen now trips `opq_hit3_contract` hit-without-subheader failures under long chained traffic. |
 
 ## 2026-04-17
 
@@ -319,24 +319,24 @@ Class legend:
     a longer post-reset warmup window, and explicit legal-state
     assumptions for `WR_HITS` plus drop-cause exclusivity in the OSS harness
   - after those reductions, the remaining failing assertions are down to
-    the lane-credit bound and `lane_issue_dbg_oss`, so the blocker has
-    narrowed from generic sampled-decision mismatches to the final
-    registered write/credit alignment
+    the sampled ticket-credit/write coupling, so the blocker has narrowed
+    from generic sampled-decision mismatches to one registered-accounting
+    phase issue
 - Root cause status:
   - open
   - the lightweight OSS harness now encodes the legal `WR_HITS`
     / drop-cause states explicitly, but it still does not match the
-    internal parser shadow timing well enough to prove the last
-    registered lane-write / credit bound properties in Yosys/SBY
+    internal parser/input shadow timing well enough to prove the last
+    registered ticket-credit / write coupling property in Yosys/SBY
 - Blocking reason:
   - kept as an open harness blocker because the ingress OSS proof has
     moved past parsing/tool readiness and the old fake credit model, and
     now needs a cleaner sampled write/drop strategy instead of more ad
     hoc weakening
 - Candidate fixes:
-  - export or bind a dedicated pre-update shadow for the ingress write
-    pulses and lane-credit accounting, then assert against that stable
-    phase in the OSS harness
+  - export or bind a dedicated pre-update shadow for the ingress ticket
+    credit update plus the public `ticket_we` pulse, then assert against
+    that stable phase in the OSS harness
   - alternatively, add an OSS-only helper wrapper around the parser that
     re-times the registered write outputs into proof-friendly sampled state
 - Fix status:
@@ -380,36 +380,18 @@ Class legend:
 - Symptom:
   - the first live `opq_oss_block_path` proof now parses, elaborates,
     and reaches the Bitwuzla engine on this host
-  - the old sampled `page_ram_wr_data_o` mismatch is now gone after
-    aligning the registered source mirror to the registered page-writer
-    outputs
-  - the current `2026-04-18` remaining failure is on the proof-visible
-    arbiter shape checks in `opq_oss_block_path_formal_tb.sv`:
-    `gnt_dbg_oss`, `sel_mask_dbg_oss`, and `lock_event_dbg_oss` still
-    violate the onehot/event invariants in basecase or induction
+  - after exporting the proof-clean arbiter view and tightening the
+    reset/output contract, `formal_mover.sh` now records
+    `formal=sby_pass`
 - Root cause status:
-  - open
-  - the OSS mover slice needed several syntax bridges and proof-visible
-    state flattening just to make the live block-path RTL trustworthy in
-    Yosys/SBY
-  - page-writer ownership is now aligned well enough for proof, but the
-    arbiter debug/state contract still does not present a clean onehot
-    story to the OSS proof harness
-- Blocking reason:
-  - mover is no longer blocked on missing OSS harness bring-up or on the
-    old page-writer data/address mismatch, but it still cannot serve as a
-    trustworthy signoff proof until the arbiter-shape invariants are made
-    proof-clean
-- Candidate fixes:
-  - either export a proof-clean registered arbiter state bundle under
-    `OPQ_OSS_FORMAL`, or relax the current harness so the proof focuses on
-    page-writer ownership and raw eligibility instead of secondary debug
-    event tagging
-  - once the arbiter-shape contract is stable, rerun the same
-    `opq_oss_block_path` job to decide whether any remaining failure is a
-    real RTL bug or only residual debug-bridge mismatch
+  - fixed for the current OSS mover subset
+  - the remaining proof-clean arbiter/debug view is now sufficient for
+    the ownership/invariant slice the mover wrapper runs today
+- Residual non-claim:
+  - this pass does not claim full end-to-end frame-table/presenter proof;
+    it closes the current OSS block-path subset only
 - Fix status:
-  - open
+  - fixed
 - Commit:
   - pending
 
@@ -420,33 +402,34 @@ Class legend:
     `VSIM_PLUSARGS=+TB_CLK_PERIOD_NS=250`
     on `2026-04-18`
 - Symptom:
-  - the earlier extended mixed-soak bug-hunt screen trips scoreboard
-    underruns during chained ERROR steps after prior PROF/BASIC/CROSS
-    traffic
-  - first reproducer hits at mixed-soak step `3`:
-    `Drop accounting underrun lane=0 shd_drop=1 hit_drop=1 source=monitor`
-    and the same for lane `1`
-  - the next chained masked-recovery ERROR step reproduces the same hole
-    again at step `5` with `hit_drop=2`
+  - the earlier extended mixed-soak bug-hunt screen no longer reproduces
+    the old scoreboard `Drop accounting underrun ... source=monitor`
+    hole from step `3` / `5`
+  - with that scoreboard handoff repaired, the same stretched run now
+    trips the live `opq_hit3_contract` SVA instead:
+    `hit word arrived without a pending non-empty sub-header`
+  - the first current reproducer appears around mixed-soak step `190`
+    (`mixed_idle_lane_bp_190`) and the same contract failure repeats
+    later in the run
 - Root cause status:
   - open
   - isolated lane-mask and lane-mask-recovery cases are green, so the
-    underrun is specific to longer no-restart chaining rather than the
-    isolated drop path itself
-  - this currently looks like a no-restart drop-accounting handoff bug in
-    the scoreboard and/or native-SV drop observability path, not a fresh
-    isolated masked-drop functional failure
+    remaining failure is specific to longer no-restart chaining rather
+    than the isolated drop path itself
+  - the old scoreboard/accounting bug is fixed, but the earlier extended
+    mixed-soak screen is still exposing a real hit/sub-header contract
+    break under longer chained traffic
 - Blocking reason:
   - `opq_cross_mixed_bucket_seconds_soak_test` is intentionally kept
     probe-only; promoting it as CROSS evidence would hide a real chained
-    no-restart accounting failure
+    no-restart hit-contract failure
 - Candidate fixes:
-  - instrument the masked-drop expectation handoff across longer
-    mixed-bucket runs so the scoreboard can distinguish DUT drop-accounting
-    loss from stale no-restart bookkeeping
-  - if the monitor and CSR path stay consistent while the scoreboard still
-    underruns, repair the scoreboard no-restart drop-accounting state
-    machine and then rerun the same stretched mixed-soak screen
+  - correlate the `opq_hit3_contract` failures against the mixed-step
+    schedule and reconstruct the missing sub-header/hit sequence in the
+    egress contract monitor
+  - once the hit/sub-header ordering bug is repaired, rerun the same
+    stretched mixed-soak screen to confirm that the old scoreboard
+    underrun stays gone and no new contract failures remain
 - Fix status:
   - open
 - Commit:

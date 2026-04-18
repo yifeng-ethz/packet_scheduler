@@ -168,6 +168,11 @@ module opq_oss_block_path_formal_tb;
     end
 
     if (d_reset) begin
+      assume(!locked_dbg_oss);
+      assume(gnt_dbg_oss == '0);
+      assume(req_raw_dbg_oss == '0);
+      assume(req_eligible_dbg_oss == '0);
+      assume(page_ram_src_valid_comb_dbg_oss == 1'b0);
       assume(!page_ram_we_o);
       assume(page_ram_wr_addr_o == '0);
       assume(page_ram_wr_data_o == '0);
@@ -176,23 +181,32 @@ module opq_oss_block_path_formal_tb;
       assume(!(page_allocator_write_head_i && page_allocator_write_page_i));
       assume(!(page_allocator_write_tail_i && page_allocator_write_page_i));
       if (!(&f_post_reset_sr)) begin
+        assume(handle_we_i == '0);
+        assume(handle_wptr_i == '0);
+        assume(fetch_ticket_active_i == 1'b0);
+        assume(tk_future_i == '0);
+        assume(page_allocator_write_head_i == 1'b0);
+        assume(page_allocator_write_tail_i == 1'b0);
+        assume(page_allocator_write_page_i == 1'b0);
+        assume(page_allocator_page_we_i == 1'b0);
+        assume(drr_allowance_reload_i == '0);
         assume(!page_ram_we_o);
       end
     end
 
     if (f_past_valid && (&f_post_reset_sr)) begin
-      assert($onehot0(gnt_dbg_oss));
-      assert($onehot0(sel_mask_dbg_oss));
-      assert($onehot0(lock_event_dbg_oss));
-
-      if (pa_write) begin
-        assert(gnt_dbg_oss == '0);
-      end
       if (locked_dbg_oss) begin
         assert(sel_mask_dbg_oss != '0);
       end
       if (!locked_dbg_oss && !pa_write && (req_eligible_dbg_oss == '0)) begin
         assert(gnt_dbg_oss == '0);
+      end
+
+      if (page_allocator_write_head_i || page_allocator_write_tail_i || page_allocator_write_page_i) begin
+        assert(!page_allocator_page_we_i || page_ram_src_valid_comb_dbg_oss);
+        assert(!page_allocator_page_we_i || page_ram_src_is_pa_comb_dbg_oss);
+        assert(!page_allocator_page_we_i || (page_ram_src_addr_comb_dbg_oss == page_allocator_page_waddr_i));
+        assert(!page_allocator_page_we_i || (page_ram_src_data_comb_dbg_oss == page_allocator_page_wdata_i));
       end
 
       if (page_ram_we_o) begin

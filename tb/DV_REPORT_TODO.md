@@ -173,9 +173,11 @@ comparison path, but it must not contribute to final signoff evidence.
       - implemented as `opq_cross_mixed_bucket_seconds_soak_test`
       - canonical bug-hunt config uses `+TB_CLK_PERIOD_NS=250`
       - current result is probe-only, not promoted:
-        `opq_cross_mixed_bucket_seconds_soak_test` reproduces chained
-        masked-drop accounting underrun by mixed-soak step `3` / `5`
-        after prior PROF/BASIC/CROSS traffic
+        the old chained masked-drop accounting underrun is fixed, but
+        `opq_cross_mixed_bucket_seconds_soak_test` now trips
+        `opq_hit3_contract` around mixed-soak step `190` and later,
+        so the earlier extended screen still exposes a real no-restart
+        cross-bucket bug before final signoff freeze
 - [x] If checkpoint UCDBs are not yet practical, create the required pages
       anyway and state the limitation explicitly until the flow is implemented.
 
@@ -200,7 +202,7 @@ comparison path, but it must not contribute to final signoff evidence.
 - [ ] Resolve the chained malformed-subheader recovery corruption before adding
       `opq_error_subheader_mask_recovery_test` back into the mixed-bucket soak
       pool.
-- [ ] Resolve the chained masked-drop accounting underrun exposed by
+- [ ] Resolve the hit-without-subheader contract failure still exposed by
       `opq_cross_mixed_bucket_seconds_soak_test` before promoting the earlier
       extended mixed-soak screen into the live report set.
 - [x] Resolve the native-SV no-reset drain / credit-restore bug before calling
@@ -319,15 +321,13 @@ comparison path, but it must not contribute to final signoff evidence.
         `tb/formal_runs/csv/formal_{ingress,mover,egress}_latest.csv`
       - current tracked blockers:
         - `BUG-015-H`: ingress now uses explicit legal-state assumptions
-          for `WR_HITS` / drop-cause exclusivity, but the remaining
-          lane-credit and `lane_issue_dbg_oss` checks still fail
+          for `WR_HITS` / drop-cause exclusivity, and the remaining
+          blocker is the phase-sensitive ticket-credit/write coupling
+          in the OSS harness
         - `BUG-016-H`: closed for the current OSS egress subset; the
           live hold-under-backpressure presenter proof now passes
-        - `BUG-017-H`: mover no longer fails on sampled page-writer
-          data/address equality after aligning the registered source
-          mirror, but it still fails on the proof-visible arbiter-shape
-          invariants (`gnt_dbg_oss`, `sel_mask_dbg_oss`,
-          `lock_event_dbg_oss`)
+        - `BUG-017-H`: closed for the current OSS mover subset;
+          `formal_mover.sh` now records `formal=sby_pass`
 - [ ] Close `BUG-015-H` by reworking the ingress OSS proof to sample
       phase-correct write/drop state all the way through the registered
       public outputs, or by replacing the remaining local-state
@@ -340,9 +340,15 @@ comparison path, but it must not contribute to final signoff evidence.
       - the current OSS subset proves the live Avalon-ST hold contract
       - unread-overwrite scan proof remains a documented non-claim for
         the OSS subset and still needs a separate proof strategy later
-- [ ] Close `BUG-017-H` by exporting or constraining a proof-clean arbiter
+- [x] Close `BUG-017-H` by exporting or constraining a proof-clean arbiter
       state bundle in `opq_oss_block_path` so the remaining onehot/event
       invariants become basecase-clean after the page-writer ownership fix.
+      Status on `2026-04-18`:
+      - `formal_mover.sh` now records `formal=sby_pass`
+      - the current OSS mover subset proves page-writer ownership and the
+        proof-clean arbiter-shape view now stays basecase/induction clean
+      - the native-SV path is unchanged; this is an OSS harness/debug export
+        closure only
 - [ ] Close the cross-module flush-under-backpressure proof for the tiled
       frame-table path (`ap_flush_does_not_touch_live_page`,
       `ap_tail_flush_preserves_head_region`) once the live native-SV top swaps

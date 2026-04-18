@@ -7,6 +7,12 @@ Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 - **Verification / OSS Formal Ingress**: added `shd_len_dbg_oss`, stretched the post-reset warmup window, and encoded the legal `WR_HITS` / drop-cause local-state assumptions explicitly in the ingress OSS harness. The remaining ingress blocker is now narrowed to the lane-credit bound plus `lane_issue_dbg_oss` sampled-write alignment.
 - **Verification / OSS Formal Mover**: added combinational page-writer source mirrors plus sampled source shadows in the mover harness. The remaining mover blocker is now isolated to `page_ram_wr_data_o` equality against the sampled write source after reset/phase cleanup attempts.
 
+## 26.3.21.0418
+
+- **Verification / Mixed Soak Screen**: fixed the earlier mixed-bucket seconds-soak scoreboard accounting handoff so the old `Drop accounting underrun ... source=monitor` failure no longer reproduces under the stretched `+TB_CLK_PERIOD_NS=250` bug-hunt run. The same earlier long-run screen now reaches much deeper chained traffic and exposes a stricter open hit/sub-header contract failure (`opq_hit3_contract`) instead of dying in the scoreboard first.
+- **Verification / OSS Formal Mover**: closed the current OSS mover subset. `formal_mover.sh` now records `formal=sby_pass` on the proof-clean block-path ownership / arbiter slice, leaving ingress as the only remaining OSS proof blocker.
+- **Verification / OSS Formal Ingress**: kept the ingress proof honest and narrowed the remaining blocker to the phase-sensitive ticket-credit/write coupling in the OSS harness. The lane-credit bound and mover-side arbiter issues are no longer the active formal blockers.
+
 ## 26.3.19.0418
 
 - **RTL / Native-SV Drop Accounting**: exposed ingress parser credit-mask rejection pulses through the monolithic native-SV path and into the standalone CSR/debug surface. The live native-SV DUT now counts parser-side lane-credit and ticket-credit packet rejection in the same software-visible drop counters used by the report and the fallback stress harness.

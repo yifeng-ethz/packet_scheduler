@@ -198,6 +198,26 @@ class opq_scoreboard extends uvm_component;
     end
   endfunction
 
+  function automatic void retire_lane_accounting_trace(
+    int         lane_id,
+    bit [47:0]  hit_ts,
+    bit [31:0]  hit_word
+  );
+    string key;
+
+    if (lane_id < 0 || lane_id >= OPQ_N_LANE) begin
+      return;
+    end
+
+    key = hit_key(hit_ts, hit_word);
+    for (int idx = 0; idx < lane_accounting_hits[lane_id].size(); idx++) begin
+      if (hit_key(lane_accounting_hits[lane_id][idx].hit_ts, lane_accounting_hits[lane_id][idx].hit_word) == key) begin
+        lane_accounting_hits[lane_id].delete(idx);
+        break;
+      end
+    end
+  endfunction
+
   function void write_frame(opq_frame_item frame);
     opq_frame_meta_t meta;
     opq_hit_trace_t trace;
@@ -233,6 +253,11 @@ class opq_scoreboard extends uvm_component;
         trace.lane_id = frame.lane_id;
         trace.shd_ts = frame.subheaders[i].shd_ts;
         pending_ingress_hits[frame.lane_id].push_back(trace);
+        if (cfg.allow_drop_accounting &&
+            frame.subheaders[i].error_bits == '0 &&
+            frame.subheaders[i].hits[j].error_bits == '0) begin
+          lane_accounting_hits[frame.lane_id].push_back(trace);
+        end
       end
     end
   endfunction
@@ -361,7 +386,8 @@ class opq_scoreboard extends uvm_component;
         end
         if (!drop_hit_from_integrity) begin
           expected_hits.push_back(trace);
-          lane_accounting_hits[lane_id].push_back(trace);
+        end else if (cfg.allow_drop_accounting) begin
+          retire_lane_accounting_trace(lane_id, trace.hit_ts, trace.hit_word);
         end
       end
       ingress_hits_pending[lane_id]--;
