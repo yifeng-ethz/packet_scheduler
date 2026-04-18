@@ -1000,10 +1000,18 @@ The wrapper API is intentionally stable ahead of a real `qverify`
 install:
 
 - `FORMAL_BACKEND=auto|stress|qverify` selects the backend. `auto`
-  chooses `stress` unless `FORMAL_QVERIFY_ENABLE=1` is set.
+  chooses `stress` unless `FORMAL_QVERIFY_ENABLE=1` or
+  `FORMAL_SBY_ENABLE=1` is set.
 - `QVERIFY_BIN=/path/to/qverify` points the same wrappers at the future
   proof executable without changing testcase names, tops, or plane
   ordering.
+- `FORMAL_BACKEND=sby` selects the OSS backend path.
+- `SBY_BIN=/path/to/sby`, `YOSYS_BIN=/path/to/yosys`, and
+  `BITWUZLA_BIN=/path/to/bitwuzla` point the same wrappers at an OSS
+  toolchain without changing testcase names, tops, or plane ordering.
+- `FORMAL_SBY_ENGINE=bitwuzla` records the intended SMT engine for the
+  future OSS flow; today the wrappers treat it as metadata and a binary
+  requirement check.
 - `FORMAL_STRESS_TESTS` overrides the default simulation fallback test
   list for one plane without editing the wrapper.
 - `FORMAL_STRESS_INCLUDE_PROBES=1` appends the plane's probe-only
@@ -1070,6 +1078,20 @@ current host tool installation does **not** provide a runnable
 install trees. So the current wrappers close compile/elaboration
 readiness and can execute a consistent simulation-backed fallback flow,
 but they do not yet execute a real proof engine on this host.
+
+Current OSS alternative status:
+
+- the wrapper layer now also accepts `FORMAL_BACKEND=sby` with explicit
+  `SBY_BIN`, `YOSYS_BIN`, and `BITWUZLA_BIN` hooks
+- this host currently has **none** of `sby`, `yosys`, or `bitwuzla`
+  installed in `PATH`
+- even after those binaries are installed, the current standalone tops
+  are still **Questa-oriented elaboration tops**, not true Yosys/SBY
+  proof harnesses: they use simulation timing constructs, and the live
+  `tb_top` / UVM compile is not a direct OSS formal input
+- so the OSS path is now an explicit backend/API handoff, but it still
+  needs a small OSS-friendly harness subset before plane proofs can run
+  for real
 
 ---
 

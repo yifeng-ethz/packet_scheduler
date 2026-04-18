@@ -258,9 +258,13 @@ comparison path, but it must not contribute to final signoff evidence.
 - [x] Stabilize a no-backend fallback API that keeps the future proof entry
       points intact.
       Status on `2026-04-18`:
-      - wrappers now support `FORMAL_BACKEND=auto|stress|qverify`
+      - wrappers now support `FORMAL_BACKEND=auto|stress|qverify|sby`
       - wrappers now support `QVERIFY_BIN=/path/to/qverify` as the
         backend handoff point once the proof binary is installed
+      - wrappers now support `SBY_BIN=/path/to/sby`,
+        `YOSYS_BIN=/path/to/yosys`, and
+        `BITWUZLA_BIN=/path/to/bitwuzla` as the OSS backend handoff
+        points once that toolchain is installed
       - wrappers now support `FORMAL_STRESS_TESTS` for targeted fallback runs
       - default fallback status:
         - ingress: pass on `opq_basic_smoke_test` +
@@ -280,6 +284,15 @@ comparison path, but it must not contribute to final signoff evidence.
       - ingress probe-only exclusions:
         `opq_error_header_mask_recovery_test`,
         `opq_error_header_word_mask_recovery_test`
+- [ ] Add the first OSS-friendly formal harness subset for
+      `FORMAL_BACKEND=sby`.
+      Required before real SymbiYosys/Yosys/Bitwuzla proofs can run:
+      - replace the current Questa-oriented standalone elaboration tops
+        with Yosys-acceptable harnesses
+      - keep the plane mapping identical to the existing ingress/mover/egress
+        wrappers so report wording and case naming stay stable
+      - start with ingress parser and basic-presenter hold-under-backpressure,
+        then extend to the tiled frame-table path
 - [ ] Run the first actual formal proof round once the proof backend is
       installed, then record any failing properties back into
       `DV_FORMAL.md` and `BUG_HISTORY.md` when a real RTL issue is exposed.

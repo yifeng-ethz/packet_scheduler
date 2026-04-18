@@ -60,6 +60,88 @@ formal_find_qverify() {
   return 1
 }
 
+formal_find_sby() {
+  local candidate
+  local -a candidates=()
+
+  if [[ -n "${SBY_BIN:-}" ]]; then
+    candidates+=("${SBY_BIN}")
+  fi
+  candidates+=(
+    sby
+    symbiyosys
+  )
+
+  for candidate in "${candidates[@]}"; do
+    [[ -n "${candidate}" ]] || continue
+    if [[ "${candidate}" == */* ]]; then
+      if [[ -x "${candidate}" ]]; then
+        printf '%s\n' "${candidate}"
+        return 0
+      fi
+    elif command -v "${candidate}" >/dev/null 2>&1; then
+      command -v "${candidate}"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+formal_find_yosys() {
+  local candidate
+  local -a candidates=()
+
+  if [[ -n "${YOSYS_BIN:-}" ]]; then
+    candidates+=("${YOSYS_BIN}")
+  fi
+  candidates+=(
+    yosys
+  )
+
+  for candidate in "${candidates[@]}"; do
+    [[ -n "${candidate}" ]] || continue
+    if [[ "${candidate}" == */* ]]; then
+      if [[ -x "${candidate}" ]]; then
+        printf '%s\n' "${candidate}"
+        return 0
+      fi
+    elif command -v "${candidate}" >/dev/null 2>&1; then
+      command -v "${candidate}"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+formal_find_bitwuzla() {
+  local candidate
+  local -a candidates=()
+
+  if [[ -n "${BITWUZLA_BIN:-}" ]]; then
+    candidates+=("${BITWUZLA_BIN}")
+  fi
+  candidates+=(
+    bitwuzla
+  )
+
+  for candidate in "${candidates[@]}"; do
+    [[ -n "${candidate}" ]] || continue
+    if [[ "${candidate}" == */* ]]; then
+      if [[ -x "${candidate}" ]]; then
+        printf '%s\n' "${candidate}"
+        return 0
+      fi
+    elif command -v "${candidate}" >/dev/null 2>&1; then
+      command -v "${candidate}"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
 formal_use_license_env() {
   local chain="${ETH_MENTOR_SERVER}"
 
@@ -268,6 +350,10 @@ formal_run_plane() {
   local strict_mode
   local backend_mode
   local qverify_bin=""
+  local sby_bin=""
+  local yosys_bin=""
+  local bitwuzla_bin=""
+  local sby_engine
   local compile_status="not_run"
   local elab_status="not_run"
   local formal_status="not_run"
@@ -278,6 +364,7 @@ formal_run_plane() {
   local history_csv
   local top
   local elab_fail=0
+  local -a missing_tools=()
 
   timestamp="$(date +%Y%m%d_%H%M%S)"
   build_dir="${BUILD_DIR:-${UVM_DIR}/build_formal_${plane}}"
@@ -287,6 +374,7 @@ formal_run_plane() {
   page_ram_depth="${FORMAL_OPQ_PAGE_RAM_DEPTH:-${default_page_ram_depth}}"
   strict_mode="${FORMAL_STRICT:-0}"
   backend_mode="${FORMAL_BACKEND:-auto}"
+  sby_engine="${FORMAL_SBY_ENGINE:-bitwuzla}"
   log_file="${FORMAL_LOG_DIR}/formal_${plane}_${timestamp}.log"
   latest_csv="${FORMAL_CSV_DIR}/formal_${plane}_latest.csv"
   history_csv="${FORMAL_CSV_DIR}/formal_${plane}_history.csv"
@@ -358,6 +446,8 @@ formal_run_plane() {
       auto)
         if [[ "${FORMAL_QVERIFY_ENABLE:-0}" == "1" ]]; then
           backend_mode="qverify"
+        elif [[ "${FORMAL_SBY_ENABLE:-0}" == "1" ]]; then
+          backend_mode="sby"
         else
           backend_mode="stress"
         fi
@@ -374,6 +464,30 @@ formal_run_plane() {
           formal_status="blocked_no_qverify"
           backend="compile_elab_only"
           note="${plane_note}; compile and elaboration passed, but qverify/znformal is not installed on this host"
+        fi
+        ;;
+      sby)
+        missing_tools=()
+        if ! sby_bin="$(formal_find_sby 2>/dev/null)"; then
+          missing_tools+=("sby")
+        fi
+        if ! yosys_bin="$(formal_find_yosys 2>/dev/null)"; then
+          missing_tools+=("yosys")
+        fi
+        if [[ "${sby_engine}" == "bitwuzla" ]]; then
+          if ! bitwuzla_bin="$(formal_find_bitwuzla 2>/dev/null)"; then
+            missing_tools+=("bitwuzla")
+          fi
+        fi
+
+        if ((${#missing_tools[@]} > 0)); then
+          formal_status="blocked_no_sby_toolchain"
+          backend="compile_elab_only"
+          note="${plane_note}; FORMAL_BACKEND=sby requested but missing tools: ${missing_tools[*]}"
+        else
+          formal_status="blocked_no_scripted_sby_flow"
+          backend="sby+yosys+${sby_engine}"
+          note="${plane_note}; OSS formal toolchain is installed, but a plane-specific Yosys/SBY harness is not wired yet. The current standalone tops still use simulation timing constructs and the live UVM tb_top compile is not a direct Yosys input."
         fi
         ;;
       stress)
