@@ -1090,16 +1090,37 @@ Current OSS alternative status:
   directly, so `FORMAL_BACKEND=sby` works on this host without a
   per-user shell setup
 - current host result with that shared install:
-  `compile=pass`, `elab=pass`,
-  `formal=blocked_no_scripted_sby_flow`,
-  `backend=sby+yosys+bitwuzla`
-- even after those binaries are installed, the current standalone tops
-  are still **Questa-oriented elaboration tops**, not true Yosys/SBY
-  proof harnesses: they use simulation timing constructs, and the live
-  `tb_top` / UVM compile is not a direct OSS formal input
-- so the OSS path is now an explicit backend/API handoff, but it still
-  needs a small OSS-friendly harness subset before plane proofs can run
-  for real
+  - ingress:
+    `compile=pass`,
+    `elab=pass`,
+    `formal=sby_fail`,
+    `backend=sby+yosys+bitwuzla`
+    via `formal_ingress.sh`
+    `FORMAL_BACKEND=sby`
+    `FORMAL_SBY_TASKS=prove`
+  - mover:
+    `compile=pass`,
+    `elab=pass`,
+    `formal=blocked_no_scripted_sby_flow`,
+    `backend=sby+yosys+bitwuzla`
+  - egress:
+    `compile=pass`,
+    `elab=pass`,
+    `formal=sby_error`,
+    `backend=sby+yosys+bitwuzla`
+    via `formal_egress.sh`
+    `FORMAL_BACKEND=sby`
+    `FORMAL_SBY_TASKS=prove`
+- the OSS path is therefore no longer just a backend/API handoff:
+  the first ingress and egress jobs are now truly scripted and execute
+  real `sby` runs on this host
+- current remaining blockers are concrete and tracked:
+  - `BUG-015-H`: ingress proof still false-fails on registered public
+    output sampling before the intended internal contract is isolated
+  - `BUG-016-H`: egress proof stops in Yosys SMT2 lowering on a reported
+    logic loop in the overwrite-drop scan path
+  - mover still needs the first OSS-native harness, so that plane
+    remains `blocked_no_scripted_sby_flow`
 
 ---
 

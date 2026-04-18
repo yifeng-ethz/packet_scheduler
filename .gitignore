@@ -13,6 +13,7 @@ tb/**/vsim.log
 tb/**/*.vcd
 tb/**/vsim.wlf
 tb/formal_runs/
+tb/formal_sby/*/
 tb_int/sim_runs/
 tb_int/uvm/cov_after/
 tb_int/uvm/logs/

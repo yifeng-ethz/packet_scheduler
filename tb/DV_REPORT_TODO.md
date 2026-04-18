@@ -284,24 +284,37 @@ comparison path, but it must not contribute to final signoff evidence.
       - ingress probe-only exclusions:
         `opq_error_header_mask_recovery_test`,
         `opq_error_header_word_mask_recovery_test`
-- [ ] Add the first OSS-friendly formal harness subset for
+- [x] Add the first OSS-friendly formal harness subset for
       `FORMAL_BACKEND=sby`.
-      Required before real SymbiYosys/Yosys/Bitwuzla proofs can run:
       Status on `2026-04-18`:
       - shared OSS tool stack is installed for all users at
         `/data1/oss_formal`
-      - `FORMAL_BACKEND=sby` now reaches
-        `blocked_no_scripted_sby_flow` on this host instead of
-        `blocked_no_sby_toolchain`
-      - replace the current Questa-oriented standalone elaboration tops
-        with Yosys-acceptable harnesses
-      - keep the plane mapping identical to the existing ingress/mover/egress
-        wrappers so report wording and case naming stay stable
-      - start with ingress parser and basic-presenter hold-under-backpressure,
-        then extend to the tiled frame-table path
-- [ ] Run the first actual formal proof round once the proof backend is
+      - ingress wrapper now runs `opq_oss_ingress.sby` for real and
+        records `formal=sby_fail`
+      - egress wrapper now runs `opq_oss_basic_presenter.sby` for real and
+        records `formal=sby_error`
+      - mover still has no OSS-native harness, so that plane remains
+        `blocked_no_scripted_sby_flow`
+      - plane naming and wrapper entry points stayed stable
+        (`formal_ingress.sh`, `formal_mover.sh`, `formal_egress.sh`)
+- [x] Run the first actual formal proof round once the proof backend is
       installed, then record any failing properties back into
       `DV_FORMAL.md` and `BUG_HISTORY.md` when a real RTL issue is exposed.
+      Status on `2026-04-18`:
+      - first wrapper-managed `sby` round is captured in
+        `tb/formal_runs/csv/formal_{ingress,mover,egress}_latest.csv`
+      - current tracked blockers:
+        - `BUG-015-H`: ingress public-output sampling still false-fails
+          the first OSS proof
+        - `BUG-016-H`: presenter SMT2 lowering reports a logic loop
+        - mover plane still needs its first OSS harness
+- [ ] Close `BUG-015-H` by reworking the ingress OSS proof to sample
+      pre-update internal state instead of registered public outputs.
+- [ ] Close `BUG-016-H` by rewriting or isolating the overwrite-drop scan
+      so the basic-presenter OSS proof can reach actual hold-under-backpressure
+      properties instead of stopping in Yosys lowering.
+- [ ] Add the first mover OSS harness so `formal_mover.sh` no longer reports
+      `blocked_no_scripted_sby_flow`.
 - [ ] Close the cross-module flush-under-backpressure proof for the tiled
       frame-table path (`ap_flush_does_not_touch_live_page`,
       `ap_tail_flush_preserves_head_region`) once the live native-SV top swaps

@@ -22,6 +22,8 @@ Class legend:
 | [BUG-012-H](#bug-012-h-edge-medium-ready-profile-testcase-was-wired-as-always-ready) | H | fixed | promoted EDGE isolated rerun on `2026-04-17` | `cbb05e0` | The supposed medium-backpressure testcase never applied stalls and gave false evidence. |
 | [BUG-013-H](#bug-013-h-mixed-bucket-random-soak-was-reported-as-directed-and-omitted-txn-growth-traceability) | H | fixed | regenerated native-SV report on `2026-04-17` | `cbb05e0` | The promoted mixed-soak testcase was misclassified as directed and hid required random-case reporting. |
 | [BUG-014-R](#bug-014-r-formal-like-egress-flush-under-backpressure-violates-the-avalon-st-hold-contract) | R | open | `formal_egress.sh` targeted stress probe on `2026-04-18` | `pending` | Formal-like egress flush-under-backpressure breaks the live Avalon-ST hold contract while the presenter is flushing under deasserted `ready`. |
+| [BUG-015-H](#bug-015-h-oss-ingress-sby-harness-still-false-fails-on-registered-public-output-sampling) | H | open | `formal_ingress.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `pending` | The first Yosys/SBY ingress harness reaches proof, but public output checks still sample registered signals one phase early and fail before the intended internal contract is isolated. |
+| [BUG-016-H](#bug-016-h-oss-basic-presenter-sby-lowering-hits-a-logic-loop-in-the-overwrite-scan-path) | H | open | `formal_egress.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `pending` | The OSS basic-presenter proof harness compiles and elaborates, but Yosys SMT2 lowering stops on a reported logic loop in the overwrite-drop scan path. |
 
 ## 2026-04-17
 
@@ -296,6 +298,75 @@ Class legend:
   - add a focused internal presenter assertion that ties flush retire,
     overwrite-drop bookkeeping, and the Avalon-ST hold shadow together
     so this edge fails at the first illegal state transition
+- Fix status:
+  - open
+- Commit:
+  - pending
+
+### BUG-015-H: OSS ingress SBY harness still false-fails on registered public output sampling
+- First seen in:
+  - `packet_scheduler/tb/scripts/formal_ingress.sh`
+    `FORMAL_BACKEND=sby`
+    `FORMAL_SBY_TASKS=prove`
+    on `2026-04-18`
+- Symptom:
+  - the first live `opq_oss_ingress` proof now parses, elaborates, and
+    reaches the Bitwuzla engine, but the proof still fails on
+    public-output checks tied to `lane_we` / `ticket_we` and related
+    registered output behavior
+  - the failures move as those checks are peeled back, which is a strong
+    sign that the harness is sampling registered public outputs in the
+    active region before the DUT nonblocking updates have committed
+- Root cause status:
+  - open
+  - the lightweight OSS harness does not yet have the same internal
+    shadow sampling that the native Questa-side formal SVA uses, so
+    several "current cycle" checks on registered public outputs are
+    phase-wrong in Yosys/SBY
+- Blocking reason:
+  - kept as an open harness blocker because the ingress OSS proof has
+    moved past parsing/tool readiness and now needs a cleaner sampling
+    strategy instead of more ad hoc weakening
+- Candidate fixes:
+  - export or bind a dedicated pre-update shadow for the ingress write
+    pointers / write pulses and reason codes, then assert against that
+    stable phase in the OSS harness
+  - alternatively, add an OSS-only helper wrapper around the parser that
+    re-times the registered public outputs into proof-friendly sampled
+    state
+- Fix status:
+  - open
+- Commit:
+  - pending
+
+### BUG-016-H: OSS basic-presenter SBY lowering hits a logic loop in the overwrite scan path
+- First seen in:
+  - `packet_scheduler/tb/scripts/formal_egress.sh`
+    `FORMAL_BACKEND=sby`
+    `FORMAL_SBY_TASKS=prove`
+    on `2026-04-18`
+- Symptom:
+  - the first live `opq_oss_basic_presenter` proof now parses and
+    elaborates cleanly, but the Yosys SMT2 backend exits with
+    `Found logic loop ... ordered_priority_queue_monolithic_basic_presenter`
+  - the failing wrapper run records
+    `formal=sby_error`
+    even though compile and elaboration already pass
+- Root cause status:
+  - open
+  - the current overwrite-drop scan coding style in
+    `proc_overwrite_drop_plan` is still legal for simulation, but the
+    Yosys lowering path currently resolves it into a loop around the
+    generated mux structure instead of a clean feed-forward scan
+- Blocking reason:
+  - the egress OSS proof cannot yet reach the actual hold-under-backpressure
+    property because the backend stops during SMT2 lowering
+- Candidate fixes:
+  - rewrite the overwrite-drop scan into an explicitly staged
+    feed-forward next-state chain for the OSS path
+  - or isolate the hold-under-backpressure proof in a reduced presenter
+    wrapper that prunes the overwrite scan until the full lowering issue
+    is resolved
 - Fix status:
   - open
 - Commit:

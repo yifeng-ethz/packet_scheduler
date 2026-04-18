@@ -256,6 +256,85 @@ formal_run_stress_suite() {
   fi
 }
 
+formal_run_sby_suite() {
+  local plane="$1"
+  local timestamp="$2"
+  local suite_log="$3"
+  local sby_bin="$4"
+  local sby_engine="$5"
+  local sby_jobs="$6"
+  local plane_note="$7"
+  local sby_tasks="${FORMAL_SBY_TASKS:-prove}"
+  local -a summaries=()
+  local -a task_args=()
+  local job
+  local job_log
+  local status
+  local rc
+  local pass_count=0
+  local fail_count=0
+  local error_count=0
+  local summary_joined=""
+
+  if [[ -z "${sby_jobs}" ]]; then
+    FORMAL_RESULT_STATUS="blocked_no_scripted_sby_flow"
+    FORMAL_RESULT_BACKEND="sby+yosys+${sby_engine}"
+    FORMAL_RESULT_NOTE="${plane_note}; OSS formal toolchain is installed, but a plane-specific Yosys/SBY harness is not wired yet."
+    return 0
+  fi
+
+  for task in ${sby_tasks}; do
+    task_args+=("${task}")
+  done
+
+  printf '[formal_%s] sby_tasks=%s jobs=%s\n' "${plane}" "${sby_tasks}" "${sby_jobs}" | tee -a "${suite_log}"
+
+  for job in ${sby_jobs}; do
+    job_log="${FORMAL_LOG_DIR}/formal_${plane}_${job}_${timestamp}.log"
+    printf '[formal_%s] sby_job=%s log=%s\n' "${plane}" "${job}" "${job_log}" | tee -a "${suite_log}"
+    set +e
+    (
+      cd "${TB_DIR}/formal_sby"
+      "${sby_bin}" -f "${job}.sby" "${task_args[@]}"
+    ) > "${job_log}" 2>&1
+    rc=$?
+    set -e
+
+    case "${rc}" in
+      0)
+        status="pass"
+        pass_count=$((pass_count + 1))
+        ;;
+      2)
+        status="fail"
+        fail_count=$((fail_count + 1))
+        ;;
+      *)
+        status="error"
+        error_count=$((error_count + 1))
+        ;;
+    esac
+
+    summaries+=("${job}:${status}")
+    printf '[formal_%s] sby_job=%s status=%s rc=%s\n' "${plane}" "${job}" "${status}" "${rc}" | tee -a "${suite_log}"
+  done
+
+  if ((${#summaries[@]} > 0)); then
+    summary_joined="$(printf '%s;' "${summaries[@]}")"
+    summary_joined="${summary_joined%;}"
+  fi
+
+  FORMAL_RESULT_BACKEND="sby+yosys+${sby_engine}"
+  FORMAL_RESULT_NOTE="${plane_note}; sby jobs=${summary_joined}; pass=${pass_count}; fail=${fail_count}; error=${error_count}"
+  if ((error_count > 0)); then
+    FORMAL_RESULT_STATUS="sby_error"
+  elif ((fail_count > 0)); then
+    FORMAL_RESULT_STATUS="sby_fail"
+  else
+    FORMAL_RESULT_STATUS="sby_pass"
+  fi
+}
+
 formal_write_csv() {
   local csv_path="$1"
   local plane="$2"
@@ -345,6 +424,7 @@ formal_run_plane() {
   local plane_note="$7"
   local stress_tests="${8:-}"
   local probe_tests="${9:-}"
+  local sby_jobs="${10:-}"
   local timestamp
   local build_dir
   local n_lane
@@ -385,6 +465,9 @@ formal_run_plane() {
 
   if [[ -n "${FORMAL_STRESS_TESTS:-}" ]]; then
     stress_tests="${FORMAL_STRESS_TESTS}"
+  fi
+  if [[ -n "${FORMAL_SBY_JOBS:-}" ]]; then
+    sby_jobs="${FORMAL_SBY_JOBS}"
   fi
   if [[ "${FORMAL_STRESS_INCLUDE_PROBES:-0}" == "1" && -n "${probe_tests}" ]]; then
     stress_tests="${stress_tests} ${probe_tests}"
@@ -489,9 +572,17 @@ formal_run_plane() {
           backend="compile_elab_only"
           note="${plane_note}; FORMAL_BACKEND=sby requested but missing tools: ${missing_tools[*]}"
         else
-          formal_status="blocked_no_scripted_sby_flow"
-          backend="sby+yosys+${sby_engine}"
-          note="${plane_note}; OSS formal toolchain is installed, but a plane-specific Yosys/SBY harness is not wired yet. The current standalone tops still use simulation timing constructs and the live UVM tb_top compile is not a direct Yosys input."
+          formal_run_sby_suite \
+            "${plane}" \
+            "${timestamp}" \
+            "${log_file}" \
+            "${sby_bin}" \
+            "${sby_engine}" \
+            "${sby_jobs}" \
+            "${plane_note}"
+          formal_status="${FORMAL_RESULT_STATUS}"
+          backend="${FORMAL_RESULT_BACKEND}"
+          note="${FORMAL_RESULT_NOTE}"
         fi
         ;;
       stress)
