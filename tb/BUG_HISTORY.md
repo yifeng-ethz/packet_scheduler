@@ -21,11 +21,11 @@ Class legend:
 | [BUG-011-R](#bug-011-r-chained-malformed-subheader-recovery-is-not-composable-in-mixed-bucket-soak) | R | open | `opq_cross_mixed_bucket_random_soak_test` | `pending` | Isolated malformed-subheader recovery is green, but chained mixed-soak recovery still breaks no-restart framing. |
 | [BUG-012-H](#bug-012-h-edge-medium-ready-profile-testcase-was-wired-as-always-ready) | H | fixed | promoted EDGE isolated rerun on `2026-04-17` | `cbb05e0` | The supposed medium-backpressure testcase never applied stalls and gave false evidence. |
 | [BUG-013-H](#bug-013-h-mixed-bucket-random-soak-was-reported-as-directed-and-omitted-txn-growth-traceability) | H | fixed | regenerated native-SV report on `2026-04-17` | `cbb05e0` | The promoted mixed-soak testcase was misclassified as directed and hid required random-case reporting. |
-| [BUG-014-R](#bug-014-r-formal-like-egress-flush-under-backpressure-violates-the-avalon-st-hold-contract) | R | open | `formal_egress.sh` targeted stress probe on `2026-04-18` | `pending` | Formal-like egress flush-under-backpressure breaks the live Avalon-ST hold contract while the presenter is flushing under deasserted `ready`. |
-| [BUG-015-H](#bug-015-h-oss-ingress-sby-harness-still-false-fails-on-phase-sensitive-write-and-drop-checks) | H | open | `formal_ingress.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `pending` | The ingress OSS proof now uses explicit legal-state assumptions, but the remaining blocker is the phase-sensitive ticket-credit/write coupling on registered behavior. |
-| [BUG-016-H](#bug-016-h-oss-basic-presenter-sby-lowering-hits-a-logic-loop-in-the-overwrite-scan-path) | H | fixed | `formal_egress.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `pending` | The OSS basic-presenter proof no longer dies in SMT2 lowering; the live Avalon-ST hold-under-backpressure slice now passes on the OSS subset. |
-| [BUG-017-H](#bug-017-h-oss-mover-sby-harness-now-reaches-proof-but-still-fails-on-arbiter-shape-invariants) | H | fixed | `formal_mover.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `pending` | The live OSS mover proof now passes on the current block-path subset after the proof-clean arbiter view was exported and constrained. |
-| [BUG-018-H](#bug-018-h-extended-mixed-bucket-seconds-soak-exposes-chained-masked-drop-accounting-underrun) | H | open | `opq_cross_mixed_bucket_seconds_soak_test` on `2026-04-18` | `pending` | The old seconds-soak accounting underrun is fixed, but the earlier extended mixed-soak screen now trips `opq_hit3_contract` hit-without-subheader failures under long chained traffic. |
+| [BUG-014-R](#bug-014-r-formal-like-egress-flush-under-backpressure-violates-the-avalon-st-hold-contract) | R | fixed | `formal_egress.sh` targeted stress probe on `2026-04-18` | `pending` | Formal-like egress flush-under-backpressure no longer breaks the live Avalon-ST hold contract after the basic presenter preserves synchronous page-RAM return data across held `ready`. |
+| [BUG-015-H](#bug-015-h-oss-ingress-sby-harness-still-false-fails-on-phase-sensitive-write-and-drop-checks) | H | fixed | `formal_ingress.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `1048b6c` | The ingress OSS proof now passes after the harness stopped consuming reset-warmup debug pulses and switched from phase-ambiguous credit-bus checks to pulse-level write/drop contracts. |
+| [BUG-016-H](#bug-016-h-oss-basic-presenter-sby-lowering-hits-a-logic-loop-in-the-overwrite-scan-path) | H | fixed | `formal_egress.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `f8448ac` | The OSS basic-presenter proof no longer dies in SMT2 lowering; the live Avalon-ST hold-under-backpressure slice now passes on the OSS subset. |
+| [BUG-017-H](#bug-017-h-oss-mover-sby-harness-now-reaches-proof-but-still-fails-on-arbiter-shape-invariants) | H | fixed | `formal_mover.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `de65125` | The live OSS mover proof now passes on the current block-path subset after the proof-clean arbiter view was exported and constrained. |
+| [BUG-018-H](#bug-018-h-extended-mixed-bucket-seconds-soak-exposes-chained-masked-drop-accounting-underrun) | H | open | `opq_cross_mixed_bucket_seconds_soak_test` on `2026-04-18` | `pending` | The old seconds-soak accounting underrun is fixed, and the presenter repair pushed the stretched rerun past the old early failure window, but a full promoted rerun is still pending before the earlier `opq_hit3_contract` report can be retired. |
 
 ## 2026-04-17
 
@@ -273,35 +273,40 @@ Class legend:
     `FORMAL_STRESS_TESTS=opq_formal_like_egress_flush_backpressure_stress_test`
     on `2026-04-18`
 - Symptom:
-  - the targeted formal-like egress probe fails with repeated
-    `opq_avst_egress_sva.sv` line `51`
-    `p_hold_under_backpressure` assertion hits while the test forces a
+  - the targeted formal-like egress probe originally failed with
+    repeated `opq_avst_egress_sva.sv` line `51`
+    `p_hold_under_backpressure` assertion hits while the test forced a
     long flush window under deasserted output `ready`
-  - observed assertion timestamps in the first failing log include
+  - the first failing logs showed assertion timestamps such as
     `32302 ns`, `48374 ns`, and `64454 ns`
-  - the failure is specific to the aggressive flush-under-backpressure
-    edge; the default fallback egress suite
-    (`opq_edge_toggle_backpressure_test`,
-    `opq_edge_stuck_low_backpressure_test`) still passes cleanly
+  - after the presenter repair, the same targeted probe now passes as a
+    clean backpressure/hold regression and the old malformed first
+    packet no longer appears at egress
 - Root cause status:
-  - open
-  - the live native-SV basic-presenter path is still allowing accepted
-    output framing or payload state to change while `aso_out_valid` is
-    held against `aso_out_ready=0` and concurrent flush / overwrite
-    retirement logic is active
-- Blocking reason:
-  - kept probe-only and excluded from both the default fallback summary
-    and signoff evidence because the contract violation is on the live
-    output interface itself
-- Candidate fixes:
-  - preserve the presenter output-hold register contents across flush
-    and overwrite retirement so `valid`, `data`, `startofpacket`,
-    `endofpacket`, and `error` remain stable until acceptance
-  - add a focused internal presenter assertion that ties flush retire,
-    overwrite-drop bookkeeping, and the Avalon-ST hold shadow together
-    so this edge fails at the first illegal state transition
+  - fixed
+  - the live native-SV basic presenter consumed `page_ram_rd_data_i`
+    directly even though the page RAM is synchronous-read; when the head
+    beat was held under `valid && !ready`, the returned RAM word could
+    advance underneath the held output state and the resumed packet
+    could skip or duplicate words
+- Fix:
+  - add a read-data skid in
+    `ordered_priority_queue_monolithic_basic_presenter.sv` so a RAM
+    return observed under held `ready` is preserved and then fed back
+    into the launch pipe on resume
+  - keep the aggressive formal-like testcase focused on the real hold
+    contract by requiring accepted egress activity under backpressure,
+    not an unrelated frame-table-drop signature
+- Runtime / proof context:
+  - `FORMAL_BACKEND=sby bash tb/scripts/formal_egress.sh` now records
+    `formal=sby_pass`
+  - the targeted fallback probe
+    `opq_formal_like_egress_flush_backpressure_stress_test` now passes
+    without `p_hold_under_backpressure` assertion hits
+  - the unread-overwrite scan remains a documented OSS non-claim, but
+    the live Avalon-ST hold-under-backpressure defect is closed
 - Fix status:
-  - open
+  - fixed
 - Commit:
   - pending
 
@@ -312,37 +317,40 @@ Class legend:
     `FORMAL_SBY_TASKS=prove`
     on `2026-04-18`
 - Symptom:
-  - the first live `opq_oss_ingress` proof now parses, elaborates, and
-    reaches the Bitwuzla engine, and the harness now uses explicit OSS
-    credit debug mirrors instead of implicit hierarchical wires
-  - the `2026-04-18` follow-up rework also added `shd_len_dbg_oss`,
-    a longer post-reset warmup window, and explicit legal-state
-    assumptions for `WR_HITS` plus drop-cause exclusivity in the OSS harness
-  - after those reductions, the remaining failing assertions are down to
-    the sampled ticket-credit/write coupling, so the blocker has narrowed
-    from generic sampled-decision mismatches to one registered-accounting
-    phase issue
+  - the first live `opq_oss_ingress` proof parsed, elaborated, and
+    reached Bitwuzla, but it false-failed on apparent credit-range and
+    ticket-write assertions
+  - the counterexample showed the harness was consuming `lane_issue_dbg_oss`
+    / `ticket_issue_dbg_oss` during reset-warmup, before the parser had
+    reached a meaningful post-reset tracking window
+  - that created fake outstanding-credit state in the harness, which in
+    turn allowed over-return traces and later drove false failures on
+    phase-ambiguous public `*_credit_dbg_oss` observability ports
 - Root cause status:
-  - open
-  - the lightweight OSS harness now encodes the legal `WR_HITS`
-    / drop-cause states explicitly, but it still does not match the
-    internal parser/input shadow timing well enough to prove the last
-    registered ticket-credit / write coupling property in Yosys/SBY
-- Blocking reason:
-  - kept as an open harness blocker because the ingress OSS proof has
-    moved past parsing/tool readiness and the old fake credit model, and
-    now needs a cleaner sampled write/drop strategy instead of more ad
-    hoc weakening
-- Candidate fixes:
-  - export or bind a dedicated pre-update shadow for the ingress ticket
-    credit update plus the public `ticket_we` pulse, then assert against
-    that stable phase in the OSS harness
-  - alternatively, add an OSS-only helper wrapper around the parser that
-    re-times the registered write outputs into proof-friendly sampled state
+  - fixed
+  - the bug was in the OSS harness, not the DUT: credit accounting began
+    one phase too early and treated debug-credit buses as exact proof
+    anchors even though same-cycle return/write behavior can legitimately
+    make those observability signals ambiguous under SBY sampling
+- Fix:
+  - freeze harness credit accounting until a real post-reset tracking
+    window is active
+  - prove pulse-level contracts instead of phase-ambiguous free-credit
+    buses:
+    `lane_issue_dbg_oss == lane_we`,
+    `ticket_issue_dbg_oss == ticket_we`,
+    and drop-vs-write exclusivity
+- Runtime / proof context:
+  - `formal_ingress.sh` now records `compile=pass`, `elab=pass`,
+    `formal=sby_pass`
+  - the current ingress OSS subset proves packet-shape assumptions plus
+    live write/drop consistency on the native parser path
+  - non-claim: public free-credit debug counters remain observability
+    signals and are not used as exact proof anchors in the OSS subset
 - Fix status:
-  - open
+  - fixed
 - Commit:
-  - pending
+  - `1048b6c` `Tighten OPQ OSS ingress proof warmup gating`
 
 ### BUG-016-H: OSS basic-presenter SBY lowering hits a logic loop in the overwrite scan path
 - First seen in:
@@ -369,7 +377,7 @@ Class legend:
 - Fix status:
   - fixed
 - Commit:
-  - pending
+  - `f8448ac` `Advance OPQ OSS formal proof slices`
 
 ### BUG-017-H: OSS mover SBY harness now reaches proof but still fails on arbiter-shape invariants
 - First seen in:
@@ -393,7 +401,7 @@ Class legend:
 - Fix status:
   - fixed
 - Commit:
-  - pending
+  - `de65125` `Stabilize OPQ mixed-soak accounting and OSS proofs`
 
 ### BUG-018-H: Extended mixed-bucket seconds soak exposes chained masked-drop accounting underrun
 - First seen in:
@@ -405,12 +413,17 @@ Class legend:
   - the earlier extended mixed-soak bug-hunt screen no longer reproduces
     the old scoreboard `Drop accounting underrun ... source=monitor`
     hole from step `3` / `5`
-  - with that scoreboard handoff repaired, the same stretched run now
-    trips the live `opq_hit3_contract` SVA instead:
+  - the first stretched rerun after that scoreboard repair was able to
+    reach much deeper chained traffic and then tripped the live
+    `opq_hit3_contract` SVA instead:
     `hit word arrived without a pending non-empty sub-header`
   - the first current reproducer appears around mixed-soak step `190`
     (`mixed_idle_lane_bp_190`) and the same contract failure repeats
     later in the run
+  - after the `BUG-014-R` presenter fix, an exploratory rerun advanced
+    through at least mixed-soak step `49` and about `3.0 ms` of sim time
+    without reproducing that earlier failure window, but the full
+    promoted-length rerun has not completed yet
 - Root cause status:
   - open
   - isolated lane-mask and lane-mask-recovery cases are green, so the
@@ -421,8 +434,9 @@ Class legend:
     break under longer chained traffic
 - Blocking reason:
   - `opq_cross_mixed_bucket_seconds_soak_test` is intentionally kept
-    probe-only; promoting it as CROSS evidence would hide a real chained
-    no-restart hit-contract failure
+    probe-only until the full stretched rerun is finished; the earlier
+    `opq_hit3_contract` evidence has improved after the presenter repair,
+    but it has not been retired honestly yet
 - Candidate fixes:
   - correlate the `opq_hit3_contract` failures against the mixed-step
     schedule and reconstruct the missing sub-header/hit sequence in the

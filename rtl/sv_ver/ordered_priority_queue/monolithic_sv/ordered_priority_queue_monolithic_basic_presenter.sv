@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_basic_presenter
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.20
+// Version : 26.3.22
 // Date    : 20260418
-// Change  : Keep the native overwrite-drop path intact while splitting the OSS-formal presenter subset into a feed-forward oversize-only drop path so Yosys/SBY can prove the live egress hold contract
+// Change  : Hold the synchronous page-RAM return across egress backpressure so the basic presenter does not skip or duplicate frame words on stalled resume
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_basic_presenter #(
@@ -87,6 +87,9 @@ module ordered_priority_queue_monolithic_basic_presenter #(
   logic pkt_accept_started;
   logic suppress_next_packet_complete;
   logic [PAGE_RAM_DATA_WIDTH-1:0] launch_data;
+  logic [PAGE_RAM_DATA_WIDTH-1:0] pipe_input_data;
+  logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_rd_data_skid;
+  logic page_ram_skid_valid;
   logic [FRAME_LEN_WIDTH-1:0] new_frame_length_full;
   page_ram_addr_t new_frame_length;
   logic new_frame_oversize;
@@ -192,12 +195,17 @@ module ordered_priority_queue_monolithic_basic_presenter #(
       launch_word_cnt = pkt_rd_word_cnt + PAGE_RAM_ADDR_ONE_CONST;
     end
 
+    pipe_input_data = page_ram_rd_data_i;
+    if (page_ram_skid_valid) begin
+      pipe_input_data = page_ram_rd_data_skid;
+    end
+
     launch_data = output_data;
     if (advance_output_pipe) begin
       if (EGRESS_DELAY > 1) begin
         launch_data = output_data_pipe[EGRESS_DELAY-2];
       end else begin
-        launch_data = page_ram_rd_data_i;
+        launch_data = pipe_input_data;
       end
     end
 
@@ -222,9 +230,13 @@ module ordered_priority_queue_monolithic_basic_presenter #(
 
 `ifdef OPQ_OSS_FORMAL
   always_comb begin : proc_overwrite_drop_plan
+    // Once a word is visible at the egress interface, the current head is
+    // live even if ready is low. Overwrite-drop must not flush that head
+    // until the visible beat is accepted, or the Avalon-ST hold contract
+    // and packet framing can break on the first stalled beat.
     overwrite_head_accepted_or_accepting =
       (presenter_state == FTABLE_PRESENTER_PRESENTING) &&
-      (pkt_accept_started || (output_data_valid[EGRESS_DELAY] && aso_egress_ready));
+      (pkt_accept_started || output_data_valid[EGRESS_DELAY]);
     overwrite_drop_valid_next = 1'b0;
     overwrite_drop_flush_head = 1'b0;
     overwrite_drop_rptr_next = meta_rptr;
@@ -253,9 +265,13 @@ module ordered_priority_queue_monolithic_basic_presenter #(
     logic [31:0] scan_shd_cnt;
     logic [31:0] scan_hit_cnt;
 
+    // Once a word is visible at the egress interface, the current head is
+    // live even if ready is low. Overwrite-drop must not flush that head
+    // until the visible beat is accepted, or the Avalon-ST hold contract
+    // and packet framing can break on the first stalled beat.
     overwrite_head_accepted_or_accepting =
       (presenter_state == FTABLE_PRESENTER_PRESENTING) &&
-      (pkt_accept_started || (output_data_valid[EGRESS_DELAY] && aso_egress_ready));
+      (pkt_accept_started || output_data_valid[EGRESS_DELAY]);
     overwrite_drop_valid_next = 1'b0;
     overwrite_drop_flush_head = 1'b0;
     overwrite_drop_rptr_next = meta_rptr;
@@ -363,12 +379,14 @@ module ordered_priority_queue_monolithic_basic_presenter #(
       pkt_rd_word_cnt <= '0;
       retire_pending <= 1'b0;
       pkt_accept_started <= 1'b0;
+      page_ram_skid_valid <= 1'b0;
     end else begin
       unique case (presenter_state)
         FTABLE_PRESENTER_IDLE: begin
           if (is_new_pkt_head) begin
             presenter_state <= FTABLE_PRESENTER_WAIT_FOR_COMPLETE;
             pkt_accept_started <= 1'b0;
+            page_ram_skid_valid <= 1'b0;
           end
         end
 
@@ -379,6 +397,7 @@ module ordered_priority_queue_monolithic_basic_presenter #(
             pkt_rd_word_cnt <= '0;
             retire_pending <= 1'b0;
             pkt_accept_started <= 1'b0;
+            page_ram_skid_valid <= 1'b0;
           end
         end
 
@@ -391,8 +410,15 @@ module ordered_priority_queue_monolithic_basic_presenter #(
               meta_rptr <= meta_rptr + META_PTR_ONE_CONST;
               retire_pending <= 1'b0;
               pkt_accept_started <= 1'b0;
+              page_ram_skid_valid <= 1'b0;
             end
           end else begin
+            if (output_data_valid[EGRESS_DELAY] && !aso_egress_ready) begin
+              if (!page_ram_skid_valid) begin
+                page_ram_rd_data_skid <= page_ram_rd_data_i;
+                page_ram_skid_valid <= 1'b1;
+              end
+            end
             if (output_data_valid[EGRESS_DELAY] && aso_egress_ready) begin
               pkt_rd_word_cnt <= pkt_rd_word_cnt + PAGE_RAM_ADDR_ONE_CONST;
               pkt_accept_started <= 1'b1;
@@ -402,11 +428,14 @@ module ordered_priority_queue_monolithic_basic_presenter #(
               for (pipe_valid_idx = 0; pipe_valid_idx < EGRESS_DELAY; pipe_valid_idx = pipe_valid_idx + 1) begin
                 output_data_valid[pipe_valid_idx+1] <= output_data_valid[pipe_valid_idx];
               end
-              output_data_pipe[0] <= page_ram_rd_data_i;
+              output_data_pipe[0] <= pipe_input_data;
               for (pipe_data_idx = 0; pipe_data_idx < EGRESS_DELAY-1; pipe_data_idx = pipe_data_idx + 1) begin
                 output_data_pipe[pipe_data_idx+1] <= output_data_pipe[pipe_data_idx];
               end
               page_ram_rptr <= page_ram_rptr + PAGE_RAM_ADDR_ONE_CONST;
+              if (page_ram_skid_valid) begin
+                page_ram_skid_valid <= 1'b0;
+              end
             end
 
             if (advance_output_pipe && launch_is_trailer) begin
@@ -441,6 +470,8 @@ module ordered_priority_queue_monolithic_basic_presenter #(
       pkt_rd_word_cnt <= '0;
       retire_pending <= 1'b0;
       pkt_accept_started <= 1'b0;
+      page_ram_rd_data_skid <= '0;
+      page_ram_skid_valid <= 1'b0;
       suppress_next_packet_complete <= 1'b0;
       ft_drop_valid_o <= 1'b0;
       ft_drop_hdr_cnt_o <= '0;

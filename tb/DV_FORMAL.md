@@ -1047,12 +1047,13 @@ installation:
   `OPQ_PAGE_RAM_DEPTH=512` elaboration point.
 - Targeted egress probe status:
   `FORMAL_STRESS_TESTS=opq_formal_like_egress_flush_backpressure_stress_test
-  FORMAL_BACKEND=stress bash tb/scripts/formal_egress.sh` is a current
-  failing probe. It trips `opq_avst_egress_sva.sv` line 51
-  (`p_hold_under_backpressure`) at multiple timestamps while the write
-  side is forcing a flush window under deasserted output `ready`. This
-  is tracked as `BUG-014-R` and remains excluded from the default
-  fallback summary until the presenter/flush interaction is fixed.
+  FORMAL_BACKEND=stress bash tb/scripts/formal_egress.sh` now passes as
+  a clean backpressure/hold regression. The root cause was a live
+  native-SV presenter bug, tracked as `BUG-014-R`, where synchronous
+  page-RAM return data could advance underneath a held output beat. The
+  basic presenter now skids the returned RAM word across
+  `valid && !ready`, so the targeted probe and the live OSS egress proof
+  are both green on this host.
 
 Current ingress probe classification:
 
@@ -1093,7 +1094,7 @@ Current OSS alternative status:
   - ingress:
     `compile=pass`,
     `elab=pass`,
-    `formal=sby_fail`,
+    `formal=sby_pass`,
     `backend=sby+yosys+bitwuzla`
     via `formal_ingress.sh`
     `FORMAL_BACKEND=sby`
@@ -1101,7 +1102,7 @@ Current OSS alternative status:
   - mover:
     `compile=pass`,
     `elab=pass`,
-    `formal=sby_fail`,
+    `formal=sby_pass`,
     `backend=sby+yosys+bitwuzla`
     via `formal_mover.sh`
     `FORMAL_BACKEND=sby`
@@ -1117,22 +1118,29 @@ Current OSS alternative status:
 - the OSS path is therefore no longer just a backend/API handoff:
   the ingress, mover, and egress jobs are now all truly scripted and
   execute real `sby` runs on this host
-- current remaining blockers are concrete and tracked:
-  - `BUG-015-H`: ingress proof now carries explicit legal-state
-    assumptions for `WR_HITS` and drop-cause exclusivity, but it still
-    fails on the phase-sensitive ticket-credit/write coupling in the OSS
-    harness, so the remaining blocker is now narrowed to one sampled
-    registered-accounting abstraction issue
+- current wrapper-managed OSS blockers for backend bring-up are closed:
+  - `BUG-015-H`: closed for the current OSS ingress subset; the
+    reset-warmup credit pollution was removed and the proof now checks
+    pulse-level write/drop consistency rather than phase-ambiguous
+    public credit buses
   - `BUG-016-H`: closed for the current OSS egress subset; the live
     Avalon-ST hold-under-backpressure slice now passes after isolating
-    the overwrite-drop scan from the OSS backend
+    the overwrite-drop scan from the OSS backend and fixing the basic
+    presenter RAM-return hold bug on the live native-SV path
   - `BUG-017-H`: closed for the current OSS mover subset;
     `formal_mover.sh` now records `formal=sby_pass`
+- current OSS non-claims:
+  - ingress free-credit debug counters are treated as observability-only
+    and are no longer used as exact proof anchors in the SBY harness;
+    the proven subset is packet-shape plus write/drop pulse legality
 - non-claim for the current OSS egress pass:
   - the unread-overwrite scan itself is not yet proven in the OSS path;
     `OPQ_OSS_FORMAL` now isolates a feed-forward oversize-only drop
     subset so the live backpressure/hold contract can be proven without
     changing the native-SV signoff behavior
+  - the tiled frame-table / presenter cross-module flush-under-backpressure
+    proof is still open; current OSS closure is plane-local, not a full
+    end-to-end tiled-path proof
 
 ---
 

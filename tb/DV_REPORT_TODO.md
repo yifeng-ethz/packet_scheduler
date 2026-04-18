@@ -205,6 +205,12 @@ comparison path, but it must not contribute to final signoff evidence.
 - [ ] Resolve the hit-without-subheader contract failure still exposed by
       `opq_cross_mixed_bucket_seconds_soak_test` before promoting the earlier
       extended mixed-soak screen into the live report set.
+      Status on `2026-04-18` after the `BUG-014-R` presenter repair:
+      - an exploratory rerun advanced through at least mixed-soak step `49`
+        and about `3.0 ms` sim time without reproducing the earlier
+        `opq_hit3_contract` failure window
+      - keep this item open until the full stretched rerun completes on the
+        fixed presenter state
 - [x] Resolve the native-SV no-reset drain / credit-restore bug before calling
       `bucket_frame` or `all_buckets_frame` signoff closed.
 - [ ] Add enough late-drop observability to prove hit integrity on the bursty
@@ -294,9 +300,8 @@ comparison path, but it must not contribute to final signoff evidence.
           `opq_edge_stuck_low_backpressure_test`
       - targeted probe status:
         - `FORMAL_STRESS_TESTS=opq_formal_like_egress_flush_backpressure_stress_test`
-          currently fails on `opq_avst_egress_sva`
-          `p_hold_under_backpressure`; tracked in `BUG-014-R` and kept
-          probe-only
+          now passes as a clean backpressure/hold regression after the
+          `BUG-014-R` presenter read-data skid fix
       - ingress probe-only exclusions:
         `opq_error_header_mask_recovery_test`,
         `opq_error_header_word_mask_recovery_test`
@@ -320,24 +325,33 @@ comparison path, but it must not contribute to final signoff evidence.
       - first wrapper-managed `sby` round is captured in
         `tb/formal_runs/csv/formal_{ingress,mover,egress}_latest.csv`
       - current tracked blockers:
-        - `BUG-015-H`: ingress now uses explicit legal-state assumptions
-          for `WR_HITS` / drop-cause exclusivity, and the remaining
-          blocker is the phase-sensitive ticket-credit/write coupling
-          in the OSS harness
+        - `BUG-015-H`: closed for the current OSS ingress subset; the
+          harness now freezes credit accounting until post-reset tracking
+          is valid and proves pulse-level write/drop consistency without
+          using phase-ambiguous public credit buses as exact anchors
         - `BUG-016-H`: closed for the current OSS egress subset; the
           live hold-under-backpressure presenter proof now passes
         - `BUG-017-H`: closed for the current OSS mover subset;
           `formal_mover.sh` now records `formal=sby_pass`
-- [ ] Close `BUG-015-H` by reworking the ingress OSS proof to sample
-      phase-correct write/drop state all the way through the registered
-      public outputs, or by replacing the remaining local-state
-      assumptions with a proof-friendly parser wrapper.
+- [x] Close `BUG-015-H` by removing reset-warmup credit pollution from
+      the ingress OSS harness and proving packet/write/drop consistency
+      on pulse-level signals instead of phase-ambiguous debug counters.
+      Status on `2026-04-18`:
+      - `formal_ingress.sh` now records `formal=sby_pass`
+      - the current OSS ingress subset proves packet-shape assumptions,
+        write/drop exclusivity, and `lane_we` / `ticket_we` pulse
+        consistency on the live parser path
+      - public free-credit debug counters remain a documented non-claim
+        for the OSS subset because they are observability signals, not
+        stable proof anchors
 - [x] Close `BUG-016-H` by rewriting or isolating the overwrite-drop scan
       so the basic-presenter OSS proof can reach actual hold-under-backpressure
       properties instead of stopping in Yosys lowering.
       Status on `2026-04-18`:
       - `formal_egress.sh` now records `formal=sby_pass`
       - the current OSS subset proves the live Avalon-ST hold contract
+      - the old targeted stress probe now also passes after the live
+        presenter fix for synchronous page-RAM return under held `ready`
       - unread-overwrite scan proof remains a documented non-claim for
         the OSS subset and still needs a separate proof strategy later
 - [x] Close `BUG-017-H` by exporting or constraining a proof-clean arbiter

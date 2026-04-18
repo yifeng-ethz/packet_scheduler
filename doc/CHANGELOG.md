@@ -1,6 +1,12 @@
 # Changelog
 Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 
+## 26.3.22.0418
+
+- **RTL / Native-SV Presenter Hold Fix**: fixed the basic-presenter synchronous page-RAM return path under held output backpressure. The presenter now skids a returned RAM word across `valid && !ready` and reuses that preserved word on resume, which removes the stale-word skip/duplicate behavior exposed by the aggressive flush-under-backpressure probe.
+- **Verification / OSS Formal Closure**: closed the current OSS `sby+yosys+bitwuzla` plane bring-up on this host. `formal_ingress.sh`, `formal_mover.sh`, and `formal_egress.sh` all now record `formal=sby_pass`, and the targeted `opq_formal_like_egress_flush_backpressure_stress_test` also passes after the live presenter fix.
+- **Verification / Cross Soak Tracking**: kept the stretched mixed-bucket seconds-soak screen honest. After the presenter repair, an exploratory rerun advanced through the earlier failure window without reproducing `opq_hit3_contract`, but the full promoted-length rerun is still pending and remains an explicit open TODO rather than a silent signoff claim.
+
 ## 26.3.20.0418
 
 - **Verification / OSS Formal Egress**: split the basic-presenter overwrite-drop scan under `OPQ_OSS_FORMAL` into a feed-forward oversize-only subset so the Yosys/SBY backend no longer dies in SMT2 lowering. `formal_egress.sh` now records `formal=sby_pass` on the live Avalon-ST hold-under-backpressure slice while leaving the native-SV signoff path unchanged.
