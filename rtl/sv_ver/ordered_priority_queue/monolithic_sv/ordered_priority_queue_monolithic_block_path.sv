@@ -63,6 +63,11 @@ module ordered_priority_queue_monolithic_block_path #(
   output logic [N_LANE-1:0]                                page_ram_src_lane_dbg_oss,
   output logic [PAGE_RAM_ADDR_WIDTH-1:0]                   page_ram_src_addr_dbg_oss,
   output logic [PAGE_RAM_DATA_WIDTH-1:0]                   page_ram_src_data_dbg_oss,
+  output logic                                             page_ram_src_valid_comb_dbg_oss,
+  output logic                                             page_ram_src_is_pa_comb_dbg_oss,
+  output logic [N_LANE-1:0]                                page_ram_src_lane_comb_dbg_oss,
+  output logic [PAGE_RAM_ADDR_WIDTH-1:0]                   page_ram_src_addr_comb_dbg_oss,
+  output logic [PAGE_RAM_DATA_WIDTH-1:0]                   page_ram_src_data_comb_dbg_oss,
 `endif
   input  logic                                             d_clk,
   input  logic                                             d_reset
@@ -277,6 +282,18 @@ module ordered_priority_queue_monolithic_block_path #(
     lock_event_dbg_oss = drr_lock_event_dbg;
     defer_event_dbg_oss = drr_defer_event_dbg;
     locked_dbg_oss = (arbiter_state == ARBITER_LOCKED);
+    page_ram_src_valid_comb_dbg_oss = page_ram_we_comb;
+    page_ram_src_is_pa_comb_dbg_oss = 1'b0;
+    page_ram_src_lane_comb_dbg_oss = '0;
+    page_ram_src_addr_comb_dbg_oss = page_ram_wr_addr_comb;
+    page_ram_src_data_comb_dbg_oss = page_ram_wr_data_comb;
+    if (page_ram_we_comb) begin
+      if (page_allocator_write_head_i || page_allocator_write_tail_i || page_allocator_write_page_i) begin
+        page_ram_src_is_pa_comb_dbg_oss = page_allocator_page_we_i;
+      end else begin
+        page_ram_src_lane_comb_dbg_oss = b2p_arb_gnt;
+      end
+    end
 `endif
   end
 

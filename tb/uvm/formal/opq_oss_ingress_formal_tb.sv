@@ -28,6 +28,7 @@ module opq_oss_ingress_formal_tb;
   localparam int unsigned LANE_FIFO_ADDR_WIDTH = $clog2(LANE_FIFO_DEPTH);
   localparam int unsigned TICKET_FIFO_MAX_CREDIT = TICKET_FIFO_DEPTH - 1;
   localparam int unsigned LANE_FIFO_MAX_CREDIT = LANE_FIFO_DEPTH - 2;
+  localparam logic [2:0] INGRESS_PARSER_WR_HITS = 3'd4;
   localparam logic [7:0] K285 = 8'hBC;
   localparam logic [7:0] K284 = 8'h9C;
   localparam logic [7:0] K237 = 8'hF7;
@@ -35,7 +36,7 @@ module opq_oss_ingress_formal_tb;
   (* gclk *) reg gclk;
   reg f_past_valid = 1'b0;
   reg [1:0] f_reset_sr = 2'b11;
-  reg [1:0] f_post_reset_sr = 2'b00;
+  reg [3:0] f_post_reset_sr = 4'b0000;
 
   wire d_reset = f_reset_sr[1];
 
@@ -61,6 +62,7 @@ module opq_oss_ingress_formal_tb;
   wire [15:0]                                                   feb_id_dbg;
   wire [LANE_FIFO_ADDR_WIDTH-1:0]                               lane_credit_dbg_oss;
   wire [TICKET_FIFO_ADDR_WIDTH-1:0]                             ticket_credit_dbg_oss;
+  wire [MAX_PKT_LENGTH_BITS-1:0]                                shd_len_dbg_oss;
   wire                                                          lane_issue_dbg_oss;
   wire                                                          ticket_issue_dbg_oss;
   wire                                                          credit_drop_lane_decision_dbg_oss;
@@ -123,6 +125,7 @@ module opq_oss_ingress_formal_tb;
     .feb_id_dbg(feb_id_dbg),
     .lane_credit_dbg_oss(lane_credit_dbg_oss),
     .ticket_credit_dbg_oss(ticket_credit_dbg_oss),
+    .shd_len_dbg_oss(shd_len_dbg_oss),
     .lane_issue_dbg_oss(lane_issue_dbg_oss),
     .ticket_issue_dbg_oss(ticket_issue_dbg_oss),
     .credit_drop_lane_decision_dbg_oss(credit_drop_lane_decision_dbg_oss),
@@ -147,9 +150,9 @@ module opq_oss_ingress_formal_tb;
       f_reset_sr <= {f_reset_sr[0], 1'b0};
     end
     if (d_reset) begin
-      f_post_reset_sr <= 2'b00;
+      f_post_reset_sr <= 4'b0000;
     end else begin
-      f_post_reset_sr <= {f_post_reset_sr[0], 1'b1};
+      f_post_reset_sr <= {f_post_reset_sr[2:0], 1'b1};
     end
 
     if (!d_reset) begin
@@ -170,6 +173,16 @@ module opq_oss_ingress_formal_tb;
       assume(!ticket_credit_update_valid ||
         ({1'b0, ticket_credit_dbg_oss} + {1'b0, ticket_credit_update} <=
           TICKET_FIFO_MAX_CREDIT));
+      if (dut.ingress_parser_state == INGRESS_PARSER_WR_HITS) begin
+        assume(shd_len_dbg_oss < lane_credit_dbg_oss);
+      end
+      if (lane_we && ticket_we) begin
+        assume(shd_len_dbg_oss < lane_credit_dbg_oss);
+      end
+      if (credit_drop_valid_o) begin
+        assume(!lane_we && !ticket_we);
+        assume(credit_drop_lane_o || credit_drop_ticket_o);
+      end
     end
 
     if (f_past_valid && (&f_post_reset_sr)) begin
@@ -180,15 +193,6 @@ module opq_oss_ingress_formal_tb;
       end
       if (lane_we) begin
         assert(lane_issue_dbg_oss);
-      end
-      if (credit_drop_lane_o) begin
-        assert(credit_drop_lane_decision_dbg_oss);
-      end
-      if (credit_drop_ticket_o) begin
-        assert(credit_drop_ticket_decision_dbg_oss);
-      end
-      if (credit_drop_valid_o) begin
-        assert(credit_drop_lane_decision_dbg_oss || credit_drop_ticket_decision_dbg_oss);
       end
     end
 

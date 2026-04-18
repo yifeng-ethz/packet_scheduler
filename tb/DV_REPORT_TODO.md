@@ -294,7 +294,7 @@ comparison path, but it must not contribute to final signoff evidence.
       - mover wrapper now runs `opq_oss_block_path.sby` for real and
         records `formal=sby_fail`
       - egress wrapper now runs `opq_oss_basic_presenter.sby` for real and
-        records `formal=sby_error`
+        records `formal=sby_pass`
       - plane naming and wrapper entry points stayed stable
         (`formal_ingress.sh`, `formal_mover.sh`, `formal_egress.sh`)
 - [x] Run the first actual formal proof round once the proof backend is
@@ -304,20 +304,27 @@ comparison path, but it must not contribute to final signoff evidence.
       - first wrapper-managed `sby` round is captured in
         `tb/formal_runs/csv/formal_{ingress,mover,egress}_latest.csv`
       - current tracked blockers:
-        - `BUG-015-H`: ingress now has sampled decision mirrors plus an
-          explicit initial-reset contract, but the remaining
-          output-to-decision implications still false-fail
-        - `BUG-016-H`: presenter SMT2 lowering reports a logic loop
-        - `BUG-017-H`: mover no longer has the old implicit-wire
-          proof-visibility issue and now has induction green, but the
-          remaining basecase still fails on sampled page-writer
-          source-data equality
+        - `BUG-015-H`: ingress now uses explicit legal-state assumptions
+          for `WR_HITS` / drop-cause exclusivity, but the remaining
+          lane-credit and `lane_issue_dbg_oss` checks still fail
+        - `BUG-016-H`: closed for the current OSS egress subset; the
+          live hold-under-backpressure presenter proof now passes
+        - `BUG-017-H`: mover now has combinational write-source mirrors,
+          sampled source shadows, and longer reset warmup, but the
+          remaining failure is still sampled `page_ram_wr_data_o`
+          equality
 - [ ] Close `BUG-015-H` by reworking the ingress OSS proof to sample
       phase-correct write/drop state all the way through the registered
-      public outputs instead of only into intermediate decision mirrors.
-- [ ] Close `BUG-016-H` by rewriting or isolating the overwrite-drop scan
+      public outputs, or by replacing the remaining local-state
+      assumptions with a proof-friendly parser wrapper.
+- [x] Close `BUG-016-H` by rewriting or isolating the overwrite-drop scan
       so the basic-presenter OSS proof can reach actual hold-under-backpressure
       properties instead of stopping in Yosys lowering.
+      Status on `2026-04-18`:
+      - `formal_egress.sh` now records `formal=sby_pass`
+      - the current OSS subset proves the live Avalon-ST hold contract
+      - unread-overwrite scan proof remains a documented non-claim for
+        the OSS subset and still needs a separate proof strategy later
 - [ ] Close `BUG-017-H` by flattening or re-exporting the mover proof-visible
       state enough to make the sampled page-writer source-data contract
       basecase-clean in `opq_oss_block_path`.

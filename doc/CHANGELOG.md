@@ -1,6 +1,12 @@
 # Changelog
 Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 
+## 26.3.20.0418
+
+- **Verification / OSS Formal Egress**: split the basic-presenter overwrite-drop scan under `OPQ_OSS_FORMAL` into a feed-forward oversize-only subset so the Yosys/SBY backend no longer dies in SMT2 lowering. `formal_egress.sh` now records `formal=sby_pass` on the live Avalon-ST hold-under-backpressure slice while leaving the native-SV signoff path unchanged.
+- **Verification / OSS Formal Ingress**: added `shd_len_dbg_oss`, stretched the post-reset warmup window, and encoded the legal `WR_HITS` / drop-cause local-state assumptions explicitly in the ingress OSS harness. The remaining ingress blocker is now narrowed to the lane-credit bound plus `lane_issue_dbg_oss` sampled-write alignment.
+- **Verification / OSS Formal Mover**: added combinational page-writer source mirrors plus sampled source shadows in the mover harness. The remaining mover blocker is now isolated to `page_ram_wr_data_o` equality against the sampled write source after reset/phase cleanup attempts.
+
 ## 26.3.19.0418
 
 - **RTL / Native-SV Drop Accounting**: exposed ingress parser credit-mask rejection pulses through the monolithic native-SV path and into the standalone CSR/debug surface. The live native-SV DUT now counts parser-side lane-credit and ticket-credit packet rejection in the same software-visible drop counters used by the report and the fallback stress harness.

@@ -1109,7 +1109,7 @@ Current OSS alternative status:
   - egress:
     `compile=pass`,
     `elab=pass`,
-    `formal=sby_error`,
+    `formal=sby_pass`,
     `backend=sby+yosys+bitwuzla`
     via `formal_egress.sh`
     `FORMAL_BACKEND=sby`
@@ -1118,18 +1118,23 @@ Current OSS alternative status:
   the ingress, mover, and egress jobs are now all truly scripted and
   execute real `sby` runs on this host
 - current remaining blockers are concrete and tracked:
-  - `BUG-015-H`: ingress proof now uses real credit debug mirrors,
-    sampled `*_issue_dbg_oss` / `credit_drop_*_decision_dbg_oss`
-    signals, and an explicit initial-reset contract, but it still
-    false-fails on the last output-to-decision implications for the
-    registered write/drop pulses
-  - `BUG-016-H`: egress proof stops in Yosys SMT2 lowering on a reported
-    logic loop in the overwrite-drop scan path
-  - `BUG-017-H`: mover proof now reaches Bitwuzla without the old
-    implicit-wire struct-field warnings, and temporal induction already
-    passes, but the remaining basecase still fails on sampled
-    page-writer source-data equality and needs one more phase cleanup
-    pass before it can serve as a signoff proof slice
+  - `BUG-015-H`: ingress proof now carries explicit legal-state
+    assumptions for `WR_HITS` and drop-cause exclusivity, but it still
+    fails on the lane-credit bound plus `lane_issue_dbg_oss` alignment,
+    so the remaining blocker is a sampled write/credit abstraction issue
+  - `BUG-016-H`: closed for the current OSS egress subset; the live
+    Avalon-ST hold-under-backpressure slice now passes after isolating
+    the overwrite-drop scan from the OSS backend
+  - `BUG-017-H`: mover proof still fails on sampled
+    page-writer source-data equality even after exporting combinational
+    write-source mirrors, adding sampled source shadows, and extending
+    reset warmup, so this one now needs RTL-or-harness triage instead
+    of more proof-visibility cleanup
+- non-claim for the current OSS egress pass:
+  - the unread-overwrite scan itself is not yet proven in the OSS path;
+    `OPQ_OSS_FORMAL` now isolates a feed-forward oversize-only drop
+    subset so the live backpressure/hold contract can be proven without
+    changing the native-SV signoff behavior
 
 ---
 

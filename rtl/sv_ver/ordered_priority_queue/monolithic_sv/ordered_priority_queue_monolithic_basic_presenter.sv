@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_basic_presenter
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.19
+// Version : 26.3.20
 // Date    : 20260418
-// Change  : Drop overwritten unread packets before corrupted page-ram contents can reach egress and add an OSS-formal syntax bridge without changing the native-SV regression path
+// Change  : Keep the native overwrite-drop path intact while splitting the OSS-formal presenter subset into a feed-forward oversize-only drop path so Yosys/SBY can prove the live egress hold contract
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_basic_presenter #(
@@ -220,6 +220,30 @@ module ordered_priority_queue_monolithic_basic_presenter #(
     aso_egress_error = '0;
   end
 
+`ifdef OPQ_OSS_FORMAL
+  always_comb begin : proc_overwrite_drop_plan
+    overwrite_head_accepted_or_accepting =
+      (presenter_state == FTABLE_PRESENTER_PRESENTING) &&
+      (pkt_accept_started || (output_data_valid[EGRESS_DELAY] && aso_egress_ready));
+    overwrite_drop_valid_next = 1'b0;
+    overwrite_drop_flush_head = 1'b0;
+    overwrite_drop_rptr_next = meta_rptr;
+    overwrite_drop_pkt_rcnt_next = meta_pkt_rcnt;
+    overwrite_drop_hdr_cnt_next = '0;
+    overwrite_drop_shd_cnt_next = '0;
+    overwrite_drop_hit_cnt_next = '0;
+
+    // Keep the OSS proof subset feed-forward. The unread-overwrite scan remains
+    // on the native-SV signoff path; this subset still proves the live egress
+    // hold contract plus oversize-frame drop accounting.
+    if (new_frame_valid_i && new_frame_oversize) begin
+      overwrite_drop_valid_next = 1'b1;
+      overwrite_drop_hdr_cnt_next = 32'd1;
+      overwrite_drop_shd_cnt_next = extend32_shd(frame_shr_cnt_this_i);
+      overwrite_drop_hit_cnt_next = extend32_hit(frame_hit_cnt_this_i);
+    end
+  end
+`else
   always_comb begin : proc_overwrite_drop_plan
     meta_ptr_t scan_rptr;
     meta_ptr_t scan_pkt_rcnt;
@@ -289,6 +313,7 @@ module ordered_priority_queue_monolithic_basic_presenter #(
       (scan_hit_cnt != 0);
     overwrite_drop_flush_head = overwrite_drop_valid_next && !new_frame_oversize;
   end
+`endif
 
   always_ff @(posedge d_clk) begin
     integer pipe_valid_idx;

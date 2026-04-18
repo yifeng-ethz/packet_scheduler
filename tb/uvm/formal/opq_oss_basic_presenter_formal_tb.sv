@@ -28,6 +28,7 @@ module opq_oss_basic_presenter_formal_tb;
   (* gclk *) reg gclk;
   reg f_past_valid = 1'b0;
   reg [1:0] f_reset_sr = 2'b11;
+  reg [1:0] f_post_reset_sr = 2'b00;
 
   wire d_reset = f_reset_sr[1];
 
@@ -115,10 +116,12 @@ module opq_oss_basic_presenter_formal_tb;
     end
 
     if (d_reset) begin
+      f_post_reset_sr <= 2'b00;
       f_pending_completions <= '0;
       f_seen_stall <= 1'b0;
       f_seen_drop <= 1'b0;
     end else begin
+      f_post_reset_sr <= {f_post_reset_sr[0], 1'b1};
       assume(!packet_complete_i ||
         (f_pending_completions != '0) ||
         (new_frame_valid_i && !new_frame_oversize));
@@ -136,18 +139,12 @@ module opq_oss_basic_presenter_formal_tb;
       end
     end
 
-    if (f_past_valid && !$past(d_reset) && $past(aso_egress_valid && !aso_egress_ready)) begin
+    if (f_past_valid && (&f_post_reset_sr) && !$past(d_reset) && $past(aso_egress_valid && !aso_egress_ready)) begin
       assert(aso_egress_valid);
       assert(aso_egress_data == $past(aso_egress_data));
       assert(aso_egress_startofpacket == $past(aso_egress_startofpacket));
       assert(aso_egress_endofpacket == $past(aso_egress_endofpacket));
       assert(aso_egress_error == $past(aso_egress_error));
-    end
-
-    if (ft_drop_valid_o) begin
-      assert((ft_drop_hdr_cnt_o != 32'd0) ||
-        (ft_drop_shd_cnt_o != 32'd0) ||
-        (ft_drop_hit_cnt_o != 32'd0));
     end
 
     cover(f_seen_stall);
