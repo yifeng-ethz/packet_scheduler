@@ -14,7 +14,7 @@ Class legend:
 | [BUG-004-H](#bug-004-h-cross-bucket-csr-proof-used-non-feb-ingress-framing) | H | fixed | `opq_cross_bp_credit_test`, `opq_cross_drr_allowance_test` | `6b9ed41` | Cross-bucket CSR proof sequences drove split packets instead of FEB whole-frame traffic. |
 | [BUG-005-R](#bug-005-r-header-error-mask-path-corrupts-the-next-legal-frame-timestamp) | R | fixed | `opq_error_header_mask_recovery_test` | `5c0d90f` | Header-error mask recovery no longer leaks stale timestamp context into the next legal frame after the allocator was re-seeded from the captured ingress header timestamp base. |
 | [BUG-006-H](#bug-006-h-native-sv-no-restart-signoff-accounting-broke-continuous-frame-closure) | H | fixed | `opq_bucket_frame_native_sv_test`, `opq_all_buckets_frame_native_sv_test` | `b799f94` | No-restart signoff reused frame identity and miscounted malformed subheaders. |
-| [BUG-007-R](#bug-007-r-swb-4-lane-sparse-frame-cadence-drops-later-hits) | R | fixed | `opq_prof_missing_empty_frame_test` @ `OPQ_N_LANE=4` | `pending` | The old 4-lane sparse-cadence drop is no longer reproducible on current native-SV RTL. |
+| [BUG-007-R](#bug-007-r-swb-4-lane-sparse-frame-cadence-drops-later-hits) | R | fixed | `opq_prof_missing_empty_frame_test` @ `OPQ_N_LANE=4` | `466b935` | The old 4-lane sparse-cadence drop is no longer reproducible on current native-SV RTL. |
 | [BUG-008-R](#bug-008-r-forced-overwrite-path-still-emits-malformed-accepted-egress-and-no-frame-table-drop-accounting) | R | fixed | `opq_error_ftable_overflow_test` | `41948b1` | Reduced-depth forced overwrite under always-stall corrupted accepted egress and hid frame-table drop events until the native-SV presenter and CSR path were fixed. |
 | [BUG-009-R](#bug-009-r-bursty-drr-stall-boundary-path-still-corrupts-egress-ordering-and-lacks-late-drop-identity) | R | fixed | `opq_cross_drr_bursty_random_test` | `9b516d7` | Bursty DRR plus periodic stall no longer loses late active-lane traffic after the allocator holds merged-frame progress until every active busy lane has surfaced its current ticket. |
 | [BUG-010-R](#bug-010-r-header-word-recovery-path-still-corrupts-the-next-legal-frame) | R | fixed | `opq_error_header_word_mask_recovery_test` | `5c0d90f` | Header-word error injection no longer corrupts the next legal timestamp base after the recovery frame seeds from the captured ingress header timestamp base. |
@@ -26,10 +26,10 @@ Class legend:
 | [BUG-016-H](#bug-016-h-oss-basic-presenter-sby-lowering-hits-a-logic-loop-in-the-overwrite-scan-path) | H | fixed | `formal_egress.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `f8448ac` | The OSS basic-presenter proof no longer dies in SMT2 lowering; the live Avalon-ST hold-under-backpressure slice now passes on the OSS subset. |
 | [BUG-017-H](#bug-017-h-oss-mover-sby-harness-now-reaches-proof-but-still-fails-on-arbiter-shape-invariants) | H | fixed | `formal_mover.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `de65125` | The live OSS mover proof now passes on the current block-path subset after the proof-clean arbiter view was exported and constrained. |
 | [BUG-018-H](#bug-018-h-extended-mixed-bucket-seconds-soak-exposes-chained-masked-drop-accounting-underrun) | H | open | `opq_cross_mixed_bucket_seconds_soak_test` on `2026-04-18` | `pending` | The old seconds-soak accounting underrun is fixed, the exact `183..190` window plus the focused 5-step rerun are green, but the full stretched rerun still needs end-to-end revalidation for later windows. |
-| [BUG-019-R](#bug-019-r-merged-frame-header-counts-incremented-per-accepted-lane-instead-of-per-emitted-subheader) | R | fixed | `opq_basic_smoke_test` on `2026-04-18` | `pending` | The native-SV page allocator was double-counting merged subheaders in the frame header, so the advertised subheader count could exceed the emitted K237 count under multi-lane merge. |
-| [BUG-020-R](#bug-020-r-late-drop-lane-credit-return-added-stale-block-path-credit-and-poisoned-no-restart-state) | R | fixed | `opq_cross_hit3_exact_183_190_repro_test` on `2026-04-19` | `pending` | Late-drop lane-credit return pulses were adding stale block-path credit data when only one source was valid, corrupting no-restart lane-credit state and the mixed-soak exact failing window. |
+| [BUG-019-R](#bug-019-r-merged-frame-header-counts-incremented-per-accepted-lane-instead-of-per-emitted-subheader) | R | fixed | `opq_basic_smoke_test` on `2026-04-18` | `466b935` | The native-SV page allocator was double-counting merged subheaders in the frame header, so the advertised subheader count could exceed the emitted K237 count under multi-lane merge. |
+| [BUG-020-R](#bug-020-r-late-drop-lane-credit-return-added-stale-block-path-credit-and-poisoned-no-restart-state) | R | fixed | `opq_cross_hit3_exact_183_190_repro_test` on `2026-04-19` | `466b935` | Late-drop lane-credit return pulses were adding stale block-path credit data when only one source was valid, corrupting no-restart lane-credit state and the mixed-soak exact failing window. |
 | [BUG-021-R](#bug-021-r-late-frame-drop-accounting-counted-whole-frame-sop-metadata-instead-of-the-unread-ticket-tail) | R | fixed | `opq_cross_random_ready_overflow_seconds_soak_test` on `2026-04-19` | `5c0d90f` | Late-frame drop accounting used full-frame SOP metadata instead of the unread ticket tail, which double-counted already credit-dropped subheaders and broke long overflow hit conservation. |
-| [BUG-022-R](#bug-022-r-new-frame-running-ts-seeded-from-frame-header-ts-instead-of-the-current-subheader-ts) | R | fixed | `opq_cross_hit3_exact_183_190_repro_test` on `2026-04-19` | `pending` | A new frame seeded allocator `running_ts` from the frame header timestamp instead of the parser's current running subheader timestamp, so same-frame payload tickets were misclassified as `future` and the allocator could emit an empty tail before fetching payload. |
+| [BUG-022-R](#bug-022-r-new-frame-running-ts-seeded-from-frame-header-ts-instead-of-the-current-subheader-ts) | R | fixed | `opq_cross_hit3_exact_183_190_repro_test` on `2026-04-19` | `466b935` | A new frame seeded allocator `running_ts` from the frame header timestamp instead of the parser's current running subheader timestamp, so same-frame payload tickets were misclassified as `future` and the allocator could emit an empty tail before fetching payload. |
 
 ## 2026-04-17
 
@@ -164,7 +164,7 @@ Class legend:
     - lane2 `accepted=0 dropped=0 delivered=0 unexplained=0`
     - lane3 `accepted=0 dropped=2 post_drop=2 delivered=0 unexplained=0`
 - Commit:
-  - pending
+  - `466b935` `Fix OPQ mixed-soak exact-window allocator state and refresh signoff docs`
 
 ### BUG-008-R: Forced-overwrite path still emits malformed accepted egress and no frame-table drop accounting
 - First seen in:
@@ -481,7 +481,7 @@ Class legend:
   - this bug was found by the invariant-first smoke rerun before the retuned overflow soak was allowed to continue
   - the fix restores agreement between the advertised merged frame header and the emitted packet body, which is a prerequisite for trusting longer soak evidence
 - Commit:
-  - pending
+  - `466b935` `Fix OPQ mixed-soak exact-window allocator state and refresh signoff docs`
 
 ### BUG-020-R: Late-drop lane-credit return added stale block-path credit and poisoned no-restart state
 - First seen in:
@@ -518,7 +518,7 @@ Class legend:
   - the final exact-window closure still required `BUG-022-R`, which repaired
     the page allocator's new-frame `running_ts` seed
 - Commit:
-  - pending
+  - `466b935` `Fix OPQ mixed-soak exact-window allocator state and refresh signoff docs`
 
 ### BUG-021-R: Late-frame drop accounting counted whole-frame SOP metadata instead of the unread ticket tail
 - First seen in:
@@ -552,7 +552,7 @@ Class legend:
     - `UVM_ERROR : 0`
   - this is shape-check overflow evidence only; frame-table overflow signoff remains a separate requirement
 - Commit:
-  - pending
+  - `5c0d90f` `Fix OPQ late-frame drop accounting and refresh signoff docs`
 
 ### BUG-022-R: New-frame `running_ts` seeded from frame header `ts` instead of the current subheader `ts`
 - First seen in:
@@ -591,4 +591,4 @@ Class legend:
   - the focused 5-step bug-hunt rerun
     `/tmp/opq_pa_trace_fixed2.log` also ends with `EXIT:0`
 - Commit:
-  - pending
+  - `466b935` `Fix OPQ mixed-soak exact-window allocator state and refresh signoff docs`
