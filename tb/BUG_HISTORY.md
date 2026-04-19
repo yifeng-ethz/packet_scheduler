@@ -28,7 +28,7 @@ Class legend:
 | [BUG-018-H](#bug-018-h-extended-mixed-bucket-seconds-soak-exposes-chained-masked-drop-accounting-underrun) | H | open | `opq_cross_mixed_bucket_seconds_soak_test` on `2026-04-18` | `pending` | The old seconds-soak accounting underrun is fixed, but the full stretched rerun still trips `opq_hit3_contract`, first around mixed step `191` and later in repeated PROF-heavy windows. |
 | [BUG-019-R](#bug-019-r-merged-frame-header-counts-incremented-per-accepted-lane-instead-of-per-emitted-subheader) | R | fixed | `opq_basic_smoke_test` on `2026-04-18` | `pending` | The native-SV page allocator was double-counting merged subheaders in the frame header, so the advertised subheader count could exceed the emitted K237 count under multi-lane merge. |
 | [BUG-020-R](#bug-020-r-late-drop-lane-credit-return-added-stale-block-path-credit-and-poisoned-no-restart-state) | R | fixed | `opq_cross_hit3_exact_183_190_repro_test` on `2026-04-19` | `pending` | Late-drop lane-credit return pulses were adding stale block-path credit data when only one source was valid, corrupting no-restart lane-credit state and the mixed-soak exact failing window. |
-| [BUG-021-R](#bug-021-r-late-frame-drop-accounting-counted-whole-frame-sop-metadata-instead-of-the-unread-ticket-tail) | R | fixed | `opq_cross_random_ready_overflow_seconds_soak_test` on `2026-04-19` | `pending` | Late-frame drop accounting used full-frame SOP metadata instead of the unread ticket tail, which double-counted already credit-dropped subheaders and broke long overflow hit conservation. |
+| [BUG-021-R](#bug-021-r-late-frame-drop-accounting-counted-whole-frame-sop-metadata-instead-of-the-unread-ticket-tail) | R | fixed | `opq_cross_random_ready_overflow_seconds_soak_test` on `2026-04-19` | `5c0d90f` | Late-frame drop accounting used full-frame SOP metadata instead of the unread ticket tail, which double-counted already credit-dropped subheaders and broke long overflow hit conservation. |
 
 ## 2026-04-17
 
@@ -113,7 +113,7 @@ Class legend:
   - `opq_error_header_mask_recovery_test` now ends with `expected=4 actual=4 missing=0 ghost=0`
   - the standalone ingress AVST SVA also had to learn that an error-tainted open packet is abortable at the next legal recovery preamble, otherwise the intentionally truncated malformed frame still raised a false nested-SOP assertion after the DUT had already masked it
 - Commit:
-  - pending
+  - `5c0d90f` `Fix OPQ late-frame drop accounting and refresh signoff docs`
 
 ### BUG-006-H: Native-SV no-restart signoff accounting broke continuous-frame closure
 - First seen in:
