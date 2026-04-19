@@ -189,31 +189,25 @@ class opq_base_test extends uvm_test;
     bit [31:0] drop_hdr_word;
     bit [31:0] drop_shd_word;
     bit [31:0] drop_hit_word;
-    int unsigned accepted_hdr_cnt;
     lane_base = OPQ_CSR_LANE_REGION_BASE + lane_id * OPQ_CSR_LANE_REGION_STRIDE;
     csr_read32(lane_base + 9'h006, drop_hdr_word);
     csr_read32(lane_base + 9'h007, drop_shd_word);
     csr_read32(lane_base + 9'h008, drop_hit_word);
-    env.scoreboard.apply_lane_drop_totals(lane_id, drop_shd_word, drop_hit_word);
-    accepted_hdr_cnt = env.scoreboard.get_expected_lane_hdr_cnt(lane_id);
-    if (drop_hdr_word <= accepted_hdr_cnt) begin
-      accepted_hdr_cnt -= drop_hdr_word;
-    end else begin
-      accepted_hdr_cnt = 0;
-    end
+    env.scoreboard.verify_lane_drop_totals(lane_id, drop_hdr_word, drop_shd_word, drop_hit_word);
     expect_csr_value($sformatf("lane%0d_wr_hdr", lane_id), lane_base + 9'h000,
-      accepted_hdr_cnt);
+      env.scoreboard.get_ingress_visible_lane_hdr_cnt(lane_id));
     expect_csr_value($sformatf("lane%0d_wr_shd", lane_id), lane_base + 9'h001,
-      env.scoreboard.get_accepted_lane_shd_cnt(lane_id));
+      env.scoreboard.get_ingress_visible_lane_shd_cnt(lane_id));
     expect_csr_value($sformatf("lane%0d_wr_hit", lane_id), lane_base + 9'h002,
-      env.scoreboard.get_accepted_lane_hit_cnt(lane_id));
+      env.scoreboard.get_ingress_visible_lane_hit_cnt(lane_id));
     expect_csr_value($sformatf("lane%0d_rd_hdr", lane_id), lane_base + 9'h003,
-      accepted_hdr_cnt);
+      env.scoreboard.get_ingress_visible_lane_hdr_cnt(lane_id));
     expect_csr_value($sformatf("lane%0d_rd_shd", lane_id), lane_base + 9'h004,
-      env.scoreboard.get_accepted_lane_shd_cnt(lane_id));
+      env.scoreboard.get_ingress_visible_lane_shd_cnt(lane_id));
     expect_csr_value($sformatf("lane%0d_rd_hit", lane_id), lane_base + 9'h005,
-      env.scoreboard.get_accepted_lane_hit_cnt(lane_id));
-    expect_csr_value($sformatf("lane%0d_drop_hdr", lane_id), lane_base + 9'h006, drop_hdr_word);
+      env.scoreboard.get_ingress_visible_lane_hit_cnt(lane_id));
+    expect_csr_value($sformatf("lane%0d_drop_hdr", lane_id), lane_base + 9'h006,
+      env.scoreboard.get_dropped_lane_hdr_cnt(lane_id));
     expect_csr_value($sformatf("lane%0d_drop_shd", lane_id), lane_base + 9'h007,
       env.scoreboard.get_dropped_lane_shd_cnt(lane_id));
     expect_csr_value($sformatf("lane%0d_drop_hit", lane_id), lane_base + 9'h008,
@@ -287,6 +281,94 @@ class opq_base_test extends uvm_test;
       shd_drop_word,
       hit_drop_word
     );
+  endtask
+
+  task automatic report_lane_hit_accounting_checkpoint(
+    string label,
+    bit require_drained = 1'b0
+  );
+    int unsigned total_accepted;
+    int unsigned total_dropped;
+    int unsigned total_delivered;
+    int unsigned total_unexplained;
+
+    total_accepted = 0;
+    total_dropped = 0;
+    total_delivered = 0;
+    total_unexplained = 0;
+
+    for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+      bit [8:0] lane_base;
+      bit [31:0] drop_shd_word;
+      bit [31:0] drop_hit_word;
+      int unsigned accepted_hits;
+      int unsigned dropped_hits;
+      int unsigned delivered_hits;
+      int unsigned unexplained_hits;
+      int unsigned loss_pct_x100;
+
+      lane_base = OPQ_CSR_LANE_REGION_BASE + lane * OPQ_CSR_LANE_REGION_STRIDE;
+      csr_read32(lane_base + 9'h007, drop_shd_word);
+      csr_read32(lane_base + 9'h008, drop_hit_word);
+      env.scoreboard.verify_lane_drop_totals(
+        lane,
+        env.scoreboard.get_dropped_lane_hdr_cnt(lane),
+        drop_shd_word,
+        drop_hit_word
+      );
+
+      accepted_hits = env.scoreboard.get_accepted_lane_hit_cnt(lane);
+      dropped_hits = env.scoreboard.get_dropped_lane_hit_cnt(lane);
+      delivered_hits = env.scoreboard.get_actual_lane_hit_cnt(lane);
+      unexplained_hits = env.scoreboard.get_unexplained_lane_hit_cnt(lane);
+      loss_pct_x100 = (accepted_hits == 0) ? 0 : ((dropped_hits * 10000) / accepted_hits);
+
+      total_accepted += accepted_hits;
+      total_dropped += dropped_hits;
+      total_delivered += delivered_hits;
+      total_unexplained += unexplained_hits;
+
+      `uvm_info(get_type_name(), $sformatf(
+        "%s lane%0d hit_ledger accepted=%0d dropped=%0d delivered=%0d unexplained=%0d drop_pct=%0d.%02d",
+        label,
+        lane,
+        accepted_hits,
+        dropped_hits,
+        delivered_hits,
+        unexplained_hits,
+        loss_pct_x100 / 100,
+        loss_pct_x100 % 100
+      ), UVM_LOW)
+
+      if (accepted_hits != (dropped_hits + delivered_hits + unexplained_hits)) begin
+        `uvm_error(get_type_name(), $sformatf(
+          "%s lane%0d hit accounting mismatch accepted=%0d dropped=%0d delivered=%0d unexplained=%0d",
+          label,
+          lane,
+          accepted_hits,
+          dropped_hits,
+          delivered_hits,
+          unexplained_hits
+        ))
+      end
+      if (require_drained && (unexplained_hits != 0)) begin
+        `uvm_error(get_type_name(), $sformatf(
+          "%s lane%0d expected drained hit ledger but still has %0d unexplained hits",
+          label,
+          lane,
+          unexplained_hits
+        ))
+      end
+    end
+
+    `uvm_info(get_type_name(), $sformatf(
+      "%s aggregate_hit_ledger accepted=%0d dropped=%0d delivered=%0d unexplained=%0d",
+      label,
+      total_accepted,
+      total_dropped,
+      total_delivered,
+      total_unexplained
+    ), UVM_LOW)
   endtask
 
   task automatic read_lane_drr_snapshot(

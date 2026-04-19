@@ -12,12 +12,12 @@ Class legend:
 | [BUG-002-R](#bug-002-r-native-sv-4-lane-feb-path-corrupted-middle-lane-hit-placement) | R | fixed | `opq_basic_feb_packet_contract_test` @ `OPQ_N_LANE=4` | `37c4b2a` | Native-SV 4-lane allocator used the wrong block-start prefix and misplaced middle-lane hits. |
 | [BUG-003-R](#bug-003-r-native-sv-csr-plane-returned-zeros-and-hid-live-credits) | R | fixed | `opq_basic_feb_packet_contract_test` | `6b9ed41` | Native-SV wrapper CSR plane was still a stub and returned zero readback. |
 | [BUG-004-H](#bug-004-h-cross-bucket-csr-proof-used-non-feb-ingress-framing) | H | fixed | `opq_cross_bp_credit_test`, `opq_cross_drr_allowance_test` | `6b9ed41` | Cross-bucket CSR proof sequences drove split packets instead of FEB whole-frame traffic. |
-| [BUG-005-R](#bug-005-r-header-error-mask-path-corrupts-the-next-legal-frame-timestamp) | R | open | `opq_error_header_mask_recovery_test` | `pending` | Header-error mask recovery still leaks stale timestamp context into the next legal frame. |
+| [BUG-005-R](#bug-005-r-header-error-mask-path-corrupts-the-next-legal-frame-timestamp) | R | fixed | `opq_error_header_mask_recovery_test` | `pending` | Header-error mask recovery no longer leaks stale timestamp context into the next legal frame after the allocator was re-seeded from the captured ingress header timestamp base. |
 | [BUG-006-H](#bug-006-h-native-sv-no-restart-signoff-accounting-broke-continuous-frame-closure) | H | fixed | `opq_bucket_frame_native_sv_test`, `opq_all_buckets_frame_native_sv_test` | `b799f94` | No-restart signoff reused frame identity and miscounted malformed subheaders. |
 | [BUG-007-R](#bug-007-r-swb-4-lane-sparse-frame-cadence-drops-later-hits) | R | open | `opq_prof_missing_empty_frame_test` @ `OPQ_N_LANE=4` | `pending` | Unmasked quiescent lanes can block later active-lane traffic when empty-frame cadence is absent. |
 | [BUG-008-R](#bug-008-r-forced-overwrite-path-still-emits-malformed-accepted-egress-and-no-frame-table-drop-accounting) | R | fixed | `opq_error_ftable_overflow_test` | `41948b1` | Reduced-depth forced overwrite under always-stall corrupted accepted egress and hid frame-table drop events until the native-SV presenter and CSR path were fixed. |
-| [BUG-009-R](#bug-009-r-bursty-drr-stall-boundary-path-still-corrupts-egress-ordering-and-lacks-late-drop-identity) | R | open | `opq_cross_drr_bursty_random_test` | `pending` | Bursty DRR plus periodic stall still trips contract assertions and large ghost/missing-hit drift. |
-| [BUG-010-R](#bug-010-r-header-word-recovery-path-still-corrupts-the-next-legal-frame) | R | open | `opq_error_header_word_mask_recovery_test` | `pending` | Header-word error injection still corrupts the next legal timestamp base and cannot stay in no-restart signoff. |
+| [BUG-009-R](#bug-009-r-bursty-drr-stall-boundary-path-still-corrupts-egress-ordering-and-lacks-late-drop-identity) | R | fixed | `opq_cross_drr_bursty_random_test` | `pending` | Bursty DRR plus periodic stall no longer loses late active-lane traffic after the allocator holds merged-frame progress until every active busy lane has surfaced its current ticket. |
+| [BUG-010-R](#bug-010-r-header-word-recovery-path-still-corrupts-the-next-legal-frame) | R | fixed | `opq_error_header_word_mask_recovery_test` | `pending` | Header-word error injection no longer corrupts the next legal timestamp base after the recovery frame seeds from the captured ingress header timestamp base. |
 | [BUG-011-R](#bug-011-r-chained-malformed-subheader-recovery-is-not-composable-in-mixed-bucket-soak) | R | open | `opq_cross_mixed_bucket_random_soak_test` | `pending` | Isolated malformed-subheader recovery is green, but chained mixed-soak recovery still breaks no-restart framing. |
 | [BUG-012-H](#bug-012-h-edge-medium-ready-profile-testcase-was-wired-as-always-ready) | H | fixed | promoted EDGE isolated rerun on `2026-04-17` | `cbb05e0` | The supposed medium-backpressure testcase never applied stalls and gave false evidence. |
 | [BUG-013-H](#bug-013-h-mixed-bucket-random-soak-was-reported-as-directed-and-omitted-txn-growth-traceability) | H | fixed | regenerated native-SV report on `2026-04-17` | `cbb05e0` | The promoted mixed-soak testcase was misclassified as directed and hid required random-case reporting. |
@@ -26,6 +26,7 @@ Class legend:
 | [BUG-016-H](#bug-016-h-oss-basic-presenter-sby-lowering-hits-a-logic-loop-in-the-overwrite-scan-path) | H | fixed | `formal_egress.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `f8448ac` | The OSS basic-presenter proof no longer dies in SMT2 lowering; the live Avalon-ST hold-under-backpressure slice now passes on the OSS subset. |
 | [BUG-017-H](#bug-017-h-oss-mover-sby-harness-now-reaches-proof-but-still-fails-on-arbiter-shape-invariants) | H | fixed | `formal_mover.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `de65125` | The live OSS mover proof now passes on the current block-path subset after the proof-clean arbiter view was exported and constrained. |
 | [BUG-018-H](#bug-018-h-extended-mixed-bucket-seconds-soak-exposes-chained-masked-drop-accounting-underrun) | H | open | `opq_cross_mixed_bucket_seconds_soak_test` on `2026-04-18` | `pending` | The old seconds-soak accounting underrun is fixed, but the full stretched rerun still trips `opq_hit3_contract`, first around mixed step `191` and later in repeated PROF-heavy windows. |
+| [BUG-019-R](#bug-019-r-merged-frame-header-counts-incremented-per-accepted-lane-instead-of-per-emitted-subheader) | R | fixed | `opq_basic_smoke_test` on `2026-04-18` | `pending` | The native-SV page allocator was double-counting merged subheaders in the frame header, so the advertised subheader count could exceed the emitted K237 count under multi-lane merge. |
 
 ## 2026-04-17
 
@@ -101,17 +102,14 @@ Class legend:
   - a malformed preamble/header frame is masked as intended, but the next legal recovery frame emerges with hits at the correct payload words and the wrong timestamp base
   - observed failure is `expected=4 actual=4 missing=4 ghost=4`, with ghost hits reconstructed at `ts=0x10` instead of the legal recovery timestamp `0x1010`
   - the ingress monitor also reports `capture_err=1` on the malformed frame, which is expected for the truncated stimulus and not the root cause of the timestamp corruption
-- Root cause status:
-  - open
-  - the native-SV ingress parser still mishandles the header-error recovery path after `INGRESS_PARSER_MASK_PKT_EXTENDED`
-  - reasserting `alert_sop` on the next legal preamble was necessary but not sufficient; the recovery frame still reaches the downstream path with stale timestamp context
-- Blocking reason:
-  - kept probe-only and excluded from native-SV signoff because promoted recovery evidence would be false until parser timestamp context is rebuilt cleanly after a masked header error
-- Candidate fixes:
-  - complete the `MASK_PKT_EXTENDED` recovery reinitialization so the next legal header rebuilds the full timestamp/ticket context exactly as the idle path does
-  - add a focused assertion on header-error recovery so stale frame timestamp state is caught at the parser boundary instead of later at egress
+- Root cause:
+  - the recovery frame rebuilt the legal header timestamp correctly inside the ingress parser, but the page allocator had no dedicated header timestamp-base input for the next legal SOP
+  - on the masked-header recovery path, the allocator seeded `frame_ts` / `running_ts` from stale allocator state instead of the just-rebuilt legal frame timestamp base, so the payload hits were emitted in the wrong frame slot (`0x0010` instead of `0x1010`)
 - Fix status:
-  - open
+  - fixed in isolated native-SV on `2026-04-18`
+- Runtime / coverage context:
+  - `opq_error_header_mask_recovery_test` now ends with `expected=4 actual=4 missing=0 ghost=0`
+  - the standalone ingress AVST SVA also had to learn that an error-tainted open packet is abortable at the next legal recovery preamble, otherwise the intentionally truncated malformed frame still raised a false nested-SOP assertion after the DUT had already masked it
 - Commit:
   - pending
 
@@ -183,17 +181,18 @@ Class legend:
 - Symptom:
   - constrained-random hot-lane / cold-lane DRR stress with periodic egress stalls still trips repeated `opq_hit3_contract_sva` failures and large scoreboard drift
   - current probe log ends with `expected=4400 actual=1335 missing=3168 ghost=103` and `UVM_ERROR : 3286`
-- Root cause status:
-  - open
-  - asymmetric block sizes plus periodic stall still expose a stall-boundary corruption bug in the monolithic presenter/egress path
-  - the live harness also has only final CSR totals for late-drop accounting, which is not enough to prove exact dropped-hit identity when this path misbehaves
-- Blocking reason:
-  - kept probe-only because promoted hit-integrity closure requires exact accepted-vs-dropped identity, not just final drop counters
-- Candidate fixes:
-  - repair the presenter `RESTART` / stall-boundary behavior under bursty asymmetric DRR traffic
-  - add per-hit late-drop identity or equivalent internal observability so final drop counters can be reconciled to concrete missing traffic
+- Root cause:
+  - the page allocator was allowed to advance merged-frame `running_ts` once one active lane had surfaced a current subheader ticket, even when another already-active busy lane had not yet produced its ticket for that same subheader
+  - under bursty asymmetric DRR traffic, that let the slow active lane's same-frame non-SOP ticket arrive "late" relative to the allocator's advanced frame state and get consumed as stale/past traffic without a legal-drop identity, which manifested as missing hits at egress
+  - the harness-side late-drop blind spot was closed at the same time by exporting pre/post ingress drop-event identity into the drop monitor and scoreboard, so the repaired path can now prove `accepted = delivered + explained_drops` per lane instead of relying on final CSR totals alone
 - Fix status:
-  - open
+  - fixed in focused native-SV repro on `2026-04-19`
+- Runtime / coverage context:
+  - `opq_cross_drr_bursty_repro_test` now ends with `expected=1864 actual=1864 missing=0 ghost=0`
+  - the repaired focused repro also closes the per-lane hit ledger:
+    - lane0 `accepted=1840 dropped=2208 pre_drop=0 post_drop=2208 delivered=1840 unexplained=0`
+    - lane1 `accepted=24 dropped=328 pre_drop=0 post_drop=328 delivered=24 unexplained=0`
+  - the full constrained-random bursty testcase still needs a refresh run before promotion, but the invariant family that caused silent hit loss is now closed on the directed reproducer
 - Commit:
   - pending
 
@@ -203,17 +202,14 @@ Class legend:
 - Symptom:
   - isolated native-SV still ends at `expected=4 actual=4 missing=4 ghost=4`, with the recovery hits reconstructed at `ts=0x10` instead of `ts=0x1010`
   - when this testcase was temporarily inserted into the promoted no-restart ERROR bucket on `2026-04-17`, `opq_bucket_frame_native_sv_test` and `opq_all_buckets_frame_native_sv_test` both stopped being signoff-clean until the promotion was reverted
-- Root cause status:
-  - open
-  - the native-SV header-error handling path still lets stale frame context leak into the next legal frame even when the malformed stimulus is injected at header-word granularity instead of by truncating the whole packet
-  - the current harness cleanup keeps the malformed frame visible to the scoreboard instead of silently suppressing it, which makes the repro more honest but does not fix the DUT recovery bug
-- Blocking reason:
-  - kept probe-only and excluded from signoff because the following legal frame is not reconstructable with trustworthy timestamp identity, and the testcase also corrupts continuous-frame signoff if it is promoted prematurely
-- Candidate fixes:
-  - complete the native-SV header-word mask recovery reinitialization so the next legal preamble rebuilds timestamp/ticket context from a clean parser state
-  - add a parser-boundary assertion for header-word recovery so stale frame context is caught before egress
+- Root cause:
+  - this path exercised the same missing handoff as `BUG-005-R`: the parser rebuilt the legal recovery header, but the page allocator still lacked a dedicated ingress header timestamp-base input and therefore restarted the recovery frame from stale allocator state
+  - the DUT symptom was identical at egress: correct payload ordering under the wrong frame timestamp base
 - Fix status:
-  - open
+  - fixed in isolated native-SV on `2026-04-18`
+- Runtime / coverage context:
+  - `opq_error_header_word_mask_recovery_test` now ends with `expected=4 actual=4 missing=0 ghost=0`
+  - the testcase still needs to be reinserted into the generated ERROR bucket / no-restart baseline on the next report refresh before it is removed from the report exclusions
 - Commit:
   - pending
 
@@ -445,5 +441,26 @@ Class legend:
     underrun stays gone and no new contract failures remain
 - Fix status:
   - open
+- Commit:
+  - pending
+
+### BUG-019-R: Merged frame header counts incremented per accepted lane instead of per emitted subheader
+- First seen in:
+  - `packet_scheduler/tb/uvm` `TEST=opq_basic_smoke_test OPQ_N_LANE=2 DUT_IMPL=native_sv` on `2026-04-18`
+  - exposed immediately after tightening the packet-boundary invariant to compare emitted K237 subheaders against the frame-header subheader count
+- Symptom:
+  - the merged egress frame header advertised `510` / `512` subheaders while the body emitted only `255` / `256` K237 subheaders
+  - `opq_hit3_contract_sva` failed with:
+    - `frame trailer sub-header count mismatch: expected=510 actual=255`
+    - `frame trailer sub-header count mismatch: expected=512 actual=256`
+  - the hit-integrity scoreboard still passed, which confirmed this was a boundary-ledger bug rather than a payload corruption bug
+- Root cause:
+  - `ordered_priority_queue_monolithic_page_allocator.sv` incremented `frame_shr_cnt` once per accepted lane inside a merged subheader
+  - the merged body emits one K237 per subheader timestamp, so the frame header must count emitted subheaders, not contributing lanes
+- Fix status:
+  - fixed
+- Runtime / coverage context:
+  - this bug was found by the invariant-first smoke rerun before the retuned overflow soak was allowed to continue
+  - the fix restores agreement between the advertised merged frame header and the emitted packet body, which is a prerequisite for trusting longer soak evidence
 - Commit:
   - pending

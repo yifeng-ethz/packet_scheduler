@@ -1,6 +1,18 @@
 # Changelog
 Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 
+## 26.3.24.0419
+
+- **RTL / Native-SV Burst DRR Closure**: fixed the monolithic page allocator so merged-frame progress no longer advances past an already-active busy lane that has not yet surfaced its current ticket. Under asymmetric bursty DRR traffic, the allocator now waits for every active busy lane before advancing the current subheader, which removes the silent late-ticket loss seen at the stall boundary.
+- **Verification / Drop Identity**: exported pre/post ingress drop-event visibility through the native-SV wrapper into the standalone drop monitor and scoreboard. The focused bursty reproducer now closes with exact per-lane accounting instead of relying on final CSR totals alone.
+- **Verification / Bursty Repro Evidence**: reran `opq_cross_drr_bursty_repro_test` on the repaired native-SV RTL. The testcase now passes with `expected=1864 actual=1864 missing=0 ghost=0`, and both lanes finish with `unexplained=0`.
+
+## 26.3.23.0418
+
+- **RTL / Native-SV Recovery Timestamp Closure**: closed the masked-header and masked-header-word recovery bugs on the live monolithic native-SV path. The ingress parser now captures the full header timestamp base when the legal frame header is rebuilt, and the page allocator seeds recovery-frame `frame_ts` / `running_ts` from that dedicated header timestamp instead of falling back to stale allocator state.
+- **Verification / Recovery Assertions**: fixed the standalone ingress AVST assertion semantics for intentionally truncated malformed packets. Error-tainted open packets are now treated as abortable at the next legal recovery preamble, so `opq_error_header_mask_recovery_test` no longer false-fails on an artificial nested-SOP assertion after the DUT has already masked the bad frame.
+- **Verification / Recovery Evidence**: reran `opq_error_header_mask_recovery_test`, `opq_error_header_word_mask_recovery_test`, and `opq_basic_smoke_test` on the native-SV path. All three now pass with `missing=0 ghost=0`; the two recovery cases are ready for ERROR-bucket re-promotion on the next report refresh.
+
 ## 26.3.22.0418
 
 - **RTL / Native-SV Presenter Hold Fix**: fixed the basic-presenter synchronous page-RAM return path under held output backpressure. The presenter now skids a returned RAM word across `valid && !ready` and reuses that preserved word on resume, which removes the stale-word skip/duplicate behavior exposed by the aggressive flush-under-backpressure probe.

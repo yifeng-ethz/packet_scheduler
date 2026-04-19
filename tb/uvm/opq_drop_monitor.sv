@@ -12,7 +12,10 @@ class opq_drop_monitor extends uvm_component;
   virtual opq_drop_if #(OPQ_N_LANE) vif;
   uvm_analysis_port #(opq_drop_item) ap;
   int unsigned observed_drop_evt_cnt[OPQ_N_LANE];
+  int unsigned observed_drop_hdr_cnt[OPQ_N_LANE];
+  int unsigned observed_pre_drop_hit_cnt[OPQ_N_LANE];
   int unsigned observed_drop_hit_cnt[OPQ_N_LANE];
+  int unsigned observed_post_drop_hit_cnt[OPQ_N_LANE];
 
   function new(string name = "opq_drop_monitor", uvm_component parent = null);
     super.new(name, parent);
@@ -38,10 +41,23 @@ class opq_drop_monitor extends uvm_component;
         if (vif.valid[lane] === 1'b1) begin
           item = opq_drop_item::type_id::create($sformatf("drop_lane%0d", lane), this);
           item.lane_id = lane;
+          item.hdr_drop_cnt = vif.hdr_drop_cnt[lane];
           item.shd_drop_cnt = vif.shd_drop_cnt[lane];
           item.hit_drop_cnt = vif.hit_drop_cnt[lane];
+          item.pre_shd_drop_cnt = vif.pre_shd_drop_cnt[lane];
+          item.pre_hit_drop_cnt = vif.pre_hit_drop_cnt[lane];
+          item.post_hdr_drop_cnt = vif.post_hdr_drop_cnt[lane];
+          item.post_shd_drop_cnt = vif.post_shd_drop_cnt[lane];
+          item.post_hit_drop_cnt = vif.post_hit_drop_cnt[lane];
+          item.exact_post_valid = vif.exact_post_valid[lane];
+          item.exact_post_ts = vif.exact_post_ts[lane];
+          item.exact_post_shd_cnt = vif.exact_post_shd_cnt[lane];
+          item.exact_post_hit_cnt = vif.exact_post_hit_cnt[lane];
           observed_drop_evt_cnt[lane]++;
+          observed_drop_hdr_cnt[lane] += item.hdr_drop_cnt;
+          observed_pre_drop_hit_cnt[lane] += item.pre_hit_drop_cnt;
           observed_drop_hit_cnt[lane] += item.hit_drop_cnt;
+          observed_post_drop_hit_cnt[lane] += item.post_hit_drop_cnt;
           ap.write(item);
         end
       end
@@ -52,10 +68,13 @@ class opq_drop_monitor extends uvm_component;
     super.report_phase(phase);
     for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
       `uvm_info(get_type_name(), $sformatf(
-        "lane%0d observed drop events=%0d dropped_hits=%0d",
+        "lane%0d observed drop events=%0d hdr=%0d pre_hits=%0d dropped_hits=%0d post_hits=%0d",
         lane,
         observed_drop_evt_cnt[lane],
-        observed_drop_hit_cnt[lane]
+        observed_drop_hdr_cnt[lane],
+        observed_pre_drop_hit_cnt[lane],
+        observed_drop_hit_cnt[lane],
+        observed_post_drop_hit_cnt[lane]
       ), UVM_LOW)
     end
   endfunction

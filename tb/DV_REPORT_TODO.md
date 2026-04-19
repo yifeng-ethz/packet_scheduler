@@ -12,6 +12,17 @@ Assumption frozen on 2026-04-17: the current harness must be upgraded into a
 full native-SV signoff harness. The VHDL path may remain as a debug/reference
 comparison path, but it must not contribute to final signoff evidence.
 
+Execution order frozen on 2026-04-18 for the next closure phase:
+
+1. Re-anchor the harness and report flow on invariant-first sanity checks:
+   end-to-end accepted hits, expected drops, per-lane throughput, and packet
+   correctness at ingress, internal OPQ boundaries, and egress.
+2. Use those invariants to close the real native-SV DUT and observability
+   blockers before spending effort on narrow cycle-level cleanups.
+3. Keep long mixed-bucket and overflow/backpressure soaks in the loop, but
+   tune them to reach useful checkpoints quickly enough that they remain
+   practical closure evidence rather than passive background runs.
+
 ## Exit Criteria
 
 - [x] `DV_REPORT.json` exists and is the single source of truth for the OPQ
@@ -46,13 +57,36 @@ comparison path, but it must not contribute to final signoff evidence.
       - `N_SHD`: `128 / 256 / 512`
       - `MODE`: `MERGING` only
       - probe-only exclusions that remain outside signoff:
-        `opq_cross_drr_bursty_random_test`,
-        `opq_error_header_mask_recovery_test`,
-        `opq_error_header_word_mask_recovery_test`
+        `opq_cross_drr_bursty_random_test`
 - [x] Write the explicit non-claims in `DV_REPORT.json` / `DV_COV.md` so the
       dashboard does not imply closure on unsupported sweeps.
       Status: both generated top-level pages now surface signoff scope,
       exclusions, and current continuous-frame non-claims directly from JSON.
+- [ ] Record the post-signoff parameter-expansion phase explicitly:
+      - future synthesis target family is `online_sc/a10_board`
+      - future lane sweep must cover `OPQ_N_LANE={2,4,8,16}`
+      - timing closure for those lane points is allowed to add adaptive
+        pipeline insertion and/or FSM repartitioning at the real critical cones
+      - those later parameter points do not inherit DV closure from the current
+        promoted `OPQ_N_LANE=2` baseline and need their own DV evidence
+- [ ] Add an explicit invariant-first sanity plan to the live todo and keep it
+      ahead of case-by-case cleanup:
+      - quantify accepted hits, expected drops, and per-lane rates end to end
+      - check packet structure at ingress, data mover / frame table, and
+        egress boundaries
+      - require long-run screens to report whether losses were observed through
+        legal counted paths or through unexpected silent corruption
+- [ ] Freeze the per-lane hit conservation law that all long-run debug must use:
+      `accepted_ingress_hits = legal_drops + delivered_egress_hits + unexplained_hits`
+      with `legal_drops` split into the currently observable buckets:
+      parser reject, lane-local late/masked drop, and frame-table drop.
+- [ ] Freeze the three authoritative packet ledgers for the active monolithic
+      signoff path:
+      - ingress accepted-frame ledger
+      - mover / frame-table write-drop ledger
+      - egress emitted-frame ledger
+      Each ledger must carry `frame_id/pkg_cnt`, `lane_id`, sub-header count,
+      total hit count, and drop-reason classification or `none`.
 
 ## 2. Create The Mandatory dv-workflow Report Scaffold
 
@@ -183,6 +217,12 @@ comparison path, but it must not contribute to final signoff evidence.
 
 ## 8. Close Native-SV DUT And Observability Blockers
 
+- [ ] Reclassify the remaining open blockers by violated invariant family so
+      debug stays ledger-driven instead of testcase-driven:
+      - hit accounting / silent-loss risk
+      - packet-boundary contract corruption
+      - missing legal-drop observability
+      - out-of-scope parameter / lane non-claim
 - [x] Resolve the forced-overwrite / malformed-egress bug before promoting
       `opq_error_ftable_overflow_test`.
       Status: the reduced-depth `OPQ_PAGE_RAM_DEPTH=512` native-SV overflow
@@ -191,14 +231,25 @@ comparison path, but it must not contribute to final signoff evidence.
       ERROR evidence because it requires a separate reduced-depth elaboration
       point and is therefore still excluded from the fixed no-restart
       baselines.
-- [ ] Resolve the bursty DRR stall-boundary corruption before promoting
+- [x] Resolve the bursty DRR stall-boundary corruption before promoting
       `opq_cross_drr_bursty_random_test`.
+      Status on `2026-04-19`:
+      - the focused reproducer `opq_cross_drr_bursty_repro_test` is now clean
+        with `expected=1864 actual=1864 missing=0 ghost=0`
+      - root cause was the page allocator advancing merged-frame progress
+        ahead of an already-active busy lane that had not yet surfaced its
+        current ticket, which silently discarded same-frame late tickets
+      - remaining work is promotion hygiene: rerun the larger bursty random
+        testcase on the repaired RTL and either promote it or keep only the
+        longer random envelope probe-only
 - [ ] Resolve the chained header-word recovery corruption before promoting
       `opq_error_header_word_mask_recovery_test`.
-      Status: a `2026-04-17` promotion attempt was backed out after the case
-      reproduced as `missing=4 ghost=4` in isolated native-SV and also
-      corrupted `bucket_frame` / `all_buckets_frame` until removed from the
-      promoted ERROR inventory.
+      Status on `2026-04-18`:
+      - isolated native-SV is now fixed and green after the ingress header
+        timestamp-base handoff was routed into the page allocator
+      - remaining work is report hygiene, not DUT repair:
+        rerun the ERROR bucket continuous-frame baseline with the restored
+        case, then remove it from the generated report exclusions
 - [ ] Resolve the chained malformed-subheader recovery corruption before adding
       `opq_error_subheader_mask_recovery_test` back into the mixed-bucket soak
       pool.
@@ -216,8 +267,18 @@ comparison path, but it must not contribute to final signoff evidence.
         just a pending-length rerun
 - [x] Resolve the native-SV no-reset drain / credit-restore bug before calling
       `bucket_frame` or `all_buckets_frame` signoff closed.
-- [ ] Add enough late-drop observability to prove hit integrity on the bursty
+- [x] Add enough late-drop observability to prove hit integrity on the bursty
       DRR path, or explicitly keep that path probe-only.
+      Status on `2026-04-19`:
+      - native-SV now exports pre/post ingress drop-event visibility into the
+        live drop monitor and scoreboard
+      - the focused bursty repro closes with per-lane `unexplained=0`, so the
+        repaired path no longer depends on final CSR totals alone for
+        hit-integrity proof
+- [ ] Add checkpoint summaries to the long mixed and overflow soaks so each
+      checkpoint reports, per lane:
+      accepted hits, legal dropped hits, delivered hits, unexplained hits, and
+      the current frame-table `wr = rd + drop` ledger state.
 - [ ] Close the remaining harness-upgrade gaps that would block full native-SV
       ownership:
       - scoreboard and SVA parity between native-SV and prior reference runs

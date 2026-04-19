@@ -56,8 +56,15 @@ class opq_scoreboard extends uvm_component;
   int unsigned expected_lane_hdr_cnt[OPQ_N_LANE];
   int unsigned expected_lane_shd_cnt[OPQ_N_LANE];
   int unsigned expected_lane_hit_cnt[OPQ_N_LANE];
+  int unsigned dropped_lane_hdr_cnt[OPQ_N_LANE];
   int unsigned dropped_lane_shd_cnt[OPQ_N_LANE];
   int unsigned dropped_lane_hit_cnt[OPQ_N_LANE];
+  int unsigned dropped_lane_pre_shd_cnt[OPQ_N_LANE];
+  int unsigned dropped_lane_pre_hit_cnt[OPQ_N_LANE];
+  int unsigned dropped_lane_post_hdr_cnt[OPQ_N_LANE];
+  int unsigned dropped_lane_post_shd_cnt[OPQ_N_LANE];
+  int unsigned dropped_lane_post_hit_cnt[OPQ_N_LANE];
+  int unsigned actual_lane_hit_cnt[OPQ_N_LANE];
   int unsigned actual_egress_hdr_cnt;
   int unsigned actual_egress_shd_cnt;
   int unsigned actual_egress_hit_cnt;
@@ -68,6 +75,7 @@ class opq_scoreboard extends uvm_component;
   opq_hit_trace_t expected_hits[$];
   opq_hit_trace_t actual_hits[$];
   bit dropped_hit_id[string];
+  bit dropped_hit_sig[string];
 
   function new(string name = "opq_scoreboard", uvm_component parent = null);
     super.new(name, parent);
@@ -142,8 +150,15 @@ class opq_scoreboard extends uvm_component;
       expected_lane_hdr_cnt[i] = 0;
       expected_lane_shd_cnt[i] = 0;
       expected_lane_hit_cnt[i] = 0;
+      dropped_lane_hdr_cnt[i] = 0;
       dropped_lane_shd_cnt[i] = 0;
       dropped_lane_hit_cnt[i] = 0;
+      dropped_lane_pre_shd_cnt[i] = 0;
+      dropped_lane_pre_hit_cnt[i] = 0;
+      dropped_lane_post_hdr_cnt[i] = 0;
+      dropped_lane_post_shd_cnt[i] = 0;
+      dropped_lane_post_hit_cnt[i] = 0;
+      actual_lane_hit_cnt[i] = 0;
     end
     actual_egress_hdr_cnt = 0;
     actual_egress_shd_cnt = 0;
@@ -156,6 +171,10 @@ class opq_scoreboard extends uvm_component;
 
   function automatic string hit_id_key(bit [63:0] hit_id);
     return $sformatf("%016h", hit_id);
+  endfunction
+
+  function automatic string hit_sig_key(int lane_id, bit [47:0] hit_ts, bit [31:0] hit_word);
+    return $sformatf("%0d_%012h_%08h", lane_id, hit_ts, hit_word);
   endfunction
 
   function automatic bit [47:0] make_abs_hit_ts(bit [47:0] frame_ts, bit [7:0] shd_ts);
@@ -177,25 +196,19 @@ class opq_scoreboard extends uvm_component;
     actual_hits.push_back(trace);
   endfunction
 
-  function automatic void retire_actual_from_lane_accounting(bit [47:0] hit_ts, bit [31:0] hit_word);
+  function automatic int retire_actual_from_lane_accounting(bit [47:0] hit_ts, bit [31:0] hit_word);
     string key;
-    bit matched;
 
     key = hit_key(hit_ts, hit_word);
-    matched = 1'b0;
-
     for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
       for (int idx = 0; idx < lane_accounting_hits[lane].size(); idx++) begin
         if (hit_key(lane_accounting_hits[lane][idx].hit_ts, lane_accounting_hits[lane][idx].hit_word) == key) begin
           lane_accounting_hits[lane].delete(idx);
-          matched = 1'b1;
-          break;
+          return lane;
         end
       end
-      if (matched) begin
-        break;
-      end
     end
+    return -1;
   endfunction
 
   function automatic void retire_lane_accounting_trace(
@@ -408,6 +421,7 @@ class opq_scoreboard extends uvm_component;
   function void write_egress(opq_beat_item beat);
     bit [3:0] datak;
     bit [31:0] data32;
+    int matched_lane;
 
     datak = beat.data[35:32];
     data32 = beat.data[31:0];
@@ -452,7 +466,10 @@ class opq_scoreboard extends uvm_component;
         ))
       end else begin
         push_actual_hit(data32);
-        retire_actual_from_lane_accounting(egress_current_ts, data32);
+        matched_lane = retire_actual_from_lane_accounting(egress_current_ts, data32);
+        if ((matched_lane >= 0) && (matched_lane < OPQ_N_LANE)) begin
+          actual_lane_hit_cnt[matched_lane]++;
+        end
         actual_egress_hit_cnt++;
       end
       egress_hits_pending--;
@@ -474,7 +491,96 @@ class opq_scoreboard extends uvm_component;
   endfunction
 
   function void write_drop(opq_drop_item item);
-    apply_drop_delta(item.lane_id, item.shd_drop_cnt, item.hit_drop_cnt, "monitor");
+    int unsigned exact_post_shd_delta;
+    int unsigned exact_post_hit_delta;
+    int unsigned residual_shd_delta;
+    int unsigned residual_hit_delta;
+
+    if (item.lane_id < 0 || item.lane_id >= OPQ_N_LANE) begin
+      `uvm_error(get_type_name(), $sformatf("Drop item arrived with invalid lane_id=%0d", item.lane_id))
+      return;
+    end
+
+    exact_post_shd_delta = 0;
+    exact_post_hit_delta = 0;
+    if (item.exact_post_valid) begin
+      exact_post_shd_delta = item.exact_post_shd_cnt;
+      exact_post_hit_delta = item.exact_post_hit_cnt;
+      if ((exact_post_shd_delta > item.post_shd_drop_cnt) ||
+          (exact_post_hit_delta > item.post_hit_drop_cnt) ||
+          (exact_post_shd_delta > item.shd_drop_cnt) ||
+          (exact_post_hit_delta > item.hit_drop_cnt)) begin
+        `uvm_error(get_type_name(), $sformatf(
+          "Exact post-drop detail exceeded event totals lane=%0d exact_shd=%0d exact_hit=%0d total_shd=%0d total_hit=%0d post_shd=%0d post_hit=%0d",
+          item.lane_id,
+          exact_post_shd_delta,
+          exact_post_hit_delta,
+          item.shd_drop_cnt,
+          item.hit_drop_cnt,
+          item.post_shd_drop_cnt,
+          item.post_hit_drop_cnt
+        ))
+        exact_post_shd_delta = 0;
+        exact_post_hit_delta = 0;
+      end
+    end
+
+    residual_shd_delta = item.shd_drop_cnt - exact_post_shd_delta;
+    residual_hit_delta = item.hit_drop_cnt - exact_post_hit_delta;
+
+    dropped_lane_hdr_cnt[item.lane_id] += item.hdr_drop_cnt;
+    dropped_lane_pre_shd_cnt[item.lane_id] += item.pre_shd_drop_cnt;
+    dropped_lane_pre_hit_cnt[item.lane_id] += item.pre_hit_drop_cnt;
+    dropped_lane_post_hdr_cnt[item.lane_id] += item.post_hdr_drop_cnt;
+    dropped_lane_post_shd_cnt[item.lane_id] += item.post_shd_drop_cnt;
+    dropped_lane_post_hit_cnt[item.lane_id] += item.post_hit_drop_cnt;
+    if (exact_post_hit_delta != 0) begin
+      apply_exact_drop_delta(
+        item.lane_id,
+        item.exact_post_ts,
+        exact_post_shd_delta,
+        exact_post_hit_delta,
+        "monitor_exact_post"
+      );
+    end
+    apply_drop_delta(item.lane_id, residual_shd_delta, residual_hit_delta, "monitor");
+  endfunction
+
+  function void verify_lane_drop_totals(
+    int lane_id,
+    int unsigned hdr_drop_total,
+    int unsigned shd_drop_total,
+    int unsigned hit_drop_total
+  );
+    if (lane_id < 0 || lane_id >= OPQ_N_LANE) begin
+      `uvm_error(get_type_name(), $sformatf("Drop total check arrived with invalid lane_id=%0d", lane_id))
+      return;
+    end
+
+    if (hdr_drop_total != dropped_lane_hdr_cnt[lane_id]) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "Drop hdr total mismatch lane=%0d expected=%0d actual=%0d",
+        lane_id,
+        dropped_lane_hdr_cnt[lane_id],
+        hdr_drop_total
+      ))
+    end
+    if (shd_drop_total != dropped_lane_shd_cnt[lane_id]) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "Drop shd total mismatch lane=%0d expected=%0d actual=%0d",
+        lane_id,
+        dropped_lane_shd_cnt[lane_id],
+        shd_drop_total
+      ))
+    end
+    if (hit_drop_total != dropped_lane_hit_cnt[lane_id]) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "Drop hit total mismatch lane=%0d expected=%0d actual=%0d",
+        lane_id,
+        dropped_lane_hit_cnt[lane_id],
+        hit_drop_total
+      ))
+    end
   endfunction
 
   function void apply_drop_delta(
@@ -494,6 +600,25 @@ class opq_scoreboard extends uvm_component;
     dropped_lane_shd_cnt[lane_id] += shd_drop_delta;
     dropped_lane_hit_cnt[lane_id] += hit_drop_delta;
 
+    if (dropped_lane_shd_cnt[lane_id] > expected_lane_shd_cnt[lane_id]) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "Dropped subheader count exceeded expected traffic lane=%0d dropped=%0d expected=%0d source=%s",
+        lane_id,
+        dropped_lane_shd_cnt[lane_id],
+        expected_lane_shd_cnt[lane_id],
+        source
+      ))
+    end
+    if (dropped_lane_hit_cnt[lane_id] > expected_lane_hit_cnt[lane_id]) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "Dropped hit count exceeded expected traffic lane=%0d dropped=%0d expected=%0d source=%s",
+        lane_id,
+        dropped_lane_hit_cnt[lane_id],
+        expected_lane_hit_cnt[lane_id],
+        source
+      ))
+    end
+
     if (!cfg.allow_drop_accounting) begin
       return;
     end
@@ -509,7 +634,72 @@ class opq_scoreboard extends uvm_component;
       end
       trace = lane_accounting_hits[lane_id].pop_front();
       dropped_hit_id[hit_id_key(trace.hit_id)] = 1'b1;
+      dropped_hit_sig[hit_sig_key(trace.lane_id, trace.hit_ts, trace.hit_word)] = 1'b1;
       hit_cnt--;
+    end
+  endfunction
+
+  function void apply_exact_drop_delta(
+    int         lane_id,
+    bit [47:0]  hit_ts,
+    int unsigned shd_drop_delta,
+    int unsigned hit_drop_delta,
+    string      source
+  );
+    opq_hit_trace_t trace;
+    int unsigned hit_cnt;
+    int idx;
+
+    if (lane_id < 0 || lane_id >= OPQ_N_LANE) begin
+      `uvm_error(get_type_name(), $sformatf("Exact drop accounting arrived with invalid lane_id=%0d from %s", lane_id, source))
+      return;
+    end
+
+    dropped_lane_shd_cnt[lane_id] += shd_drop_delta;
+    dropped_lane_hit_cnt[lane_id] += hit_drop_delta;
+
+    if (dropped_lane_shd_cnt[lane_id] > expected_lane_shd_cnt[lane_id]) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "Exact dropped subheader count exceeded expected traffic lane=%0d dropped=%0d expected=%0d source=%s",
+        lane_id,
+        dropped_lane_shd_cnt[lane_id],
+        expected_lane_shd_cnt[lane_id],
+        source
+      ))
+    end
+    if (dropped_lane_hit_cnt[lane_id] > expected_lane_hit_cnt[lane_id]) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "Exact dropped hit count exceeded expected traffic lane=%0d dropped=%0d expected=%0d source=%s",
+        lane_id,
+        dropped_lane_hit_cnt[lane_id],
+        expected_lane_hit_cnt[lane_id],
+        source
+      ))
+    end
+
+    if (!cfg.allow_drop_accounting) begin
+      return;
+    end
+
+    hit_cnt = hit_drop_delta;
+    idx = 0;
+    while ((idx < lane_accounting_hits[lane_id].size()) && (hit_cnt > 0)) begin
+      if (lane_accounting_hits[lane_id][idx].hit_ts == hit_ts) begin
+        trace = lane_accounting_hits[lane_id][idx];
+        lane_accounting_hits[lane_id].delete(idx);
+        dropped_hit_id[hit_id_key(trace.hit_id)] = 1'b1;
+        dropped_hit_sig[hit_sig_key(trace.lane_id, trace.hit_ts, trace.hit_word)] = 1'b1;
+        hit_cnt--;
+      end else begin
+        idx++;
+      end
+    end
+
+    if (hit_cnt != 0) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "Exact drop accounting mismatch lane=%0d ts=0x%012h expected_hits=%0d missing_hits=%0d source=%s",
+        lane_id, hit_ts, hit_drop_delta, hit_cnt, source
+      ))
     end
   endfunction
 
@@ -594,7 +784,13 @@ class opq_scoreboard extends uvm_component;
     compare_expected_hits = 0;
     foreach (expected_hits[i]) begin
       drop_key = hit_id_key(expected_hits[i].hit_id);
-      if (cfg.allow_drop_accounting && dropped_hit_id.exists(drop_key)) begin
+      if (cfg.allow_drop_accounting &&
+          (dropped_hit_id.exists(drop_key) ||
+           dropped_hit_sig.exists(hit_sig_key(
+             expected_hits[i].lane_id,
+             expected_hits[i].hit_ts,
+             expected_hits[i].hit_word
+           )))) begin
         continue;
       end
       compare_expected_hits++;
@@ -633,6 +829,18 @@ class opq_scoreboard extends uvm_component;
       "Hit integrity summary: expected=%0d actual=%0d missing=%0d ghost=%0d",
       compare_expected_hits, actual_hits.size(), missing_hits, ghost_hits
     ), UVM_LOW)
+    foreach (expected_lane_hit_cnt[i]) begin
+      `uvm_info(get_type_name(), $sformatf(
+        "lane%0d hit ledger: accepted=%0d dropped=%0d pre_drop=%0d post_drop=%0d delivered=%0d unexplained=%0d",
+        i,
+        get_accepted_lane_hit_cnt(i),
+        get_dropped_lane_hit_cnt(i),
+        get_pre_dropped_lane_hit_cnt(i),
+        get_post_dropped_lane_hit_cnt(i),
+        get_actual_lane_hit_cnt(i),
+        get_unexplained_lane_hit_cnt(i)
+      ), UVM_LOW)
+    end
   endfunction
 
   function automatic int unsigned get_expected_lane_hdr_cnt(int lane_id);
@@ -655,12 +863,68 @@ class opq_scoreboard extends uvm_component;
     return dropped_lane_hit_cnt[lane_id];
   endfunction
 
+  function automatic int unsigned get_dropped_lane_hdr_cnt(int lane_id);
+    return dropped_lane_hdr_cnt[lane_id];
+  endfunction
+
+  function automatic int unsigned get_pre_dropped_lane_shd_cnt(int lane_id);
+    return dropped_lane_pre_shd_cnt[lane_id];
+  endfunction
+
+  function automatic int unsigned get_pre_dropped_lane_hit_cnt(int lane_id);
+    return dropped_lane_pre_hit_cnt[lane_id];
+  endfunction
+
+  function automatic int unsigned get_post_dropped_lane_hdr_cnt(int lane_id);
+    return dropped_lane_post_hdr_cnt[lane_id];
+  endfunction
+
+  function automatic int unsigned get_post_dropped_lane_shd_cnt(int lane_id);
+    return dropped_lane_post_shd_cnt[lane_id];
+  endfunction
+
+  function automatic int unsigned get_post_dropped_lane_hit_cnt(int lane_id);
+    return dropped_lane_post_hit_cnt[lane_id];
+  endfunction
+
   function automatic int unsigned get_accepted_lane_shd_cnt(int lane_id);
+    if (dropped_lane_shd_cnt[lane_id] > expected_lane_shd_cnt[lane_id]) begin
+      return 0;
+    end
     return expected_lane_shd_cnt[lane_id] - dropped_lane_shd_cnt[lane_id];
   endfunction
 
   function automatic int unsigned get_accepted_lane_hit_cnt(int lane_id);
+    if (dropped_lane_hit_cnt[lane_id] > expected_lane_hit_cnt[lane_id]) begin
+      return 0;
+    end
     return expected_lane_hit_cnt[lane_id] - dropped_lane_hit_cnt[lane_id];
+  endfunction
+
+  function automatic int unsigned get_ingress_visible_lane_hdr_cnt(int lane_id);
+    return expected_lane_hdr_cnt[lane_id];
+  endfunction
+
+  function automatic int unsigned get_ingress_visible_lane_shd_cnt(int lane_id);
+    if (dropped_lane_pre_shd_cnt[lane_id] > expected_lane_shd_cnt[lane_id]) begin
+      return 0;
+    end
+    return expected_lane_shd_cnt[lane_id] - dropped_lane_pre_shd_cnt[lane_id];
+  endfunction
+
+  function automatic int unsigned get_ingress_visible_lane_hit_cnt(int lane_id);
+    if (dropped_lane_pre_hit_cnt[lane_id] > expected_lane_hit_cnt[lane_id]) begin
+      return 0;
+    end
+    return expected_lane_hit_cnt[lane_id] - dropped_lane_pre_hit_cnt[lane_id];
+  endfunction
+
+  function automatic int unsigned get_actual_lane_hit_cnt(int lane_id);
+    return actual_lane_hit_cnt[lane_id];
+  endfunction
+
+  function automatic int unsigned get_unexplained_lane_hit_cnt(int lane_id);
+    return lane_accounting_hits[lane_id].size();
   endfunction
 
   function automatic int unsigned get_actual_egress_hdr_cnt();

@@ -125,10 +125,23 @@ endinterface
 interface opq_drop_if #(parameter int N_LANE = 2) (input logic clk);
   logic reset;
   logic [N_LANE-1:0] valid;
+  logic [15:0] hdr_drop_cnt [N_LANE];
   logic [15:0] shd_drop_cnt [N_LANE];
   logic [15:0] hit_drop_cnt [N_LANE];
+  logic [15:0] pre_shd_drop_cnt [N_LANE];
+  logic [15:0] pre_hit_drop_cnt [N_LANE];
+  logic [15:0] post_hdr_drop_cnt [N_LANE];
+  logic [15:0] post_shd_drop_cnt [N_LANE];
+  logic [15:0] post_hit_drop_cnt [N_LANE];
+  logic [N_LANE-1:0] exact_post_valid;
+  logic [47:0] exact_post_ts [N_LANE];
+  logic [15:0] exact_post_shd_cnt [N_LANE];
+  logic [15:0] exact_post_hit_cnt [N_LANE];
 
   clocking mon_cb @(posedge clk);
-    input reset, valid, shd_drop_cnt, hit_drop_cnt;
+    input reset, valid, hdr_drop_cnt, shd_drop_cnt, hit_drop_cnt;
+    input pre_shd_drop_cnt, pre_hit_drop_cnt;
+    input post_hdr_drop_cnt, post_shd_drop_cnt, post_hit_drop_cnt;
+    input exact_post_valid, exact_post_ts, exact_post_shd_cnt, exact_post_hit_cnt;
   endclocking
 endinterface

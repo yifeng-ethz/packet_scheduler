@@ -297,20 +297,50 @@ package opq_pkg;
 
   class opq_drop_item extends uvm_sequence_item;
     int lane_id;
+    int unsigned hdr_drop_cnt;
     int unsigned shd_drop_cnt;
     int unsigned hit_drop_cnt;
+    int unsigned pre_shd_drop_cnt;
+    int unsigned pre_hit_drop_cnt;
+    int unsigned post_hdr_drop_cnt;
+    int unsigned post_shd_drop_cnt;
+    int unsigned post_hit_drop_cnt;
+    bit          exact_post_valid;
+    bit [47:0]   exact_post_ts;
+    int unsigned exact_post_shd_cnt;
+    int unsigned exact_post_hit_cnt;
 
     `uvm_object_utils_begin(opq_drop_item)
       `uvm_field_int(lane_id, UVM_DEFAULT)
+      `uvm_field_int(hdr_drop_cnt, UVM_DEFAULT)
       `uvm_field_int(shd_drop_cnt, UVM_DEFAULT)
       `uvm_field_int(hit_drop_cnt, UVM_DEFAULT)
+      `uvm_field_int(pre_shd_drop_cnt, UVM_DEFAULT)
+      `uvm_field_int(pre_hit_drop_cnt, UVM_DEFAULT)
+      `uvm_field_int(post_hdr_drop_cnt, UVM_DEFAULT)
+      `uvm_field_int(post_shd_drop_cnt, UVM_DEFAULT)
+      `uvm_field_int(post_hit_drop_cnt, UVM_DEFAULT)
+      `uvm_field_int(exact_post_valid, UVM_DEFAULT)
+      `uvm_field_int(exact_post_ts, UVM_DEFAULT)
+      `uvm_field_int(exact_post_shd_cnt, UVM_DEFAULT)
+      `uvm_field_int(exact_post_hit_cnt, UVM_DEFAULT)
     `uvm_object_utils_end
 
     function new(string name = "opq_drop_item");
       super.new(name);
       lane_id = -1;
+      hdr_drop_cnt = 0;
       shd_drop_cnt = 0;
       hit_drop_cnt = 0;
+      pre_shd_drop_cnt = 0;
+      pre_hit_drop_cnt = 0;
+      post_hdr_drop_cnt = 0;
+      post_shd_drop_cnt = 0;
+      post_hit_drop_cnt = 0;
+      exact_post_valid = 1'b0;
+      exact_post_ts = '0;
+      exact_post_shd_cnt = 0;
+      exact_post_hit_cnt = 0;
     endfunction
   endclass
 

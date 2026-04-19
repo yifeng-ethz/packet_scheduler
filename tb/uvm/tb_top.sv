@@ -16,6 +16,10 @@ module tb_top;
   logic d_reset = 1'b1;
   time clk_period = 4ns;
   int unsigned clk_period_ns;
+`ifdef OPQ_USE_NATIVE_SV
+  bit native_trace_boundary;
+  time native_trace_after_ps = 0;
+`endif
 
   opq_ingress_if ingress_if [OPQ_N_LANE] (d_clk);
   opq_egress_if egress_if (d_clk);
@@ -44,6 +48,13 @@ module tb_top;
     end
   end
 
+`ifdef OPQ_USE_NATIVE_SV
+  initial begin
+    native_trace_boundary = $test$plusargs("OPQ_NATIVE_TRACE_BOUNDARY");
+    void'($value$plusargs("OPQ_TRACE_AFTER_PS=%d", native_trace_after_ps));
+  end
+`endif
+
   genvar i;
   generate
     for (i = 0; i < OPQ_N_LANE; i++) begin : gen_if_rst
@@ -58,28 +69,178 @@ module tb_top;
   if (OPQ_N_LANE == 2) begin : gen_drop_tap_2lane
     for (i = 0; i < OPQ_N_LANE; i++) begin : gen_drop_lane
       assign drop_if.valid[i] = gen_dut_2lane.dut.u_vhdl.u_impl.dbg_drop_valid[i];
+      assign drop_if.hdr_drop_cnt[i] = 16'd0;
       assign drop_if.shd_drop_cnt[i] = drop_if.valid[i] ? 16'd1 : 16'd0;
       assign drop_if.hit_drop_cnt[i] = drop_if.valid[i] ? gen_dut_2lane.dut.u_vhdl.u_impl.dbg_drop_hit_cnt[(i*16) +: 16] : 16'd0;
+      assign drop_if.pre_shd_drop_cnt[i] = drop_if.shd_drop_cnt[i];
+      assign drop_if.pre_hit_drop_cnt[i] = drop_if.hit_drop_cnt[i];
+      assign drop_if.post_hdr_drop_cnt[i] = 16'd0;
+      assign drop_if.post_shd_drop_cnt[i] = 16'd0;
+      assign drop_if.post_hit_drop_cnt[i] = 16'd0;
+      assign drop_if.exact_post_valid[i] = 1'b0;
+      assign drop_if.exact_post_ts[i] = '0;
+      assign drop_if.exact_post_shd_cnt[i] = '0;
+      assign drop_if.exact_post_hit_cnt[i] = '0;
     end
   end else begin : gen_drop_tap_4lane
     for (i = 0; i < OPQ_N_LANE; i++) begin : gen_drop_lane
       assign drop_if.valid[i] = gen_dut_4lane.dut4.u_impl.dbg_drop_valid[i];
+      assign drop_if.hdr_drop_cnt[i] = 16'd0;
       assign drop_if.shd_drop_cnt[i] = drop_if.valid[i] ? 16'd1 : 16'd0;
       assign drop_if.hit_drop_cnt[i] = drop_if.valid[i] ? gen_dut_4lane.dut4.u_impl.dbg_drop_hit_cnt[(i*16) +: 16] : 16'd0;
+      assign drop_if.pre_shd_drop_cnt[i] = drop_if.shd_drop_cnt[i];
+      assign drop_if.pre_hit_drop_cnt[i] = drop_if.hit_drop_cnt[i];
+      assign drop_if.post_hdr_drop_cnt[i] = 16'd0;
+      assign drop_if.post_shd_drop_cnt[i] = 16'd0;
+      assign drop_if.post_hit_drop_cnt[i] = 16'd0;
+      assign drop_if.exact_post_valid[i] = 1'b0;
+      assign drop_if.exact_post_ts[i] = '0;
+      assign drop_if.exact_post_shd_cnt[i] = '0;
+      assign drop_if.exact_post_hit_cnt[i] = '0;
     end
   end
 `else
   if (OPQ_N_LANE == 2) begin : gen_drop_tap_2lane_native
     for (i = 0; i < OPQ_N_LANE; i++) begin : gen_drop_lane_native
-      assign drop_if.valid[i] = gen_dut_2lane.dut.native_drop_valid_dbg[i];
-      assign drop_if.shd_drop_cnt[i] = gen_dut_2lane.dut.native_drop_shd_dbg[i];
-      assign drop_if.hit_drop_cnt[i] = gen_dut_2lane.dut.native_drop_hit_dbg[i];
+      assign drop_if.valid[i] = gen_dut_2lane.dut.native_drop_evt_valid_dbg[i];
+      assign drop_if.hdr_drop_cnt[i] = gen_dut_2lane.dut.native_drop_evt_hdr_dbg[i];
+      assign drop_if.shd_drop_cnt[i] = gen_dut_2lane.dut.native_drop_evt_shd_dbg[i];
+      assign drop_if.hit_drop_cnt[i] = gen_dut_2lane.dut.native_drop_evt_hit_dbg[i];
+      assign drop_if.pre_shd_drop_cnt[i] = gen_dut_2lane.dut.native_drop_evt_pre_shd_dbg[i];
+      assign drop_if.pre_hit_drop_cnt[i] = gen_dut_2lane.dut.native_drop_evt_pre_hit_dbg[i];
+      assign drop_if.post_hdr_drop_cnt[i] = gen_dut_2lane.dut.native_drop_evt_post_hdr_dbg[i];
+      assign drop_if.post_shd_drop_cnt[i] = gen_dut_2lane.dut.native_drop_evt_post_shd_dbg[i];
+      assign drop_if.post_hit_drop_cnt[i] = gen_dut_2lane.dut.native_drop_evt_post_hit_dbg[i];
+      assign drop_if.exact_post_valid[i] = gen_dut_2lane.dut.native_exact_post_valid_dbg[i];
+      assign drop_if.exact_post_ts[i] = gen_dut_2lane.dut.native_exact_post_ts_dbg[i];
+      assign drop_if.exact_post_shd_cnt[i] = gen_dut_2lane.dut.native_exact_post_shd_dbg[i];
+      assign drop_if.exact_post_hit_cnt[i] = gen_dut_2lane.dut.native_exact_post_hit_dbg[i];
     end
   end else begin : gen_drop_tap_4lane_native
     for (i = 0; i < OPQ_N_LANE; i++) begin : gen_drop_lane_native
-      assign drop_if.valid[i] = gen_dut_4lane.dut4.native_drop_valid_dbg[i];
-      assign drop_if.shd_drop_cnt[i] = gen_dut_4lane.dut4.native_drop_shd_dbg[i];
-      assign drop_if.hit_drop_cnt[i] = gen_dut_4lane.dut4.native_drop_hit_dbg[i];
+      assign drop_if.valid[i] = gen_dut_4lane.dut4.native_drop_evt_valid_dbg[i];
+      assign drop_if.hdr_drop_cnt[i] = gen_dut_4lane.dut4.native_drop_evt_hdr_dbg[i];
+      assign drop_if.shd_drop_cnt[i] = gen_dut_4lane.dut4.native_drop_evt_shd_dbg[i];
+      assign drop_if.hit_drop_cnt[i] = gen_dut_4lane.dut4.native_drop_evt_hit_dbg[i];
+      assign drop_if.pre_shd_drop_cnt[i] = gen_dut_4lane.dut4.native_drop_evt_pre_shd_dbg[i];
+      assign drop_if.pre_hit_drop_cnt[i] = gen_dut_4lane.dut4.native_drop_evt_pre_hit_dbg[i];
+      assign drop_if.post_hdr_drop_cnt[i] = gen_dut_4lane.dut4.native_drop_evt_post_hdr_dbg[i];
+      assign drop_if.post_shd_drop_cnt[i] = gen_dut_4lane.dut4.native_drop_evt_post_shd_dbg[i];
+      assign drop_if.post_hit_drop_cnt[i] = gen_dut_4lane.dut4.native_drop_evt_post_hit_dbg[i];
+      assign drop_if.exact_post_valid[i] = gen_dut_4lane.dut4.native_exact_post_valid_dbg[i];
+      assign drop_if.exact_post_ts[i] = gen_dut_4lane.dut4.native_exact_post_ts_dbg[i];
+      assign drop_if.exact_post_shd_cnt[i] = gen_dut_4lane.dut4.native_exact_post_shd_dbg[i];
+      assign drop_if.exact_post_hit_cnt[i] = gen_dut_4lane.dut4.native_exact_post_hit_dbg[i];
+    end
+  end
+`endif
+
+`ifdef OPQ_USE_NATIVE_SV
+  if (OPQ_N_LANE == 2) begin : gen_native_boundary_trace_2lane
+    always_ff @(posedge d_clk) begin
+      if (!d_reset && native_trace_boundary && ($time >= native_trace_after_ps)) begin
+        for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+          if (gen_dut_2lane.dut.native_handle_we_dbg[lane]) begin
+            $display("[opq_boundary] t=%0t lane%0d handle_we flag=%0b src=0x%0h dst=0x%0h len=%0d handle_wptr=0x%0h ticket_rptr=0x%0h",
+              $time,
+              lane,
+              gen_dut_2lane.dut.native_handle_flag_dbg[lane],
+              gen_dut_2lane.dut.u_native.page_allocator_i.page_allocator.ticket[lane].lane_fifo_rd_offset,
+              gen_dut_2lane.dut.u_native.page_allocator_i.page_allocator_if_alloc_blk_start[lane],
+              gen_dut_2lane.dut.u_native.page_allocator_i.page_allocator.ticket[lane].block_length,
+              gen_dut_2lane.dut.u_native.page_allocator_i.page_allocator.handle_wptr[lane],
+              gen_dut_2lane.dut.u_native.page_allocator_i.page_allocator.ticket_rptr[lane]);
+          end
+
+          if (gen_dut_2lane.dut.u_native.block_path_i.block_mover_state[lane] == 3'd1) begin
+            $display("[opq_boundary] t=%0t lane%0d mover_prep src=0x%0h dst=0x%0h len=%0d handle_rptr=0x%0h quantum=%0d",
+              $time,
+              lane,
+              gen_dut_2lane.dut.u_native.block_path_i.block_mover_handle_src[lane],
+              gen_dut_2lane.dut.u_native.block_path_i.block_mover_handle_dst[lane],
+              gen_dut_2lane.dut.u_native.block_path_i.block_mover_handle_blk_len[lane],
+              gen_dut_2lane.dut.u_native.block_path_i.block_mover_handle_rptr[lane],
+              gen_dut_2lane.dut.native_drr_quantum_dbg[lane]);
+          end
+
+          if (gen_dut_2lane.dut.u_native.block_path_i.block_mover_page_wreq[lane] &&
+              gen_dut_2lane.dut.native_drr_gnt_dbg[lane]) begin
+            $display("[opq_boundary] t=%0t lane%0d mover_write word_idx=%0d src=0x%0h dst=0x%0h len=%0d lane_rd=0x%0h lane_q=0x%0h page_addr=0x%0h page_data=0x%0h quantum=%0d",
+              $time,
+              lane,
+              gen_dut_2lane.dut.u_native.block_path_i.block_mover_word_wr_cnt[lane],
+              gen_dut_2lane.dut.u_native.block_path_i.block_mover_handle_src[lane],
+              gen_dut_2lane.dut.u_native.block_path_i.block_mover_handle_dst[lane],
+              gen_dut_2lane.dut.u_native.block_path_i.block_mover_handle_blk_len[lane],
+              gen_dut_2lane.dut.u_native.lane_fifos_rd_addr[lane],
+              gen_dut_2lane.dut.u_native.lane_fifos_rd_data[lane],
+              gen_dut_2lane.dut.u_native.page_ram_wr_addr_dbg,
+              gen_dut_2lane.dut.u_native.page_ram_wr_data_dbg,
+              gen_dut_2lane.dut.native_drr_quantum_dbg[lane]);
+          end
+
+          if (gen_dut_2lane.dut.u_native.block_path_i.block_mover_lane_credit_update_valid[lane]) begin
+            $display("[opq_boundary] t=%0t lane%0d credit_return amount=%0d handle_rptr=0x%0h",
+              $time,
+              lane,
+              gen_dut_2lane.dut.u_native.block_path_i.block_mover_lane_credit_update[lane],
+              gen_dut_2lane.dut.u_native.block_path_i.block_mover_handle_rptr[lane]);
+          end
+        end
+      end
+    end
+  end else begin : gen_native_boundary_trace_4lane
+    always_ff @(posedge d_clk) begin
+      if (!d_reset && native_trace_boundary && ($time >= native_trace_after_ps)) begin
+        for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+          if (gen_dut_4lane.dut4.native_handle_we_dbg[lane]) begin
+            $display("[opq_boundary] t=%0t lane%0d handle_we flag=%0b src=0x%0h dst=0x%0h len=%0d handle_wptr=0x%0h ticket_rptr=0x%0h",
+              $time,
+              lane,
+              gen_dut_4lane.dut4.native_handle_flag_dbg[lane],
+              gen_dut_4lane.dut4.u_native.page_allocator_i.page_allocator.ticket[lane].lane_fifo_rd_offset,
+              gen_dut_4lane.dut4.u_native.page_allocator_i.page_allocator_if_alloc_blk_start[lane],
+              gen_dut_4lane.dut4.u_native.page_allocator_i.page_allocator.ticket[lane].block_length,
+              gen_dut_4lane.dut4.u_native.page_allocator_i.page_allocator.handle_wptr[lane],
+              gen_dut_4lane.dut4.u_native.page_allocator_i.page_allocator.ticket_rptr[lane]);
+          end
+
+          if (gen_dut_4lane.dut4.u_native.block_path_i.block_mover_state[lane] == 3'd1) begin
+            $display("[opq_boundary] t=%0t lane%0d mover_prep src=0x%0h dst=0x%0h len=%0d handle_rptr=0x%0h quantum=%0d",
+              $time,
+              lane,
+              gen_dut_4lane.dut4.u_native.block_path_i.block_mover_handle_src[lane],
+              gen_dut_4lane.dut4.u_native.block_path_i.block_mover_handle_dst[lane],
+              gen_dut_4lane.dut4.u_native.block_path_i.block_mover_handle_blk_len[lane],
+              gen_dut_4lane.dut4.u_native.block_path_i.block_mover_handle_rptr[lane],
+              gen_dut_4lane.dut4.native_drr_quantum_dbg[lane]);
+          end
+
+          if (gen_dut_4lane.dut4.u_native.block_path_i.block_mover_page_wreq[lane] &&
+              gen_dut_4lane.dut4.native_drr_gnt_dbg[lane]) begin
+            $display("[opq_boundary] t=%0t lane%0d mover_write word_idx=%0d src=0x%0h dst=0x%0h len=%0d lane_rd=0x%0h lane_q=0x%0h page_addr=0x%0h page_data=0x%0h quantum=%0d",
+              $time,
+              lane,
+              gen_dut_4lane.dut4.u_native.block_path_i.block_mover_word_wr_cnt[lane],
+              gen_dut_4lane.dut4.u_native.block_path_i.block_mover_handle_src[lane],
+              gen_dut_4lane.dut4.u_native.block_path_i.block_mover_handle_dst[lane],
+              gen_dut_4lane.dut4.u_native.block_path_i.block_mover_handle_blk_len[lane],
+              gen_dut_4lane.dut4.u_native.lane_fifos_rd_addr[lane],
+              gen_dut_4lane.dut4.u_native.lane_fifos_rd_data[lane],
+              gen_dut_4lane.dut4.u_native.page_ram_wr_addr_dbg,
+              gen_dut_4lane.dut4.u_native.page_ram_wr_data_dbg,
+              gen_dut_4lane.dut4.native_drr_quantum_dbg[lane]);
+          end
+
+          if (gen_dut_4lane.dut4.u_native.block_path_i.block_mover_lane_credit_update_valid[lane]) begin
+            $display("[opq_boundary] t=%0t lane%0d credit_return amount=%0d handle_rptr=0x%0h",
+              $time,
+              lane,
+              gen_dut_4lane.dut4.u_native.block_path_i.block_mover_lane_credit_update[lane],
+              gen_dut_4lane.dut4.u_native.block_path_i.block_mover_handle_rptr[lane]);
+          end
+        end
+      end
     end
   end
 `endif
