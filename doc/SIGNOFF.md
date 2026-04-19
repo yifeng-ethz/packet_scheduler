@@ -1,7 +1,7 @@
 # ⚠️ Signoff — packet_scheduler ordered_priority_queue
 
-**DUT:** `ordered_priority_queue` &nbsp; **Date:** `2026-04-17` &nbsp;
-**Release under check:** `26.3.10.0414` &nbsp; **Git base:** `local working tree`
+**DUT:** `ordered_priority_queue` &nbsp; **Date:** `2026-04-19` &nbsp;
+**Release under check:** `26.3.25.0419` &nbsp; **Git base:** `local working tree`
 
 This page is the master signoff dashboard. Detailed standalone synthesis
 evidence lives in [`../syn/SYN_REPORT.md`](../syn/SYN_REPORT.md); detailed DV
@@ -16,9 +16,9 @@ evidence lives in [`../tb/DV_REPORT.md`](../tb/DV_REPORT.md).
 | status | field | value |
 |:---:|---|---|
 | ⚠️ | overall_signoff | `partial` |
-| ❓ | standalone_syn | `pending standalone Quartus refresh in the cleaned tree` |
-| ⚠️ | isolated_dv_closure | `31/31 isolated cases evidenced; code coverage below target` |
-| ❌ | cross_bucket_signoff | `2` native-SV continuous-frame runs recorded, both failing |
+| ❓ | standalone_syn | `4-lane A10 standalone Quartus refresh in progress on 10AX115N2F45E1SG` |
+| ⚠️ | isolated_dv_closure | `37/37` promoted isolated cases evidenced; merged code coverage below target |
+| ✅ | cross_bucket_signoff | `2` native-SV continuous-frame runs recorded, both green |
 | ✅ | tb_int_longrun_matrix | `128/128` integrated matrix cases green |
 | ⚠️ | resource_model | `RAM/CAM standalone estimate under review` |
 
@@ -26,8 +26,9 @@ evidence lives in [`../tb/DV_REPORT.md`](../tb/DV_REPORT.md).
 
 | status | area | result | source |
 |:---:|---|---|---|
-| ⚠️ | isolated DV closure | `31/31` planned isolated cases evidenced; merged code coverage remains below `dv-workflow` targets | [`../tb/DV_REPORT.md`](../tb/DV_REPORT.md) |
-| ❌ | bucket / continuous-frame signoff | `bucket_frame_native_sv` and `all_buckets_frame_native_sv` both fail on the open no-reset credit-restore bug | [`../tb/DV_COV.md`](../tb/DV_COV.md) |
+| ⚠️ | isolated DV closure | `37/37` promoted isolated native-SV cases evidenced; merged code coverage remains below `dv-workflow` targets | [`../tb/DV_REPORT.md`](../tb/DV_REPORT.md) |
+| ✅ | bucket / continuous-frame signoff | `bucket_frame_native_sv` and `all_buckets_frame_native_sv` both pass on the current native-SV baseline | [`../tb/DV_COV.md`](../tb/DV_COV.md) |
+| ⚠️ | long-run invariant screens | focused half-saturation random-ready overflow rerun is now clean (`unexplained=0`, `UVM_ERROR=0`), but the stretched mixed-bucket seconds soak remains an explicit open probe | [`../tb/DV_REPORT_TODO.md`](../tb/DV_REPORT_TODO.md), [`../tb/BUG_HISTORY.md`](../tb/BUG_HISTORY.md) |
 | ✅ | integrated long-run matrix | `128/128` long-run cases green; merged-frame contract evidence exists in `tb_int/` | [`../tb_int/DV_REPORT.md`](../tb_int/DV_REPORT.md) |
 | ✅ | bug ledgers | standalone and integrated bugs are both tracked in live ledgers | [`../tb/BUG_HISTORY.md`](../tb/BUG_HISTORY.md), [`../tb_int/BUG_HISTORY.md`](../tb_int/BUG_HISTORY.md) |
 
@@ -35,9 +36,9 @@ evidence lives in [`../tb/DV_REPORT.md`](../tb/DV_REPORT.md).
 
 | status | item | value |
 |:---:|---|---|
-| ❓ | revision | `standalone cleaned-tree revision not yet rerun` |
-| ℹ️ | device | `5AGXBA7D4F31C5` planned signoff target |
-| ❓ | signoff constraint | `pending standalone refresh` |
+| ❓ | revision | `opq_native_sv_4lane_signoff` standalone A10 refresh still in progress |
+| ℹ️ | device | `10AX115N2F45E1SG` (`online_sc/a10_board`) planned signoff target |
+| ℹ️ | signoff constraint | `275 MHz` (`1.1x` the `250 MHz` board target) |
 | ❓ | timing summary | `no standalone WNS/TNS/Fmax claim yet` |
 | ⚠️ | fitted resources | `existing RAM-block estimate is not trusted until the standalone refresh is rerun` |
 | ℹ️ | detail report | [`../syn/SYN_REPORT.md`](../syn/SYN_REPORT.md) |
@@ -49,7 +50,8 @@ evidence lives in [`../tb/DV_REPORT.md`](../tb/DV_REPORT.md).
 | ✅ | Structure | root layout normalized to `rtl/`, `tb/`, `tb_int/`, `script/`, `doc/`, and `syn/` with canonical README entry points |
 | ✅ | Packaging | `_hw.tcl` files moved under `script/` and updated to reference the canonical RTL trees |
 | ✅ | Harness | FEB output can be captured into TLM transactions for OPQ and can still directly pin-drive OPQ for later `tb_int/` work |
-| ❌ | Native-SV long run | no-reset drain / lane-credit restore bug still blocks continuous-frame signoff closure |
+| ✅ | Native-SV no-restart signoff | default-build continuous-frame native-SV signoff is closed on the current baseline |
+| ✅ | Native-SV overflow accounting | focused half-saturation random-ready overflow screen now closes with `unexplained=0` after the late-frame ticket-tail accounting fix |
 | ❓ | Standalone synthesis | standalone Quartus signoff rerun and RAM/CAM resource audit still pending |
 
 ## Evidence Index
@@ -72,3 +74,7 @@ evidence lives in [`../tb/DV_REPORT.md`](../tb/DV_REPORT.md).
 - The RAM/CAM fitter concern is explicitly left open here: the next standalone
   Quartus refresh must reconcile the RAM-block count with the CAM-backed
   storage implementation instead of reusing the older estimate.
+- Future parameterized timing closure is a later phase: `N_LANE={2,4,8,16}`
+  plus other allowed parameter points need their own synthesis-safe pipeline
+  options and matching DV closure rather than inheriting the current 2-lane
+  baseline.

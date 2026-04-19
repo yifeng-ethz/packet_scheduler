@@ -1,6 +1,12 @@
 # Changelog
 Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 
+## 26.3.25.0419
+
+- **RTL / Native-SV Late-Frame Drop Accounting**: fixed the page allocator's late-frame accounting so a stale past SOP ticket no longer reports the whole frame's stored `n_subh/n_hit` metadata as one monolithic post-drop event. The live native-SV path now emits header-drop only on a past SOP ticket and one post-drop event per unread non-SOP ticket using that ticket's exact `block_length` and `ticket_ts`.
+- **Verification / Overflow Conservation Closure**: reran the focused half-saturation random-ready overflow screen in shape-check mode. `opq_cross_random_ready_overflow_seconds_soak_test` now closes with `UVM_ERROR : 0`, lane0 `accepted=460 delivered=460 unexplained=0`, lane1 `accepted=444 delivered=444 unexplained=0`, and no drop-total mismatch against expected traffic.
+- **Documentation / Signoff Status**: refreshed the standalone signoff dashboards to the live `online_sc/a10_board` / Arria 10 state. `doc/SIGNOFF.md` now reflects green native-SV continuous-frame baselines plus the repaired overflow invariant screen, while `syn/SYN_REPORT.md` now points at the active 4-lane A10 standalone revision still in progress.
+
 ## 26.3.24.0419
 
 - **RTL / Native-SV Burst DRR Closure**: fixed the monolithic page allocator so merged-frame progress no longer advances past an already-active busy lane that has not yet surfaced its current ticket. Under asymmetric bursty DRR traffic, the allocator now waits for every active busy lane before advancing the current subheader, which removes the silent late-ticket loss seen at the stall boundary.

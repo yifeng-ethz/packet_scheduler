@@ -69,13 +69,18 @@ Execution order frozen on 2026-04-18 for the next closure phase:
         pipeline insertion and/or FSM repartitioning at the real critical cones
       - those later parameter points do not inherit DV closure from the current
         promoted `OPQ_N_LANE=2` baseline and need their own DV evidence
-- [ ] Add an explicit invariant-first sanity plan to the live todo and keep it
+- [x] Add an explicit invariant-first sanity plan to the live todo and keep it
       ahead of case-by-case cleanup:
       - quantify accepted hits, expected drops, and per-lane rates end to end
       - check packet structure at ingress, data mover / frame table, and
         egress boundaries
       - require long-run screens to report whether losses were observed through
         legal counted paths or through unexpected silent corruption
+      Status on `2026-04-19`:
+      - the same invariant-first guidance is now frozen in the repo-root
+        `AGENTS.md`
+      - the live closure screens use per-lane checkpoint ledgers and treat the
+        first non-zero `unexplained` hit count as a hard stop for debug
 - [ ] Freeze the per-lane hit conservation law that all long-run debug must use:
       `accepted_ingress_hits = legal_drops + delivered_egress_hits + unexplained_hits`
       with `legal_drops` split into the currently observable buckets:
@@ -87,6 +92,9 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       - egress emitted-frame ledger
       Each ledger must carry `frame_id/pkg_cnt`, `lane_id`, sub-header count,
       total hit count, and drop-reason classification or `none`.
+      Priority frozen on `2026-04-19`: the mover / frame-table write-drop
+      ledger is the first missing authoritative boundary and must be added
+      before further broad random reruns are trusted.
 
 ## 2. Create The Mandatory dv-workflow Report Scaffold
 
@@ -223,6 +231,14 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       - packet-boundary contract corruption
       - missing legal-drop observability
       - out-of-scope parameter / lane non-claim
+      Current mapping frozen on `2026-04-19`:
+      - `BUG-011-R`: packet-boundary contract corruption after chained
+        predecessor traffic, with the weak boundary currently at malformed
+        subheader recovery composability
+      - `BUG-018-H`: hit accounting / silent-loss risk in later PROF-heavy
+        no-restart windows after the earliest exact window was repaired
+      - 4-lane scope statement: out-of-scope parameter / lane non-claim until
+        native-SV 4-lane DV evidence and A10 synthesis evidence are both live
 - [x] Resolve the forced-overwrite / malformed-egress bug before promoting
       `opq_error_ftable_overflow_test`.
       Status: the reduced-depth `OPQ_PAGE_RAM_DEPTH=512` native-SV overflow
@@ -253,18 +269,43 @@ Execution order frozen on 2026-04-18 for the next closure phase:
 - [ ] Resolve the chained malformed-subheader recovery corruption before adding
       `opq_error_subheader_mask_recovery_test` back into the mixed-bucket soak
       pool.
+      Required deterministic predecessor matrix before any broad soak rerun:
+      - `drr_bp -> subheader_error_recovery`
+      - `idle_lane_bp -> subheader_error_recovery`
+      - `whole_frame_skew -> subheader_error_recovery`
+      - `sparse_missing_empty -> subheader_error_recovery`
+      Each pairwise repro must print ingress, mover/frame-table, and egress
+      ledgers at every checkpoint, not only at final summary.
 - [ ] Resolve the hit-without-subheader contract failure still exposed by
       `opq_cross_mixed_bucket_seconds_soak_test` before promoting the earlier
       extended mixed-soak screen into the live report set.
-      Status on `2026-04-18` after the `BUG-014-R` presenter repair:
-      - a full stretched rerun still fails on the fixed presenter state
-      - earliest current hit is at `11.642702 ms`, immediately before
-        `mixed_sparse_191`
-      - later repeats are also seen around `mixed_soak_261`,
-        `mixed_whole_skew_275`, `mixed_whole_skew_418`, and before
-        `mixed_whole_skew_435`
-      - keep this item open as a real long-chain mixed-soak blocker, not
-        just a pending-length rerun
+      Status on `2026-04-19`:
+      - the original earliest failing window around `mixed_sparse_191` is now
+        repaired on the exact deterministic reproducer
+        `opq_cross_hit3_exact_183_190_repro_test`, which ends
+        `expected=2476 actual=2476 missing=0 ghost=0`
+      - remaining work is a refreshed full stretched rerun to prove that the
+        later windows (`mixed_soak_261`, `mixed_whole_skew_275`,
+        `mixed_whole_skew_418`, `mixed_whole_skew_435`) are also gone on the
+        repaired RTL
+      - before rerunning the full seconds soak, build exact deterministic
+        repro windows around each remaining later site so any continued
+        failure is shrunk at the ledger level instead of debugged only inside
+        the full long run
+      - keep this item open as a real long-chain revalidation step, not as an
+        already-closed signoff point
+- [x] Resolve late-frame legal-drop overcount in the half-saturation random
+      ready overflow screen before trusting longer overflow/backpressure
+      conservation evidence.
+      Status on `2026-04-19`:
+      - `BUG-021-R` is now fixed on the live native-SV RTL
+      - focused rerun `/tmp/opq_overflow_fix6.log` closes with
+        `UVM_ERROR : 0` and per-lane
+        `accepted = delivered + unexplained(0)` under the configured legal-drop
+        path
+      - the repaired invariant is now ticket-tail based: late-frame SOP emits
+        header-drop only, and unread non-SOP tickets emit one post-drop
+        subheader each with exact `block_length` / `ticket_ts`
 - [x] Resolve the native-SV no-reset drain / credit-restore bug before calling
       `bucket_frame` or `all_buckets_frame` signoff closed.
 - [x] Add enough late-drop observability to prove hit integrity on the bursty
@@ -275,18 +316,32 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       - the focused bursty repro closes with per-lane `unexplained=0`, so the
         repaired path no longer depends on final CSR totals alone for
         hit-integrity proof
-- [ ] Add checkpoint summaries to the long mixed and overflow soaks so each
+- [ ] Add checkpoint summaries to the long mixed soak so each checkpoint
+      reports, per lane:
+      accepted hits, legal dropped hits, delivered hits, unexplained hits, and
+      the current frame-table `wr = rd + drop` ledger state.
+- [x] Add checkpoint summaries to the overflow/backpressure soaks so each
       checkpoint reports, per lane:
       accepted hits, legal dropped hits, delivered hits, unexplained hits, and
       the current frame-table `wr = rd + drop` ledger state.
+      Status on `2026-04-19`:
+      - `opq_cross_random_ready_overflow_seconds_soak_test` now reports both
+        `overflow_step_*` and `overflow_final` ledgers with per-lane
+        `expected / accepted / dropped / delivered / unexplained` plus the
+        frame-table `wr = rd + drop` summary
 - [ ] Close the remaining harness-upgrade gaps that would block full native-SV
       ownership:
       - scoreboard and SVA parity between native-SV and prior reference runs
       - build/run support for every promoted bucket under `DUT_IMPL=native_sv`
       - native-SV-only closure for any parameter points claimed in the report
-- [ ] Decide whether 4-lane native-SV closure is in scope for this report:
-      - if yes, fix the sparse-frame cadence issue logged in `BUG_HISTORY.md`
-      - if no, mark 4-lane as a non-claim in the report
+- [ ] Refresh the 4-lane native-SV scope statement in the report:
+      - the old sparse-frame cadence reproducer (`BUG-007-R`) is now green on
+        current RTL and should no longer be treated as an automatic non-claim
+      - keep 4-lane signoff tied to real evidence instead:
+        current 4-lane DV status plus the standalone A10 `N_LANE=4` synthesis
+        result
+      - remove the stale 4-lane non-claim wording from the report only after
+        the active A10 standalone refresh is recorded
 
 ## 9. Update BUG_HISTORY With Signoff Discipline
 

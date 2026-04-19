@@ -14,7 +14,7 @@ Class legend:
 | [BUG-004-H](#bug-004-h-cross-bucket-csr-proof-used-non-feb-ingress-framing) | H | fixed | `opq_cross_bp_credit_test`, `opq_cross_drr_allowance_test` | `6b9ed41` | Cross-bucket CSR proof sequences drove split packets instead of FEB whole-frame traffic. |
 | [BUG-005-R](#bug-005-r-header-error-mask-path-corrupts-the-next-legal-frame-timestamp) | R | fixed | `opq_error_header_mask_recovery_test` | `pending` | Header-error mask recovery no longer leaks stale timestamp context into the next legal frame after the allocator was re-seeded from the captured ingress header timestamp base. |
 | [BUG-006-H](#bug-006-h-native-sv-no-restart-signoff-accounting-broke-continuous-frame-closure) | H | fixed | `opq_bucket_frame_native_sv_test`, `opq_all_buckets_frame_native_sv_test` | `b799f94` | No-restart signoff reused frame identity and miscounted malformed subheaders. |
-| [BUG-007-R](#bug-007-r-swb-4-lane-sparse-frame-cadence-drops-later-hits) | R | open | `opq_prof_missing_empty_frame_test` @ `OPQ_N_LANE=4` | `pending` | Unmasked quiescent lanes can block later active-lane traffic when empty-frame cadence is absent. |
+| [BUG-007-R](#bug-007-r-swb-4-lane-sparse-frame-cadence-drops-later-hits) | R | fixed | `opq_prof_missing_empty_frame_test` @ `OPQ_N_LANE=4` | `pending` | The old 4-lane sparse-cadence drop is no longer reproducible on current native-SV RTL. |
 | [BUG-008-R](#bug-008-r-forced-overwrite-path-still-emits-malformed-accepted-egress-and-no-frame-table-drop-accounting) | R | fixed | `opq_error_ftable_overflow_test` | `41948b1` | Reduced-depth forced overwrite under always-stall corrupted accepted egress and hid frame-table drop events until the native-SV presenter and CSR path were fixed. |
 | [BUG-009-R](#bug-009-r-bursty-drr-stall-boundary-path-still-corrupts-egress-ordering-and-lacks-late-drop-identity) | R | fixed | `opq_cross_drr_bursty_random_test` | `pending` | Bursty DRR plus periodic stall no longer loses late active-lane traffic after the allocator holds merged-frame progress until every active busy lane has surfaced its current ticket. |
 | [BUG-010-R](#bug-010-r-header-word-recovery-path-still-corrupts-the-next-legal-frame) | R | fixed | `opq_error_header_word_mask_recovery_test` | `pending` | Header-word error injection no longer corrupts the next legal timestamp base after the recovery frame seeds from the captured ingress header timestamp base. |
@@ -27,6 +27,8 @@ Class legend:
 | [BUG-017-H](#bug-017-h-oss-mover-sby-harness-now-reaches-proof-but-still-fails-on-arbiter-shape-invariants) | H | fixed | `formal_mover.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `de65125` | The live OSS mover proof now passes on the current block-path subset after the proof-clean arbiter view was exported and constrained. |
 | [BUG-018-H](#bug-018-h-extended-mixed-bucket-seconds-soak-exposes-chained-masked-drop-accounting-underrun) | H | open | `opq_cross_mixed_bucket_seconds_soak_test` on `2026-04-18` | `pending` | The old seconds-soak accounting underrun is fixed, but the full stretched rerun still trips `opq_hit3_contract`, first around mixed step `191` and later in repeated PROF-heavy windows. |
 | [BUG-019-R](#bug-019-r-merged-frame-header-counts-incremented-per-accepted-lane-instead-of-per-emitted-subheader) | R | fixed | `opq_basic_smoke_test` on `2026-04-18` | `pending` | The native-SV page allocator was double-counting merged subheaders in the frame header, so the advertised subheader count could exceed the emitted K237 count under multi-lane merge. |
+| [BUG-020-R](#bug-020-r-late-drop-lane-credit-return-added-stale-block-path-credit-and-poisoned-no-restart-state) | R | fixed | `opq_cross_hit3_exact_183_190_repro_test` on `2026-04-19` | `pending` | Late-drop lane-credit return pulses were adding stale block-path credit data when only one source was valid, corrupting no-restart lane-credit state and the mixed-soak exact failing window. |
+| [BUG-021-R](#bug-021-r-late-frame-drop-accounting-counted-whole-frame-sop-metadata-instead-of-the-unread-ticket-tail) | R | fixed | `opq_cross_random_ready_overflow_seconds_soak_test` on `2026-04-19` | `pending` | Late-frame drop accounting used full-frame SOP metadata instead of the unread ticket tail, which double-counted already credit-dropped subheaders and broke long overflow hit conservation. |
 
 ## 2026-04-17
 
@@ -142,17 +144,24 @@ Class legend:
   - reproducer result: `expected=6 actual=4 missing=2 ghost=0`
   - integrated clue: stage-D per-lane frame counts are highly uneven (`57/128/57/73`) and OPQ remains stuck near the first frame
 - Root cause status:
-  - open, but the evidence points to a contract mismatch around sparse per-lane frame cadence
-  - OPQ already has an explicit ingress lane-mask CSR; this bug therefore applies to the unmasked case (`lane_mask=0`), not to intentionally quiescent lanes that are masked off by configuration
-  - the monolithic 4-lane page allocator advances only when every lane has a stable pending ticket or an end-of-frame condition, so lanes that simply stop producing frames can hold back later active-lane traffic
-- Blocking reason:
-  - 4-lane native-SV remains an explicit non-claim in the active report until the sparse-frame cadence contract is fixed or the intended lane-mask/empty-frame normalization policy is frozen
-- Candidate fixes:
-  - configure the existing OPQ lane-mask CSR whenever a lane is intentionally quiescent
-  - add an SWB/FEB ingress normalizer that synthesizes empty frames for idle lanes when masking is not available or not desirable
-  - or upgrade OPQ fetch/allocation so quiescent lanes do not block later active-lane frames
+  - fixed on current native-SV RTL
+  - the old failure is no longer reproducible after the allocator / late-drop
+    credit repair series that culminated in `BUG-020-R`; current evidence
+    points to stale lane-credit state rather than a permanent 4-lane cadence
+    contract violation
+  - OPQ still supports the explicit ingress lane-mask CSR, but the focused
+    unmasked sparse-cadence testcase is now green and no longer forces a hard
+    4-lane non-claim by itself
 - Fix status:
-  - open
+  - fixed in focused native-SV rerun on `2026-04-19`
+- Runtime / coverage context:
+  - `OPQ_N_LANE=4 BUILD_DIR=/tmp/opq_uvm_build_n4 bash packet_scheduler/tb/scripts/run_uvm.sh opq_prof_missing_empty_frame_test`
+    now ends with `expected=4 actual=4 missing=0 ghost=0`
+  - current per-lane ledgers close as:
+    - lane0 `accepted=2 dropped=0 delivered=2 unexplained=0`
+    - lane1 `accepted=2 dropped=0 delivered=2 unexplained=0`
+    - lane2 `accepted=0 dropped=0 delivered=0 unexplained=0`
+    - lane3 `accepted=0 dropped=2 post_drop=2 delivered=0 unexplained=0`
 - Commit:
   - pending
 
@@ -424,21 +433,25 @@ Class legend:
   - isolated lane-mask and lane-mask-recovery cases are green, so the
     remaining failure is specific to longer no-restart chaining rather
     than the isolated drop path itself
-  - the old scoreboard/accounting bug is fixed, but the earlier extended
-    mixed-soak screen is still exposing a real hit/sub-header contract
-    break under longer chained traffic
+  - the original exact failing window around `mixed_sparse_191` is now
+    repaired by `BUG-020-R`: the focused deterministic reproducer
+    `opq_cross_hit3_exact_183_190_repro_test` passes cleanly on current RTL
+  - this item stays open only because the full stretched rerun has not yet
+    been repeated end-to-end after that exact-window repair, so later windows
+    such as `mixed_soak_261` / `mixed_whole_skew_275` are not closed by
+    assertion yet
 - Blocking reason:
   - `opq_cross_mixed_bucket_seconds_soak_test` is intentionally kept
     probe-only because the full stretched rerun still produces real
     `opq_hit3_contract` failures on the fixed presenter state; this is
     no longer just a short-run uncertainty
 - Candidate fixes:
-  - correlate the `opq_hit3_contract` failures against the mixed-step
-    schedule and reconstruct the missing sub-header/hit sequence in the
-    egress contract monitor
-  - once the hit/sub-header ordering bug is repaired, rerun the same
-    stretched mixed-soak screen to confirm that the old scoreboard
-    underrun stays gone and no new contract failures remain
+  - rerun the same stretched mixed-soak screen on the repaired RTL to prove
+    that the old `mixed_sparse_191` failure is gone and to determine whether
+    any later failure windows remain
+  - if later windows still fail, split each one into an exact deterministic
+    reproducer the same way `opq_cross_hit3_exact_183_190_repro_test` was
+    derived from the first failing chain
 - Fix status:
   - open
 - Commit:
@@ -462,5 +475,78 @@ Class legend:
 - Runtime / coverage context:
   - this bug was found by the invariant-first smoke rerun before the retuned overflow soak was allowed to continue
   - the fix restores agreement between the advertised merged frame header and the emitted packet body, which is a prerequisite for trusting longer soak evidence
+- Commit:
+  - pending
+
+### BUG-020-R: Late-drop lane-credit return added stale block-path credit and poisoned no-restart state
+- First seen in:
+  - `packet_scheduler/tb/uvm`
+    `TEST=opq_cross_hit3_exact_183_190_repro_test DUT_IMPL=native_sv`
+    on `2026-04-19`
+  - derived while shrinking `BUG-018-H` from the full seconds-soak failure
+    window down to the exact `183..190` no-restart chain
+- Symptom:
+  - before the final fix, the exact reproducer could advance through the old
+    failing traffic family but then hang on credit restore with under-restored
+    lane credit, for example:
+    - lane0 `lane_credit=304/1022`
+    - lane1 `lane_credit=505/1022`
+  - the hit ledger at that point was already telling the real story: payload
+    delivery was otherwise consistent, so the remaining corruption had moved
+    into lane-credit state rather than raw egress ordering
+  - once enough of those stale credit additions accumulated, the longer mixed
+    soak manifested the same root issue as `opq_hit3_contract` failures in the
+    later exact chain
+- Root cause:
+  - `ordered_priority_queue_monolithic.sv` merged
+    `block_path_lane_credit_update[i]` and `late_drop_lane_credit_update[i]`
+    with a plain sum whenever either valid bit was asserted
+  - that meant a late-drop credit-return pulse could add a stale
+    block-path-credit bus value even when `block_path_lane_credit_update_valid`
+    was low, corrupting the visible lane-credit state that no-restart chaining
+    depends on
+- Fix status:
+  - fixed in focused native-SV exact repro on `2026-04-19`
+- Runtime / coverage context:
+  - `/tmp/opq_hit3_exact_183_190_repro_20260419_cleanpass.log` now ends with:
+    - `expected=2476 actual=2476 missing=0 ghost=0`
+    - lane0 `accepted=1625 dropped=0 delivered=1625 unexplained=0`
+    - lane1 `accepted=851 dropped=4 post_drop=4 delivered=851 unexplained=0`
+    - `UVM_ERROR : 0`
+    - `[PASS] opq_cross_hit3_exact_183_190_repro_test`
+- Commit:
+  - pending
+
+### BUG-021-R: Late-frame drop accounting counted whole-frame SOP metadata instead of the unread ticket tail
+- First seen in:
+  - `packet_scheduler/tb/uvm`
+    `TEST=opq_cross_random_ready_overflow_seconds_soak_test DUT_IMPL=native_sv`
+    on `2026-04-19`
+  - focused half-saturation shape-check configuration:
+    `+TB_CLK_PERIOD_NS=100000 +OPQ_OVERFLOW_SOAK_STEPS=1 +OPQ_OVERFLOW_MIN_HIT_PERCENT=0 +OPQ_OVERFLOW_MAX_HIT_PERCENT=50 +OPQ_OVERFLOW_HOT_MIN_HIT_PERCENT=25 +OPQ_OVERFLOW_SUBHEADERS_PER_FRAME=128 +OPQ_OVERFLOW_FRAMES_PER_STEP=4 +OPQ_OVERFLOW_GAP_CYCLES=0 +OPQ_OVERFLOW_REQUIRE_FT_DROP=0`
+- Symptom:
+  - the previous half-saturation rerun no longer hit the old scoreboard underrun, but it still failed the big-picture conservation check:
+    - lane0 `expected=54400 accepted=460 dropped=53940 delivered=386 unexplained=74`
+    - lane1 `expected=54016 accepted=359 dropped=53657 delivered=304 unexplained=55`
+  - lane drop CSR totals were higher than the scoreboard’s exact accounting by exact whole-subheader quanta:
+    - lane0 `+13 * 105`
+    - lane1 `+14 * 85`
+  - this proved the error was no longer random residue; it was deterministic overcount in the legal-drop path
+- Root cause:
+  - `ordered_priority_queue_monolithic_page_allocator.sv` exported late-frame drop counts from the past SOP ticket using the stored whole-frame `n_subh/n_hit` metadata
+  - that metadata still includes subheaders that later never become unread tail tickets because ingress credit-drop already rejected them
+  - under long overflow/backpressure screens, the SOP-based late-frame count therefore double-counted part of the frame: once in the full-frame late-drop aggregate and again through later exact pre-drop accounting
+- Fix status:
+  - fixed in focused native-SV overflow rerun on `2026-04-19`
+- Runtime / coverage context:
+  - the repair changes late-frame accounting to the invariant that actually matches unread ownership:
+    - past SOP ticket emits header-drop only
+    - each unread non-SOP past ticket emits exactly one dropped subheader with its own `block_length` and `ticket_ts`
+  - `/tmp/opq_overflow_fix6.log` now closes cleanly with:
+    - lane0 `expected=54400 accepted=460 dropped=53940 delivered=460 unexplained=0`
+    - lane1 `expected=54016 accepted=444 dropped=53572 delivered=444 unexplained=0`
+    - aggregate `accepted=904 dropped=107512 delivered=904 unexplained=0`
+    - `UVM_ERROR : 0`
+  - this is shape-check overflow evidence only; frame-table overflow signoff remains a separate requirement
 - Commit:
   - pending

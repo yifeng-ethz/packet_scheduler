@@ -1,11 +1,11 @@
 # ⚠️ SYN Report — packet_scheduler ordered_priority_queue
 
-**Revision:** `pending standalone refresh` &nbsp; **Date:** `2026-04-17` &nbsp;
-**Device:** `5AGXBA7D4F31C5` &nbsp; **Quartus:** `pending rerun` &nbsp;
-**Build basis:** `cleaned tree refresh only`
+**Revision:** `opq_native_sv_4lane_signoff` &nbsp; **Date:** `2026-04-19` &nbsp;
+**Device:** `10AX115N2F45E1SG` (`online_sc/a10_board`) &nbsp; **Quartus:** `18.1 Standard` &nbsp;
+**Build basis:** `live standalone Arria 10 refresh in progress`
 
 This file is the detailed standalone synthesis and timing report for the active
-`packet_scheduler` cleanup point. The master signoff dashboard is
+`packet_scheduler` standalone signoff harness. The master signoff dashboard is
 [`../doc/SIGNOFF.md`](../doc/SIGNOFF.md).
 
 ## Build Intent
@@ -15,6 +15,11 @@ This file is the detailed standalone synthesis and timing report for the active
   reusing the older example-system numbers
 - use that refresh to validate timing, resource usage, and the RAM/CAM storage
   model on the current packaged release
+- use the `online_sc/a10_board` target device rather than the older Arria V
+  FE board device
+- establish the first live standalone baseline at `N_LANE=4`, because the board
+  target is `250 MHz` and later lane-point closure must start from the real
+  4-lane Arria 10 cone rather than the older 2-lane placeholder revision
 
 ## Pre-Fit Model
 
@@ -28,26 +33,30 @@ This file is the detailed standalone synthesis and timing report for the active
   - frame-table / presenter drain logic
   - backpressure and credit-return bookkeeping in the merged egress path
 
-This model has not yet been checked against a fresh standalone fitter run in
-the cleaned tree.
+This model is currently being checked against a fresh standalone A10 compile in
+the cleaned tree. The current active run has already cleared the old
+synthesis-only lane-FIFO inference problem by forcing the local compatibility
+lane FIFO onto explicit `M20K` storage; fit/STA artifacts are still pending.
 
 ## Timing Summary
 
 Signoff target:
 
-- target clock: `pending`
-- target frequency: `pending`
-- target period: `pending`
+- target clock: `d_clk`
+- target frequency: `275 MHz`
+- target period: `3.636364 ns`
 
 | status | model | setup WNS (ns) | hold WNS (ns) | Fmax |
 |:---:|---|---:|---:|---:|
-| ❓ | Standalone cleaned-tree refresh not yet rerun | n/a | n/a | n/a |
+| ❓ | 4-lane A10 standalone refresh in progress | n/a | n/a | n/a |
 
 Key conclusions:
 
 - no standalone timing closure claim is made yet
-- the cleaned tree only reorganizes the collateral; it does not replace the
-  required Quartus refresh
+- the live signoff revision is now `opq_native_sv_4lane_signoff`; the older
+  `opq_native_sv_2lane_signoff` placeholder is no longer the active baseline
+- lane-scaled timing closure for `N_LANE={8,16}` remains a later phase and will
+  require adaptive pipeline controls plus its own DV evidence
 
 ## Resource Summary
 
@@ -65,7 +74,7 @@ Key conclusions:
 
 | module | elapsed | CPU time |
 |---|---:|---:|
-| Analysis & Synthesis | `pending` | `pending` |
+| Analysis & Synthesis | `running` | `pending` |
 | Fitter | `pending` | `pending` |
 | Assembler | `pending` | `pending` |
 | Timing Analyzer | `pending` | `pending` |
@@ -74,24 +83,31 @@ Key conclusions:
 ## Constraint Caveats
 
 - the current `quartus/opq_monolithic_4lane_merge/` collateral is an example
-  system generation point, not a refreshed standalone timing signoff harness
+  system generation point, not the refreshed standalone timing signoff harness
 - RAM / CAM accounting is explicitly considered unresolved: the next fitter run
   must be reviewed for whether CAM-backed behavior is consuming more memory
   than the old estimate implied
 - until that refresh exists, do not quote RAM-block counts or Fmax from older
   collateral as signoff numbers
+- the active standalone refresh uses a synthesis-only harness top and local
+  compatibility copies for old-parser and simulation-only constructs; functional
+  RTL changes still belong in `rtl/`
+- the active compile currently has no fit or STA report, so no ALM, M20K,
+  WNS, TNS, or Fmax number in this file is allowed to be treated as signoff
+  evidence yet
 
 ## Artifacts
 
-- [`quartus/opq_monolithic_4lane_merge/generate.sh`](quartus/opq_monolithic_4lane_merge/generate.sh)
-- [`quartus/opq_monolithic_4lane_merge/opq_monolithic_4lane_merge.tcl`](quartus/opq_monolithic_4lane_merge/opq_monolithic_4lane_merge.tcl)
-- [`quartus/opq_monolithic_4lane_merge/opq_monolithic_4lane_merge.qsys`](quartus/opq_monolithic_4lane_merge/opq_monolithic_4lane_merge.qsys)
-- [`quartus/opq_monolithic_4lane_merge/generated/opq_monolithic_4lane_merge_generation.rpt`](quartus/opq_monolithic_4lane_merge/generated/opq_monolithic_4lane_merge_generation.rpt)
+- [`quartus/opq_native_sv_4lane_signoff/README.md`](quartus/opq_native_sv_4lane_signoff/README.md)
+- [`quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff.qsf`](quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff.qsf)
+- [`quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv`](quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv)
+- [`quartus/opq_native_sv_4lane_signoff/compile_live.log`](quartus/opq_native_sv_4lane_signoff/compile_live.log)
 
 ## Result
 
 **⚠️ PENDING for standalone timing / resource signoff**
 
-The tree cleanup is complete, but the standalone Quartus signoff rerun has not
-been executed from the new `syn/quartus/` layout yet. Timing, fitted resource,
-and RAM/CAM accounting remain open until that refresh is done.
+The active standalone Arria 10 refresh is now the 4-lane revision under
+`syn/quartus/opq_native_sv_4lane_signoff/`, but the fitter and timing analyzer
+have not produced signoff artifacts yet. Timing, fitted resource, and RAM/CAM
+accounting remain open until that refresh completes.

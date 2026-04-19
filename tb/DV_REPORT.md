@@ -1,6 +1,6 @@
 # ✅ DV Report — packet_scheduler ordered_priority_queue native_sv
 
-**DUT:** `ordered_priority_queue_monolithic_sv` &nbsp; **Date:** `2026-04-18` &nbsp; **RTL variant:** `after` &nbsp; **Seed:** `1`
+**DUT:** `ordered_priority_queue_monolithic_sv` &nbsp; **Date:** `2026-04-19` &nbsp; **RTL variant:** `after` &nbsp; **Seed:** `1`
 
 This page is the chief-architect dashboard. All per-case evidence lives under [`REPORT/`](REPORT/README.md).
 
@@ -30,7 +30,7 @@ This page is the chief-architect dashboard. All per-case evidence lives under [`
 - excluded probe cases: `opq_error_header_mask_recovery_test`, `opq_error_header_word_mask_recovery_test`, `opq_cross_drr_bursty_random_test`
 - mode scope: MERGING mode only is claimed in the active native-SV report
 - n shd scope: native-SV signoff claim covers OPQ_N_SHD = 128 / 256 / 512 only
-- four lane status: 4-lane native-SV remains out of signoff scope until the sparse-frame cadence bug in BUG_HISTORY.md is closed
+- four lane status: 4-lane native-SV remains out of signoff scope until dedicated 4-lane DV evidence and the standalone Arria 10 synthesis result are both recorded
 - continuous frame scope: continuous-frame baselines currently cover the default-build promoted matrix only; PARAM build points and the reduced-depth overflow point require separate elaboration and are excluded from no-restart baselines
 
 ## Bucket Summary

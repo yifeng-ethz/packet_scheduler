@@ -56,15 +56,17 @@ INSTANCE_HOLE_SPECS = [
         "classification": "real gap",
         "reason": (
             "The remaining low FSM-transition coverage lines up with the still-open "
-            "bursty DRR stall-boundary probe and the 4-lane sparse-cadence non-claim."
+            "bursty DRR random probe plus the lack of signed-off 4-lane DV and "
+            "Arria 10 synthesis evidence."
         ),
         "evidence_anchor": (
-            "BUG-007-R / BUG-009-R; opq_cross_drr_bursty_random_test; "
-            "opq_prof_missing_empty_frame_test @ OPQ_N_LANE=4"
+            "BUG-009-R; opq_cross_drr_bursty_random_test; "
+            "opq_prof_missing_empty_frame_test @ OPQ_N_LANE=4; "
+            "doc/SIGNOFF.md standalone_syn"
         ),
         "next_action": (
-            "Repair bursty DRR ordering and 4-lane sparse cadence, then add promoted "
-            "directed closure around those transitions."
+            "Refresh the bursty DRR random evidence and record real 4-lane DV plus "
+            "A10 standalone closure before expanding the signoff claim."
         ),
     },
     {
@@ -1148,7 +1150,7 @@ def build() -> dict:
             "excluded_probe_cases": EXCLUDED_CASES,
             "mode_scope": "MERGING mode only is claimed in the active native-SV report",
             "n_shd_scope": "native-SV signoff claim covers OPQ_N_SHD = 128 / 256 / 512 only",
-            "four_lane_status": "4-lane native-SV remains out of signoff scope until the sparse-frame cadence bug in BUG_HISTORY.md is closed",
+            "four_lane_status": "4-lane native-SV remains out of signoff scope until dedicated 4-lane DV evidence and the standalone Arria 10 synthesis result are both recorded",
             "continuous_frame_scope": "continuous-frame baselines currently cover the default-build promoted matrix only; PARAM build points and the reduced-depth overflow point require separate elaboration and are excluded from no-restart baselines",
         },
         "execution_modes": {

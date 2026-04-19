@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_page_allocator
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.29
+// Version : 26.3.30
 // Date    : 20260419
-// Change  : Hold merged-frame subheader progress until every active busy lane has surfaced its current ticket, preventing silent late-loss on skewed frames
+// Change  : Return lane FIFO credits immediately when stale past tickets are dropped and export the dropped ticket identity for exact post-drop accounting
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_page_allocator #(
@@ -63,6 +63,9 @@ module ordered_priority_queue_monolithic_page_allocator #(
   output logic [N_LANE-1:0][15:0]                           late_frame_drop_hdr_cnt_o,
   output logic [N_LANE-1:0][15:0]                           late_frame_drop_shd_cnt_o,
   output logic [N_LANE-1:0][15:0]                           late_frame_drop_hit_cnt_o,
+  output logic [N_LANE-1:0][47:0]                           late_frame_drop_ts_o,
+  output logic [N_LANE-1:0][LANE_FIFO_ADDR_WIDTH-1:0]       late_frame_lane_credit_update_o,
+  output logic [N_LANE-1:0]                                 late_frame_lane_credit_update_valid_o,
   output logic                                              page_we_o,
   output logic [PAGE_RAM_ADDR_WIDTH-1:0]                    page_waddr_o,
   output logic [PAGE_RAM_DATA_WIDTH-1:0]                    page_wdata_o,
@@ -284,6 +287,9 @@ module ordered_priority_queue_monolithic_page_allocator #(
   logic [N_LANE-1:0][15:0] late_frame_drop_hdr_cnt;
   logic [N_LANE-1:0][15:0] late_frame_drop_shd_cnt;
   logic [N_LANE-1:0][15:0] late_frame_drop_hit_cnt;
+  logic [N_LANE-1:0][47:0] late_frame_drop_ts;
+  logic [N_LANE-1:0][LANE_FIFO_ADDR_WIDTH-1:0] late_frame_lane_credit_update;
+  logic [N_LANE-1:0] late_frame_lane_credit_update_valid;
   logic [PAGE_RAM_ADDR_WIDTH-1:0] packet_complete_frame_start_addr;
 
   always_comb begin : proc_page_allocator_comb
@@ -372,6 +378,9 @@ module ordered_priority_queue_monolithic_page_allocator #(
       late_frame_drop_hdr_cnt_o[i] = late_frame_drop_hdr_cnt[i];
       late_frame_drop_shd_cnt_o[i] = late_frame_drop_shd_cnt[i];
       late_frame_drop_hit_cnt_o[i] = late_frame_drop_hit_cnt[i];
+      late_frame_drop_ts_o[i] = late_frame_drop_ts[i];
+      late_frame_lane_credit_update_o[i] = late_frame_lane_credit_update[i];
+      late_frame_lane_credit_update_valid_o[i] = late_frame_lane_credit_update_valid[i];
 
       page_allocator_if_alloc_blk_start[i] = page_allocator.page_start_addr + alloc_offset_v;
       if (!page_allocator.lane_masked[i] && !page_allocator.lane_skipped[i]) begin
@@ -506,6 +515,9 @@ module ordered_priority_queue_monolithic_page_allocator #(
     late_frame_drop_hdr_cnt <= '{default:'0};
     late_frame_drop_shd_cnt <= '{default:'0};
     late_frame_drop_hit_cnt <= '{default:'0};
+    late_frame_drop_ts <= '{default:'0};
+    late_frame_lane_credit_update <= '{default:'0};
+    late_frame_lane_credit_update_valid <= '0;
 
     unique case (page_allocator_state)
       PAGE_ALLOCATOR_IDLE: begin
@@ -566,12 +578,22 @@ module ordered_priority_queue_monolithic_page_allocator #(
               page_allocator.lane_masked[i] <= 1'b1;
               page_allocator.ticket_credit_update_valid[i] <= 1'b0;
             end else if (page_allocator_is_tk_past[i]) begin
+              late_frame_drop_valid[i] <= 1'b1;
               if (page_allocator_is_tk_sop[i]) begin
-                late_frame_drop_valid[i] <= 1'b1;
                 late_frame_drop_hdr_cnt[i] <= 16'd1;
-                late_frame_drop_shd_cnt[i] <= ticket_fifos_rd_data_i[i][TICKET_N_SUBH_HI:TICKET_N_SUBH_LO];
-                late_frame_drop_hit_cnt[i] <= ticket_fifos_rd_data_i[i][TICKET_N_HIT_HI:TICKET_N_HIT_LO];
+                late_frame_drop_shd_cnt[i] <= '0;
+                late_frame_drop_hit_cnt[i] <= '0;
+                late_frame_drop_ts[i] <= ticket_fifos_rd_data_i[i][TICKET_FRAME_TS_HI:TICKET_FRAME_TS_LO];
+              end else begin
+                late_frame_drop_hdr_cnt[i] <= '0;
+                late_frame_drop_shd_cnt[i] <= 16'd1;
+                late_frame_drop_hit_cnt[i] <=
+                  {{(16-MAX_PKT_LENGTH_BITS){1'b0}}, page_allocator_if_read_ticket_ticket[i].block_length};
+                late_frame_drop_ts[i] <= page_allocator_if_read_ticket_ticket[i].ticket_ts;
               end
+              late_frame_lane_credit_update[i] <=
+                page_allocator_if_read_ticket_ticket[i].block_length;
+              late_frame_lane_credit_update_valid[i] <= 1'b1;
               page_allocator.ticket[i] <= TICKET_DEFAULT;
               page_allocator.ticket_rptr[i] <= page_allocator.ticket_rptr[i] + ticket_fifo_addr_t'(1);
               page_allocator.lane_masked[i] <= 1'b1;
@@ -585,12 +607,22 @@ module ordered_priority_queue_monolithic_page_allocator #(
           page_allocator.lane_masked[i] <= 1'b1;
           page_allocator.ticket_credit_update_valid[i] <= 1'b0;
         end else if (page_allocator_is_tk_past[i]) begin
+          late_frame_drop_valid[i] <= 1'b1;
           if (page_allocator_is_tk_sop[i]) begin
-            late_frame_drop_valid[i] <= 1'b1;
             late_frame_drop_hdr_cnt[i] <= 16'd1;
-            late_frame_drop_shd_cnt[i] <= ticket_fifos_rd_data_i[i][TICKET_N_SUBH_HI:TICKET_N_SUBH_LO];
-            late_frame_drop_hit_cnt[i] <= ticket_fifos_rd_data_i[i][TICKET_N_HIT_HI:TICKET_N_HIT_LO];
+            late_frame_drop_shd_cnt[i] <= '0;
+            late_frame_drop_hit_cnt[i] <= '0;
+            late_frame_drop_ts[i] <= ticket_fifos_rd_data_i[i][TICKET_FRAME_TS_HI:TICKET_FRAME_TS_LO];
+          end else begin
+            late_frame_drop_hdr_cnt[i] <= '0;
+            late_frame_drop_shd_cnt[i] <= 16'd1;
+            late_frame_drop_hit_cnt[i] <=
+              {{(16-MAX_PKT_LENGTH_BITS){1'b0}}, page_allocator_if_read_ticket_ticket[i].block_length};
+            late_frame_drop_ts[i] <= page_allocator_if_read_ticket_ticket[i].ticket_ts;
           end
+          late_frame_lane_credit_update[i] <=
+            page_allocator_if_read_ticket_ticket[i].block_length;
+          late_frame_lane_credit_update_valid[i] <= 1'b1;
           page_allocator.ticket[i] <= TICKET_DEFAULT;
           page_allocator.ticket_rptr[i] <= page_allocator.ticket_rptr[i] + ticket_fifo_addr_t'(1);
           page_allocator.lane_masked[i] <= 1'b1;

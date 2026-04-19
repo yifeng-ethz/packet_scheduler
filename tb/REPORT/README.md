@@ -1,6 +1,6 @@
 # packet_scheduler ordered_priority_queue native_sv — REPORT index
 
-**DUT:** `ordered_priority_queue_monolithic_sv` &nbsp; **Date:** `2026-04-18` &nbsp; **RTL variant:** `after` &nbsp; **Seed:** `1`
+**DUT:** `ordered_priority_queue_monolithic_sv` &nbsp; **Date:** `2026-04-19` &nbsp; **RTL variant:** `after` &nbsp; **Seed:** `1`
 
 ✅ pass / closed / target met &middot; ⚠️ partial / below target / known limitation &middot; ❌ failed / missing evidence &middot; ❓ pending &middot; ℹ️ informational
 
