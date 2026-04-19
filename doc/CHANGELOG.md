@@ -1,6 +1,12 @@
 # Changelog
 Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 
+## 26.3.26.0419
+
+- **RTL / Native-SV Mixed-Soak Exact Window**: fixed the monolithic page allocator so a new frame seeds `running_ts` from the parser's current running subheader timestamp instead of the frame header timestamp. The allocator no longer misclassifies the first live payload tickets as `future` and no longer closes an empty frame tail before fetching same-frame payload.
+- **Verification / Exact-Window Closure**: reran the deterministic `opq_cross_hit3_exact_183_190_repro_test` and the focused 5-step `opq_cross_mixed_bucket_seconds_soak_test` bug-hunt configuration. Both now pass with `UVM_ERROR : 0`, which closes the old earliest `mixed_sparse_191` failing window on current native-SV RTL.
+- **Documentation / Signoff Discipline**: refreshed the standalone signoff dashboard, generated DV dashboard, and live TODO so they record the repaired exact-window evidence without overstating closure. The stretched mixed-bucket seconds-soak rerun and the 4-lane standalone Arria 10 synthesis refresh both remain explicit pending signoff items.
+
 ## 26.3.25.0419
 
 - **RTL / Native-SV Late-Frame Drop Accounting**: fixed the page allocator's late-frame accounting so a stale past SOP ticket no longer reports the whole frame's stored `n_subh/n_hit` metadata as one monolithic post-drop event. The live native-SV path now emits header-drop only on a past SOP ticket and one post-drop event per unread non-SOP ticket using that ticket's exact `block_length` and `ticket_ts`.

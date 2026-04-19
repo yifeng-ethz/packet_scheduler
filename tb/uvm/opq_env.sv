@@ -3,6 +3,7 @@ class opq_virtual_sequencer extends uvm_sequencer #(uvm_sequence_item);
 
   opq_ingress_sequencer ingress_seqr[OPQ_N_LANE];
   opq_egress_sequencer egress_seqr;
+  virtual opq_ingress_if ingress_vif[OPQ_N_LANE];
 
   function new(string name = "opq_virtual_sequencer", uvm_component parent = null);
     super.new(name, parent);
@@ -54,6 +55,7 @@ class opq_env extends uvm_env;
       ingress_agent[i].lane_id = i;
       ingress_agent[i].is_active = UVM_ACTIVE;
       ingress_frame_fifo[i] = new($sformatf("ingress_frame_fifo_%0d", i), this);
+      vseqr.ingress_vif[i] = ingress_vif[i];
     end
 
     egress_agent = opq_egress_agent::type_id::create("egress_agent", this);

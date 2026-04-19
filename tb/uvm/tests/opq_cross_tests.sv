@@ -463,6 +463,25 @@ class opq_cross_drr_bursty_random_test extends opq_base_test;
     return 1200us;
   endfunction
 
+  virtual function void configure_bursty_sequence(opq_drr_bursty_random_virtual_sequence seq);
+    if (!seq.randomize()) begin
+      `uvm_fatal(get_type_name(), "Failed to randomize bursty DRR stress sequence")
+    end
+  endfunction
+
+  virtual function void configure_bursty_allowance(
+    output int unsigned hot_allowance,
+    output int unsigned cold_allowance
+  );
+    if (!std::randomize(hot_allowance, cold_allowance) with {
+      hot_allowance inside {[1:8]};
+      cold_allowance inside {[16:64]};
+      hot_allowance < cold_allowance;
+    }) begin
+      `uvm_fatal(get_type_name(), "Failed to randomize DRR allowance pair")
+    end
+  endfunction
+
   virtual task run_main_sequence();
     opq_drr_bursty_random_virtual_sequence seq;
     opq_bp_sequence bp_seq;
@@ -471,16 +490,8 @@ class opq_cross_drr_bursty_random_test extends opq_base_test;
     int unsigned cold_allowance;
 
     seq = opq_drr_bursty_random_virtual_sequence::type_id::create("seq");
-    if (!seq.randomize()) begin
-      `uvm_fatal(get_type_name(), "Failed to randomize bursty DRR stress sequence")
-    end
-    if (!std::randomize(hot_allowance, cold_allowance) with {
-      hot_allowance inside {[1:8]};
-      cold_allowance inside {[16:64]};
-      hot_allowance < cold_allowance;
-    }) begin
-      `uvm_fatal(get_type_name(), "Failed to randomize DRR allowance pair")
-    end
+    configure_bursty_sequence(seq);
+    configure_bursty_allowance(hot_allowance, cold_allowance);
 
     hot_lane = seq.hot_lane;
     lane_allowance_cfg[0] = (hot_lane == 0) ? hot_allowance : cold_allowance;
@@ -587,4 +598,30 @@ class opq_cross_drr_bursty_random_test extends opq_base_test;
       ))
     end
   endtask
+endclass
+
+class opq_cross_drr_bursty_repro_test extends opq_cross_drr_bursty_random_test;
+  `uvm_component_utils(opq_cross_drr_bursty_repro_test)
+
+  function new(string name = "opq_cross_drr_bursty_repro_test", uvm_component parent = null);
+    super.new(name, parent);
+  endfunction
+
+  virtual function void configure_bursty_sequence(opq_drr_bursty_random_virtual_sequence seq);
+    seq.hot_lane = 0;
+    seq.frame_count = 8;
+    seq.subheaders_per_frame = 11;
+    seq.hot_hits_per_subheader = 46;
+    seq.cold_hits_per_subheader = 4;
+    seq.hot_gap_cycles = 8;
+    seq.cold_gap_cycles = 4032;
+  endfunction
+
+  virtual function void configure_bursty_allowance(
+    output int unsigned hot_allowance,
+    output int unsigned cold_allowance
+  );
+    hot_allowance = 1;
+    cold_allowance = 46;
+  endfunction
 endclass

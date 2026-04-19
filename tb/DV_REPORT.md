@@ -31,6 +31,7 @@ This page is the chief-architect dashboard. All per-case evidence lives under [`
 - mode scope: MERGING mode only is claimed in the active native-SV report
 - n shd scope: native-SV signoff claim covers OPQ_N_SHD = 128 / 256 / 512 only
 - four lane status: 4-lane native-SV remains out of signoff scope until dedicated 4-lane DV evidence and the standalone Arria 10 synthesis result are both recorded
+- mixed bucket seconds probe status: the exact 183..190 reproducer and the focused 5-step seconds-soak rerun are now green on current RTL, but the full stretched mixed-bucket seconds soak remains open until it is rerun end-to-end on the repaired allocator state
 - continuous frame scope: continuous-frame baselines currently cover the default-build promoted matrix only; PARAM build points and the reduced-depth overflow point require separate elaboration and are excluded from no-restart baselines
 
 ## Bucket Summary

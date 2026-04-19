@@ -19,10 +19,18 @@ class opq_ingress_driver extends uvm_driver #(opq_frame_item);
   virtual opq_ingress_if vif;
   int lane_id;
   uvm_analysis_port #(opq_frame_item) frame_ap;
+  bit reset_sync_done;
+  bit frame_inflight;
 
   function new(string name = "opq_ingress_driver", uvm_component parent = null);
     super.new(name, parent);
     frame_ap = new("frame_ap", this);
+    reset_sync_done = 1'b0;
+    frame_inflight = 1'b0;
+  endfunction
+
+  function automatic bit is_idle();
+    return !frame_inflight && (vif.valid !== 1'b1);
   endfunction
 
   task automatic clear_bus();
@@ -39,11 +47,23 @@ class opq_ingress_driver extends uvm_driver #(opq_frame_item);
   endtask
 
   task automatic wait_reset_release();
-    while (vif.reset) begin
-      clear_bus();
+    if (!reset_sync_done) begin
+      while (vif.reset) begin
+        clear_bus();
+        @(vif.drv_cb);
+      end
+      wait_cycles(OPQ_POST_RESET_SETTLE_CYCLES);
+      reset_sync_done = 1'b1;
+    end else if (vif.reset) begin
+      reset_sync_done = 1'b0;
+      wait_reset_release();
+    end
+  endtask
+
+  task automatic wait_until_cycle(bit [63:0] target_cycle);
+    while (vif.cycle_count < target_cycle) begin
       @(vif.drv_cb);
     end
-    wait_cycles(OPQ_POST_RESET_SETTLE_CYCLES);
   endtask
 
   task automatic drive_word(
@@ -65,8 +85,33 @@ class opq_ingress_driver extends uvm_driver #(opq_frame_item);
   endtask
 
   task automatic drive_frame(opq_frame_item tr);
+    opq_frame_item tr_clone;
+
     wait_reset_release();
-    wait_cycles(tr.pre_gap_cycles);
+    frame_inflight = 1'b1;
+    if (!tr.suppress_scoreboard_frame) begin
+      $cast(tr_clone, tr.clone());
+      frame_ap.write(tr_clone);
+    end
+    if (tr.use_absolute_launch) begin
+      if (vif.cycle_count > tr.launch_cycle) begin
+        `uvm_error(get_type_name(), $sformatf(
+          "lane %0d missed absolute launch_cycle=%0d current_cycle=%0d slot_id=%0d pkg_cnt=%0d",
+          lane_id,
+          tr.launch_cycle,
+          vif.cycle_count,
+          tr.frame_slot_id,
+          tr.pkg_cnt
+        ))
+      end
+      wait_until_cycle(tr.launch_cycle);
+    end else begin
+      if (tr.pre_gap_cycles == 0) begin
+        @(vif.drv_cb);
+      end else begin
+        wait_cycles(tr.pre_gap_cycles);
+      end
+    end
 
     drive_word(make_preamble(tr.dt_type, tr.feb_id), 4'b0001, 1'b1, 1'b0, tr.preamble_error_bits, tr.channel);
     drive_word(make_frame_data_header0(tr.frame_ts), 4'b0000, 1'b0, 1'b0, tr.data_header0_error_bits, tr.channel);
@@ -92,21 +137,25 @@ class opq_ingress_driver extends uvm_driver #(opq_frame_item);
     if (!tr.omit_trailer) begin
       drive_word(make_trailer(), 4'b0001, 1'b0, 1'b1, 3'b000, tr.channel);
     end
+    frame_inflight = 1'b0;
   endtask
 
   task run_phase(uvm_phase phase);
     opq_frame_item tr;
-    opq_frame_item tr_clone;
 
     clear_bus();
     forever begin
       seq_item_port.get_next_item(tr);
-      $cast(tr_clone, tr.clone());
-      if (!tr.suppress_scoreboard_frame) begin
-        frame_ap.write(tr_clone);
-      end
-      `uvm_info(get_type_name(), $sformatf("Driving lane %0d frame pkg_cnt=%0d subh=%0d hits=%0d",
-        lane_id, tr.pkg_cnt, tr.frame_subh_count_bits(), tr.frame_hit_count_bits()), UVM_MEDIUM)
+      `uvm_info(get_type_name(), $sformatf(
+        "Driving lane %0d frame pkg_cnt=%0d subh=%0d hits=%0d abs=%0b launch_cycle=%0d slot_id=%0d",
+        lane_id,
+        tr.pkg_cnt,
+        tr.frame_subh_count_bits(),
+        tr.frame_hit_count_bits(),
+        tr.use_absolute_launch,
+        tr.launch_cycle,
+        tr.frame_slot_id
+      ), UVM_MEDIUM)
       drive_frame(tr);
       seq_item_port.item_done();
     end

@@ -301,6 +301,7 @@ class opq_base_test extends uvm_test;
       bit [8:0] lane_base;
       bit [31:0] drop_shd_word;
       bit [31:0] drop_hit_word;
+      int unsigned expected_hits;
       int unsigned accepted_hits;
       int unsigned dropped_hits;
       int unsigned delivered_hits;
@@ -317,11 +318,16 @@ class opq_base_test extends uvm_test;
         drop_hit_word
       );
 
+      expected_hits = env.scoreboard.get_expected_lane_hit_cnt(lane);
       accepted_hits = env.scoreboard.get_accepted_lane_hit_cnt(lane);
       dropped_hits = env.scoreboard.get_dropped_lane_hit_cnt(lane);
       delivered_hits = env.scoreboard.get_actual_lane_hit_cnt(lane);
       unexplained_hits = env.scoreboard.get_unexplained_lane_hit_cnt(lane);
-      loss_pct_x100 = (accepted_hits == 0) ? 0 : ((dropped_hits * 10000) / accepted_hits);
+      if (expected_hits == 0) begin
+        loss_pct_x100 = 0;
+      end else begin
+        loss_pct_x100 = (dropped_hits * 10000) / expected_hits;
+      end
 
       total_accepted += accepted_hits;
       total_dropped += dropped_hits;
@@ -329,9 +335,10 @@ class opq_base_test extends uvm_test;
       total_unexplained += unexplained_hits;
 
       `uvm_info(get_type_name(), $sformatf(
-        "%s lane%0d hit_ledger accepted=%0d dropped=%0d delivered=%0d unexplained=%0d drop_pct=%0d.%02d",
+        "%s lane%0d hit_ledger expected=%0d accepted=%0d dropped=%0d delivered=%0d unexplained=%0d drop_pct=%0d.%02d",
         label,
         lane,
+        expected_hits,
         accepted_hits,
         dropped_hits,
         delivered_hits,
@@ -340,13 +347,24 @@ class opq_base_test extends uvm_test;
         loss_pct_x100 % 100
       ), UVM_LOW)
 
-      if (accepted_hits != (dropped_hits + delivered_hits + unexplained_hits)) begin
+      if (expected_hits != (dropped_hits + delivered_hits + unexplained_hits)) begin
         `uvm_error(get_type_name(), $sformatf(
-          "%s lane%0d hit accounting mismatch accepted=%0d dropped=%0d delivered=%0d unexplained=%0d",
+          "%s lane%0d hit accounting mismatch expected=%0d accepted=%0d dropped=%0d delivered=%0d unexplained=%0d",
+          label,
+          lane,
+          expected_hits,
+          accepted_hits,
+          dropped_hits,
+          delivered_hits,
+          unexplained_hits
+        ))
+      end
+      if (accepted_hits != (delivered_hits + unexplained_hits)) begin
+        `uvm_error(get_type_name(), $sformatf(
+          "%s lane%0d accepted-hit mismatch accepted=%0d delivered=%0d unexplained=%0d",
           label,
           lane,
           accepted_hits,
-          dropped_hits,
           delivered_hits,
           unexplained_hits
         ))
@@ -358,6 +376,7 @@ class opq_base_test extends uvm_test;
           lane,
           unexplained_hits
         ))
+        env.scoreboard.dump_lane_unexplained_hits(lane, 24);
       end
     end
 
@@ -369,6 +388,83 @@ class opq_base_test extends uvm_test;
       total_delivered,
       total_unexplained
     ), UVM_LOW)
+  endtask
+
+  task automatic report_frame_table_accounting_checkpoint(
+    string label,
+    bit require_accounting_match = 1'b1
+  );
+    bit [31:0] ft_wr_hdr_word;
+    bit [31:0] ft_wr_shd_word;
+    bit [31:0] ft_wr_hit_word;
+    bit [31:0] ft_rd_hdr_word;
+    bit [31:0] ft_rd_shd_word;
+    bit [31:0] ft_rd_hit_word;
+    bit [31:0] ft_drop_hdr_word;
+    bit [31:0] ft_drop_shd_word;
+    bit [31:0] ft_drop_hit_word;
+
+    csr_read32(OPQ_CSR_WORD_FT_WR_HDR, ft_wr_hdr_word);
+    csr_read32(OPQ_CSR_WORD_FT_WR_SHD, ft_wr_shd_word);
+    csr_read32(OPQ_CSR_WORD_FT_WR_HIT, ft_wr_hit_word);
+    csr_read32(OPQ_CSR_WORD_FT_RD_HDR, ft_rd_hdr_word);
+    csr_read32(OPQ_CSR_WORD_FT_RD_SHD, ft_rd_shd_word);
+    csr_read32(OPQ_CSR_WORD_FT_RD_HIT, ft_rd_hit_word);
+    csr_read32(OPQ_CSR_WORD_FT_DROP_HDR, ft_drop_hdr_word);
+    csr_read32(OPQ_CSR_WORD_FT_DROP_SHD, ft_drop_shd_word);
+    csr_read32(OPQ_CSR_WORD_FT_DROP_HIT, ft_drop_hit_word);
+
+    env.coverage.sample_drop_snapshot(
+      opq_coverage::DROP_DOMAIN_FTABLE,
+      -1,
+      ft_drop_hdr_word,
+      ft_drop_shd_word,
+      ft_drop_hit_word
+    );
+
+    `uvm_info(get_type_name(), $sformatf(
+      "%s frame_table_ledger wr_hdr=%0d rd_hdr=%0d drop_hdr=%0d wr_shd=%0d rd_shd=%0d drop_shd=%0d wr_hit=%0d rd_hit=%0d drop_hit=%0d",
+      label,
+      ft_wr_hdr_word,
+      ft_rd_hdr_word,
+      ft_drop_hdr_word,
+      ft_wr_shd_word,
+      ft_rd_shd_word,
+      ft_drop_shd_word,
+      ft_wr_hit_word,
+      ft_rd_hit_word,
+      ft_drop_hit_word
+    ), UVM_LOW)
+
+    if (require_accounting_match) begin
+      if (ft_wr_hdr_word !== (ft_rd_hdr_word + ft_drop_hdr_word)) begin
+        `uvm_error(get_type_name(), $sformatf(
+          "%s ft_wr_hdr accounting mismatch wr=%0d rd=%0d drop=%0d",
+          label,
+          ft_wr_hdr_word,
+          ft_rd_hdr_word,
+          ft_drop_hdr_word
+        ))
+      end
+      if (ft_wr_shd_word !== (ft_rd_shd_word + ft_drop_shd_word)) begin
+        `uvm_error(get_type_name(), $sformatf(
+          "%s ft_wr_shd accounting mismatch wr=%0d rd=%0d drop=%0d",
+          label,
+          ft_wr_shd_word,
+          ft_rd_shd_word,
+          ft_drop_shd_word
+        ))
+      end
+      if (ft_wr_hit_word !== (ft_rd_hit_word + ft_drop_hit_word)) begin
+        `uvm_error(get_type_name(), $sformatf(
+          "%s ft_wr_hit accounting mismatch wr=%0d rd=%0d drop=%0d",
+          label,
+          ft_wr_hit_word,
+          ft_rd_hit_word,
+          ft_drop_hit_word
+        ))
+      end
+    end
   endtask
 
   task automatic read_lane_drr_snapshot(
@@ -478,12 +574,51 @@ class opq_base_test extends uvm_test;
     end
   endtask
 
+  task automatic dump_lane_credit_snapshot(string tag = "credit_snapshot");
+    for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+      bit [8:0] lane_base;
+      bit [31:0] lane_credit_word;
+      bit [31:0] ticket_credit_word;
+
+      lane_base = OPQ_CSR_LANE_REGION_BASE + lane * OPQ_CSR_LANE_REGION_STRIDE;
+      csr_peek32(lane_base + 9'h009, lane_credit_word);
+      csr_peek32(lane_base + 9'h00A, ticket_credit_word);
+      `uvm_info(get_type_name(), $sformatf(
+        "%s lane%0d lane_credit=%0d/%0d ticket_credit=%0d/%0d",
+        tag,
+        lane,
+        lane_credit_word,
+        OPQ_LANE_FIFO_MAX_CREDIT,
+        ticket_credit_word,
+        OPQ_TICKET_FIFO_MAX_CREDIT
+      ), UVM_LOW)
+    end
+  endtask
+
+  task automatic dump_dut_status_snapshot(string tag = "dut_status");
+    bit [31:0] status_word;
+
+    csr_peek32(OPQ_CSR_WORD_STATUS, status_word);
+    `uvm_info(get_type_name(), $sformatf(
+      "%s lane_mask=0x%0h page_allocator_active=%0b arbiter_active=%0b egress_valid=%0b lane_mask_effective=%0b n_lane=%0d",
+      tag,
+      status_word[OPQ_N_LANE-1:0],
+      status_word[16],
+      status_word[17],
+      status_word[18],
+      status_word[19],
+      status_word[23:20]
+    ), UVM_LOW)
+  endtask
+
   task automatic wait_for_credit_restore(
     string tag = "drain",
     time timeout_t = 500us,
     time poll_t = 500ns
   );
     bit drained;
+    bit dut_idle;
+    bit egress_idle;
     int stable_samples;
     time deadline;
 
@@ -508,7 +643,16 @@ class opq_base_test extends uvm_test;
       end
 
       if (drained) begin
-        stable_samples++;
+        bit [31:0] status_word;
+
+        csr_peek32(OPQ_CSR_WORD_STATUS, status_word);
+        dut_idle = 1'b1;
+        egress_idle = (env.egress_vif.valid !== 1'b1);
+        if (dut_idle && egress_idle) begin
+          stable_samples++;
+        end else begin
+          stable_samples = 0;
+        end
         if (stable_samples >= 2) begin
           return;
         end
@@ -523,7 +667,50 @@ class opq_base_test extends uvm_test;
       "%s timed out waiting for lane/ticket credit restore after %0t",
       tag, timeout_t
     ))
+    dump_lane_credit_snapshot({tag, "_timeout"});
+    dump_dut_status_snapshot({tag, "_timeout"});
     poll_lane_credits(4, 500ns);
+    report_lane_hit_accounting_checkpoint({tag, "_timeout"}, 1'b0);
+  endtask
+
+  task automatic wait_for_ingress_idle(
+    string tag = "ingress_idle",
+    time timeout_t = 500us,
+    time poll_t = 500ns
+  );
+    bit ingress_idle;
+    int stable_samples;
+    time deadline;
+
+    deadline = $time + timeout_t;
+    stable_samples = 0;
+
+    while ($time < deadline) begin
+      ingress_idle = 1'b1;
+      for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+        if (!env.ingress_agent[lane].drv.is_idle() ||
+            env.ingress_agent[lane].seqr.has_do_available()) begin
+          ingress_idle = 1'b0;
+          break;
+        end
+      end
+
+      if (ingress_idle) begin
+        stable_samples++;
+        if (stable_samples >= 2) begin
+          return;
+        end
+      end else begin
+        stable_samples = 0;
+      end
+
+      #(poll_t);
+    end
+
+    `uvm_error(get_type_name(), $sformatf(
+      "%s timed out waiting for ingress drivers to go idle after %0t",
+      tag, timeout_t
+    ))
   endtask
 
   task run_phase(uvm_phase phase);

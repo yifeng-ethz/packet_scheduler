@@ -3,7 +3,7 @@
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
 // Version : 26.3.28
 // Date    : 20260419
-// Change  : Carry per-frame header metadata inside SOP tickets so skewed frame starts do not sample live parser state
+// Change  : Carry per-frame header metadata inside SOP tickets and late-drop identity into the shared debug surface
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_sv #(
@@ -87,12 +87,17 @@ module ordered_priority_queue_monolithic_sv #(
   logic [N_LANE-1:0] ingress_credit_drop_valid_dbg;
   logic [N_LANE-1:0] ingress_credit_drop_lane_dbg;
   logic [N_LANE-1:0] ingress_credit_drop_ticket_dbg;
+  logic [N_LANE-1:0][47:0] ingress_credit_drop_ts_dbg;
   logic [N_LANE-1:0][15:0] ingress_credit_drop_shd_cnt_dbg;
   logic [N_LANE-1:0][15:0] ingress_credit_drop_hit_cnt_dbg;
   logic [N_LANE-1:0] ingress_alert_eop_dbg;
   logic [N_LANE-1:0] ingress_eop_flush_ack_dbg;
   logic [N_LANE-1:0][LANE_FIFO_ADDR_WIDTH-1:0] lane_credit_update;
   logic [N_LANE-1:0] lane_credit_update_valid;
+  logic [N_LANE-1:0][LANE_FIFO_ADDR_WIDTH-1:0] block_path_lane_credit_update;
+  logic [N_LANE-1:0] block_path_lane_credit_update_valid;
+  logic [N_LANE-1:0][LANE_FIFO_ADDR_WIDTH-1:0] late_drop_lane_credit_update;
+  logic [N_LANE-1:0] late_drop_lane_credit_update_valid;
   logic [N_LANE-1:0][TICKET_FIFO_ADDR_WIDTH-1:0] ticket_credit_update;
   logic [N_LANE-1:0] ticket_credit_update_valid;
   logic [N_LANE-1:0][TICKET_FIFO_DATA_WIDTH-1:0] ticket_fifos_rd_data;
@@ -109,8 +114,10 @@ module ordered_priority_queue_monolithic_sv #(
   logic [N_LANE-1:0][15:0] late_frame_drop_hdr_cnt_dbg;
   logic [N_LANE-1:0][15:0] late_frame_drop_shd_cnt_dbg;
   logic [N_LANE-1:0][15:0] late_frame_drop_hit_cnt_dbg;
+  logic [N_LANE-1:0][47:0] late_frame_drop_ts_dbg;
   logic [N_LANE-1:0] tk_future_dbg;
   logic fetch_ticket_active_dbg;
+  logic alloc_page_active_dbg;
   logic write_head_active_dbg;
   logic write_tail_active_dbg;
   logic write_page_active_dbg;
@@ -144,6 +151,21 @@ module ordered_priority_queue_monolithic_sv #(
   logic [31:0] ft_drop_hdr_cnt_dbg;
   logic [31:0] ft_drop_shd_cnt_dbg;
   logic [31:0] ft_drop_hit_cnt_dbg;
+
+  always_comb begin : proc_lane_credit_update_mux
+    for (int i = 0; i < N_LANE; i++) begin
+      lane_credit_update[i] = '0;
+      lane_credit_update_valid[i] = 1'b0;
+      if (block_path_lane_credit_update_valid[i]) begin
+        lane_credit_update[i] = lane_credit_update[i] + block_path_lane_credit_update[i];
+        lane_credit_update_valid[i] = 1'b1;
+      end
+      if (late_drop_lane_credit_update_valid[i]) begin
+        lane_credit_update[i] = lane_credit_update[i] + late_drop_lane_credit_update[i];
+        lane_credit_update_valid[i] = 1'b1;
+      end
+    end
+  end
 
   for (genvar m = 0; m < N_LANE; m++) begin : g_storage
     ticket_fifo #(
@@ -219,6 +241,7 @@ module ordered_priority_queue_monolithic_sv #(
       .credit_drop_valid_o(ingress_credit_drop_valid_dbg[g]),
       .credit_drop_lane_o(ingress_credit_drop_lane_dbg[g]),
       .credit_drop_ticket_o(ingress_credit_drop_ticket_dbg[g]),
+      .credit_drop_ts_o(ingress_credit_drop_ts_dbg[g]),
       .credit_drop_shd_cnt_o(ingress_credit_drop_shd_cnt_dbg[g]),
       .credit_drop_hit_cnt_o(ingress_credit_drop_hit_cnt_dbg[g]),
       .alert_eop_state_o(ingress_alert_eop_dbg[g]),
@@ -264,12 +287,16 @@ module ordered_priority_queue_monolithic_sv #(
     .late_frame_drop_hdr_cnt_o(late_frame_drop_hdr_cnt_dbg),
     .late_frame_drop_shd_cnt_o(late_frame_drop_shd_cnt_dbg),
     .late_frame_drop_hit_cnt_o(late_frame_drop_hit_cnt_dbg),
+    .late_frame_drop_ts_o(late_frame_drop_ts_dbg),
+    .late_frame_lane_credit_update_o(late_drop_lane_credit_update),
+    .late_frame_lane_credit_update_valid_o(late_drop_lane_credit_update_valid),
     .page_we_o(page_we_dbg),
     .page_waddr_o(page_waddr_dbg),
     .page_wdata_o(page_wdata_dbg),
     .ticket_fifos_rd_addr_o(ticket_fifos_rd_addr),
     .tk_future_o(tk_future_dbg),
     .fetch_ticket_active_o(fetch_ticket_active_dbg),
+    .alloc_page_active_o(alloc_page_active_dbg),
     .write_head_active_o(write_head_active_dbg),
     .write_tail_active_o(write_tail_active_dbg),
     .write_page_active_o(write_page_active_dbg),
@@ -299,6 +326,7 @@ module ordered_priority_queue_monolithic_sv #(
     .handle_fifos_rd_data_i(handle_fifos_rd_data),
     .lane_fifos_rd_data_i(lane_fifos_rd_data),
     .fetch_ticket_active_i(fetch_ticket_active_dbg),
+    .page_allocator_alloc_page_i(alloc_page_active_dbg),
     .tk_future_i(tk_future_dbg),
     .page_allocator_write_head_i(write_head_active_dbg),
     .page_allocator_write_tail_i(write_tail_active_dbg),
@@ -310,8 +338,8 @@ module ordered_priority_queue_monolithic_sv #(
     .drr_allowance_reload_i(cfg_drr_allowance_reload_i),
     .handle_fifos_rd_addr_o(handle_fifos_rd_addr),
     .lane_fifos_rd_addr_o(lane_fifos_rd_addr),
-    .lane_credit_update_o(lane_credit_update),
-    .lane_credit_update_valid_o(lane_credit_update_valid),
+    .lane_credit_update_o(block_path_lane_credit_update),
+    .lane_credit_update_valid_o(block_path_lane_credit_update_valid),
     .payload_commit_idle_o(payload_commit_idle_dbg),
     .page_ram_we_o(page_ram_we_dbg),
     .page_ram_wr_addr_o(page_ram_wr_addr_dbg),

@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 // IP Name   : opq_hit3_contract_sva
 // Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
-// Revision  : 0.3 - follow the active egress contract with absolute subheader ts
+// Revision  : 0.4 - validate emitted frame header counts against body content
 // Description:
 //   Checks the active egress frame/subheader/hit contract used by the UVM
 //   scoreboard: an implicit 5-word frame header, then K237 subheaders, hit
@@ -23,10 +23,19 @@ module opq_hit3_contract_sva (
   logic saw_nonempty_subhdr;
   logic [31:0] frame_ts_hi32;
   logic [15:0] frame_ts_lo16;
+  logic [15:0] expected_frame_subhdr_cnt;
+  logic [15:0] expected_frame_hit_cnt;
+  logic [15:0] emitted_frame_subhdr_cnt;
+  logic [15:0] emitted_frame_hit_cnt;
   logic [35:0] subheader_ts_hi;
   logic [7:0] last_subhdr_byte;
   logic last_subhdr_valid;
+  logic [47:0] last_subhdr_abs_ts;
   logic [47:0] last_nonempty_subhdr_abs_ts;
+  logic [15:0] current_frame_pkg_cnt;
+  logic [15:0] last_closed_frame_pkg_cnt;
+  logic last_closed_frame_valid;
+  logic [47:0] last_closed_frame_ts;
 
   function automatic logic pkt_is_frame_trl(input logic [35:0] word);
     return (word[35:32] == 4'b0001) && (word[7:0] == 8'h9C);
@@ -71,10 +80,19 @@ module opq_hit3_contract_sva (
       saw_nonempty_subhdr         <= 1'b0;
       frame_ts_hi32               <= '0;
       frame_ts_lo16               <= '0;
+      expected_frame_subhdr_cnt   <= '0;
+      expected_frame_hit_cnt      <= '0;
+      emitted_frame_subhdr_cnt    <= '0;
+      emitted_frame_hit_cnt       <= '0;
       subheader_ts_hi             <= '0;
       last_subhdr_byte            <= '0;
       last_subhdr_valid           <= 1'b0;
+      last_subhdr_abs_ts          <= '0;
       last_nonempty_subhdr_abs_ts <= '0;
+      current_frame_pkg_cnt       <= '0;
+      last_closed_frame_pkg_cnt   <= '0;
+      last_closed_frame_valid     <= 1'b0;
+      last_closed_frame_ts        <= '0;
     end else if (valid && ready) begin
       if (!frame_open) begin
         frame_open                  <= 1'b1;
@@ -83,16 +101,35 @@ module opq_hit3_contract_sva (
         saw_nonempty_subhdr         <= 1'b0;
         frame_ts_hi32               <= '0;
         frame_ts_lo16               <= '0;
+        expected_frame_subhdr_cnt   <= '0;
+        expected_frame_hit_cnt      <= '0;
+        emitted_frame_subhdr_cnt    <= '0;
+        emitted_frame_hit_cnt       <= '0;
         subheader_ts_hi             <= '0;
         last_subhdr_byte            <= '0;
         last_subhdr_valid           <= 1'b0;
+        last_subhdr_abs_ts          <= '0;
         last_nonempty_subhdr_abs_ts <= '0;
+        current_frame_pkg_cnt       <= '0;
       end else if (frame_hdr_aux_words_left != 0) begin
         case (frame_hdr_aux_words_left)
           3'd4: frame_ts_hi32 <= data[31:0];
           3'd3: begin
             frame_ts_lo16   <= data[31:16];
             subheader_ts_hi <= {frame_ts_hi32, data[31:28]};
+            current_frame_pkg_cnt <= data[15:0];
+            if (last_closed_frame_valid) begin
+              assert (data[15:0] == (last_closed_frame_pkg_cnt + 16'd1))
+                else $error("[opq_hit3_contract] frame pkg_cnt discontinuity: prev=%0d new=%0d",
+                  last_closed_frame_pkg_cnt, data[15:0]);
+              assert ({frame_ts_hi32, data[31:16]} > last_closed_frame_ts)
+                else $error("[opq_hit3_contract] frame timestamp did not increase: prev=0x%012h new=0x%012h",
+                  last_closed_frame_ts, {frame_ts_hi32, data[31:16]});
+            end
+          end
+          3'd2: begin
+            expected_frame_subhdr_cnt <= {1'b0, data[30:16]};
+            expected_frame_hit_cnt    <= data[15:0];
           end
           default: begin
           end
@@ -101,13 +138,25 @@ module opq_hit3_contract_sva (
       end else if (pkt_is_frame_trl(data)) begin
         assert (hit_words_left == 0)
           else $error("[opq_hit3_contract] frame trailer arrived with %0d hit words still pending", hit_words_left);
+        assert (emitted_frame_subhdr_cnt == expected_frame_subhdr_cnt)
+          else $error("[opq_hit3_contract] frame trailer sub-header count mismatch: expected=%0d actual=%0d",
+            expected_frame_subhdr_cnt, emitted_frame_subhdr_cnt);
+        assert (emitted_frame_hit_cnt == expected_frame_hit_cnt)
+          else $error("[opq_hit3_contract] frame trailer hit count mismatch: expected=%0d actual=%0d",
+            expected_frame_hit_cnt, emitted_frame_hit_cnt);
         frame_open <= 1'b0;
+        last_closed_frame_pkg_cnt <= current_frame_pkg_cnt;
+        last_closed_frame_ts      <= {frame_ts_hi32, frame_ts_lo16};
+        last_closed_frame_valid   <= 1'b1;
       end else if (pkt_is_subhdr(data)) begin
         logic [35:0] subheader_ts_hi_v;
         logic [47:0] subheader_abs_ts_v;
 
         assert (hit_words_left == 0)
           else $error("[opq_hit3_contract] sub-header arrived before the previous sub-header drained");
+        assert (emitted_frame_subhdr_cnt < expected_frame_subhdr_cnt)
+          else $error("[opq_hit3_contract] sub-header count exceeded header promise: expected=%0d actual=%0d",
+            expected_frame_subhdr_cnt, emitted_frame_subhdr_cnt + 16'd1);
 
         subheader_ts_hi_v = extend_subheader_ts_hi(
           subheader_ts_hi,
@@ -117,9 +166,17 @@ module opq_hit3_contract_sva (
         );
         subheader_abs_ts_v = make_subheader_abs_ts(subheader_ts_hi_v, data[31:24]);
 
+        if (last_subhdr_valid) begin
+          assert (subheader_abs_ts_v == (last_subhdr_abs_ts + 48'd16))
+            else $error("[opq_hit3_contract] sub-header absolute ts discontinuity: prev=0x%012h new=0x%012h",
+              last_subhdr_abs_ts, subheader_abs_ts_v);
+        end
+
         subheader_ts_hi   <= subheader_ts_hi_v;
         last_subhdr_byte  <= data[31:24];
         last_subhdr_valid <= 1'b1;
+        last_subhdr_abs_ts <= subheader_abs_ts_v;
+        emitted_frame_subhdr_cnt <= emitted_frame_subhdr_cnt + 16'd1;
 
         if (data[15:8] != 8'h00) begin
           if (saw_nonempty_subhdr) begin
@@ -134,9 +191,13 @@ module opq_hit3_contract_sva (
       end else if (pkt_is_hit(data)) begin
         assert (hit_words_left != 0)
           else $error("[opq_hit3_contract] hit word arrived without a pending non-empty sub-header");
+        assert (emitted_frame_hit_cnt < expected_frame_hit_cnt)
+          else $error("[opq_hit3_contract] hit count exceeded header promise: expected=%0d actual=%0d",
+            expected_frame_hit_cnt, emitted_frame_hit_cnt + 16'd1);
         if (hit_words_left != 0) begin
           hit_words_left <= hit_words_left - 1'b1;
         end
+        emitted_frame_hit_cnt <= emitted_frame_hit_cnt + 16'd1;
       end
     end
   end
@@ -148,6 +209,16 @@ module opq_hit3_contract_sva (
     end
     if (frame_open) begin
       $error("[opq_hit3_contract] simulation ended with an open frame");
+    end
+    if (!frame_open) begin
+      if (emitted_frame_subhdr_cnt != expected_frame_subhdr_cnt) begin
+        $error("[opq_hit3_contract] simulation ended with closed frame sub-header mismatch: expected=%0d actual=%0d",
+          expected_frame_subhdr_cnt, emitted_frame_subhdr_cnt);
+      end
+      if (emitted_frame_hit_cnt != expected_frame_hit_cnt) begin
+        $error("[opq_hit3_contract] simulation ended with closed frame hit mismatch: expected=%0d actual=%0d",
+          expected_frame_hit_cnt, emitted_frame_hit_cnt);
+      end
     end
   end
 endmodule

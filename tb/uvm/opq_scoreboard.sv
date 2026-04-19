@@ -231,6 +231,24 @@ class opq_scoreboard extends uvm_component;
     end
   endfunction
 
+  function automatic int unsigned count_lane_hits_at_ts(
+    int        lane_id,
+    bit [47:0] hit_ts
+  );
+    int unsigned match_cnt;
+
+    match_cnt = 0;
+    if (lane_id < 0 || lane_id >= OPQ_N_LANE) begin
+      return 0;
+    end
+    for (int idx = 0; idx < lane_accounting_hits[lane_id].size(); idx++) begin
+      if (lane_accounting_hits[lane_id][idx].hit_ts == hit_ts) begin
+        match_cnt++;
+      end
+    end
+    return match_cnt;
+  endfunction
+
   function void write_frame(opq_frame_item frame);
     opq_frame_meta_t meta;
     opq_hit_trace_t trace;
@@ -491,8 +509,14 @@ class opq_scoreboard extends uvm_component;
   endfunction
 
   function void write_drop(opq_drop_item item);
+    int unsigned exact_pre_shd_delta;
+    int unsigned exact_pre_hit_delta;
     int unsigned exact_post_shd_delta;
     int unsigned exact_post_hit_delta;
+    int unsigned used_exact_pre_shd_delta;
+    int unsigned used_exact_pre_hit_delta;
+    int unsigned used_exact_post_shd_delta;
+    int unsigned used_exact_post_hit_delta;
     int unsigned residual_shd_delta;
     int unsigned residual_hit_delta;
 
@@ -501,8 +525,35 @@ class opq_scoreboard extends uvm_component;
       return;
     end
 
+    exact_pre_shd_delta = 0;
+    exact_pre_hit_delta = 0;
     exact_post_shd_delta = 0;
     exact_post_hit_delta = 0;
+    used_exact_pre_shd_delta = 0;
+    used_exact_pre_hit_delta = 0;
+    used_exact_post_shd_delta = 0;
+    used_exact_post_hit_delta = 0;
+    if (item.exact_pre_valid) begin
+      exact_pre_shd_delta = item.exact_pre_shd_cnt;
+      exact_pre_hit_delta = item.exact_pre_hit_cnt;
+      if ((exact_pre_shd_delta > item.pre_shd_drop_cnt) ||
+          (exact_pre_hit_delta > item.pre_hit_drop_cnt) ||
+          (exact_pre_shd_delta > item.shd_drop_cnt) ||
+          (exact_pre_hit_delta > item.hit_drop_cnt)) begin
+        `uvm_error(get_type_name(), $sformatf(
+          "Exact pre-drop detail exceeded event totals lane=%0d exact_shd=%0d exact_hit=%0d total_shd=%0d total_hit=%0d pre_shd=%0d pre_hit=%0d",
+          item.lane_id,
+          exact_pre_shd_delta,
+          exact_pre_hit_delta,
+          item.shd_drop_cnt,
+          item.hit_drop_cnt,
+          item.pre_shd_drop_cnt,
+          item.pre_hit_drop_cnt
+        ))
+        exact_pre_shd_delta = 0;
+        exact_pre_hit_delta = 0;
+      end
+    end
     if (item.exact_post_valid) begin
       exact_post_shd_delta = item.exact_post_shd_cnt;
       exact_post_hit_delta = item.exact_post_hit_cnt;
@@ -525,24 +576,38 @@ class opq_scoreboard extends uvm_component;
       end
     end
 
-    residual_shd_delta = item.shd_drop_cnt - exact_post_shd_delta;
-    residual_hit_delta = item.hit_drop_cnt - exact_post_hit_delta;
-
     dropped_lane_hdr_cnt[item.lane_id] += item.hdr_drop_cnt;
     dropped_lane_pre_shd_cnt[item.lane_id] += item.pre_shd_drop_cnt;
     dropped_lane_pre_hit_cnt[item.lane_id] += item.pre_hit_drop_cnt;
     dropped_lane_post_hdr_cnt[item.lane_id] += item.post_hdr_drop_cnt;
     dropped_lane_post_shd_cnt[item.lane_id] += item.post_shd_drop_cnt;
     dropped_lane_post_hit_cnt[item.lane_id] += item.post_hit_drop_cnt;
+    if (exact_pre_hit_delta != 0) begin
+      if (apply_exact_drop_delta(
+        item.lane_id,
+        item.exact_pre_ts,
+        exact_pre_shd_delta,
+        exact_pre_hit_delta,
+        "monitor_exact_pre"
+      )) begin
+        used_exact_pre_shd_delta = exact_pre_shd_delta;
+        used_exact_pre_hit_delta = exact_pre_hit_delta;
+      end
+    end
     if (exact_post_hit_delta != 0) begin
-      apply_exact_drop_delta(
+      if (apply_exact_drop_delta(
         item.lane_id,
         item.exact_post_ts,
         exact_post_shd_delta,
         exact_post_hit_delta,
         "monitor_exact_post"
-      );
+      )) begin
+        used_exact_post_shd_delta = exact_post_shd_delta;
+        used_exact_post_hit_delta = exact_post_hit_delta;
+      end
     end
+    residual_shd_delta = item.shd_drop_cnt - used_exact_pre_shd_delta - used_exact_post_shd_delta;
+    residual_hit_delta = item.hit_drop_cnt - used_exact_pre_hit_delta - used_exact_post_hit_delta;
     apply_drop_delta(item.lane_id, residual_shd_delta, residual_hit_delta, "monitor");
   endfunction
 
@@ -639,7 +704,7 @@ class opq_scoreboard extends uvm_component;
     end
   endfunction
 
-  function void apply_exact_drop_delta(
+  function bit apply_exact_drop_delta(
     int         lane_id,
     bit [47:0]  hit_ts,
     int unsigned shd_drop_delta,
@@ -652,7 +717,54 @@ class opq_scoreboard extends uvm_component;
 
     if (lane_id < 0 || lane_id >= OPQ_N_LANE) begin
       `uvm_error(get_type_name(), $sformatf("Exact drop accounting arrived with invalid lane_id=%0d from %s", lane_id, source))
-      return;
+      return 1'b0;
+    end
+
+    if (cfg.allow_drop_accounting &&
+        (count_lane_hits_at_ts(lane_id, hit_ts) < hit_drop_delta)) begin
+      bit [47:0] front_ts;
+      bit [47:0] back_ts;
+      int unsigned match_cnt;
+      bit duplicate_single_v;
+
+      front_ts = '0;
+      back_ts = '0;
+      if (lane_accounting_hits[lane_id].size() != 0) begin
+        front_ts = lane_accounting_hits[lane_id][0].hit_ts;
+        back_ts = lane_accounting_hits[lane_id][lane_accounting_hits[lane_id].size()-1].hit_ts;
+      end
+      match_cnt = count_lane_hits_at_ts(lane_id, hit_ts);
+      duplicate_single_v =
+        (shd_drop_delta == 1) &&
+        (hit_drop_delta != 0) &&
+        (match_cnt == 0) &&
+        ((lane_accounting_hits[lane_id].size() == 0) || (hit_ts < front_ts));
+      if (duplicate_single_v) begin
+        `uvm_warning(get_type_name(), $sformatf(
+          "Exact drop detail already accounted lane=%0d ts=0x%012h expected_hits=%0d available_hits_at_ts=%0d queue_depth=%0d front_ts=0x%012h back_ts=0x%012h source=%s; suppressing duplicate single-subheader drop",
+          lane_id,
+          hit_ts,
+          hit_drop_delta,
+          match_cnt,
+          lane_accounting_hits[lane_id].size(),
+          front_ts,
+          back_ts,
+          source
+        ))
+        return 1'b1;
+      end
+      `uvm_warning(get_type_name(), $sformatf(
+        "Exact drop detail unavailable lane=%0d ts=0x%012h expected_hits=%0d available_hits_at_ts=%0d queue_depth=%0d front_ts=0x%012h back_ts=0x%012h source=%s; falling back to aggregate drop accounting",
+        lane_id,
+        hit_ts,
+        hit_drop_delta,
+        match_cnt,
+        lane_accounting_hits[lane_id].size(),
+        front_ts,
+        back_ts,
+        source
+      ))
+      return 1'b0;
     end
 
     dropped_lane_shd_cnt[lane_id] += shd_drop_delta;
@@ -678,7 +790,7 @@ class opq_scoreboard extends uvm_component;
     end
 
     if (!cfg.allow_drop_accounting) begin
-      return;
+      return 1'b1;
     end
 
     hit_cnt = hit_drop_delta;
@@ -697,10 +809,16 @@ class opq_scoreboard extends uvm_component;
 
     if (hit_cnt != 0) begin
       `uvm_error(get_type_name(), $sformatf(
-        "Exact drop accounting mismatch lane=%0d ts=0x%012h expected_hits=%0d missing_hits=%0d source=%s",
-        lane_id, hit_ts, hit_drop_delta, hit_cnt, source
+        "Exact drop accounting internal mismatch lane=%0d ts=0x%012h expected_hits=%0d missing_hits=%0d source=%s",
+        lane_id,
+        hit_ts,
+        hit_drop_delta,
+        hit_cnt,
+        source
       ))
+      return 1'b0;
     end
+    return 1'b1;
   endfunction
 
   function void apply_lane_drop_totals(
@@ -925,6 +1043,68 @@ class opq_scoreboard extends uvm_component;
 
   function automatic int unsigned get_unexplained_lane_hit_cnt(int lane_id);
     return lane_accounting_hits[lane_id].size();
+  endfunction
+
+  function void dump_lane_unexplained_hits(int lane_id, int unsigned max_entries = 16);
+    int unsigned shown;
+    int unsigned ts_run_count;
+    bit [47:0] current_ts;
+    bit        current_ts_valid;
+
+    if (lane_id < 0 || lane_id >= OPQ_N_LANE) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "Unexplained hit dump requested with invalid lane_id=%0d",
+        lane_id
+      ))
+      return;
+    end
+
+    $display("[opq_unexplained] lane%0d queue_depth=%0d",
+      lane_id,
+      lane_accounting_hits[lane_id].size()
+    );
+
+    shown = 0;
+    current_ts = '0;
+    ts_run_count = 0;
+    current_ts_valid = 1'b0;
+    for (int idx = 0; idx < lane_accounting_hits[lane_id].size(); idx++) begin
+      if (!current_ts_valid) begin
+        current_ts = lane_accounting_hits[lane_id][idx].hit_ts;
+        ts_run_count = 1;
+        current_ts_valid = 1'b1;
+      end else if (lane_accounting_hits[lane_id][idx].hit_ts == current_ts) begin
+        ts_run_count++;
+      end else begin
+        $display("[opq_unexplained] lane%0d ts=0x%012h count=%0d",
+          lane_id,
+          current_ts,
+          ts_run_count
+        );
+        current_ts = lane_accounting_hits[lane_id][idx].hit_ts;
+        ts_run_count = 1;
+      end
+
+      if (shown < max_entries) begin
+        $display("[opq_unexplained] lane%0d idx=%0d hit_id=0x%016h ts=0x%012h shd_ts=0x%02h word=0x%08h",
+          lane_id,
+          shown,
+          lane_accounting_hits[lane_id][idx].hit_id,
+          lane_accounting_hits[lane_id][idx].hit_ts,
+          lane_accounting_hits[lane_id][idx].shd_ts,
+          lane_accounting_hits[lane_id][idx].hit_word
+        );
+        shown++;
+      end
+    end
+
+    if (current_ts_valid) begin
+      $display("[opq_unexplained] lane%0d ts=0x%012h count=%0d",
+        lane_id,
+        current_ts,
+        ts_run_count
+      );
+    end
   endfunction
 
   function automatic int unsigned get_actual_egress_hdr_cnt();

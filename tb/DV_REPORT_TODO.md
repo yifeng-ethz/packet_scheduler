@@ -284,6 +284,13 @@ Execution order frozen on 2026-04-18 for the next closure phase:
         repaired on the exact deterministic reproducer
         `opq_cross_hit3_exact_183_190_repro_test`, which ends
         `expected=2476 actual=2476 missing=0 ghost=0`
+      - the final exact-window root cause was a real DUT bug in the page
+        allocator: a new frame seeded `running_ts` from the frame header
+        timestamp instead of the parser's current running subheader timestamp,
+        so the first live payload tickets were misclassified as `future`
+      - the focused 5-step bug-hunt rerun of
+        `opq_cross_mixed_bucket_seconds_soak_test` is also green on the same
+        repaired RTL and no longer reopens the old earliest window
       - remaining work is a refreshed full stretched rerun to prove that the
         later windows (`mixed_soak_261`, `mixed_whole_skew_275`,
         `mixed_whole_skew_418`, `mixed_whole_skew_435`) are also gone on the

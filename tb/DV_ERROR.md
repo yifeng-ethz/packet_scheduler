@@ -3,7 +3,7 @@
 **Companion to:** `DV_PLAN.md`, `DV_HARNESS.md`  
 **Author:** Yifeng Wang (yifenwan@phys.ethz.ch)  
 **Date:** 2026-04-14  
-**Status:** Active current-tree bucket for passing control/error cases, including the reduced-depth overwrite closure, plus explicit open probes for the remaining recovery bugs.
+**Status:** Active current-tree bucket for passing control/error cases, including the reduced-depth overwrite closure, plus isolated recovery cases that are fixed in native-SV and awaiting regenerated report promotion.
 
 ---
 
@@ -34,13 +34,13 @@ recovery gaps.
 
 ---
 
-## Open Probes
+## Special-Handling Cases
 
 | Test | Purpose | Current status |
 |------|---------|----------------|
-| `opq_error_header_mask_recovery_test` | Malformed preamble/header suppression followed by a legal recovery frame | Open repro: the native-SV ingress parser still loses the recovery frame timestamp context after a header-error mask path, producing ghost/missing hits with low-byte-only timestamps |
-| `opq_error_header_word_mask_recovery_test` | Header-word error injection followed by a legal recovery frame | Open repro: isolated native-SV still ends at `expected=4 actual=4 missing=4 ghost=4`, with recovery hits emitted at `ts=0x0010` instead of `ts=0x1010`; attempted promotion into the no-restart ERROR bucket was backed out because it also poisoned later continuous-frame accounting |
-| `opq_error_ftable_overflow_test` | Reduced-depth forced overwrite / frame-table drop accounting | Open repro: forced overwrite still produces malformed accepted egress beats under always-stall backpressure, so the testcase is useful bug evidence but not promotable signoff coverage today |
+| `opq_error_header_mask_recovery_test` | Malformed preamble/header suppression followed by a legal recovery frame | Passing in isolated native-SV after the `2026-04-18` header timestamp-base repair; remove from report exclusions after the next ERROR-bucket / continuous-frame refresh |
+| `opq_error_header_word_mask_recovery_test` | Header-word error injection followed by a legal recovery frame | Passing in isolated native-SV after the `2026-04-18` header timestamp-base repair; reinsert into the generated ERROR bucket on the next report refresh |
+| `opq_error_ftable_overflow_test` | Reduced-depth forced overwrite / frame-table drop accounting | Passing isolated-only at reduced depth; remains outside the fixed default no-restart baseline because it requires a separate `OPQ_PAGE_RAM_DEPTH=512` elaboration point |
 
 ---
 

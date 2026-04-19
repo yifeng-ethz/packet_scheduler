@@ -1,7 +1,7 @@
 # ⚠️ Signoff — packet_scheduler ordered_priority_queue
 
 **DUT:** `ordered_priority_queue` &nbsp; **Date:** `2026-04-19` &nbsp;
-**Release under check:** `26.3.25.0419` &nbsp; **Git base:** `local working tree`
+**Release under check:** `26.3.26.0419` &nbsp; **Git base:** `local working tree`
 
 This page is the master signoff dashboard. Detailed standalone synthesis
 evidence lives in [`../syn/SYN_REPORT.md`](../syn/SYN_REPORT.md); detailed DV
@@ -28,7 +28,7 @@ evidence lives in [`../tb/DV_REPORT.md`](../tb/DV_REPORT.md).
 |:---:|---|---|---|
 | ⚠️ | isolated DV closure | `37/37` promoted isolated native-SV cases evidenced; merged code coverage remains below `dv-workflow` targets | [`../tb/DV_REPORT.md`](../tb/DV_REPORT.md) |
 | ✅ | bucket / continuous-frame signoff | `bucket_frame_native_sv` and `all_buckets_frame_native_sv` both pass on the current native-SV baseline | [`../tb/DV_COV.md`](../tb/DV_COV.md) |
-| ⚠️ | long-run invariant screens | focused half-saturation random-ready overflow rerun is now clean (`unexplained=0`, `UVM_ERROR=0`), but the stretched mixed-bucket seconds soak remains an explicit open probe | [`../tb/DV_REPORT_TODO.md`](../tb/DV_REPORT_TODO.md), [`../tb/BUG_HISTORY.md`](../tb/BUG_HISTORY.md) |
+| ⚠️ | long-run invariant screens | focused half-saturation random-ready overflow rerun is clean, and the mixed-bucket exact `183..190` window plus focused 5-step seconds-soak rerun are now green after the allocator `running_ts` seed repair; the full stretched mixed-bucket seconds soak remains an explicit open probe pending end-to-end rerun | [`../tb/DV_REPORT_TODO.md`](../tb/DV_REPORT_TODO.md), [`../tb/BUG_HISTORY.md`](../tb/BUG_HISTORY.md) |
 | ✅ | integrated long-run matrix | `128/128` long-run cases green; merged-frame contract evidence exists in `tb_int/` | [`../tb_int/DV_REPORT.md`](../tb_int/DV_REPORT.md) |
 | ✅ | bug ledgers | standalone and integrated bugs are both tracked in live ledgers | [`../tb/BUG_HISTORY.md`](../tb/BUG_HISTORY.md), [`../tb_int/BUG_HISTORY.md`](../tb_int/BUG_HISTORY.md) |
 
@@ -52,6 +52,7 @@ evidence lives in [`../tb/DV_REPORT.md`](../tb/DV_REPORT.md).
 | ✅ | Harness | FEB output can be captured into TLM transactions for OPQ and can still directly pin-drive OPQ for later `tb_int/` work |
 | ✅ | Native-SV no-restart signoff | default-build continuous-frame native-SV signoff is closed on the current baseline |
 | ✅ | Native-SV overflow accounting | focused half-saturation random-ready overflow screen now closes with `unexplained=0` after the late-frame ticket-tail accounting fix |
+| ⚠️ | Native-SV mixed-soak long chain | exact `183..190` reproducer and focused 5-step seconds-soak rerun are green after the page-allocator `running_ts` seed repair, but the full stretched seconds-soak rerun still needs end-to-end revalidation before the open probe is removed |
 | ❓ | Standalone synthesis | standalone Quartus signoff rerun and RAM/CAM resource audit still pending |
 
 ## Evidence Index

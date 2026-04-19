@@ -24,17 +24,31 @@ class opq_frame_signoff_base_test extends opq_base_test;
     return cfg;
   endfunction
 
-  function automatic time tb_clk_period();
+  function automatic int unsigned tb_clk_period_ns();
     int unsigned clk_period_ns;
 
     if (!$value$plusargs("TB_CLK_PERIOD_NS=%d", clk_period_ns) || (clk_period_ns == 0)) begin
       clk_period_ns = TB_REF_CLK_PERIOD_NS;
     end
-    return clk_period_ns * 1ns;
+    return clk_period_ns;
+  endfunction
+
+  function automatic time tb_clk_period();
+    return tb_clk_period_ns() * 1ns;
   endfunction
 
   function automatic time cycles_to_time(longint unsigned cycle_count);
     return cycle_count * tb_clk_period();
+  endfunction
+
+  function automatic int unsigned duration_ns_to_cycles(longint unsigned duration_ns);
+    longint unsigned clk_period_ns;
+
+    clk_period_ns = tb_clk_period_ns();
+    if (duration_ns == 0) begin
+      return 0;
+    end
+    return int'((duration_ns + clk_period_ns - 1) / clk_period_ns);
   endfunction
 
   virtual function time dwell_time();
@@ -82,13 +96,15 @@ class opq_frame_signoff_base_test extends opq_base_test;
   task automatic advance_no_restart_sequence(opq_virtual_sequence_base seq);
     bit [47:0] frame_duration_cycles;
     int unsigned frame_slots_emitted;
+    bit emits_egress_frames;
 
     frame_duration_cycles = 48'(OPQ_N_SHD * 16);
     frame_slots_emitted = seq.get_continuous_frame_slots_emitted();
-    foreach (no_restart_next_pkg_cnt_base[lane]) begin
-      no_restart_next_pkg_cnt_base[lane] = seq.get_next_pkg_cnt_base(lane);
-    end
-    if (seq.continuous_frame_emits_egress_frames()) begin
+    emits_egress_frames = seq.continuous_frame_emits_egress_frames();
+    if (emits_egress_frames) begin
+      foreach (no_restart_next_pkg_cnt_base[lane]) begin
+        no_restart_next_pkg_cnt_base[lane] = seq.get_next_pkg_cnt_base(lane);
+      end
       no_restart_next_frame_ts_base = no_restart_next_frame_ts_base +
         (frame_duration_cycles * frame_slots_emitted);
     end
@@ -101,6 +117,11 @@ class opq_frame_signoff_base_test extends opq_base_test;
     configure_no_restart_sequence(seq);
     `uvm_info(get_type_name(), $sformatf("Starting no-restart case %s", seq.get_name()), UVM_LOW)
     seq.start(env.vseqr);
+    wait_for_ingress_idle(
+      $sformatf("%s_ingress_idle", seq.get_name()),
+      credit_restore_timeout(),
+      credit_restore_poll()
+    );
     advance_no_restart_sequence(seq);
     wait_for_credit_restore(
       $sformatf("%s_credit_restore", seq.get_name()),
@@ -137,6 +158,11 @@ class opq_frame_signoff_base_test extends opq_base_test;
         bp_seq.start(env.vseqr.egress_seqr);
       end
     join
+    wait_for_ingress_idle(
+      $sformatf("%s_ingress_idle", seq.get_name()),
+      credit_restore_timeout(),
+      credit_restore_poll()
+    );
     advance_no_restart_sequence(seq);
     wait_for_credit_restore(
       $sformatf("%s_credit_restore", seq.get_name()),
@@ -233,6 +259,60 @@ class opq_frame_signoff_base_test extends opq_base_test;
       credit_restore_timeout(),
       credit_restore_poll()
     );
+    #(inter_case_gap_time());
+  endtask
+
+  task automatic run_cross_drr_bp_case(
+    string seq_name,
+    int unsigned frame_count,
+    int unsigned subheaders_per_frame,
+    int unsigned hit_count_per_subheader,
+    int unsigned high_cycles = 8,
+    int unsigned low_cycles = 8,
+    int unsigned repeat_count = 32,
+    int unsigned lane0_allowance = 8,
+    int unsigned lane1_allowance = 16
+  );
+    opq_bp_sequence bp_seq;
+    opq_bp_item bp_item;
+    opq_drr_saturation_virtual_sequence drr_seq;
+
+    bp_seq = opq_bp_sequence::type_id::create({seq_name, "_bp_seq"});
+    bp_item = opq_bp_item::type_id::create({seq_name, "_bp_item"});
+    bp_item.mode = BP_PERIODIC_STALL;
+    bp_item.high_cycles = high_cycles;
+    bp_item.low_cycles = low_cycles;
+    bp_item.repeat_count = repeat_count;
+    bp_seq.items.push_back(bp_item);
+
+    drr_seq = opq_drr_saturation_virtual_sequence::type_id::create(seq_name);
+    drr_seq.frame_count = frame_count;
+    drr_seq.subheaders_per_frame = subheaders_per_frame;
+    drr_seq.hit_count_per_subheader = hit_count_per_subheader;
+
+    csr_write_lane_drr_allowance(0, lane0_allowance);
+    csr_write_lane_drr_allowance(1, lane1_allowance);
+    configure_no_restart_sequence(drr_seq);
+    fork
+      drr_seq.start(env.vseqr);
+      begin
+        #(inter_case_gap_time());
+        bp_seq.start(env.vseqr.egress_seqr);
+      end
+    join
+    wait_for_ingress_idle(
+      $sformatf("%s_ingress_idle", drr_seq.get_name()),
+      credit_restore_timeout(),
+      credit_restore_poll()
+    );
+    advance_no_restart_sequence(drr_seq);
+    wait_for_credit_restore(
+      $sformatf("%s_credit_restore", drr_seq.get_name()),
+      credit_restore_timeout(),
+      credit_restore_poll()
+    );
+    csr_write_lane_drr_allowance(0, OPQ_DRR_DEFAULT_ALLOWANCE);
+    csr_write_lane_drr_allowance(1, OPQ_DRR_DEFAULT_ALLOWANCE);
     #(inter_case_gap_time());
   endtask
 
@@ -507,6 +587,11 @@ class opq_cross_mixed_bucket_random_soak_test extends opq_frame_signoff_base_tes
     case (choice)
       0: begin
         seq = opq_basic_virtual_sequence::type_id::create($sformatf("mixed_basic_%0d", step_idx));
+        `uvm_info(
+          get_type_name(),
+          $sformatf("Mixed BASIC step %0d case=basic", step_idx),
+          UVM_LOW
+        )
         run_vseq(seq);
       end
       1: begin
@@ -522,6 +607,18 @@ class opq_cross_mixed_bucket_random_soak_test extends opq_frame_signoff_base_tes
         single_lane_seq.frame_count = frame_count_local;
         single_lane_seq.subheaders_per_frame = 4;
         single_lane_seq.hit_count = 4;
+        `uvm_info(
+          get_type_name(),
+          $sformatf(
+            "Mixed BASIC step %0d case=single_lane active_lane=%0d frame_count=%0d subheaders=%0d hits=%0d",
+            step_idx,
+            active_lane_local,
+            frame_count_local,
+            single_lane_seq.subheaders_per_frame,
+            single_lane_seq.hit_count
+          ),
+          UVM_LOW
+        )
         run_vseq(single_lane_seq);
       end
     endcase
@@ -549,10 +646,27 @@ class opq_cross_mixed_bucket_random_soak_test extends opq_frame_signoff_base_tes
         }) begin
           `uvm_fatal(get_type_name(), "Failed to randomize mixed EDGE backpressure profile")
         end
+        `uvm_info(
+          get_type_name(),
+          $sformatf(
+            "Mixed EDGE step %0d case=basic_bp mode=%0d high=%0d low=%0d repeat=%0d",
+            step_idx,
+            bp_mode,
+            high_cycles,
+            low_cycles,
+            repeat_count
+          ),
+          UVM_LOW
+        )
         run_basic_with_bp(bp_mode, high_cycles, low_cycles, repeat_count);
       end
       1: begin
         seq = opq_max_hits_virtual_sequence::type_id::create($sformatf("mixed_max_hits_%0d", step_idx));
+        `uvm_info(
+          get_type_name(),
+          $sformatf("Mixed EDGE step %0d case=max_hits", step_idx),
+          UVM_LOW
+        )
         run_vseq(seq);
       end
     endcase
@@ -578,6 +692,11 @@ class opq_cross_mixed_bucket_random_soak_test extends opq_frame_signoff_base_tes
           `uvm_fatal(get_type_name(), "Failed to randomize mixed PROF soak frame count")
         end
         soak_seq.frame_count = soak_frame_count_local;
+        `uvm_info(
+          get_type_name(),
+          $sformatf("Mixed PROF step %0d case=soak frame_count=%0d", step_idx, soak_frame_count_local),
+          UVM_LOW
+        )
         run_vseq(soak_seq);
       end
       1: begin
@@ -593,10 +712,26 @@ class opq_cross_mixed_bucket_random_soak_test extends opq_frame_signoff_base_tes
         skew_seq.hit_period = skew_hit_period_local;
         skew_seq.hit_count_when_active = 2;
         skew_seq.inter_frame_gap_cycles = OPQ_MIN_SOP_GAP_CYCLES;
+        `uvm_info(
+          get_type_name(),
+          $sformatf(
+            "Mixed PROF step %0d case=whole_skew frame_count=%0d hit_period=%0d active_hits=%0d",
+            step_idx,
+            skew_frame_count_local,
+            skew_hit_period_local,
+            skew_seq.hit_count_when_active
+          ),
+          UVM_LOW
+        )
         run_vseq(skew_seq);
       end
       2: begin
         seq = opq_missing_empty_frame_virtual_sequence::type_id::create($sformatf("mixed_sparse_%0d", step_idx));
+        `uvm_info(
+          get_type_name(),
+          $sformatf("Mixed PROF step %0d case=sparse_missing_empty", step_idx),
+          UVM_LOW
+        )
         run_vseq(seq);
       end
     endcase
@@ -611,12 +746,27 @@ class opq_cross_mixed_bucket_random_soak_test extends opq_frame_signoff_base_tes
 
     case (choice)
       0: begin
+        `uvm_info(
+          get_type_name(),
+          $sformatf("Mixed ERROR step %0d case=masked_drop", step_idx),
+          UVM_LOW
+        )
         run_masked_drop_case(opq_masked_drop_virtual_sequence::get_type());
       end
       1: begin
+        `uvm_info(
+          get_type_name(),
+          $sformatf("Mixed ERROR step %0d case=single_hit_masked_drop", step_idx),
+          UVM_LOW
+        )
         run_masked_drop_case(opq_single_hit_masked_drop_virtual_sequence::get_type());
       end
       2: begin
+        `uvm_info(
+          get_type_name(),
+          $sformatf("Mixed ERROR step %0d case=masked_drop_recovery", step_idx),
+          UVM_LOW
+        )
         run_masked_drop_recovery_case($sformatf("mixed_masked_recovery_%0d", step_idx));
       end
     endcase
@@ -656,6 +806,22 @@ class opq_cross_mixed_bucket_random_soak_test extends opq_frame_signoff_base_tes
         drr_seq.frame_count = drr_frame_count_local;
         drr_seq.subheaders_per_frame = drr_subheaders_local;
         drr_seq.hit_count_per_subheader = drr_hits_local;
+        `uvm_info(
+          get_type_name(),
+          $sformatf(
+            "Mixed CROSS step %0d case=drr_bp frames=%0d subheaders=%0d hits=%0d high=%0d low=%0d repeat=%0d allowance0=%0d allowance1=%0d",
+            step_idx,
+            drr_frame_count_local,
+            drr_subheaders_local,
+            drr_hits_local,
+            high_cycles,
+            low_cycles,
+            repeat_count,
+            8,
+            16
+          ),
+          UVM_LOW
+        )
         csr_write_lane_drr_allowance(0, 8);
         csr_write_lane_drr_allowance(1, 16);
         configure_no_restart_sequence(drr_seq);
@@ -686,6 +852,21 @@ class opq_cross_mixed_bucket_random_soak_test extends opq_frame_signoff_base_tes
         #(inter_case_gap_time());
       end
       1: begin
+        `uvm_info(
+          get_type_name(),
+          $sformatf(
+            "Mixed CROSS step %0d case=idle_lane_bp active_lane=%0d frames=%0d subheaders=%0d hits=%0d high=%0d low=%0d repeat=%0d",
+            step_idx,
+            0,
+            6,
+            8,
+            8,
+            8,
+            8,
+            32
+          ),
+          UVM_LOW
+        )
         run_cross_idle_lane_bp_case($sformatf("mixed_idle_lane_bp_%0d", step_idx), 0, 6, 8, 8, 8, 8, 32);
       end
     endcase
@@ -797,4 +978,876 @@ class opq_cross_mixed_bucket_seconds_soak_test extends opq_cross_mixed_bucket_ra
   virtual function time credit_restore_timeout();
     return cycles_to_time(SECONDS_SOAK_TIMEOUT_CYCLES);
   endfunction
+endclass
+
+class opq_cross_random_ready_overflow_seconds_soak_test extends opq_frame_signoff_base_test;
+  `uvm_component_utils(opq_cross_random_ready_overflow_seconds_soak_test)
+
+  localparam int unsigned OVERFLOW_SOAK_DWELL_CYCLES = 2_500_000;
+  localparam int unsigned OVERFLOW_SOAK_TIMEOUT_CYCLES = 2_500_000;
+
+  int unsigned soak_iterations;
+  int unsigned bp_segment_count;
+  int unsigned overflow_steps_with_ft_drop;
+  int unsigned short_bp_segments_seen;
+  int unsigned ms_like_bp_segments_seen;
+  bit require_ft_drop;
+  bit [31:0] last_ft_drop_hdr_total;
+  bit [31:0] last_ft_drop_shd_total;
+  bit [31:0] last_ft_drop_hit_total;
+
+  function new(string name = "opq_cross_random_ready_overflow_seconds_soak_test", uvm_component parent = null);
+    int unsigned soak_iterations_plusarg;
+    int unsigned bp_segment_plusarg;
+    int unsigned require_ft_drop_plusarg;
+
+    super.new(name, parent);
+    soak_iterations = 12;
+    bp_segment_count = 48;
+    require_ft_drop = 1'b1;
+    if ($value$plusargs("OPQ_OVERFLOW_SOAK_STEPS=%d", soak_iterations_plusarg) &&
+        (soak_iterations_plusarg > 0)) begin
+      soak_iterations = soak_iterations_plusarg;
+    end
+    if ($value$plusargs("OPQ_OVERFLOW_BP_SEGMENTS=%d", bp_segment_plusarg) &&
+        (bp_segment_plusarg > 0)) begin
+      bp_segment_count = bp_segment_plusarg;
+    end
+    if ($value$plusargs("OPQ_OVERFLOW_REQUIRE_FT_DROP=%d", require_ft_drop_plusarg)) begin
+      require_ft_drop = (require_ft_drop_plusarg != 0);
+    end
+  endfunction
+
+  virtual function opq_scoreboard_cfg create_scoreboard_cfg();
+    opq_scoreboard_cfg cfg;
+
+    cfg = super.create_scoreboard_cfg();
+    cfg.check_hit_integrity = 1'b0;
+    cfg.min_sop_count = 1;
+    return cfg;
+  endfunction
+
+  virtual function time dwell_time();
+    return cycles_to_time(OVERFLOW_SOAK_DWELL_CYCLES);
+  endfunction
+
+  virtual function time credit_restore_timeout();
+    return cycles_to_time(OVERFLOW_SOAK_TIMEOUT_CYCLES);
+  endfunction
+
+  virtual function int unsigned default_min_hit_percent();
+    return 1;
+  endfunction
+
+  virtual function int unsigned default_max_hit_percent();
+    return 80;
+  endfunction
+
+  virtual function int unsigned default_hot_lane_min_hit_percent();
+    return 60;
+  endfunction
+
+  virtual function int unsigned default_hot_lane_count_min();
+    return 1;
+  endfunction
+
+  virtual function int unsigned default_hot_lane_count_max();
+    return (OPQ_N_LANE >= 2) ? 2 : 1;
+  endfunction
+
+  virtual function string soak_label();
+    return "overflow";
+  endfunction
+
+  virtual function time target_run_time();
+    return 0;
+  endfunction
+
+  task automatic append_bp_item(
+    ref opq_bp_sequence bp_seq,
+    input string item_name,
+    input opq_bp_mode_e mode,
+    input int unsigned high_cycles,
+    input int unsigned low_cycles,
+    input int unsigned repeat_count
+  );
+    opq_bp_item bp_item;
+
+    bp_item = opq_bp_item::type_id::create(item_name);
+    bp_item.mode = mode;
+    bp_item.high_cycles = high_cycles;
+    bp_item.low_cycles = low_cycles;
+    bp_item.repeat_count = repeat_count;
+    bp_seq.items.push_back(bp_item);
+  endtask
+
+  task automatic append_bp_item_ns(
+    ref opq_bp_sequence bp_seq,
+    input string item_name,
+    input opq_bp_mode_e mode,
+    input longint unsigned high_ns,
+    input longint unsigned low_ns,
+    input int unsigned repeat_count
+  );
+    append_bp_item(
+      bp_seq,
+      item_name,
+      mode,
+      duration_ns_to_cycles(high_ns),
+      duration_ns_to_cycles(low_ns),
+      repeat_count
+    );
+  endtask
+
+  task automatic build_random_ready_gate_sequence(ref opq_bp_sequence bp_seq, int unsigned step_idx);
+    int unsigned seg_idx;
+
+    seg_idx = 0;
+
+    if (bp_segment_count > 0) begin
+      int unsigned high_cycles;
+      int unsigned low_cycles;
+      int unsigned repeat_count;
+
+      if (!std::randomize(high_cycles, low_cycles, repeat_count) with {
+        high_cycles inside {1, 2, 4, 8};
+        low_cycles inside {1, 2, 4, 8};
+        repeat_count inside {[8:32]};
+      }) begin
+        `uvm_fatal(get_type_name(), "Failed to randomize mandatory short periodic stall segment")
+      end
+      append_bp_item(
+        bp_seq,
+        $sformatf("bp_periodic_short_forced_%0d", step_idx),
+        BP_PERIODIC_STALL,
+        high_cycles,
+        low_cycles,
+        repeat_count
+      );
+      short_bp_segments_seen++;
+      seg_idx++;
+    end
+
+    if (bp_segment_count > 1) begin
+      longint unsigned high_ns;
+      longint unsigned low_ns;
+
+      if (!std::randomize(high_ns, low_ns) with {
+        high_ns inside {10_000, 50_000, 100_000, 250_000};
+        low_ns inside {250_000, 500_000, 1_000_000, 2_000_000};
+      }) begin
+        `uvm_fatal(get_type_name(), "Failed to randomize mandatory ms-like backpressure segment")
+      end
+      append_bp_item_ns(
+        bp_seq,
+        $sformatf("bp_periodic_ms_forced_%0d", step_idx),
+        BP_PERIODIC_STALL,
+        high_ns,
+        low_ns,
+        1
+      );
+      ms_like_bp_segments_seen++;
+      seg_idx++;
+    end
+
+    for (; seg_idx < bp_segment_count; seg_idx++) begin
+      int unsigned pattern_pick;
+
+      if (!std::randomize(pattern_pick) with { pattern_pick inside {[0:99]}; }) begin
+        `uvm_fatal(get_type_name(), "Failed to randomize overflow backpressure pattern")
+      end
+
+      if (pattern_pick < 18) begin
+        int unsigned ready_cycles;
+        if (!std::randomize(ready_cycles) with { ready_cycles inside {1, 2, 4, 8, 16, 32}; }) begin
+          `uvm_fatal(get_type_name(), "Failed to randomize short ready segment")
+        end
+        append_bp_item(
+          bp_seq,
+          $sformatf("bp_ready_short_%0d_%0d", step_idx, seg_idx),
+          BP_ALWAYS_READY,
+          ready_cycles,
+          1,
+          1
+        );
+      end else if (pattern_pick < 35) begin
+        int unsigned high_cycles;
+        int unsigned low_cycles;
+        int unsigned repeat_count;
+        if (!std::randomize(high_cycles, low_cycles, repeat_count) with {
+          high_cycles inside {1, 2, 4, 8};
+          low_cycles inside {1, 2, 4, 8};
+          repeat_count inside {[8:32]};
+        }) begin
+          `uvm_fatal(get_type_name(), "Failed to randomize short periodic stall segment")
+        end
+        append_bp_item(
+          bp_seq,
+          $sformatf("bp_periodic_short_%0d_%0d", step_idx, seg_idx),
+          BP_PERIODIC_STALL,
+          high_cycles,
+          low_cycles,
+          repeat_count
+        );
+        short_bp_segments_seen++;
+      end else if (pattern_pick < 52) begin
+        int unsigned high_cycles;
+        int unsigned low_cycles;
+        int unsigned repeat_count;
+        if (!std::randomize(high_cycles, low_cycles, repeat_count) with {
+          high_cycles inside {4, 8, 16, 32};
+          low_cycles inside {16, 32, 64, 128};
+          repeat_count inside {[4:16]};
+        }) begin
+          `uvm_fatal(get_type_name(), "Failed to randomize medium periodic stall segment")
+        end
+        append_bp_item(
+          bp_seq,
+          $sformatf("bp_periodic_medium_%0d_%0d", step_idx, seg_idx),
+          BP_PERIODIC_STALL,
+          high_cycles,
+          low_cycles,
+          repeat_count
+        );
+      end else if (pattern_pick < 62) begin
+        int unsigned low_cycles;
+        if (!std::randomize(low_cycles) with { low_cycles inside {1, 2, 4, 8, 16, 32}; }) begin
+          `uvm_fatal(get_type_name(), "Failed to randomize short stall segment")
+        end
+        append_bp_item(
+          bp_seq,
+          $sformatf("bp_stall_short_%0d_%0d", step_idx, seg_idx),
+          BP_ALWAYS_STALL,
+          1,
+          low_cycles,
+          1
+        );
+        short_bp_segments_seen++;
+      end else if (pattern_pick < 72) begin
+        int unsigned low_cycles;
+        if (!std::randomize(low_cycles) with { low_cycles inside {128, 256, 512, 1024}; }) begin
+          `uvm_fatal(get_type_name(), "Failed to randomize long stall segment")
+        end
+        append_bp_item(
+          bp_seq,
+          $sformatf("bp_stall_long_%0d_%0d", step_idx, seg_idx),
+          BP_ALWAYS_STALL,
+          1,
+          low_cycles,
+          1
+        );
+      end else if (pattern_pick < 80) begin
+        int unsigned ready_cycles;
+        if (!std::randomize(ready_cycles) with { ready_cycles inside {64, 128, 256, 512}; }) begin
+          `uvm_fatal(get_type_name(), "Failed to randomize long ready segment")
+        end
+        append_bp_item(
+          bp_seq,
+          $sformatf("bp_ready_long_%0d_%0d", step_idx, seg_idx),
+          BP_ALWAYS_READY,
+          ready_cycles,
+          1,
+          1
+        );
+      end else if (pattern_pick < 88) begin
+        int unsigned high_cycles;
+        int unsigned low_cycles;
+        int unsigned repeat_count;
+        if (!std::randomize(high_cycles, low_cycles, repeat_count) with {
+          high_cycles inside {8, 16, 32, 64};
+          low_cycles inside {256, 512, 1024, 2048};
+          repeat_count inside {[2:8]};
+        }) begin
+          `uvm_fatal(get_type_name(), "Failed to randomize extended periodic stall segment")
+        end
+        append_bp_item(
+          bp_seq,
+          $sformatf("bp_periodic_long_%0d_%0d", step_idx, seg_idx),
+          BP_PERIODIC_STALL,
+          high_cycles,
+          low_cycles,
+          repeat_count
+        );
+      end else if (pattern_pick < 95) begin
+        longint unsigned low_ns;
+        if (!std::randomize(low_ns) with { low_ns inside {1_000, 10_000, 100_000}; }) begin
+          `uvm_fatal(get_type_name(), "Failed to randomize microsecond-scale stall segment")
+        end
+        append_bp_item_ns(
+          bp_seq,
+          $sformatf("bp_stall_us_%0d_%0d", step_idx, seg_idx),
+          BP_ALWAYS_STALL,
+          1,
+          low_ns,
+          1
+        );
+      end else if (pattern_pick < 98) begin
+        longint unsigned low_ns;
+        if (!std::randomize(low_ns) with {
+          low_ns inside {250_000, 500_000, 1_000_000, 2_000_000};
+        }) begin
+          `uvm_fatal(get_type_name(), "Failed to randomize ms-like stall segment")
+        end
+        append_bp_item_ns(
+          bp_seq,
+          $sformatf("bp_stall_ms_%0d_%0d", step_idx, seg_idx),
+          BP_ALWAYS_STALL,
+          1,
+          low_ns,
+          1
+        );
+        ms_like_bp_segments_seen++;
+      end else begin
+        longint unsigned high_ns;
+        longint unsigned low_ns;
+        int unsigned repeat_count;
+        if (!std::randomize(high_ns, low_ns, repeat_count) with {
+          high_ns inside {250, 1_000, 10_000, 50_000};
+          low_ns inside {50_000, 100_000, 250_000, 500_000};
+          repeat_count inside {[1:4]};
+        }) begin
+          `uvm_fatal(get_type_name(), "Failed to randomize ms-like periodic stall segment")
+        end
+        append_bp_item_ns(
+          bp_seq,
+          $sformatf("bp_periodic_ms_%0d_%0d", step_idx, seg_idx),
+          BP_PERIODIC_STALL,
+          high_ns,
+          low_ns,
+          repeat_count
+        );
+        ms_like_bp_segments_seen++;
+      end
+    end
+  endtask
+
+  task automatic sample_frame_table_drop_totals(
+    output bit [31:0] ft_drop_hdr_word,
+    output bit [31:0] ft_drop_shd_word,
+    output bit [31:0] ft_drop_hit_word
+  );
+    csr_read32(OPQ_CSR_WORD_FT_DROP_HDR, ft_drop_hdr_word);
+    csr_read32(OPQ_CSR_WORD_FT_DROP_SHD, ft_drop_shd_word);
+    csr_read32(OPQ_CSR_WORD_FT_DROP_HIT, ft_drop_hit_word);
+    env.coverage.sample_drop_snapshot(
+      opq_coverage::DROP_DOMAIN_FTABLE,
+      -1,
+      ft_drop_hdr_word,
+      ft_drop_shd_word,
+      ft_drop_hit_word
+    );
+  endtask
+
+  task automatic update_ftable_drop_progress(int unsigned step_idx);
+    bit [31:0] ft_drop_hdr_word;
+    bit [31:0] ft_drop_shd_word;
+    bit [31:0] ft_drop_hit_word;
+
+    sample_frame_table_drop_totals(ft_drop_hdr_word, ft_drop_shd_word, ft_drop_hit_word);
+    if ((ft_drop_hdr_word > last_ft_drop_hdr_total) ||
+        (ft_drop_shd_word > last_ft_drop_shd_total) ||
+        (ft_drop_hit_word > last_ft_drop_hit_total)) begin
+      overflow_steps_with_ft_drop++;
+    end
+    last_ft_drop_hdr_total = ft_drop_hdr_word;
+    last_ft_drop_shd_total = ft_drop_shd_word;
+    last_ft_drop_hit_total = ft_drop_hit_word;
+
+    `uvm_info(
+      get_type_name(),
+      $sformatf(
+        "%s soak step %0d cumulative ft_drop_hdr=%0d ft_drop_shd=%0d ft_drop_hit=%0d steps_with_ft_drop=%0d",
+        soak_label(),
+        step_idx,
+        ft_drop_hdr_word,
+        ft_drop_shd_word,
+        ft_drop_hit_word,
+        overflow_steps_with_ft_drop
+      ),
+      UVM_LOW
+    )
+  endtask
+
+  task automatic run_random_ready_overflow_step(int unsigned step_idx);
+    opq_variable_saturation_overflow_virtual_sequence seq;
+    opq_bp_sequence bp_seq;
+    int unsigned frame_count_local;
+    int unsigned inter_frame_gap_cycles_local;
+    int unsigned subheaders_per_frame_plusarg;
+    int unsigned frame_count_plusarg;
+    int unsigned gap_cycles_plusarg;
+    int unsigned hot_lane_count_plusarg;
+    int unsigned min_hit_percent_plusarg;
+    int unsigned max_hit_percent_plusarg;
+    int unsigned hot_lane_min_hit_percent_plusarg;
+
+    seq = opq_variable_saturation_overflow_virtual_sequence::type_id::create($sformatf("overflow_seq_%0d", step_idx));
+    bp_seq = opq_bp_sequence::type_id::create($sformatf("overflow_bp_seq_%0d", step_idx));
+
+    if (!std::randomize(frame_count_local, inter_frame_gap_cycles_local) with {
+      frame_count_local inside {[2:4]};
+      inter_frame_gap_cycles_local inside {0, 1, 2, 4};
+    }) begin
+      `uvm_fatal(get_type_name(), "Failed to randomize overflow step density")
+    end
+
+    seq.frame_count = frame_count_local;
+    seq.subheaders_per_frame = (OPQ_N_SHD >= 128) ? 128 : OPQ_N_SHD;
+    seq.min_hit_percent = default_min_hit_percent();
+    seq.max_hit_percent = default_max_hit_percent();
+    seq.hot_lane_min_hit_percent = default_hot_lane_min_hit_percent();
+    seq.hot_lane_count_min = default_hot_lane_count_min();
+    seq.hot_lane_count_max = default_hot_lane_count_max();
+    seq.inter_frame_gap_cycles = inter_frame_gap_cycles_local;
+    if ($value$plusargs("OPQ_OVERFLOW_SUBHEADERS_PER_FRAME=%d", subheaders_per_frame_plusarg) &&
+        (subheaders_per_frame_plusarg > 0) &&
+        (subheaders_per_frame_plusarg <= OPQ_N_SHD)) begin
+      seq.subheaders_per_frame = subheaders_per_frame_plusarg;
+    end
+    if ($value$plusargs("OPQ_OVERFLOW_FRAMES_PER_STEP=%d", frame_count_plusarg) &&
+        (frame_count_plusarg > 0)) begin
+      seq.frame_count = frame_count_plusarg;
+      frame_count_local = frame_count_plusarg;
+    end
+    if ($value$plusargs("OPQ_OVERFLOW_GAP_CYCLES=%d", gap_cycles_plusarg)) begin
+      seq.inter_frame_gap_cycles = gap_cycles_plusarg;
+      inter_frame_gap_cycles_local = gap_cycles_plusarg;
+    end
+    if ($value$plusargs("OPQ_OVERFLOW_HOT_LANES=%d", hot_lane_count_plusarg) &&
+        (hot_lane_count_plusarg > 0) &&
+        (hot_lane_count_plusarg <= OPQ_N_LANE)) begin
+      seq.hot_lane_count_min = hot_lane_count_plusarg;
+      seq.hot_lane_count_max = hot_lane_count_plusarg;
+    end
+    if ($value$plusargs("OPQ_OVERFLOW_MIN_HIT_PERCENT=%d", min_hit_percent_plusarg) &&
+        (min_hit_percent_plusarg <= 100)) begin
+      seq.min_hit_percent = min_hit_percent_plusarg;
+    end
+    if ((seq.max_hit_percent < seq.min_hit_percent) ||
+        (seq.hot_lane_min_hit_percent < seq.min_hit_percent)) begin
+      `uvm_fatal(get_type_name(), $sformatf(
+        "Invalid saturation defaults min=%0d max=%0d hot_min=%0d",
+        seq.min_hit_percent,
+        seq.max_hit_percent,
+        seq.hot_lane_min_hit_percent
+      ))
+    end
+    if ($value$plusargs("OPQ_OVERFLOW_MAX_HIT_PERCENT=%d", max_hit_percent_plusarg) &&
+        (max_hit_percent_plusarg >= seq.min_hit_percent) &&
+        (max_hit_percent_plusarg <= 100)) begin
+      seq.max_hit_percent = max_hit_percent_plusarg;
+    end
+    if ($value$plusargs("OPQ_OVERFLOW_HOT_MIN_HIT_PERCENT=%d", hot_lane_min_hit_percent_plusarg) &&
+        (hot_lane_min_hit_percent_plusarg >= seq.min_hit_percent) &&
+        (hot_lane_min_hit_percent_plusarg <= seq.max_hit_percent)) begin
+      seq.hot_lane_min_hit_percent = hot_lane_min_hit_percent_plusarg;
+    end
+    if ((seq.max_hit_percent < seq.min_hit_percent) ||
+        (seq.hot_lane_min_hit_percent < seq.min_hit_percent) ||
+        (seq.hot_lane_count_max < seq.hot_lane_count_min)) begin
+      `uvm_fatal(get_type_name(), $sformatf(
+        "Invalid saturation config min=%0d max=%0d hot_min=%0d hot_lanes=[%0d:%0d]",
+        seq.min_hit_percent,
+        seq.max_hit_percent,
+        seq.hot_lane_min_hit_percent,
+        seq.hot_lane_count_min,
+        seq.hot_lane_count_max
+      ))
+    end
+    build_random_ready_gate_sequence(bp_seq, step_idx);
+
+    `uvm_info(
+      get_type_name(),
+      $sformatf(
+        "%s soak step %0d frames=%0d subheaders=%0d gap_cycles=%0d bp_segments=%0d hit_percent=[%0d:%0d] hot_min=%0d hot_lanes=[%0d:%0d] time=%0t",
+        soak_label(),
+        step_idx,
+        frame_count_local,
+        seq.subheaders_per_frame,
+        inter_frame_gap_cycles_local,
+        bp_segment_count,
+        seq.min_hit_percent,
+        seq.max_hit_percent,
+        seq.hot_lane_min_hit_percent,
+        seq.hot_lane_count_min,
+        seq.hot_lane_count_max,
+        $time
+      ),
+      UVM_LOW
+    )
+
+    configure_no_restart_sequence(seq);
+    fork
+      seq.start(env.vseqr);
+      begin
+        #(cycles_to_time(4));
+        bp_seq.start(env.vseqr.egress_seqr);
+      end
+    join
+    advance_no_restart_sequence(seq);
+    wait_for_credit_restore(
+      $sformatf("%s_credit_restore", seq.get_name()),
+      credit_restore_timeout(),
+      credit_restore_poll()
+    );
+    update_ftable_drop_progress(step_idx);
+    report_frame_table_accounting_checkpoint($sformatf("%s_step_%0d", soak_label(), step_idx), 1'b1);
+    report_lane_hit_accounting_checkpoint($sformatf("%s_step_%0d", soak_label(), step_idx), 1'b1);
+    #(inter_case_gap_time());
+  endtask
+
+  virtual task run_main_sequence();
+    time target_t;
+    int unsigned step_idx;
+
+    reset_no_restart_identity();
+    csr_clear_counters();
+    csr_write32(OPQ_CSR_WORD_LANE_MASK, 32'h0000_0000);
+    overflow_steps_with_ft_drop = 0;
+    short_bp_segments_seen = 0;
+    ms_like_bp_segments_seen = 0;
+    last_ft_drop_hdr_total = '0;
+    last_ft_drop_shd_total = '0;
+    last_ft_drop_hit_total = '0;
+    target_t = target_run_time();
+    step_idx = 0;
+
+    do begin
+      run_random_ready_overflow_step(step_idx);
+      step_idx++;
+    end while ((step_idx < soak_iterations) || ((target_t != 0) && ($time < target_t)));
+  endtask
+
+  virtual task run_post_sequence_checks();
+    bit [31:0] ft_wr_hdr_word;
+    bit [31:0] ft_wr_shd_word;
+    bit [31:0] ft_wr_hit_word;
+    bit [31:0] ft_rd_hdr_word;
+    bit [31:0] ft_rd_shd_word;
+    bit [31:0] ft_rd_hit_word;
+    bit [31:0] ft_drop_hdr_word;
+    bit [31:0] ft_drop_shd_word;
+    bit [31:0] ft_drop_hit_word;
+
+    for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+      sample_lane_drop_snapshot(lane);
+      sample_lane_credit_snapshot(lane, 1'b1);
+      sample_lane_drr_snapshot(lane, -1, 1'b0, 1'b0);
+    end
+
+    csr_read32(OPQ_CSR_WORD_FT_WR_HDR, ft_wr_hdr_word);
+    csr_read32(OPQ_CSR_WORD_FT_WR_SHD, ft_wr_shd_word);
+    csr_read32(OPQ_CSR_WORD_FT_WR_HIT, ft_wr_hit_word);
+    csr_read32(OPQ_CSR_WORD_FT_RD_HDR, ft_rd_hdr_word);
+    csr_read32(OPQ_CSR_WORD_FT_RD_SHD, ft_rd_shd_word);
+    csr_read32(OPQ_CSR_WORD_FT_RD_HIT, ft_rd_hit_word);
+    sample_frame_table_drop_totals(ft_drop_hdr_word, ft_drop_shd_word, ft_drop_hit_word);
+
+    if (ft_rd_hdr_word !== env.scoreboard.get_actual_egress_hdr_cnt()[31:0]) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "ft_rd_hdr mismatch expected=%0d actual=%0d",
+        env.scoreboard.get_actual_egress_hdr_cnt(),
+        ft_rd_hdr_word
+      ))
+    end
+    if (ft_rd_shd_word !== env.scoreboard.get_actual_egress_shd_cnt()[31:0]) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "ft_rd_shd mismatch expected=%0d actual=%0d",
+        env.scoreboard.get_actual_egress_shd_cnt(),
+        ft_rd_shd_word
+      ))
+    end
+    if (ft_rd_hit_word !== env.scoreboard.get_actual_egress_hit_cnt()[31:0]) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "ft_rd_hit mismatch expected=%0d actual=%0d",
+        env.scoreboard.get_actual_egress_hit_cnt(),
+        ft_rd_hit_word
+      ))
+    end
+    if (ft_wr_hdr_word !== (ft_rd_hdr_word + ft_drop_hdr_word)) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "ft_wr_hdr accounting mismatch wr=%0d rd=%0d drop=%0d",
+        ft_wr_hdr_word,
+        ft_rd_hdr_word,
+        ft_drop_hdr_word
+      ))
+    end
+    if (ft_wr_shd_word !== (ft_rd_shd_word + ft_drop_shd_word)) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "ft_wr_shd accounting mismatch wr=%0d rd=%0d drop=%0d",
+        ft_wr_shd_word,
+        ft_rd_shd_word,
+        ft_drop_shd_word
+      ))
+    end
+    if (ft_wr_hit_word !== (ft_rd_hit_word + ft_drop_hit_word)) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "ft_wr_hit accounting mismatch wr=%0d rd=%0d drop=%0d",
+        ft_wr_hit_word,
+        ft_rd_hit_word,
+        ft_drop_hit_word
+      ))
+    end
+    if (require_ft_drop) begin
+      if ((ft_drop_hdr_word == 0) && (ft_drop_shd_word == 0) && (ft_drop_hit_word == 0)) begin
+        `uvm_error(get_type_name(), "Expected non-zero frame-table drop counters during random-ready overflow soak")
+      end
+      if (overflow_steps_with_ft_drop == 0) begin
+        `uvm_error(get_type_name(), "Random-ready overflow soak never advanced the frame-table drop counters")
+      end
+    end else begin
+      `uvm_info(
+        get_type_name(),
+        $sformatf(
+          "%s soak completed in shape-check mode: ft_drop_hdr=%0d ft_drop_shd=%0d ft_drop_hit=%0d steps_with_ft_drop=%0d",
+          soak_label(),
+          ft_drop_hdr_word,
+          ft_drop_shd_word,
+          ft_drop_hit_word,
+          overflow_steps_with_ft_drop
+        ),
+        UVM_LOW
+      )
+    end
+    if ((bp_segment_count > 0) && (short_bp_segments_seen == 0)) begin
+      `uvm_error(get_type_name(), "Random-ready overflow soak never exercised a short-cycle backpressure segment")
+    end
+    if ((bp_segment_count > 1) && (ms_like_bp_segments_seen == 0)) begin
+      `uvm_error(get_type_name(), "Random-ready overflow soak never exercised an ms-like backpressure segment")
+    end
+    report_frame_table_accounting_checkpoint({soak_label(), "_final"}, 1'b1);
+    report_lane_hit_accounting_checkpoint({soak_label(), "_final"}, 1'b1);
+  endtask
+endclass
+
+class opq_cross_random_ready_overflow_long_simtime_soak_test extends opq_cross_random_ready_overflow_seconds_soak_test;
+  `uvm_component_utils(opq_cross_random_ready_overflow_long_simtime_soak_test)
+
+  function new(string name = "opq_cross_random_ready_overflow_long_simtime_soak_test", uvm_component parent = null);
+    super.new(name, parent);
+    if (!$test$plusargs("OPQ_OVERFLOW_SOAK_STEPS")) begin
+      soak_iterations = 16;
+    end
+    if (!$test$plusargs("OPQ_OVERFLOW_BP_SEGMENTS")) begin
+      bp_segment_count = 64;
+    end
+  endfunction
+endclass
+
+class opq_cross_random_ready_overflow_extensive_soak_test extends opq_cross_random_ready_overflow_seconds_soak_test;
+  `uvm_component_utils(opq_cross_random_ready_overflow_extensive_soak_test)
+
+  function new(string name = "opq_cross_random_ready_overflow_extensive_soak_test", uvm_component parent = null);
+    super.new(name, parent);
+    if (!$test$plusargs("OPQ_OVERFLOW_SOAK_STEPS")) begin
+      soak_iterations = 8;
+    end
+    if (!$test$plusargs("OPQ_OVERFLOW_BP_SEGMENTS")) begin
+      bp_segment_count = 24;
+    end
+  endfunction
+endclass
+
+class opq_cross_random_ready_half_saturation_1s_simtime_test extends opq_cross_random_ready_overflow_seconds_soak_test;
+  `uvm_component_utils(opq_cross_random_ready_half_saturation_1s_simtime_test)
+
+  function new(string name = "opq_cross_random_ready_half_saturation_1s_simtime_test", uvm_component parent = null);
+    super.new(name, parent);
+    require_ft_drop = 1'b0;
+    if (!$test$plusargs("OPQ_OVERFLOW_SOAK_STEPS")) begin
+      soak_iterations = 8;
+    end
+    if (!$test$plusargs("OPQ_OVERFLOW_BP_SEGMENTS")) begin
+      bp_segment_count = 32;
+    end
+  endfunction
+
+  virtual function int unsigned default_min_hit_percent();
+    return 0;
+  endfunction
+
+  virtual function int unsigned default_max_hit_percent();
+    return 50;
+  endfunction
+
+  virtual function int unsigned default_hot_lane_min_hit_percent();
+    return 25;
+  endfunction
+
+  virtual function int unsigned default_hot_lane_count_min();
+    return 0;
+  endfunction
+
+  virtual function string soak_label();
+    return "half_sat";
+  endfunction
+
+  virtual function time target_run_time();
+    return 1s;
+  endfunction
+
+  virtual function time dwell_time();
+    return cycles_to_time(4096);
+  endfunction
+endclass
+
+class opq_cross_drr_then_idle_lane_bp_repro_test extends opq_frame_signoff_base_test;
+  `uvm_component_utils(opq_cross_drr_then_idle_lane_bp_repro_test)
+
+  function new(string name = "opq_cross_drr_then_idle_lane_bp_repro_test", uvm_component parent = null);
+    super.new(name, parent);
+  endfunction
+
+  virtual task run_main_sequence();
+    reset_no_restart_identity();
+    csr_clear_counters();
+    csr_write32(OPQ_CSR_WORD_LANE_MASK, 32'h0000_0000);
+    run_cross_drr_bp_case("repro_drr", 5, 7, 16, 8, 8, 32, 8, 16);
+    run_cross_idle_lane_bp_case("repro_idle_lane_bp", 0, 6, 8, 8, 8, 8, 32);
+  endtask
+endclass
+
+class opq_cross_hit3_lead_in_repro_test extends opq_frame_signoff_base_test;
+  `uvm_component_utils(opq_cross_hit3_lead_in_repro_test)
+
+  localparam int unsigned REPRO_DWELL_CYCLES = 2_500_000;
+  localparam int unsigned REPRO_TIMEOUT_CYCLES = 2_500_000;
+
+  function new(string name = "opq_cross_hit3_lead_in_repro_test", uvm_component parent = null);
+    super.new(name, parent);
+  endfunction
+
+  virtual function time dwell_time();
+    return cycles_to_time(REPRO_DWELL_CYCLES);
+  endfunction
+
+  virtual function time credit_restore_timeout();
+    return cycles_to_time(REPRO_TIMEOUT_CYCLES);
+  endfunction
+
+  virtual task run_main_sequence();
+    opq_basic_virtual_sequence basic_seq;
+    opq_whole_frame_skew_virtual_sequence skew_seq;
+
+    reset_no_restart_identity();
+    csr_clear_counters();
+    csr_write32(OPQ_CSR_WORD_LANE_MASK, 32'h0000_0000);
+
+    skew_seq = opq_whole_frame_skew_virtual_sequence::type_id::create("repro_whole_skew");
+    skew_seq.frame_count = 17;
+    skew_seq.hit_period = 2;
+    skew_seq.hit_count_when_active = 2;
+    skew_seq.inter_frame_gap_cycles = OPQ_MIN_SOP_GAP_CYCLES;
+    run_vseq(skew_seq);
+
+    run_cross_idle_lane_bp_case("repro_idle_lane_bp_186", 0, 6, 8, 8, 8, 8, 32);
+
+    basic_seq = opq_basic_virtual_sequence::type_id::create("repro_basic_187");
+    run_vseq(basic_seq);
+
+    basic_seq = opq_basic_virtual_sequence::type_id::create("repro_basic_188");
+    run_vseq(basic_seq);
+
+    run_cross_drr_bp_case("repro_drr_189", 5, 7, 16, 8, 8, 32, 8, 16);
+    run_cross_idle_lane_bp_case("repro_idle_lane_bp_190", 0, 6, 8, 8, 8, 8, 32);
+  endtask
+endclass
+
+class opq_cross_hit3_exact_183_190_repro_test extends opq_frame_signoff_base_test;
+  `uvm_component_utils(opq_cross_hit3_exact_183_190_repro_test)
+
+  localparam int unsigned REPRO_DWELL_CYCLES = 2_500_000;
+  localparam int unsigned REPRO_TIMEOUT_CYCLES = 2_500_000;
+
+  function new(string name = "opq_cross_hit3_exact_183_190_repro_test", uvm_component parent = null);
+    super.new(name, parent);
+  endfunction
+
+  virtual function time dwell_time();
+    return cycles_to_time(REPRO_DWELL_CYCLES);
+  endfunction
+
+  virtual function time credit_restore_timeout();
+    return cycles_to_time(REPRO_TIMEOUT_CYCLES);
+  endfunction
+
+  virtual task run_main_sequence();
+    opq_whole_frame_skew_virtual_sequence skew_seq;
+    opq_basic_virtual_sequence basic_187_seq;
+    opq_basic_virtual_sequence basic_188_seq;
+
+    reset_no_restart_identity();
+    csr_clear_counters();
+    csr_write32(OPQ_CSR_WORD_LANE_MASK, 32'h0000_0000);
+
+    // Exact failing lead-in from the logged seconds-soak repro window.
+    run_basic_with_bp(BP_PERIODIC_STALL, 4, 8, 17);
+    run_cross_drr_bp_case("repro_drr_184", 3, 7, 13, 4, 12, 44, 8, 16);
+
+    skew_seq =
+      opq_whole_frame_skew_virtual_sequence::type_id::create("repro_whole_skew_185");
+    skew_seq.frame_count = 17;
+    skew_seq.hit_period = 2;
+    skew_seq.hit_count_when_active = 2;
+    skew_seq.inter_frame_gap_cycles = OPQ_MIN_SOP_GAP_CYCLES;
+    run_vseq(skew_seq);
+
+    run_cross_idle_lane_bp_case("repro_idle_lane_bp_186", 0, 6, 8, 8, 8, 8, 32);
+
+    basic_187_seq = opq_basic_virtual_sequence::type_id::create("repro_basic_187");
+    run_vseq(basic_187_seq);
+
+    basic_188_seq = opq_basic_virtual_sequence::type_id::create("repro_basic_188");
+    run_vseq(basic_188_seq);
+
+    run_cross_drr_bp_case("repro_drr_189", 5, 7, 16, 4, 4, 41, 8, 16);
+    run_cross_idle_lane_bp_case("repro_idle_lane_bp_190", 0, 6, 8, 8, 8, 8, 32);
+  endtask
+endclass
+
+class opq_cross_sparse_single_lane_drr_credit_restore_repro_test extends opq_frame_signoff_base_test;
+  `uvm_component_utils(opq_cross_sparse_single_lane_drr_credit_restore_repro_test)
+
+  localparam int unsigned REPRO_DWELL_CYCLES = 500_000;
+  localparam int unsigned REPRO_TIMEOUT_CYCLES = 500_000;
+
+  function new(
+    string name = "opq_cross_sparse_single_lane_drr_credit_restore_repro_test",
+    uvm_component parent = null
+  );
+    super.new(name, parent);
+  endfunction
+
+  virtual function time dwell_time();
+    return cycles_to_time(REPRO_DWELL_CYCLES);
+  endfunction
+
+  virtual function time credit_restore_timeout();
+    return cycles_to_time(REPRO_TIMEOUT_CYCLES);
+  endfunction
+
+  virtual task run_main_sequence();
+    opq_missing_empty_frame_virtual_sequence sparse_seq;
+    opq_single_lane_virtual_sequence single_lane_seq;
+
+    reset_no_restart_identity();
+    csr_clear_counters();
+    csr_write32(OPQ_CSR_WORD_LANE_MASK, 32'h0000_0000);
+
+    sparse_seq = opq_missing_empty_frame_virtual_sequence::type_id::create("repro_sparse_0");
+    run_vseq(sparse_seq);
+    report_lane_hit_accounting_checkpoint("after_sparse_0", 1'b1);
+
+    single_lane_seq =
+      opq_single_lane_virtual_sequence::type_id::create("repro_single_lane_1");
+    single_lane_seq.active_lane = 0;
+    single_lane_seq.frame_count = 5;
+    single_lane_seq.subheaders_per_frame = 4;
+    single_lane_seq.hit_count = 4;
+    run_vseq(single_lane_seq);
+    report_lane_hit_accounting_checkpoint("after_single_lane_1", 1'b0);
+
+    run_cross_drr_bp_case("repro_drr_2", 3, 6, 9, 8, 4, 45, 8, 16);
+    report_lane_hit_accounting_checkpoint("after_drr_2", 1'b0);
+  endtask
 endclass

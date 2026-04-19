@@ -43,6 +43,7 @@ package opq_pkg;
   localparam int OPQ_DRR_DEFAULT_ALLOWANCE = 256;
   localparam int OPQ_MIN_SOP_GAP_CYCLES = 4000;
   localparam int OPQ_POST_RESET_SETTLE_CYCLES = 4;
+  localparam int OPQ_ABSOLUTE_LAUNCH_GUARD_CYCLES = 64;
   localparam int OPQ_FRAME_HDR_AUX_WORDS = 4;
 
   localparam bit [7:0] K285 = 8'hBC;
@@ -187,6 +188,9 @@ package opq_pkg;
     rand bit [5:0] dt_type;
     rand bit [15:0] feb_id;
     rand int unsigned pre_gap_cycles;
+    bit use_absolute_launch;
+    bit [63:0] launch_cycle;
+    int unsigned frame_slot_id;
     bit [2:0] preamble_error_bits;
     bit [2:0] data_header0_error_bits;
     bit [2:0] data_header1_error_bits;
@@ -208,6 +212,9 @@ package opq_pkg;
       `uvm_field_int(dt_type, UVM_DEFAULT)
       `uvm_field_int(feb_id, UVM_DEFAULT)
       `uvm_field_int(pre_gap_cycles, UVM_DEFAULT)
+      `uvm_field_int(use_absolute_launch, UVM_DEFAULT)
+      `uvm_field_int(launch_cycle, UVM_DEFAULT)
+      `uvm_field_int(frame_slot_id, UVM_DEFAULT)
       `uvm_field_int(preamble_error_bits, UVM_DEFAULT)
       `uvm_field_int(data_header0_error_bits, UVM_DEFAULT)
       `uvm_field_int(data_header1_error_bits, UVM_DEFAULT)
@@ -224,6 +231,9 @@ package opq_pkg;
       dt_type = 6'b000001;
       feb_id = 16'h0001;
       pre_gap_cycles = 0;
+      use_absolute_launch = 1'b0;
+      launch_cycle = '0;
+      frame_slot_id = '0;
       preamble_error_bits = '0;
       data_header0_error_bits = '0;
       data_header1_error_bits = '0;
@@ -245,6 +255,18 @@ package opq_pkg;
         total_hits += subheaders[i].hit_count();
       end
       return total_hits;
+    endfunction
+
+    function int unsigned frame_word_count();
+      int unsigned total_words;
+
+      total_words = 5;
+      total_words += subheaders.size();
+      total_words += frame_hit_count_bits();
+      if (!omit_trailer) begin
+        total_words++;
+      end
+      return total_words;
     endfunction
   endclass
 
@@ -305,6 +327,10 @@ package opq_pkg;
     int unsigned post_hdr_drop_cnt;
     int unsigned post_shd_drop_cnt;
     int unsigned post_hit_drop_cnt;
+    bit          exact_pre_valid;
+    bit [47:0]   exact_pre_ts;
+    int unsigned exact_pre_shd_cnt;
+    int unsigned exact_pre_hit_cnt;
     bit          exact_post_valid;
     bit [47:0]   exact_post_ts;
     int unsigned exact_post_shd_cnt;
@@ -320,6 +346,10 @@ package opq_pkg;
       `uvm_field_int(post_hdr_drop_cnt, UVM_DEFAULT)
       `uvm_field_int(post_shd_drop_cnt, UVM_DEFAULT)
       `uvm_field_int(post_hit_drop_cnt, UVM_DEFAULT)
+      `uvm_field_int(exact_pre_valid, UVM_DEFAULT)
+      `uvm_field_int(exact_pre_ts, UVM_DEFAULT)
+      `uvm_field_int(exact_pre_shd_cnt, UVM_DEFAULT)
+      `uvm_field_int(exact_pre_hit_cnt, UVM_DEFAULT)
       `uvm_field_int(exact_post_valid, UVM_DEFAULT)
       `uvm_field_int(exact_post_ts, UVM_DEFAULT)
       `uvm_field_int(exact_post_shd_cnt, UVM_DEFAULT)
@@ -337,6 +367,10 @@ package opq_pkg;
       post_hdr_drop_cnt = 0;
       post_shd_drop_cnt = 0;
       post_hit_drop_cnt = 0;
+      exact_pre_valid = 1'b0;
+      exact_pre_ts = '0;
+      exact_pre_shd_cnt = 0;
+      exact_pre_hit_cnt = 0;
       exact_post_valid = 1'b0;
       exact_post_ts = '0;
       exact_post_shd_cnt = 0;

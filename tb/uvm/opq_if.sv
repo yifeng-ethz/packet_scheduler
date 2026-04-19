@@ -1,5 +1,6 @@
 interface opq_ingress_if(input logic clk);
   logic reset;
+  longint unsigned cycle_count;
   logic [35:0] data;
   logic [0:0] valid;
   logic [1:0] channel;
@@ -7,12 +8,20 @@ interface opq_ingress_if(input logic clk);
   logic [0:0] endofpacket;
   logic [2:0] error;
 
+  always_ff @(posedge clk) begin
+    if (reset) begin
+      cycle_count <= '0;
+    end else begin
+      cycle_count <= cycle_count + 1;
+    end
+  end
+
   clocking drv_cb @(posedge clk);
     output data, valid, channel, startofpacket, endofpacket, error;
   endclocking
 
   clocking mon_cb @(posedge clk);
-    input reset, data, valid, channel, startofpacket, endofpacket, error;
+    input reset, cycle_count, data, valid, channel, startofpacket, endofpacket, error;
   endclocking
 endinterface
 
@@ -133,6 +142,10 @@ interface opq_drop_if #(parameter int N_LANE = 2) (input logic clk);
   logic [15:0] post_hdr_drop_cnt [N_LANE];
   logic [15:0] post_shd_drop_cnt [N_LANE];
   logic [15:0] post_hit_drop_cnt [N_LANE];
+  logic [N_LANE-1:0] exact_pre_valid;
+  logic [47:0] exact_pre_ts [N_LANE];
+  logic [15:0] exact_pre_shd_cnt [N_LANE];
+  logic [15:0] exact_pre_hit_cnt [N_LANE];
   logic [N_LANE-1:0] exact_post_valid;
   logic [47:0] exact_post_ts [N_LANE];
   logic [15:0] exact_post_shd_cnt [N_LANE];
@@ -142,6 +155,7 @@ interface opq_drop_if #(parameter int N_LANE = 2) (input logic clk);
     input reset, valid, hdr_drop_cnt, shd_drop_cnt, hit_drop_cnt;
     input pre_shd_drop_cnt, pre_hit_drop_cnt;
     input post_hdr_drop_cnt, post_shd_drop_cnt, post_hit_drop_cnt;
+    input exact_pre_valid, exact_pre_ts, exact_pre_shd_cnt, exact_pre_hit_cnt;
     input exact_post_valid, exact_post_ts, exact_post_shd_cnt, exact_post_hit_cnt;
   endclocking
 endinterface

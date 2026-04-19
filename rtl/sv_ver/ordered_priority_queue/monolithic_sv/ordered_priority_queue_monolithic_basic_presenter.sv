@@ -28,6 +28,9 @@ module ordered_priority_queue_monolithic_basic_presenter #(
   input  logic [MAX_SHR_CNT_BITS-1:0]                     frame_shr_cnt_this_i,
   input  logic [MAX_HIT_CNT_BITS-1:0]                     frame_hit_cnt_this_i,
   input  logic                                            packet_complete_i,
+  input  logic [MAX_SHR_CNT_BITS-1:0]                     packet_complete_shr_cnt_i,
+  input  logic [MAX_HIT_CNT_BITS-1:0]                     packet_complete_hit_cnt_i,
+  input  logic                                            payload_commit_idle_i,
   output logic [PAGE_RAM_ADDR_WIDTH-1:0]                  page_ram_rd_addr_o,
   input  logic [PAGE_RAM_DATA_WIDTH-1:0]                  page_ram_rd_data_i,
   output logic                                            ft_drop_valid_o,
@@ -83,6 +86,7 @@ module ordered_priority_queue_monolithic_basic_presenter #(
   logic output_is_trailer;
   logic launch_is_trailer;
   logic advance_output_pipe;
+  logic startup_prefetch_ok;
   logic retire_pending;
   logic pkt_accept_started;
   logic suppress_next_packet_complete;
@@ -189,7 +193,10 @@ module ordered_priority_queue_monolithic_basic_presenter #(
       output_is_trailer = 1'b1;
     end
 
-    advance_output_pipe = aso_egress_ready || !output_data_valid[EGRESS_DELAY];
+    startup_prefetch_ok = pkt_accept_started || aso_egress_ready;
+    advance_output_pipe =
+      aso_egress_ready ||
+      (!output_data_valid[EGRESS_DELAY] && startup_prefetch_ok);
     launch_word_cnt = pkt_rd_word_cnt;
     if (output_data_valid[EGRESS_DELAY] && aso_egress_ready) begin
       launch_word_cnt = pkt_rd_word_cnt + PAGE_RAM_ADDR_ONE_CONST;
@@ -369,6 +376,9 @@ module ordered_priority_queue_monolithic_basic_presenter #(
       if (suppress_next_packet_complete) begin
         suppress_next_packet_complete <= 1'b0;
       end else begin
+        meta_len[meta_pkt_wcnt] <= frame_length_from_counts(packet_complete_shr_cnt_i, packet_complete_hit_cnt_i);
+        meta_shd_cnt[meta_pkt_wcnt] <= packet_complete_shr_cnt_i;
+        meta_hit_cnt[meta_pkt_wcnt] <= packet_complete_hit_cnt_i;
         meta_pkt_wcnt <= meta_pkt_wcnt + META_PTR_ONE_CONST;
       end
     end
@@ -391,7 +401,7 @@ module ordered_priority_queue_monolithic_basic_presenter #(
         end
 
         FTABLE_PRESENTER_WAIT_FOR_COMPLETE: begin
-          if (is_new_pkt_complete) begin
+          if (is_new_pkt_complete && payload_commit_idle_i) begin
             presenter_state <= FTABLE_PRESENTER_PRESENTING;
             page_ram_rptr <= meta_addr[meta_rptr];
             pkt_rd_word_cnt <= '0;
@@ -479,6 +489,69 @@ module ordered_priority_queue_monolithic_basic_presenter #(
       ft_drop_hit_cnt_o <= '0;
     end
   end
+
+// synthesis translate_off
+`ifndef SYNTHESIS
+  always_ff @(posedge d_clk) begin : proc_presenter_trace
+    longint unsigned trace_after_ps_v;
+    bit trace_after_ps_valid_v;
+    bit trace_enable_v;
+
+    trace_after_ps_v = 0;
+`ifdef SYNTHESIS
+    trace_after_ps_valid_v = 1'b0;
+`else
+    trace_after_ps_valid_v = $value$plusargs("OPQ_TRACE_AFTER_PS=%d", trace_after_ps_v);
+`endif
+    trace_enable_v = $test$plusargs("OPQ_NATIVE_TRACE_PRESENTER") &&
+      (!trace_after_ps_valid_v || ($time >= trace_after_ps_v));
+
+    if (trace_enable_v && (presenter_state == FTABLE_PRESENTER_WAIT_FOR_COMPLETE) && is_new_pkt_complete) begin
+      $display(
+        "[opq_presenter] t=%0t start meta_rptr=%0d addr=0x%0h len=%0d shd=%0d hit=%0d meta_pkt_rcnt=%0d meta_pkt_wcnt=%0d",
+        $time,
+        meta_rptr,
+        meta_addr[meta_rptr],
+        meta_len[meta_rptr],
+        meta_shd_cnt[meta_rptr],
+        meta_hit_cnt[meta_rptr],
+        meta_pkt_rcnt,
+        meta_pkt_wcnt
+      );
+    end
+
+    if (trace_enable_v &&
+        (presenter_state == FTABLE_PRESENTER_PRESENTING) &&
+        output_data_valid[EGRESS_DELAY] &&
+        aso_egress_ready) begin
+      $display(
+        "[opq_presenter] t=%0t accept word_idx=%0d page_rptr=0x%0h meta_rptr=%0d data=0x%010h sop=%0b eop=%0b retire=%0b",
+        $time,
+        pkt_rd_word_cnt,
+        page_ram_rptr,
+        meta_rptr,
+        output_data,
+        ((output_data[35:32] == 4'b0001) && (output_data[7:0] == K285)),
+        ((output_data[35:32] == 4'b0001) && (output_data[7:0] == K284)),
+        retire_pending
+      );
+    end
+
+    if (trace_enable_v && overwrite_drop_valid_next) begin
+      $display(
+        "[opq_presenter] t=%0t overwrite_drop hdr=%0d shd=%0d hit=%0d flush_head=%0b meta_rptr=%0d meta_pkt_rcnt=%0d",
+        $time,
+        overwrite_drop_hdr_cnt_next,
+        overwrite_drop_shd_cnt_next,
+        overwrite_drop_hit_cnt_next,
+        overwrite_drop_flush_head,
+        meta_rptr,
+        meta_pkt_rcnt
+      );
+    end
+  end
+`endif
+// synthesis translate_on
 
 `ifndef OPQ_OSS_FORMAL
   property p_reset_enters_presenter_reset;

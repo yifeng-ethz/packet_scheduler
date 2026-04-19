@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_block_path
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.20
-// Date    : 20260418
-// Change  : Tighten the OSS-formal page-writer source classification without changing the native-SV datapath
+// Version : 26.3.25
+// Date    : 20260419
+// Change  : Keep payload_commit_idle low while the allocator is still fetching or allocating tickets so the presenter cannot launch a frame before payload commit is actually ready
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_block_path #(
@@ -30,6 +30,7 @@ module ordered_priority_queue_monolithic_block_path #(
   input  logic [N_LANE-1:0][HANDLE_LENGTH:0]               handle_fifos_rd_data_i,
   input  logic [N_LANE-1:0][LANE_FIFO_WIDTH-1:0]           lane_fifos_rd_data_i,
   input  logic                                             fetch_ticket_active_i,
+  input  logic                                             page_allocator_alloc_page_i,
   input  logic [N_LANE-1:0]                                tk_future_i,
   input  logic                                             page_allocator_write_head_i,
   input  logic                                             page_allocator_write_tail_i,
@@ -43,6 +44,7 @@ module ordered_priority_queue_monolithic_block_path #(
   output logic [N_LANE-1:0][LANE_FIFO_ADDR_WIDTH-1:0]      lane_fifos_rd_addr_o,
   output logic [N_LANE-1:0][LANE_FIFO_ADDR_WIDTH-1:0]      lane_credit_update_o,
   output logic [N_LANE-1:0]                                lane_credit_update_valid_o,
+  output logic                                             payload_commit_idle_o,
   output logic                                             page_ram_we_o,
   output logic [PAGE_RAM_ADDR_WIDTH-1:0]                   page_ram_wr_addr_o,
   output logic [PAGE_RAM_DATA_WIDTH-1:0]                   page_ram_wr_data_o,
@@ -81,6 +83,17 @@ module ordered_priority_queue_monolithic_block_path #(
   localparam int unsigned HANDLE_DST_HI = LANE_FIFO_ADDR_WIDTH + PAGE_RAM_ADDR_WIDTH - 1;
   localparam int unsigned HANDLE_LEN_LO = LANE_FIFO_ADDR_WIDTH + PAGE_RAM_ADDR_WIDTH;
   localparam int unsigned HANDLE_LEN_HI = LANE_FIFO_ADDR_WIDTH + PAGE_RAM_ADDR_WIDTH + MAX_PKT_LENGTH_BITS - 1;
+
+`ifndef SYNTHESIS
+  bit opq_trace_boundary_en;
+  time opq_trace_after_ps;
+
+  initial begin
+    opq_trace_boundary_en = $test$plusargs("OPQ_NATIVE_TRACE_BOUNDARY");
+    opq_trace_after_ps = 0;
+    void'($value$plusargs("OPQ_TRACE_AFTER_PS=%d", opq_trace_after_ps));
+  end
+`endif
 
   function automatic logic [N_LANE-1:0] rr_grant(
     input logic [N_LANE-1:0] req,
@@ -182,6 +195,7 @@ module ordered_priority_queue_monolithic_block_path #(
   logic              page_ram_we_comb;
   logic [PAGE_RAM_ADDR_WIDTH-1:0] page_ram_wr_addr_comb;
   logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_wr_data_comb;
+  logic              payload_commit_idle_comb;
   logic [$clog2(N_LANE)-1:0] grant_code;
 
   always_comb begin : proc_block_mover_comb
@@ -189,6 +203,8 @@ module ordered_priority_queue_monolithic_block_path #(
 
     pa_writing_v = page_allocator_write_page_i || page_allocator_write_head_i ||
       page_allocator_write_tail_i || page_allocator_page_we_i;
+    payload_commit_idle_comb =
+      !(fetch_ticket_active_i || page_allocator_alloc_page_i || pa_writing_v);
     for (int i = 0; i < N_LANE; i++) begin
       handle_fifo_is_pending_handle[i] = 1'b0;
       handle_fifo_is_pending_handle_valid[i] = 1'b0;
@@ -235,6 +251,13 @@ module ordered_priority_queue_monolithic_block_path #(
         b2p_arb_quantum_update_if_updating[i] = QUANTUM_MAX - b2p_arb.quantum[i] + 10'd1;
       end else begin
         b2p_arb_quantum_update_if_updating[i] = QUANTUM_MAX - b2p_arb.quantum[i];
+      end
+
+      if (handle_we_i[i] ||
+          handle_fifo_is_pending_handle[i] ||
+          block_mover_page_wreq[i] ||
+          (block_mover_state[i] != BLOCK_MOVER_IDLE)) begin
+        payload_commit_idle_comb = 1'b0;
       end
     end
   end
@@ -319,6 +342,19 @@ module ordered_priority_queue_monolithic_block_path #(
             block_mover_handle_dst[i] <= handle_fifo_if_rd_dst[i];
             block_mover_handle_blk_len[i] <= handle_fifo_if_rd_blk_len[i];
             block_mover_flag[i] <= handle_fifo_if_rd_flag[i];
+`ifndef SYNTHESIS
+            if (opq_trace_boundary_en && ($time >= opq_trace_after_ps)) begin
+              $display("[opq_boundary] t=%0t lane%0d mover_load flag=%0b src=0x%0h dst=0x%0h len=%0d handle_rptr=0x%0h q=0x%0h",
+                $time,
+                i,
+                handle_fifo_if_rd_flag[i],
+                handle_fifo_if_rd_src[i],
+                handle_fifo_if_rd_dst[i],
+                handle_fifo_if_rd_blk_len[i],
+                block_mover_handle_rptr[i],
+                handle_fifos_rd_data_i[i]);
+            end
+`endif
             if (!handle_fifo_if_rd_flag[i]) begin
               block_mover_state[i] <= BLOCK_MOVER_PREP;
             end else begin
@@ -338,12 +374,36 @@ module ordered_priority_queue_monolithic_block_path #(
         BLOCK_MOVER_WRITE_BLK: begin
           block_mover_page_wreq[i] <= 1'b1;
           if (block_mover_page_wreq[i] && b2p_arb_gnt[i]) begin
+`ifndef SYNTHESIS
+            if (opq_trace_boundary_en && ($time >= opq_trace_after_ps)) begin
+              $display("[opq_boundary] t=%0t lane%0d mover_write word_idx=%0d src=0x%0h dst=0x%0h len=%0d lane_rd=0x%0h lane_q=0x%0h page_addr=0x%0h quantum=%0d",
+                $time,
+                i,
+                block_mover_word_wr_cnt[i],
+                block_mover_handle_src[i],
+                block_mover_handle_dst[i],
+                block_mover_handle_blk_len[i],
+                lane_fifos_rd_addr_o[i],
+                lane_fifos_rd_data_i[i],
+                block_mover_page_wptr[i] + page_ram_addr_t'(block_mover_word_wr_cnt[i]),
+                b2p_arb.quantum[i]);
+            end
+`endif
             block_mover_word_wr_cnt[i] <= block_mover_word_wr_cnt[i] + pkt_length_t'(1);
             if ((block_mover_word_wr_cnt[i] + pkt_length_t'(1)) == block_mover_handle_blk_len[i]) begin
               block_mover_lane_credit_update[i] <= lane_fifo_addr_t'(block_mover_handle_blk_len[i]);
               block_mover_lane_credit_update_valid[i] <= 1'b1;
               block_mover_handle_rptr[i] <= block_mover_handle_rptr[i] + handle_fifo_addr_t'(1);
               block_mover_page_wreq[i] <= 1'b0;
+`ifndef SYNTHESIS
+              if (opq_trace_boundary_en && ($time >= opq_trace_after_ps)) begin
+                $display("[opq_boundary] t=%0t lane%0d mover_done credit_return=%0d next_handle_rptr=0x%0h",
+                  $time,
+                  i,
+                  block_mover_handle_blk_len[i],
+                  block_mover_handle_rptr[i] + handle_fifo_addr_t'(1));
+              end
+`endif
               block_mover_state[i] <= BLOCK_MOVER_IDLE;
             end
           end
@@ -353,6 +413,15 @@ module ordered_priority_queue_monolithic_block_path #(
           block_mover_handle_rptr[i] <= block_mover_handle_rptr[i] + handle_fifo_addr_t'(1);
           block_mover_lane_credit_update[i] <= lane_fifo_addr_t'(block_mover_handle_blk_len[i]);
           block_mover_lane_credit_update_valid[i] <= 1'b1;
+`ifndef SYNTHESIS
+          if (opq_trace_boundary_en && ($time >= opq_trace_after_ps)) begin
+            $display("[opq_boundary] t=%0t lane%0d mover_abort credit_return=%0d next_handle_rptr=0x%0h",
+              $time,
+              i,
+              block_mover_handle_blk_len[i],
+              block_mover_handle_rptr[i] + handle_fifo_addr_t'(1));
+          end
+`endif
           block_mover_state[i] <= BLOCK_MOVER_IDLE;
         end
 
@@ -495,6 +564,7 @@ module ordered_priority_queue_monolithic_block_path #(
     page_ram_we_o <= page_ram_we_comb;
     page_ram_wr_addr_o <= page_ram_wr_addr_comb;
     page_ram_wr_data_o <= page_ram_wr_data_comb;
+    payload_commit_idle_o <= payload_commit_idle_comb;
 `ifdef OPQ_OSS_FORMAL
     if (page_ram_we_comb) begin
       page_ram_src_addr_dbg_oss <= page_ram_wr_addr_comb;
@@ -518,6 +588,7 @@ module ordered_priority_queue_monolithic_block_path #(
       page_ram_we_o <= 1'b0;
       page_ram_wr_addr_o <= '0;
       page_ram_wr_data_o <= '0;
+      payload_commit_idle_o <= 1'b0;
 `ifdef OPQ_OSS_FORMAL
       lock_req_raw_dbg_oss <= '0;
       lock_req_eligible_dbg_oss <= '0;

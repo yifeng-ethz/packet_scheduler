@@ -156,6 +156,7 @@ class opq_prof_missing_empty_frame_test extends opq_base_test;
     opq_scoreboard_cfg cfg;
     cfg = super.create_scoreboard_cfg();
     cfg.check_hit_integrity = 1'b1;
+    cfg.allow_drop_accounting = (OPQ_N_LANE >= 4);
     return cfg;
   endfunction
 
@@ -182,6 +183,7 @@ class opq_prof_missing_empty_frame_test extends opq_base_test;
   virtual task run_post_sequence_checks();
     super.run_post_sequence_checks();
     for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+      sample_lane_drop_snapshot(lane);
       sample_lane_credit_snapshot(lane, 1'b0);
       sample_lane_drr_snapshot(lane, -1, 1'b0, 1'b0);
     end

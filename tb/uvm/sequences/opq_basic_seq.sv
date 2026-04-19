@@ -289,6 +289,92 @@ class opq_virtual_sequence_base extends uvm_sequence #(uvm_sequence_item);
     return finalize_frame_item(tr, pkg_cnt);
   endfunction
 
+  function automatic bit [63:0] decode_slot_offset_cycles(
+    opq_frame_item tr,
+    int unsigned slot_idx,
+    int unsigned slot_gap_cycles
+  );
+    bit [63:0] slot_offset_cycles;
+
+    slot_offset_cycles = tr.pre_gap_cycles;
+    if (slot_idx != 0) begin
+      if (tr.pre_gap_cycles > slot_gap_cycles) begin
+        slot_offset_cycles = tr.pre_gap_cycles - slot_gap_cycles;
+      end else begin
+        slot_offset_cycles = '0;
+      end
+    end
+    return slot_offset_cycles;
+  endfunction
+
+  function automatic bit [63:0] get_absolute_launch_origin_cycle();
+    bit [63:0] launch_origin_cycle;
+    bit [63:0] live_cycle_origin;
+
+    launch_origin_cycle = OPQ_POST_RESET_SETTLE_CYCLES + OPQ_ABSOLUTE_LAUNCH_GUARD_CYCLES;
+    if ((p_sequencer != null) && (p_sequencer.ingress_vif[0] != null)) begin
+      live_cycle_origin = '0;
+      for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+        if ((p_sequencer.ingress_vif[lane] != null) &&
+            (p_sequencer.ingress_vif[lane].cycle_count > live_cycle_origin)) begin
+          live_cycle_origin = p_sequencer.ingress_vif[lane].cycle_count;
+        end
+      end
+      launch_origin_cycle = live_cycle_origin + OPQ_ABSOLUTE_LAUNCH_GUARD_CYCLES;
+    end
+    return launch_origin_cycle;
+  endfunction
+
+  task automatic apply_absolute_frame_slot_schedule(
+    ref opq_frame_item lane_frames[OPQ_N_LANE][$],
+    input int unsigned slot_gap_cycles
+  );
+    int unsigned max_slot_count;
+    bit [63:0] slot_base_cycle;
+
+    max_slot_count = 0;
+    for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+      if (lane_frames[lane].size() > max_slot_count) begin
+        max_slot_count = lane_frames[lane].size();
+      end
+    end
+
+    slot_base_cycle = get_absolute_launch_origin_cycle();
+    for (int unsigned slot_idx = 0; slot_idx < max_slot_count; slot_idx++) begin
+      bit slot_has_frame;
+      bit [63:0] next_slot_base_cycle;
+
+      slot_has_frame = 1'b0;
+      next_slot_base_cycle = slot_base_cycle;
+      for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+        if (slot_idx < lane_frames[lane].size()) begin
+          bit [63:0] launch_cycle_v;
+          bit [63:0] slot_offset_cycles;
+          bit [63:0] slot_end_cycle;
+
+          slot_has_frame = 1'b1;
+          slot_offset_cycles = decode_slot_offset_cycles(
+            lane_frames[lane][slot_idx],
+            slot_idx,
+            slot_gap_cycles
+          );
+          launch_cycle_v = slot_base_cycle + slot_offset_cycles;
+          slot_end_cycle = launch_cycle_v + lane_frames[lane][slot_idx].frame_word_count();
+
+          lane_frames[lane][slot_idx].use_absolute_launch = 1'b1;
+          lane_frames[lane][slot_idx].launch_cycle = launch_cycle_v;
+          lane_frames[lane][slot_idx].frame_slot_id = slot_idx;
+          if (slot_end_cycle > next_slot_base_cycle) begin
+            next_slot_base_cycle = slot_end_cycle;
+          end
+        end
+      end
+      if (slot_has_frame) begin
+        slot_base_cycle = next_slot_base_cycle + slot_gap_cycles;
+      end
+    end
+  endtask
+
   task automatic start_lane_frames(ref opq_frame_item lane0_frames[$], ref opq_frame_item lane1_frames[$]);
     opq_frame_item lane_frames[OPQ_N_LANE][$];
 
@@ -477,6 +563,7 @@ class opq_whole_frame_skew_virtual_sequence extends opq_virtual_sequence_base;
       end
     end
 
+    apply_absolute_frame_slot_schedule(lane_frames, inter_frame_gap_cycles);
     start_lane_frame_matrix(lane_frames);
   endtask
 endclass
@@ -541,6 +628,7 @@ class opq_missing_empty_frame_virtual_sequence extends opq_virtual_sequence_base
       end
     end
 
+    apply_absolute_frame_slot_schedule(lane_frames, inter_frame_gap_cycles);
     start_lane_frame_matrix(lane_frames);
   endtask
 endclass
@@ -566,6 +654,7 @@ class opq_stress_virtual_sequence extends opq_virtual_sequence_base;
   task body();
     opq_frame_item lane0_frames[$];
     opq_frame_item lane1_frames[$];
+    opq_frame_item lane_frames[OPQ_N_LANE][$];
     bit [47:0] ts_step;
 
     ts_step = OPQ_N_SHD * 16;
@@ -602,6 +691,13 @@ class opq_stress_virtual_sequence extends opq_virtual_sequence_base;
       ));
     end
 
+    foreach (lane0_frames[i]) lane_frames[0].push_back(lane0_frames[i]);
+    foreach (lane1_frames[i]) lane_frames[1].push_back(lane1_frames[i]);
+    apply_absolute_frame_slot_schedule(lane_frames, inter_frame_gap_cycles);
+    lane0_frames.delete();
+    lane1_frames.delete();
+    foreach (lane_frames[0][i]) lane0_frames.push_back(lane_frames[0][i]);
+    foreach (lane_frames[1][i]) lane1_frames.push_back(lane_frames[1][i]);
     start_lane_frames(lane0_frames, lane1_frames);
   endtask
 endclass
@@ -701,6 +797,7 @@ class opq_single_lane_virtual_sequence extends opq_virtual_sequence_base;
   task body();
     opq_frame_item lane0_frames[$];
     opq_frame_item lane1_frames[$];
+    opq_frame_item lane_frames[OPQ_N_LANE][$];
     bit [47:0] ts_step;
 
     if (active_lane >= OPQ_N_LANE) begin
@@ -761,6 +858,13 @@ class opq_single_lane_virtual_sequence extends opq_virtual_sequence_base;
       end
     end
 
+    foreach (lane0_frames[i]) lane_frames[0].push_back(lane0_frames[i]);
+    foreach (lane1_frames[i]) lane_frames[1].push_back(lane1_frames[i]);
+    apply_absolute_frame_slot_schedule(lane_frames, inter_frame_gap_cycles);
+    lane0_frames.delete();
+    lane1_frames.delete();
+    foreach (lane_frames[0][i]) lane0_frames.push_back(lane_frames[0][i]);
+    foreach (lane_frames[1][i]) lane1_frames.push_back(lane_frames[1][i]);
     start_lane_frames(lane0_frames, lane1_frames);
   endtask
 endclass
@@ -1388,5 +1492,132 @@ class opq_ftable_overflow_virtual_sequence extends opq_virtual_sequence_base;
     end
 
     start_lane_frames(lane0_frames, lane1_frames);
+  endtask
+endclass
+
+class opq_variable_saturation_overflow_virtual_sequence extends opq_virtual_sequence_base;
+  `uvm_object_utils(opq_variable_saturation_overflow_virtual_sequence)
+
+  int unsigned frame_count;
+  int unsigned subheaders_per_frame;
+  int unsigned min_hit_percent;
+  int unsigned max_hit_percent;
+  int unsigned hot_lane_min_hit_percent;
+  int unsigned hot_lane_count_min;
+  int unsigned hot_lane_count_max;
+  int unsigned inter_frame_gap_cycles;
+
+  function new(string name = "opq_variable_saturation_overflow_virtual_sequence");
+    super.new(name);
+    frame_count = 6;
+    subheaders_per_frame = (OPQ_N_SHD >= 128) ? 128 : OPQ_N_SHD;
+    min_hit_percent = 1;
+    max_hit_percent = 80;
+    hot_lane_min_hit_percent = 60;
+    hot_lane_count_min = 1;
+    hot_lane_count_max = (OPQ_N_LANE >= 2) ? 2 : 1;
+    inter_frame_gap_cycles = (OPQ_MIN_SOP_GAP_CYCLES >= 8) ? (OPQ_MIN_SOP_GAP_CYCLES / 8) : 1;
+  endfunction
+
+  function automatic int unsigned percent_to_hit_count_per_subheader(int unsigned hit_percent);
+    int unsigned hit_count;
+
+    if (hit_percent == 0) begin
+      return 0;
+    end
+    hit_count = ((OPQ_N_HIT * hit_percent) + 99) / 100;
+    if (hit_count == 0) begin
+      hit_count = 1;
+    end
+    if (hit_count > OPQ_N_HIT) begin
+      hit_count = OPQ_N_HIT;
+    end
+    return hit_count;
+  endfunction
+
+  function automatic int unsigned gap_cycles_from_profile(int unsigned gap_profile);
+    case (gap_profile)
+      0: return 0;
+      1: return 4;
+      2: return 32;
+      3: return 256;
+      4: return 2_048;
+      5: return 16_384;
+      default: return OPQ_MIN_SOP_GAP_CYCLES;
+    endcase
+  endfunction
+
+  task body();
+    opq_frame_item lane_frames[OPQ_N_LANE][$];
+    bit [47:0] ts_step;
+
+    ts_step = OPQ_N_SHD * 16;
+
+    for (int frame_idx = 0; frame_idx < frame_count; frame_idx++) begin
+      int unsigned hot_lane_start;
+      int unsigned hot_lane_span;
+
+      if (!std::randomize(hot_lane_start, hot_lane_span) with {
+        hot_lane_start < OPQ_N_LANE;
+        hot_lane_span inside {[hot_lane_count_min:hot_lane_count_max]};
+        hot_lane_span <= OPQ_N_LANE;
+      }) begin
+        `uvm_fatal(get_type_name(), "Failed to randomize hot-lane overflow window")
+      end
+      for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+        int unsigned gap_profile;
+        int unsigned hit_percent;
+        int unsigned hit_count_per_subheader;
+        int unsigned lane_extra_gap_cycles;
+        int unsigned pre_gap_cycles;
+        int unsigned shd_ts_base;
+        bit hot_lane_selected;
+        bit [31:0] payload_seed;
+
+        hot_lane_selected = (((lane + OPQ_N_LANE - hot_lane_start) % OPQ_N_LANE) < hot_lane_span);
+
+        if (hot_lane_selected) begin
+          if (!std::randomize(hit_percent) with {
+            hit_percent inside {[hot_lane_min_hit_percent:max_hit_percent]};
+          }) begin
+            `uvm_fatal(get_type_name(), "Failed to randomize hot-lane saturation")
+          end
+        end else begin
+          if (!std::randomize(hit_percent) with {
+            hit_percent inside {[min_hit_percent:max_hit_percent]};
+          }) begin
+            `uvm_fatal(get_type_name(), "Failed to randomize lane saturation")
+          end
+        end
+        if (!std::randomize(gap_profile) with { gap_profile inside {[0:5]}; }) begin
+          `uvm_fatal(get_type_name(), "Failed to randomize lane skew profile")
+        end
+
+        hit_count_per_subheader = percent_to_hit_count_per_subheader(hit_percent);
+        lane_extra_gap_cycles = gap_cycles_from_profile(gap_profile);
+        pre_gap_cycles = (frame_idx == 0) ? lane_extra_gap_cycles
+                                          : inter_frame_gap_cycles + lane_extra_gap_cycles;
+        shd_ts_base = (frame_idx == 0) ? ((lane + 1) % OPQ_N_SHD)
+                                       : ((frame_idx * OPQ_N_SHD) + lane) % OPQ_N_SHD;
+        payload_seed = 32'h8800_0000 + (lane << 20) + (frame_idx << 8) + hit_percent;
+
+        lane_frames[lane].push_back(build_dense_frame(
+          $sformatf("lane%0d_sat_%0d", lane, frame_idx),
+          lane,
+          ts_step * frame_idx,
+          frame_idx[15:0],
+          subheaders_per_frame,
+          shd_ts_base,
+          pre_gap_cycles,
+          hit_count_per_subheader,
+          payload_seed
+        ));
+        lane_frames[lane][lane_frames[lane].size()-1].whole_frame_packet = 1'b1;
+        lane_frames[lane][lane_frames[lane].size()-1].feb_id = (lane < 2) ? 16'h0001 : 16'h0002;
+      end
+    end
+
+    apply_absolute_frame_slot_schedule(lane_frames, inter_frame_gap_cycles);
+    start_lane_frame_matrix(lane_frames);
   endtask
 endclass

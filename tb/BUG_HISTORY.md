@@ -12,12 +12,12 @@ Class legend:
 | [BUG-002-R](#bug-002-r-native-sv-4-lane-feb-path-corrupted-middle-lane-hit-placement) | R | fixed | `opq_basic_feb_packet_contract_test` @ `OPQ_N_LANE=4` | `37c4b2a` | Native-SV 4-lane allocator used the wrong block-start prefix and misplaced middle-lane hits. |
 | [BUG-003-R](#bug-003-r-native-sv-csr-plane-returned-zeros-and-hid-live-credits) | R | fixed | `opq_basic_feb_packet_contract_test` | `6b9ed41` | Native-SV wrapper CSR plane was still a stub and returned zero readback. |
 | [BUG-004-H](#bug-004-h-cross-bucket-csr-proof-used-non-feb-ingress-framing) | H | fixed | `opq_cross_bp_credit_test`, `opq_cross_drr_allowance_test` | `6b9ed41` | Cross-bucket CSR proof sequences drove split packets instead of FEB whole-frame traffic. |
-| [BUG-005-R](#bug-005-r-header-error-mask-path-corrupts-the-next-legal-frame-timestamp) | R | fixed | `opq_error_header_mask_recovery_test` | `pending` | Header-error mask recovery no longer leaks stale timestamp context into the next legal frame after the allocator was re-seeded from the captured ingress header timestamp base. |
+| [BUG-005-R](#bug-005-r-header-error-mask-path-corrupts-the-next-legal-frame-timestamp) | R | fixed | `opq_error_header_mask_recovery_test` | `5c0d90f` | Header-error mask recovery no longer leaks stale timestamp context into the next legal frame after the allocator was re-seeded from the captured ingress header timestamp base. |
 | [BUG-006-H](#bug-006-h-native-sv-no-restart-signoff-accounting-broke-continuous-frame-closure) | H | fixed | `opq_bucket_frame_native_sv_test`, `opq_all_buckets_frame_native_sv_test` | `b799f94` | No-restart signoff reused frame identity and miscounted malformed subheaders. |
 | [BUG-007-R](#bug-007-r-swb-4-lane-sparse-frame-cadence-drops-later-hits) | R | fixed | `opq_prof_missing_empty_frame_test` @ `OPQ_N_LANE=4` | `pending` | The old 4-lane sparse-cadence drop is no longer reproducible on current native-SV RTL. |
 | [BUG-008-R](#bug-008-r-forced-overwrite-path-still-emits-malformed-accepted-egress-and-no-frame-table-drop-accounting) | R | fixed | `opq_error_ftable_overflow_test` | `41948b1` | Reduced-depth forced overwrite under always-stall corrupted accepted egress and hid frame-table drop events until the native-SV presenter and CSR path were fixed. |
-| [BUG-009-R](#bug-009-r-bursty-drr-stall-boundary-path-still-corrupts-egress-ordering-and-lacks-late-drop-identity) | R | fixed | `opq_cross_drr_bursty_random_test` | `pending` | Bursty DRR plus periodic stall no longer loses late active-lane traffic after the allocator holds merged-frame progress until every active busy lane has surfaced its current ticket. |
-| [BUG-010-R](#bug-010-r-header-word-recovery-path-still-corrupts-the-next-legal-frame) | R | fixed | `opq_error_header_word_mask_recovery_test` | `pending` | Header-word error injection no longer corrupts the next legal timestamp base after the recovery frame seeds from the captured ingress header timestamp base. |
+| [BUG-009-R](#bug-009-r-bursty-drr-stall-boundary-path-still-corrupts-egress-ordering-and-lacks-late-drop-identity) | R | fixed | `opq_cross_drr_bursty_random_test` | `9b516d7` | Bursty DRR plus periodic stall no longer loses late active-lane traffic after the allocator holds merged-frame progress until every active busy lane has surfaced its current ticket. |
+| [BUG-010-R](#bug-010-r-header-word-recovery-path-still-corrupts-the-next-legal-frame) | R | fixed | `opq_error_header_word_mask_recovery_test` | `5c0d90f` | Header-word error injection no longer corrupts the next legal timestamp base after the recovery frame seeds from the captured ingress header timestamp base. |
 | [BUG-011-R](#bug-011-r-chained-malformed-subheader-recovery-is-not-composable-in-mixed-bucket-soak) | R | open | `opq_cross_mixed_bucket_random_soak_test` | `pending` | Isolated malformed-subheader recovery is green, but chained mixed-soak recovery still breaks no-restart framing. |
 | [BUG-012-H](#bug-012-h-edge-medium-ready-profile-testcase-was-wired-as-always-ready) | H | fixed | promoted EDGE isolated rerun on `2026-04-17` | `cbb05e0` | The supposed medium-backpressure testcase never applied stalls and gave false evidence. |
 | [BUG-013-H](#bug-013-h-mixed-bucket-random-soak-was-reported-as-directed-and-omitted-txn-growth-traceability) | H | fixed | regenerated native-SV report on `2026-04-17` | `cbb05e0` | The promoted mixed-soak testcase was misclassified as directed and hid required random-case reporting. |
@@ -25,10 +25,11 @@ Class legend:
 | [BUG-015-H](#bug-015-h-oss-ingress-sby-harness-still-false-fails-on-phase-sensitive-write-and-drop-checks) | H | fixed | `formal_ingress.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `1048b6c` | The ingress OSS proof now passes after the harness stopped consuming reset-warmup debug pulses and switched from phase-ambiguous credit-bus checks to pulse-level write/drop contracts. |
 | [BUG-016-H](#bug-016-h-oss-basic-presenter-sby-lowering-hits-a-logic-loop-in-the-overwrite-scan-path) | H | fixed | `formal_egress.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `f8448ac` | The OSS basic-presenter proof no longer dies in SMT2 lowering; the live Avalon-ST hold-under-backpressure slice now passes on the OSS subset. |
 | [BUG-017-H](#bug-017-h-oss-mover-sby-harness-now-reaches-proof-but-still-fails-on-arbiter-shape-invariants) | H | fixed | `formal_mover.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `de65125` | The live OSS mover proof now passes on the current block-path subset after the proof-clean arbiter view was exported and constrained. |
-| [BUG-018-H](#bug-018-h-extended-mixed-bucket-seconds-soak-exposes-chained-masked-drop-accounting-underrun) | H | open | `opq_cross_mixed_bucket_seconds_soak_test` on `2026-04-18` | `pending` | The old seconds-soak accounting underrun is fixed, but the full stretched rerun still trips `opq_hit3_contract`, first around mixed step `191` and later in repeated PROF-heavy windows. |
+| [BUG-018-H](#bug-018-h-extended-mixed-bucket-seconds-soak-exposes-chained-masked-drop-accounting-underrun) | H | open | `opq_cross_mixed_bucket_seconds_soak_test` on `2026-04-18` | `pending` | The old seconds-soak accounting underrun is fixed, the exact `183..190` window plus the focused 5-step rerun are green, but the full stretched rerun still needs end-to-end revalidation for later windows. |
 | [BUG-019-R](#bug-019-r-merged-frame-header-counts-incremented-per-accepted-lane-instead-of-per-emitted-subheader) | R | fixed | `opq_basic_smoke_test` on `2026-04-18` | `pending` | The native-SV page allocator was double-counting merged subheaders in the frame header, so the advertised subheader count could exceed the emitted K237 count under multi-lane merge. |
 | [BUG-020-R](#bug-020-r-late-drop-lane-credit-return-added-stale-block-path-credit-and-poisoned-no-restart-state) | R | fixed | `opq_cross_hit3_exact_183_190_repro_test` on `2026-04-19` | `pending` | Late-drop lane-credit return pulses were adding stale block-path credit data when only one source was valid, corrupting no-restart lane-credit state and the mixed-soak exact failing window. |
 | [BUG-021-R](#bug-021-r-late-frame-drop-accounting-counted-whole-frame-sop-metadata-instead-of-the-unread-ticket-tail) | R | fixed | `opq_cross_random_ready_overflow_seconds_soak_test` on `2026-04-19` | `5c0d90f` | Late-frame drop accounting used full-frame SOP metadata instead of the unread ticket tail, which double-counted already credit-dropped subheaders and broke long overflow hit conservation. |
+| [BUG-022-R](#bug-022-r-new-frame-running-ts-seeded-from-frame-header-ts-instead-of-the-current-subheader-ts) | R | fixed | `opq_cross_hit3_exact_183_190_repro_test` on `2026-04-19` | `pending` | A new frame seeded allocator `running_ts` from the frame header timestamp instead of the parser's current running subheader timestamp, so same-frame payload tickets were misclassified as `future` and the allocator could emit an empty tail before fetching payload. |
 
 ## 2026-04-17
 
@@ -203,7 +204,7 @@ Class legend:
     - lane1 `accepted=24 dropped=328 pre_drop=0 post_drop=328 delivered=24 unexplained=0`
   - the full constrained-random bursty testcase still needs a refresh run before promotion, but the invariant family that caused silent hit loss is now closed on the directed reproducer
 - Commit:
-  - pending
+  - `9b516d7` `Fix OPQ bursty DRR frame-progress loss`
 
 ### BUG-010-R: Header-word recovery path still corrupts the next legal frame
 - First seen in:
@@ -220,7 +221,7 @@ Class legend:
   - `opq_error_header_word_mask_recovery_test` now ends with `expected=4 actual=4 missing=0 ghost=0`
   - the testcase still needs to be reinserted into the generated ERROR bucket / no-restart baseline on the next report refresh before it is removed from the report exclusions
 - Commit:
-  - pending
+  - `5c0d90f` `Fix OPQ late-frame drop accounting and refresh signoff docs`
 
 ### BUG-011-R: Chained malformed-subheader recovery is not composable in mixed-bucket soak
 - First seen in:
@@ -434,17 +435,21 @@ Class legend:
     remaining failure is specific to longer no-restart chaining rather
     than the isolated drop path itself
   - the original exact failing window around `mixed_sparse_191` is now
-    repaired by `BUG-020-R`: the focused deterministic reproducer
+    repaired by `BUG-022-R`: the focused deterministic reproducer
     `opq_cross_hit3_exact_183_190_repro_test` passes cleanly on current RTL
+  - the focused 5-step bug-hunt rerun of
+    `opq_cross_mixed_bucket_seconds_soak_test` also passes on the repaired
+    allocator state, so the earliest failing window no longer reopens under
+    the short screen
   - this item stays open only because the full stretched rerun has not yet
     been repeated end-to-end after that exact-window repair, so later windows
     such as `mixed_soak_261` / `mixed_whole_skew_275` are not closed by
     assertion yet
 - Blocking reason:
   - `opq_cross_mixed_bucket_seconds_soak_test` is intentionally kept
-    probe-only because the full stretched rerun still produces real
-    `opq_hit3_contract` failures on the fixed presenter state; this is
-    no longer just a short-run uncertainty
+    probe-only because the full stretched rerun has not yet been repeated
+    end-to-end after the exact-window repair; later windows therefore remain
+    unclosed by evidence even though the earliest window is now green
 - Candidate fixes:
   - rerun the same stretched mixed-soak screen on the repaired RTL to prove
     that the old `mixed_sparse_191` failure is gone and to determine whether
@@ -508,12 +513,10 @@ Class legend:
 - Fix status:
   - fixed in focused native-SV exact repro on `2026-04-19`
 - Runtime / coverage context:
-  - `/tmp/opq_hit3_exact_183_190_repro_20260419_cleanpass.log` now ends with:
-    - `expected=2476 actual=2476 missing=0 ghost=0`
-    - lane0 `accepted=1625 dropped=0 delivered=1625 unexplained=0`
-    - lane1 `accepted=851 dropped=4 post_drop=4 delivered=851 unexplained=0`
-    - `UVM_ERROR : 0`
-    - `[PASS] opq_cross_hit3_exact_183_190_repro_test`
+  - this fix removed one residual no-restart state corruption from the exact
+    deterministic chain, but it was not the last root cause in that window
+  - the final exact-window closure still required `BUG-022-R`, which repaired
+    the page allocator's new-frame `running_ts` seed
 - Commit:
   - pending
 
@@ -548,5 +551,44 @@ Class legend:
     - aggregate `accepted=904 dropped=107512 delivered=904 unexplained=0`
     - `UVM_ERROR : 0`
   - this is shape-check overflow evidence only; frame-table overflow signoff remains a separate requirement
+- Commit:
+  - pending
+
+### BUG-022-R: New-frame `running_ts` seeded from frame header `ts` instead of the current subheader `ts`
+- First seen in:
+  - `packet_scheduler/tb/uvm`
+    `TEST=opq_cross_hit3_exact_183_190_repro_test DUT_IMPL=native_sv`
+    on `2026-04-19`
+  - derived while finishing closure of the earliest `BUG-018-H` mixed-soak
+    failure window after the stale lane-credit return bug in `BUG-020-R` had
+    already been repaired
+- Symptom:
+  - the focused exact-window repro could still emit an empty trailer for a new
+    frame before fetching the first live payload ticket from that same frame
+  - boundary tracing showed the broken sequence directly:
+    - the new frame opened with `header_ts=0xb000`
+    - the first payload ticket arrived at `ts=0xb020`
+    - the allocator still decided `idle_to_write_tail` with `running_ts=0xb000`
+      and `tk_future=0x3`, then completed `page_len=0`
+  - this manifested as the live `opq_hit3_contract` failure
+    `hit word arrived without a pending non-empty sub-header` in the old
+    `mixed_sparse_191` window
+- Root cause:
+  - `ordered_priority_queue_monolithic_page_allocator.sv` seeded a new frame's
+    `running_ts` from the frame header timestamp (`header_frame_ts`) instead of
+    the parser's current running subheader timestamp (`header_running_ts`)
+  - for a frame whose first live payload subheader timestamp was later than the
+    header base, the allocator immediately classified those same-frame payload
+    tickets as `future` and could close the frame tail before fetching them
+- Fix status:
+  - fixed in focused native-SV repro on `2026-04-19`
+- Runtime / coverage context:
+  - the allocator now seeds `running_ts` from `ingress_running_ts_i` /
+    `header_running_ts` when the frame is created
+  - `/tmp/opq_hit3_exact_183_190_after_fix.log` now ends with:
+    - `expected=2476 actual=2476 missing=0 ghost=0`
+    - `UVM_ERROR : 0`
+  - the focused 5-step bug-hunt rerun
+    `/tmp/opq_pa_trace_fixed2.log` also ends with `EXIT:0`
 - Commit:
   - pending
