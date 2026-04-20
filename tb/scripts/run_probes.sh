@@ -12,7 +12,8 @@ fi
 if [[ "$#" -eq 0 ]]; then
   set -- \
     opq_cross_drr_bursty_random_test \
-    opq_error_header_mask_recovery_test \
+    opq_cross_random_ready_overflow_seconds_soak_test \
+    opq_cross_mixed_bucket_seconds_soak_test \
     opq_error_ftable_overflow_test
 fi
 

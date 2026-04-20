@@ -369,6 +369,15 @@ Execution order frozen on 2026-04-18 for the next closure phase:
         `overflow_step_*` and `overflow_final` ledgers with per-lane
         `expected / accepted / dropped / delivered / unexplained` plus the
         frame-table `wr = rd + drop` summary
+      Status on `2026-04-20`:
+      - the fresh rerun of
+        `opq_cross_random_ready_overflow_seconds_soak_test` still fails at
+        `overflow_step_0` with
+        `ft_wr_shd wr=5 rd=7 drop=0`,
+        `ft_wr_hit wr=540 rd=545 drop=0`, and lane1 `unexplained=174`
+      - this confirms the checkpoint plumbing is useful, but the default-build
+        overflow path is still not signoff-clean because the presenter can
+        suppress unread-tail drop accounting while a live head is resident
 - [ ] Close the remaining harness-upgrade gaps that would block full native-SV
       ownership:
       - scoreboard and SVA parity between native-SV and prior reference runs

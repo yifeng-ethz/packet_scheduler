@@ -278,6 +278,14 @@ These checks are currently valid and rerun against the live DUT:
   - the focused native-SV reproducer remains fixed and closes with
     `unexplained=0`, but the larger constrained-random envelope is not yet
     signoff-clean
+- `opq_cross_random_ready_overflow_seconds_soak_test`
+  - default-build random-ready overflow / backpressure soak with per-step
+    frame-table and per-lane hit ledgers
+  - intentionally kept probe-only because a fresh rerun on `2026-04-20`
+    already fails at `overflow_step_0` with `ft_wr_shd wr=5 rd=7 drop=0`,
+    `ft_wr_hit wr=540 rd=545 drop=0`, and lane1 `unexplained=174`
+  - this screen is now the default-build overflow bug anchor beside the
+    reduced-depth `opq_error_ftable_overflow_test` elaboration point
 
 ---
 
@@ -324,6 +332,7 @@ closure progress without reading the whole testcase catalog.
 | DRR allowance programming | `DV_CROSS` | `opq_cross_drr_allowance_test`, DRR CSR reads | Implemented / green | Medium | Medium |
 | DRR defer / lock contract | `DV_CROSS`, formal backlog | `opq_drr_sva`, DRR covergroup bins, DRR CSR counters | Implemented / green on directed allowance case | Medium | Medium |
 | Bursty hot-lane DRR stress | `DV_CROSS`, formal backlog | `opq_cross_drr_bursty_random_test` | Focused repro fixed, but the refreshed larger constrained-random rerun still fails and remains probe-only | High | High |
+| Overflow + random-ready backpressure stress | `DV_CROSS`, formal backlog | `opq_cross_random_ready_overflow_seconds_soak_test`, per-step hit ledgers, FT CSR ledger checks | Probe-only: the refreshed `2026-04-20` rerun fails with `ft_wr < ft_rd + ft_drop` and lane1 `unexplained=174` | High | High |
 | Backpressure hold / restart | `DV_EDGE`, `DV_CROSS`, `DV_ERROR` probe path | `opq_avst_egress_sva`, `opq_hit3_contract_sva`, presenter logic | Implemented / green on the promoted default-build matrix, but the `2026-04-20` reduced-depth overflow rerun reopened accepted-egress contract errors and the larger DRR random probe also remains open | High | High |
 
 ---
@@ -339,7 +348,7 @@ states which items are really closed and which are still backlog.
 | UVM-only `HIT_ID` for missing/ghost-hit tracking | Implemented / green | scoreboard contract in `DV_HARNESS.md`, promoted integrity tests |
 | `N_SHD=256` default plus `128/256/512` signoff sweep | Implemented / green | `DV_PARAM.md`, `run_param.sh`, `cg_cfg` |
 | DRR per-lane allowance through CSR plus monitors/counters | Implemented / green on directed path | `DV_CROSS.md`, `opq_cross_drr_allowance_test`, DRR CSR checks |
-| DRR SVA and constrained-random stress | Partial: directed SVA closure is green, focused bursty repro is fixed, and the larger constrained-random screen remains probe-only after the refreshed `2026-04-20` rerun reopened hit-accounting loss | `opq_drr_sva`, `opq_cross_drr_bursty_random_test`, `DV_FORMAL.md`, `DV_PROBE.md` |
+| DRR SVA and constrained-random stress | Partial: directed SVA closure is green, focused bursty repro is fixed, and the larger constrained-random screen remains probe-only after the refreshed `2026-04-20` rerun reopened hit-accounting loss and exposed an active-lane retirement bug | `opq_drr_sva`, `opq_cross_drr_bursty_random_test`, `DV_FORMAL.md`, `DV_PROBE.md` |
 | Formal section separate from directed/random | Implemented in plan | `DV_FORMAL.md` |
 | Realistic FEB-like driver contract derived from frontend frame format | Implemented at FEB-frame contract level, not yet the full `online_dpv2` IP chain | `DV_HARNESS.md`, packet builders in `opq_pkg.sv` |
 | Full `online_dpv2` FEB datapath in the active harness | Open backlog | not yet wired into the current-tree harness |
@@ -354,7 +363,8 @@ states which items are really closed and which are still backlog.
 | Structural code coverage | `stmt=83.73`, `branch=80.83`, `fsm_state=95.45`, `fsm_trans=58.00`, `toggle=46.48` on the current merged UCDB flow | Active baseline, not closed |
 | Directive coverage | `100.00%` on the current merged UCDB flow | Active baseline |
 | DRR directed closure | `opq_cross_drr_allowance_test` green | Closed for directed allowance path |
-| DRR bursty closure | Focused `opq_cross_drr_bursty_repro_test` is green with closed late-drop ledgers; the larger `opq_cross_drr_bursty_random_test` still fails on the refreshed `2026-04-20` rerun with lane0 `unexplained=368` | Probe-only pending debug |
+| DRR bursty closure | Focused `opq_cross_drr_bursty_repro_test` is green with closed late-drop ledgers; the larger `opq_cross_drr_bursty_random_test` still fails on the refreshed `2026-04-20` rerun with lane0 `unexplained=368`, and the traced end-state leaves `frame_lane_active=0x3` with no pending tickets | Probe-only pending debug |
+| Default-build overflow closure | `opq_cross_random_ready_overflow_seconds_soak_test` rerun on `2026-04-20` fails at `overflow_step_0` with `ft_wr_shd wr=5 rd=7 drop=0`, `ft_wr_hit wr=540 rd=545 drop=0`, and lane1 `unexplained=174` | Probe-only pending debug |
 | Forced overwrite closure | `opq_error_ftable_overflow_test` rerun on `2026-04-20` reopens reduced-depth accepted-egress contract errors despite the dedicated supplemental screen plumbing | Reopened / debug required |
 
 ---

@@ -36,7 +36,8 @@
 
 | Test | Purpose | Current status |
 |------|---------|----------------|
-| `opq_cross_drr_bursty_random_test` | Constrained-random hot-lane / cold-lane DRR stress with periodic egress stalls | Focused native-SV repro remains fixed, but the refreshed larger constrained-random rerun on `2026-04-20` still fails with lane0 `unexplained=368` and hit-integrity summary `expected=852 actual=622 missing=368 ghost=138`; keep probe-only |
+| `opq_cross_drr_bursty_random_test` | Constrained-random hot-lane / cold-lane DRR stress with periodic egress stalls | Focused native-SV repro remains fixed, but the refreshed larger constrained-random rerun on `2026-04-20` still fails with lane0 `unexplained=368` and hit-integrity summary `expected=852 actual=622 missing=368 ghost=138`; the traced end-state leaves `frame_lane_active=0x3` with `pending=0`, so keep probe-only while active-lane retirement is repaired |
+| `opq_cross_random_ready_overflow_seconds_soak_test` | Default-build random-ready overflow / backpressure soak with ledger checkpoints after each step | Fresh rerun on `2026-04-20` fails immediately at `overflow_step_0` with `ft_wr_shd wr=5 rd=7 drop=0`, `ft_wr_hit wr=540 rd=545 drop=0`, and lane1 `unexplained=174`; keep probe-only while the presenter overwrite path is debugged |
 | `opq_cross_mixed_bucket_seconds_soak_test` | Earlier extended mixed-bucket random soak with longer chained no-restart traffic and stretched simulated time | Passing extended probe: the full stretched rerun now crosses the old `mixed_sparse_191`, `mixed_soak_261`, `mixed_whole_skew_275`, `mixed_whole_skew_418`, and `mixed_whole_skew_435` windows cleanly and exits with `UVM_ERROR : 0`; kept probe-only because it is a long runtime stress screen rather than a promoted matrix case |
 
 ---
@@ -65,5 +66,6 @@ The archived cross catalog remains relevant for:
 
 - broader parameter crosses
 - MODE parity once live `MULTIPLEXING` support exists
-- longer chained mixed-axis regressions after the larger bursty DRR random
-  screen is refreshed and either promoted or explicitly retired
+- longer chained mixed-axis regressions after the larger bursty DRR random and
+  default-build random-ready overflow screens are either promoted or explicitly
+  retired

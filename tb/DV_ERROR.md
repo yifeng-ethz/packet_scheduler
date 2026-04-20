@@ -46,7 +46,7 @@ instead of preserving a single monotonic end-of-run counter image.
 
 | Test | Purpose | Current status |
 |------|---------|----------------|
-| `opq_error_ftable_overflow_test` | Reduced-depth forced overwrite / frame-table drop accounting | Reopened on the fresh `2026-04-20` reduced-depth rerun: `opq_hit3_contract` now reports frame-trailer/pkg_cnt/timestamp errors on accepted egress, so this screen stays outside the fixed default no-restart baseline and is not signoff-clean |
+| `opq_error_ftable_overflow_test` | Reduced-depth forced overwrite / frame-table drop accounting | Reopened on the fresh `2026-04-20` reduced-depth rerun: `opq_hit3_contract` now reports frame-trailer/pkg_cnt/timestamp errors on accepted egress, and the current native-SV evidence points at an overwrite-launch window that can still flush the live head before first acceptance; this screen stays outside the fixed default no-restart baseline and is not signoff-clean |
 
 ---
 

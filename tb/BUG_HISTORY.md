@@ -41,6 +41,9 @@ Encounter sim-time legend:
 | [BUG-021-R](#bug-021-r-late-frame-drop-accounting-counted-whole-frame-sop-metadata-instead-of-the-unread-ticket-tail) | R | non-datapath-refactor | `n/a (overflow random-ready)` | fixed | `opq_cross_random_ready_overflow_seconds_soak_test` on `2026-04-19` | `5c0d90f` | Late-frame drop accounting used full-frame SOP metadata instead of the unread ticket tail, which double-counted already credit-dropped subheaders and broke long overflow hit conservation. |
 | [BUG-022-R](#bug-022-r-new-frame-running-ts-seeded-from-frame-header-ts-instead-of-the-current-subheader-ts) | R | hard stuck error | `n/a (exact repro)` | fixed | `opq_cross_hit3_exact_183_190_repro_test` on `2026-04-19` | `466b935` | A new frame seeded allocator `running_ts` from the frame header timestamp instead of the parser's current running subheader timestamp, so same-frame payload tickets were misclassified as `future` and the allocator could emit an empty tail before fetching payload. |
 | [BUG-023-H](#bug-023-h-expanded-no-restart-signoff-matrix-reused-stale-frame-identity-and-under-specified-credit-restore-idle) | H | non-datapath-refactor | `n/a (no-restart directed)` | fixed | `opq_bucket_frame_native_sv_test`, `opq_all_buckets_frame_native_sv_test` on `2026-04-20` | `36de7a3` | The expanded no-restart signoff matrix falsely failed until composed sequences carried monotonic frame identity across lanes and waited for true idle credit restore. |
+| [BUG-024-R](#bug-024-r-overwrite-launch-window-can-still-flush-the-live-head-before-first-accept) | R | soft error | `n/a (reduced-depth directed)` | open | `opq_error_ftable_overflow_test` on `2026-04-20` | `pending` | The reduced-depth overwrite screen still hits accepted-egress trailer / `pkg_cnt` / timestamp corruption because the presenter does not protect a just-launched head until the first beat is actually accepted or visible. |
+| [BUG-025-R](#bug-025-r-active-lane-retirement-still-depends-on-a-level-eop-flag-that-the-parser-can-clear-too-early) | R | hard stuck error | `n/a (large constrained-random)` | open | `opq_cross_drr_bursty_random_test` on `2026-04-20` | `pending` | The larger bursty DRR probe can strand accepted lane0 hits because the allocator keeps `frame_lane_active` set after tail state is forgotten, blocking frame retirement with no pending tickets left. |
+| [BUG-026-R](#bug-026-r-live-head-overwrite-protection-suppresses-unread-tail-drop-accounting) | R | soft error | `n/a (overflow random-ready)` | open | `opq_cross_random_ready_overflow_seconds_soak_test` on `2026-04-20` | `pending` | Default-build random-ready overflow still loses unread resident tail traffic because the presenter suppresses the whole overlap-drop scan while a live head is present, so `ft_wr < ft_rd + ft_drop` and accepted hits become unexplained. |
 
 ## 2026-04-17
 
@@ -648,3 +651,109 @@ Encounter sim-time legend:
     architectural packet contract
 - Commit:
   - `36de7a3` `Wire OPQ full-case signoff expansions and refresh DV docs`
+
+### BUG-024-R: Overwrite launch window can still flush the live head before first accept
+- First seen in:
+  - `packet_scheduler/tb/uvm`
+    `TEST=opq_error_ftable_overflow_test OPQ_PAGE_RAM_DEPTH=512 DUT_IMPL=native_sv`
+    on `2026-04-20`
+- Symptom:
+  - the reduced-depth forced-overwrite rerun now trips accepted-egress
+    `opq_hit3_contract` failures instead of closing as a clean reduced-depth
+    bug anchor
+  - the fresh failing log reports:
+    - `frame pkg_cnt did not increase: prev=247 new=247`
+    - `frame timestamp did not increase: prev=0xf60000f7f700 new=0xf20000f7f300`
+    - later `frame pkg_cnt did not increase: prev=247 new=13`
+- Root cause:
+  - `ordered_priority_queue_monolithic_basic_presenter.sv`
+    `proc_overwrite_drop_plan` only treats the head as protected when
+    `pkt_accept_started || output_data_valid[EGRESS_DELAY]`
+  - that leaves a launch window where the presenter is already in
+    `FTABLE_PRESENTER_PRESENTING`, but the first beat is still in startup
+    prefetch and therefore not yet accepted or visible
+  - in that window, the overlap path can still assert
+    `overwrite_drop_flush_head`, reset the presenter state, and discard the
+    just-launched resident head before the first legal acceptance boundary
+- Fix status:
+  - open
+- Runtime / coverage context:
+  - this is the current reduced-depth overflow blocker that keeps
+    `opq_error_ftable_overflow_test` outside the signoff-clean supplemental
+    matrix on `2026-04-20`
+  - the failure is reproducible on the fresh reduced-depth native-SV rerun
+    without any harness weakening
+- Commit:
+  - pending
+
+### BUG-025-R: Active-lane retirement still depends on a level EOP flag that the parser can clear too early
+- First seen in:
+  - `packet_scheduler/tb/uvm`
+    `TEST=opq_cross_drr_bursty_random_test DUT_IMPL=native_sv`
+    on `2026-04-20`
+- Symptom:
+  - the larger bursty DRR constrained-random probe still exits with
+    `expected=852 actual=622 missing=368 ghost=138`
+  - the per-lane ledger ends with lane0
+    `accepted=828 dropped=3220 delivered=460 unexplained=368`
+  - a traced rerun at the failing window reaches allocator idle with:
+    - `frame_lane_active=0x3`
+    - `pending=0x0`
+    - `ticket_wptr=0x3f/0x60`
+    - `ticket_rptr=0x3f/0x60`
+    - `ingress_busy=0x0`
+    while the active frame still has not retired
+- Root cause:
+  - `ordered_priority_queue_monolithic_page_allocator.sv` uses live
+    `ingress_alert_eop_i` as a level-sensitive prerequisite for
+    `all_lanes_alert_eop` and `all_active_lanes_tail_ready`
+  - `ordered_priority_queue_monolithic_ingress_parser.sv` clears
+    `alert_eop` as soon as the next ticket is issued
+  - under bursty no-restart DRR traffic, a completed active lane can therefore
+    lose its tail-ready state before the allocator observes the flush point,
+    leaving `frame_lane_active` stuck high and stranding accepted traffic
+- Fix status:
+  - open
+- Runtime / coverage context:
+  - the focused `opq_cross_drr_bursty_repro_test` remains green, so this is a
+    larger-envelope retirement bug rather than a regression of the earlier
+    focused running-timestamp fix in `BUG-009-R`
+  - the bug remains probe-only until the allocator latches active-lane
+    completion independently of later ticket issuance
+- Commit:
+  - pending
+
+### BUG-026-R: Live-head overwrite protection suppresses unread-tail drop accounting
+- First seen in:
+  - `packet_scheduler/tb/uvm`
+    `TEST=opq_cross_random_ready_overflow_seconds_soak_test DUT_IMPL=native_sv`
+    on `2026-04-20`
+- Symptom:
+  - the fresh default-build random-ready overflow rerun now fails at
+    `overflow_step_0`
+  - the first failing ledger reports:
+    - `ft_wr_shd accounting mismatch wr=5 rd=7 drop=0`
+    - `ft_wr_hit accounting mismatch wr=540 rd=545 drop=0`
+    - lane1
+      `expected=91392 accepted=174 dropped=91218 delivered=0 unexplained=174`
+  - the same log also fires accepted-egress `opq_hit3_contract` monotonicity
+    errors at the first overflow window
+- Root cause:
+  - `ordered_priority_queue_monolithic_basic_presenter.sv`
+    `proc_overwrite_drop_plan` blocks the entire overlap-drop scan whenever
+    `overwrite_head_accepted_or_accepting` is true
+  - that protects the live head itself, but it also prevents the presenter
+    from accounting overlapped unread tail residents behind that live head
+  - under random-ready overflow backpressure, accepted tail subheaders can
+    therefore be overwritten in page RAM without corresponding
+    `ft_drop_*` accounting, leaving `ft_wr < ft_rd + ft_drop` and non-zero
+    unexplained accepted hits
+- Fix status:
+  - open
+- Runtime / coverage context:
+  - this is the current default-build overflow bug anchor beside the
+    reduced-depth `BUG-024-R` path
+  - the existing per-step overflow ledgers are now proving a real DUT hole
+    rather than a missing harness observable
+- Commit:
+  - pending
