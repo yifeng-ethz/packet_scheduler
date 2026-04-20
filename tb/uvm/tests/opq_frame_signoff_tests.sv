@@ -539,9 +539,11 @@ class opq_cross_mixed_bucket_random_soak_test extends opq_frame_signoff_base_tes
   localparam int unsigned MIXED_SOAK_DWELL_CYCLES = 1_250_000;
   localparam int unsigned MIXED_SOAK_TIMEOUT_CYCLES = 1_250_000;
   localparam int unsigned MIXED_BUCKET_COUNT = 5;
+  localparam int unsigned MIXED_ERROR_CASE_COUNT = 4;
 
   int unsigned soak_iterations;
   int unsigned bucket_visit_count[MIXED_BUCKET_COUNT];
+  int unsigned error_case_visit_count[MIXED_ERROR_CASE_COUNT];
 
   function new(string name = "opq_cross_mixed_bucket_random_soak_test", uvm_component parent = null);
     int unsigned soak_iterations_plusarg;
@@ -739,10 +741,27 @@ class opq_cross_mixed_bucket_random_soak_test extends opq_frame_signoff_base_tes
 
   task automatic run_random_error_step(int unsigned step_idx);
     int unsigned choice;
+    int unsigned unseen_error_cases[$];
 
-    if (!std::randomize(choice) with { choice inside {[0:2]}; }) begin
-      `uvm_fatal(get_type_name(), "Failed to randomize mixed ERROR choice")
+    for (int unsigned idx = 0; idx < MIXED_ERROR_CASE_COUNT; idx++) begin
+      if (error_case_visit_count[idx] == 0) begin
+        unseen_error_cases.push_back(idx);
+      end
     end
+
+    if (unseen_error_cases.size() != 0) begin
+      int unsigned unseen_idx;
+      if (!std::randomize(unseen_idx) with { unseen_idx < unseen_error_cases.size(); }) begin
+        `uvm_fatal(get_type_name(), "Failed to randomize unseen mixed ERROR choice")
+      end
+      choice = unseen_error_cases[unseen_idx];
+    end else begin
+      if (!std::randomize(choice) with { choice < MIXED_ERROR_CASE_COUNT; }) begin
+        `uvm_fatal(get_type_name(), "Failed to randomize mixed ERROR choice")
+      end
+    end
+
+    error_case_visit_count[choice]++;
 
     case (choice)
       0: begin
@@ -768,6 +787,20 @@ class opq_cross_mixed_bucket_random_soak_test extends opq_frame_signoff_base_tes
           UVM_LOW
         )
         run_masked_drop_recovery_case($sformatf("mixed_masked_recovery_%0d", step_idx));
+      end
+      3: begin
+        opq_subheader_error_recovery_virtual_sequence shd_recovery_seq;
+
+        shd_recovery_seq =
+          opq_subheader_error_recovery_virtual_sequence::type_id::create(
+            $sformatf("mixed_subheader_recovery_%0d", step_idx)
+          );
+        `uvm_info(
+          get_type_name(),
+          $sformatf("Mixed ERROR step %0d case=subheader_error_recovery", step_idx),
+          UVM_LOW
+        )
+        run_vseq(shd_recovery_seq);
       end
     endcase
   endtask
@@ -923,6 +956,9 @@ class opq_cross_mixed_bucket_random_soak_test extends opq_frame_signoff_base_tes
     foreach (bucket_visit_count[idx]) begin
       bucket_visit_count[idx] = 0;
     end
+    foreach (error_case_visit_count[idx]) begin
+      error_case_visit_count[idx] = 0;
+    end
 
     for (int unsigned step_idx = 0; step_idx < soak_iterations; step_idx++) begin
       run_random_mixed_step(step_idx);
@@ -933,6 +969,14 @@ class opq_cross_mixed_bucket_random_soak_test extends opq_frame_signoff_base_tes
         `uvm_error(
           get_type_name(),
           $sformatf("Mixed-bucket soak never visited bucket %s", mixed_bucket_name(idx))
+        )
+      end
+    end
+    foreach (error_case_visit_count[idx]) begin
+      if (error_case_visit_count[idx] == 0) begin
+        `uvm_error(
+          get_type_name(),
+          $sformatf("Mixed ERROR soak never visited error subcase %0d", idx)
         )
       end
     end
@@ -1802,6 +1846,136 @@ class opq_cross_hit3_exact_183_190_repro_test extends opq_frame_signoff_base_tes
 
     run_cross_drr_bp_case("repro_drr_189", 5, 7, 16, 4, 4, 41, 8, 16);
     run_cross_idle_lane_bp_case("repro_idle_lane_bp_190", 0, 6, 8, 8, 8, 8, 32);
+  endtask
+endclass
+
+class opq_cross_masked_drop_exact_102_117_repro_test extends opq_frame_signoff_base_test;
+  `uvm_component_utils(opq_cross_masked_drop_exact_102_117_repro_test)
+
+  localparam int unsigned REPRO_DWELL_CYCLES = 1_000_000;
+  localparam int unsigned REPRO_TIMEOUT_CYCLES = 1_000_000;
+
+  function new(
+    string name = "opq_cross_masked_drop_exact_102_117_repro_test",
+    uvm_component parent = null
+  );
+    super.new(name, parent);
+  endfunction
+
+  virtual function time dwell_time();
+    return cycles_to_time(REPRO_DWELL_CYCLES);
+  endfunction
+
+  virtual function time credit_restore_timeout();
+    return cycles_to_time(REPRO_TIMEOUT_CYCLES);
+  endfunction
+
+  virtual task run_main_sequence();
+    opq_basic_virtual_sequence basic_seq;
+    opq_missing_empty_frame_virtual_sequence sparse_seq;
+    opq_max_hits_virtual_sequence max_hits_seq;
+    opq_single_lane_virtual_sequence single_lane_seq;
+    opq_whole_frame_skew_virtual_sequence skew_seq;
+
+    reset_no_restart_identity();
+    csr_clear_counters();
+    csr_write32(OPQ_CSR_WORD_LANE_MASK, 32'h0000_0000);
+
+    // Exact mixed-soak failing window from steps 102..117.
+    basic_seq = opq_basic_virtual_sequence::type_id::create("repro_basic_102");
+    run_vseq(basic_seq);
+
+    run_masked_drop_case(opq_single_hit_masked_drop_virtual_sequence::get_type());
+
+    sparse_seq =
+      opq_missing_empty_frame_virtual_sequence::type_id::create("repro_sparse_104");
+    run_vseq(sparse_seq);
+
+    max_hits_seq = opq_max_hits_virtual_sequence::type_id::create("repro_max_hits_105");
+    run_vseq(max_hits_seq);
+
+    run_basic_with_bp(BP_PERIODIC_STALL, 4, 12, 12);
+    run_basic_with_bp(BP_PERIODIC_STALL, 16, 16, 13);
+
+    basic_seq = opq_basic_virtual_sequence::type_id::create("repro_basic_108");
+    run_vseq(basic_seq);
+
+    run_basic_with_bp(BP_PERIODIC_STALL, 4, 4, 25);
+
+    basic_seq = opq_basic_virtual_sequence::type_id::create("repro_basic_110");
+    run_vseq(basic_seq);
+
+    single_lane_seq =
+      opq_single_lane_virtual_sequence::type_id::create("repro_single_lane_111");
+    single_lane_seq.active_lane = 0;
+    single_lane_seq.frame_count = 6;
+    single_lane_seq.subheaders_per_frame = 4;
+    single_lane_seq.hit_count = 4;
+    run_vseq(single_lane_seq);
+
+    single_lane_seq =
+      opq_single_lane_virtual_sequence::type_id::create("repro_single_lane_112");
+    single_lane_seq.active_lane = 1;
+    single_lane_seq.frame_count = 5;
+    single_lane_seq.subheaders_per_frame = 4;
+    single_lane_seq.hit_count = 4;
+    run_vseq(single_lane_seq);
+
+    run_cross_idle_lane_bp_case("repro_idle_lane_bp_113", 0, 6, 8, 8, 8, 8, 32);
+
+    skew_seq =
+      opq_whole_frame_skew_virtual_sequence::type_id::create("repro_whole_skew_114");
+    skew_seq.frame_count = 9;
+    skew_seq.hit_period = 2;
+    skew_seq.hit_count_when_active = 2;
+    skew_seq.inter_frame_gap_cycles = OPQ_MIN_SOP_GAP_CYCLES;
+    run_vseq(skew_seq);
+
+    skew_seq =
+      opq_whole_frame_skew_virtual_sequence::type_id::create("repro_whole_skew_115");
+    skew_seq.frame_count = 8;
+    skew_seq.hit_period = 3;
+    skew_seq.hit_count_when_active = 2;
+    skew_seq.inter_frame_gap_cycles = OPQ_MIN_SOP_GAP_CYCLES;
+    run_vseq(skew_seq);
+
+    run_masked_drop_recovery_case("repro_masked_recovery_116");
+    run_masked_drop_recovery_case("repro_masked_recovery_117");
+  endtask
+endclass
+
+class opq_cross_single_hit_masked_then_sparse_repro_test extends opq_frame_signoff_base_test;
+  `uvm_component_utils(opq_cross_single_hit_masked_then_sparse_repro_test)
+
+  localparam int unsigned REPRO_TIMEOUT_CYCLES = 1_000_000;
+
+  function new(
+    string name = "opq_cross_single_hit_masked_then_sparse_repro_test",
+    uvm_component parent = null
+  );
+    super.new(name, parent);
+  endfunction
+
+  virtual function time credit_restore_timeout();
+    return cycles_to_time(REPRO_TIMEOUT_CYCLES);
+  endfunction
+
+  virtual task run_main_sequence();
+    opq_basic_virtual_sequence basic_seq;
+    opq_missing_empty_frame_virtual_sequence sparse_seq;
+
+    reset_no_restart_identity();
+    csr_clear_counters();
+    csr_write32(OPQ_CSR_WORD_LANE_MASK, 32'h0000_0000);
+
+    basic_seq = opq_basic_virtual_sequence::type_id::create("repro_basic_lead_in");
+    run_vseq(basic_seq);
+
+    run_masked_drop_case(opq_single_hit_masked_drop_virtual_sequence::get_type());
+
+    sparse_seq =
+      opq_missing_empty_frame_virtual_sequence::type_id::create("repro_sparse_followup");
+    run_vseq(sparse_seq);
   endtask
 endclass
 

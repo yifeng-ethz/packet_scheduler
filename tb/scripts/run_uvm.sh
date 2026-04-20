@@ -11,9 +11,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TB_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 UVM_DIR="${TB_DIR}/uvm"
-RUN_DIR="${TB_DIR}/sim_runs"
-LOG_DIR="${RUN_DIR}/logs"
-COV_DIR="${RUN_DIR}/coverage"
+RUN_DIR="${RUN_DIR:-${TB_DIR}/sim_runs}"
+LOG_DIR="${LOG_DIR:-${RUN_DIR}/logs}"
+COV_DIR="${COV_DIR:-${RUN_DIR}/coverage}"
 
 usage() {
   cat <<'EOF'
@@ -27,6 +27,9 @@ Environment:
   OPQ_TICKET_FIFO_DEPTH Optional ticket FIFO depth override; if unset the script derives a safe power-of-two depth from N_SHD
   OPQ_PAGE_RAM_DEPTH Optional page RAM depth override passed into the DUT wrapper generator
   QUESTA_PREFER_FE  0 by default; set to 1 to force the FE executable
+  RUN_DIR           Optional root for run artifacts; defaults to tb/sim_runs
+  LOG_DIR           Optional log directory override; defaults to $RUN_DIR/logs
+  COV_DIR           Optional coverage directory override; defaults to $RUN_DIR/coverage
   RUN_DO            Optional override for the vsim `-do` script
   VSIM_PLUSARGS     Optional extra vsim plusargs, for example `+TB_CLK_PERIOD_NS=100000`
 EOF

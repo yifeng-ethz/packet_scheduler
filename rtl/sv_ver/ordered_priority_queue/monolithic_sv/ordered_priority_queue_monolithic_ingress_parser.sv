@@ -166,6 +166,21 @@ module ordered_priority_queue_monolithic_ingress_parser #(
   logic [TICKET_FIFO_DATA_WIDTH-1:0] ingress_parser_if_write_ticket_data;
   logic [LANE_FIFO_WIDTH-1:0] ingress_parser_if_write_lane_data;
 
+  function automatic logic [47:0] ingress_parser_extend_subheader_ts(
+    input logic [47:0] last_running_ts,
+    input logic [15:0] last_subheader_count,
+    input logic [7:0]  curr_subheader_byte
+  );
+    logic [47:0] ts_v;
+    begin
+      ts_v = {last_running_ts[47:12], curr_subheader_byte, 4'b0000};
+      if ((last_subheader_count != '0) && (curr_subheader_byte < last_running_ts[11:4])) begin
+        ts_v[47:12] = last_running_ts[47:12] + 36'd1;
+      end
+      return ts_v;
+    end
+  endfunction
+
   always_comb begin : proc_ingress_parser_comb
     ingress_parser_is_subheader = (asi_ingress_data[7:0] == K237) && (asi_ingress_data[35:32] == 4'b0001);
     ingress_parser_is_preamble = (asi_ingress_data[7:0] == K285) && (asi_ingress_data[35:32] == 4'b0001);
@@ -175,17 +190,19 @@ module ordered_priority_queue_monolithic_ingress_parser #(
     ingress_parser_shd_err = asi_ingress_error[1];
     ingress_parser_hdr_err = asi_ingress_error[2];
 
-    ingress_parser_if_current_subheader_ts =
-      {ingress_parser.running_ts[47:12], asi_ingress_data[31:24], 4'b0000};
+    ingress_parser_if_current_subheader_ts = ingress_parser_extend_subheader_ts(
+      ingress_parser.running_ts,
+      ingress_parser.running_shd_cnt,
+      asi_ingress_data[31:24]
+    );
     ingress_parser_if_subheader_hit_cnt = asi_ingress_data[15:8];
     ingress_parser_if_subheader_shd_ts = asi_ingress_data[31:24];
     ingress_parser_if_preamble_dt_type = asi_ingress_data[31:26];
     ingress_parser_if_preamble_feb_id = asi_ingress_data[23:8];
 
     ingress_parser_if_write_ticket_data = '0;
-    if (ingress_parser_state == INGRESS_PARSER_IDLE) begin
-      ingress_parser_if_write_ticket_data[TICKET_TS_HI:TICKET_TS_LO] =
-        {ingress_parser.running_ts[47:12], ingress_parser_if_subheader_shd_ts, 4'b0000};
+    if (ingress_parser_is_subheader) begin
+      ingress_parser_if_write_ticket_data[TICKET_TS_HI:TICKET_TS_LO] = ingress_parser_if_current_subheader_ts;
       ingress_parser_if_write_ticket_data[TICKET_LANE_RD_OFST_HI:TICKET_LANE_RD_OFST_LO] =
         ingress_parser.lane_start_addr;
       ingress_parser_if_write_ticket_data[TICKET_BLOCK_LEN_HI:TICKET_BLOCK_LEN_LO] =
@@ -275,7 +292,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
       INGRESS_PARSER_IDLE: begin
         if (asi_ingress_valid) begin
           if (ingress_parser_is_subheader && !ingress_parser_shd_err) begin
-            ingress_parser.running_ts[11:4] <= ingress_parser_if_subheader_shd_ts;
+            ingress_parser.running_ts <= ingress_parser_if_current_subheader_ts;
             ingress_parser.shd_len <= ingress_parser_if_subheader_hit_cnt;
             if (int'(ingress_parser_if_subheader_hit_cnt) >= int'(ingress_parser.lane_credit)) begin
               credit_drop_valid_o <= 1'b1;
@@ -431,7 +448,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
 
         if (asi_ingress_valid) begin
           if (ingress_parser_is_subheader && !ingress_parser_shd_err) begin
-            ingress_parser.running_ts[11:4] <= ingress_parser_if_subheader_shd_ts;
+            ingress_parser.running_ts <= ingress_parser_if_current_subheader_ts;
             ingress_parser.shd_len <= ingress_parser_if_subheader_hit_cnt;
             if (int'(ingress_parser_if_subheader_hit_cnt) >= int'(ingress_parser.lane_credit)) begin
               credit_drop_valid_o <= 1'b1;

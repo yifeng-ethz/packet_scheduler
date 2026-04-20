@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_dut_sv
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.24
-// Date    : 20260418
-// Change  : Count allocator late-frame drops in the native-SV CSR plane and expose them to the standalone UVM harness
+// Version : 26.3.33
+// Date    : 20260419
+// Change  : Track masked-frame header timing in the native debug/drop plane so no-restart exact pre-drop timestamps stay aligned under lane masking
 //------------------------------------------------------------------------------
 
 `ifndef OPQ_N_SHD
@@ -210,6 +210,11 @@ module ordered_priority_queue_dut_sv (
   logic [OPQ_N_LANE_LOCAL-1:0][15:0] native_exact_post_shd_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][15:0] native_exact_post_hit_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][47:0] native_ingress_running_ts_dbg;
+  logic [OPQ_N_LANE_LOCAL-1:0][47:0] masked_ingress_running_ts_dbg;
+  logic [OPQ_N_LANE_LOCAL-1:0][47:0] masked_frame_ts_base_dbg;
+  logic [OPQ_N_LANE_LOCAL-1:0][15:0] masked_running_shd_cnt_dbg;
+  logic [OPQ_N_LANE_LOCAL-1:0][2:0] masked_header_flow_dbg;
+  logic [OPQ_N_LANE_LOCAL-1:0] masked_header_valid_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][9:0] native_drr_quantum_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0] native_drr_req_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0] native_drr_gnt_dbg;
@@ -288,6 +293,21 @@ module ordered_priority_queue_dut_sv (
 
   function automatic logic is_trailer_word(input logic [35:0] word_v);
     return (word_v[35:32] == 4'b0001) && (word_v[7:0] == K284_CONST);
+  endfunction
+
+  function automatic logic [47:0] extend_subheader_ts(
+    input logic [47:0] last_running_ts,
+    input logic [15:0] last_subheader_count,
+    input logic [7:0]  curr_subheader_byte
+  );
+    logic [47:0] ts_v;
+    begin
+      ts_v = {last_running_ts[47:12], curr_subheader_byte, 4'b0000};
+      if ((last_subheader_count != '0) && (curr_subheader_byte < last_running_ts[11:4])) begin
+        ts_v[47:12] = last_running_ts[47:12] + 36'd1;
+      end
+      return ts_v;
+    end
   endfunction
 
   function automatic logic [31:0] csr_decode_word(input logic [8:0] addr_v);
@@ -541,6 +561,11 @@ module ordered_priority_queue_dut_sv (
       native_exact_post_ts_dbg <= '0;
       native_exact_post_shd_dbg <= '0;
       native_exact_post_hit_dbg <= '0;
+      masked_ingress_running_ts_dbg <= '0;
+      masked_frame_ts_base_dbg <= '0;
+      masked_running_shd_cnt_dbg <= '0;
+      masked_header_flow_dbg <= '0;
+      masked_header_valid_dbg <= '0;
       csr_ft_wr_hdr_cnt <= '0;
       csr_ft_wr_shd_cnt <= '0;
       csr_ft_wr_hit_cnt <= '0;
@@ -640,6 +665,7 @@ module ordered_priority_queue_dut_sv (
           logic [31:0] drop_post_hdr_delta_v;
           logic [31:0] drop_post_shd_delta_v;
           logic [31:0] drop_post_hit_delta_v;
+          logic [47:0] masked_exact_pre_ts_v;
 
           drop_hdr_delta_v = '0;
           drop_shd_delta_v = '0;
@@ -649,6 +675,55 @@ module ordered_priority_queue_dut_sv (
           drop_post_hdr_delta_v = '0;
           drop_post_shd_delta_v = '0;
           drop_post_hit_delta_v = '0;
+          masked_exact_pre_ts_v =
+            {native_ingress_running_ts_dbg[lane][47:12], asi_ingress_data_bus[lane][31:24], 4'b0000};
+
+          if (csr_lane_mask_effective[lane] && asi_ingress_valid_bus[lane]) begin
+            if (asi_ingress_startofpacket_bus[lane] && is_preamble_word(asi_ingress_data_bus[lane])) begin
+              masked_header_flow_dbg[lane] <= asi_ingress_error_bus[lane][2] ? 3'd0 : 3'd1;
+              masked_header_valid_dbg[lane] <= 1'b0;
+              masked_running_shd_cnt_dbg[lane] <= '0;
+            end else begin
+              unique case (masked_header_flow_dbg[lane])
+                3'd1: begin
+                  masked_ingress_running_ts_dbg[lane][47:16] <= asi_ingress_data_bus[lane][31:0];
+                  masked_header_flow_dbg[lane] <= 3'd2;
+                end
+                3'd2: begin
+                  masked_ingress_running_ts_dbg[lane][15:0] <= asi_ingress_data_bus[lane][31:16];
+                  masked_frame_ts_base_dbg[lane] <= {
+                    masked_ingress_running_ts_dbg[lane][47:16],
+                    asi_ingress_data_bus[lane][31:16]
+                  };
+                  masked_header_valid_dbg[lane] <= 1'b1;
+                  masked_header_flow_dbg[lane] <= 3'd3;
+                end
+                3'd3: begin
+                  masked_running_shd_cnt_dbg[lane] <= asi_ingress_data_bus[lane][31:16];
+                  masked_header_flow_dbg[lane] <= 3'd4;
+                end
+                3'd4: begin
+                  masked_header_flow_dbg[lane] <= 3'd0;
+                end
+                default: begin
+                end
+              endcase
+            end
+
+            if (is_subheader_word(asi_ingress_data_bus[lane]) && masked_header_valid_dbg[lane]) begin
+              masked_exact_pre_ts_v = extend_subheader_ts(
+                masked_ingress_running_ts_dbg[lane],
+                masked_running_shd_cnt_dbg[lane],
+                asi_ingress_data_bus[lane][31:24]
+              );
+              masked_ingress_running_ts_dbg[lane] <= masked_exact_pre_ts_v;
+            end
+
+            if (is_trailer_word(asi_ingress_data_bus[lane])) begin
+              masked_header_flow_dbg[lane] <= 3'd0;
+              masked_header_valid_dbg[lane] <= 1'b0;
+            end
+          end
 
           if (asi_ingress_valid_bus[lane]) begin
             if (asi_ingress_startofpacket_bus[lane] &&
@@ -681,8 +756,7 @@ module ordered_priority_queue_dut_sv (
             drop_pre_shd_delta_v = drop_pre_shd_delta_v + 32'd1;
             drop_pre_hit_delta_v = drop_pre_hit_delta_v + {{24{1'b0}}, asi_ingress_data_bus[lane][15:8]};
             native_exact_pre_valid_dbg[lane] <= 1'b1;
-            native_exact_pre_ts_dbg[lane] <=
-              {native_ingress_running_ts_dbg[lane][47:12], asi_ingress_data_bus[lane][31:24], 4'b0000};
+            native_exact_pre_ts_dbg[lane] <= masked_exact_pre_ts_v;
             native_exact_pre_shd_dbg[lane] <= 16'd1;
             native_exact_pre_hit_dbg[lane] <= {{8{1'b0}}, asi_ingress_data_bus[lane][15:8]};
           end

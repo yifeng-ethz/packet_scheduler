@@ -7,8 +7,9 @@ module tile_fifo
 	output reg [(DATA_WIDTH-1):0] q
 );
 
-	// Declare the RAM variable
-	reg [DATA_WIDTH-1:0] ram[2**ADDR_WIDTH-1:0];
+	// Keep presenter/frame-table metadata storage on dedicated block RAMs
+	// during signoff builds instead of letting Quartus spill it into ALMs/MLABs.
+	(* ramstyle = "M20K, no_rw_check" *) reg [DATA_WIDTH-1:0] ram[2**ADDR_WIDTH-1:0];
 
 `ifndef SYNTHESIS
 	integer init_i;

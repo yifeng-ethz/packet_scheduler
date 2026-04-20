@@ -428,33 +428,39 @@ class opq_basic_virtual_sequence extends opq_virtual_sequence_base;
     opq_frame_item lane0_frames[$];
     opq_frame_item lane1_frames[$];
     bit [47:0] ts_step;
+    int unsigned smoke_subheaders_per_frame;
 
     ts_step = OPQ_N_SHD * 16;
+    // Keep the BASIC smoke in a no-drop regime even when OPQ_N_SHD scales up.
+    smoke_subheaders_per_frame = (OPQ_N_SHD >= 128) ? 128 : OPQ_N_SHD;
+    if (smoke_subheaders_per_frame < 2) begin
+      smoke_subheaders_per_frame = 2;
+    end
 
     lane0_frames.push_back(build_frame(
-      "lane0_pkt0", 0, 48'd0, 16'd0, OPQ_N_SHD - 1, 1, 0,
+      "lane0_pkt0", 0, 48'd0, 16'd0, smoke_subheaders_per_frame - 1, 1, 0,
       32'hDEADBEEF, 32'h0BADBEEF, 2
     ));
     lane1_frames.push_back(build_frame(
-      "lane1_pkt0", 1, 48'd0, 16'd0, OPQ_N_SHD - 1, 1, 0,
+      "lane1_pkt0", 1, 48'd0, 16'd0, smoke_subheaders_per_frame - 1, 1, 0,
       32'hCAFEBABE, 32'h0BADCAFE, 2
     ));
 
     lane0_frames.push_back(build_frame(
-      "lane0_pkt1", 0, ts_step, 16'd1, OPQ_N_SHD, OPQ_N_SHD, OPQ_MIN_SOP_GAP_CYCLES,
+      "lane0_pkt1", 0, ts_step, 16'd1, smoke_subheaders_per_frame, OPQ_N_SHD, OPQ_MIN_SOP_GAP_CYCLES,
       '0, '0, 0
     ));
     lane1_frames.push_back(build_frame(
-      "lane1_pkt1", 1, ts_step, 16'd1, OPQ_N_SHD, OPQ_N_SHD, OPQ_MIN_SOP_GAP_CYCLES,
+      "lane1_pkt1", 1, ts_step, 16'd1, smoke_subheaders_per_frame, OPQ_N_SHD, OPQ_MIN_SOP_GAP_CYCLES,
       '0, '0, 0
     ));
 
     lane0_frames.push_back(build_frame(
-      "lane0_pkt2", 0, ts_step + ts_step, 16'd2, OPQ_N_SHD, OPQ_N_SHD * 2, OPQ_MIN_SOP_GAP_CYCLES,
+      "lane0_pkt2", 0, ts_step + ts_step, 16'd2, smoke_subheaders_per_frame, OPQ_N_SHD * 2, OPQ_MIN_SOP_GAP_CYCLES,
       '0, '0, 0
     ));
     lane1_frames.push_back(build_frame(
-      "lane1_pkt2", 1, ts_step + ts_step, 16'd2, OPQ_N_SHD, OPQ_N_SHD * 2, OPQ_MIN_SOP_GAP_CYCLES,
+      "lane1_pkt2", 1, ts_step + ts_step, 16'd2, smoke_subheaders_per_frame, OPQ_N_SHD * 2, OPQ_MIN_SOP_GAP_CYCLES,
       '0, '0, 0
     ));
 
@@ -877,7 +883,10 @@ class opq_masked_drop_virtual_sequence extends opq_virtual_sequence_base;
   endfunction
 
   virtual function bit continuous_frame_emits_egress_frames();
-    return 1'b0;
+    // Lane-masked frames still consume composed ingress identity in
+    // no-restart tests; otherwise the next legal frame reuses the same
+    // pkg_cnt/frame_ts window and aliases drop accounting.
+    return 1'b1;
   endfunction
 
   task body();
@@ -903,7 +912,7 @@ class opq_single_hit_masked_drop_virtual_sequence extends opq_virtual_sequence_b
   endfunction
 
   virtual function bit continuous_frame_emits_egress_frames();
-    return 1'b0;
+    return 1'b1;
   endfunction
 
   task body();
@@ -940,7 +949,7 @@ class opq_burst_masked_drop_virtual_sequence extends opq_virtual_sequence_base;
   endfunction
 
   virtual function bit continuous_frame_emits_egress_frames();
-    return 1'b0;
+    return 1'b1;
   endfunction
 
   task body();

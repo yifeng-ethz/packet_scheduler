@@ -425,13 +425,13 @@ module ordered_priority_queue_monolithic_sv #(
         ft_drop_hdr_cnt_dbg,
         ft_drop_shd_cnt_dbg,
         ft_drop_hit_cnt_dbg,
-        presenter_i.presenter_state,
-        presenter_i.pkt_accept_started,
-        presenter_i.retire_pending,
+        presenter_i.native_i.presenter_state,
+        presenter_i.native_i.pkt_accept_started,
+        presenter_i.native_i.retire_pending,
         aso_egress_valid,
         aso_egress_ready,
-        presenter_i.output_data_valid[3],
-        presenter_i.overwrite_drop_flush_head
+        presenter_i.native_i.output_data_valid[3],
+        (presenter_i.native_i.overwrite_scan_active || presenter_i.native_i.overwrite_scan_process_head)
       );
     end
   end

@@ -110,7 +110,7 @@ class opq_cross_drr_allowance_test extends opq_base_test;
 
     super.run_post_sequence_checks();
     for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
-      check_lane_no_drop_and_credit(lane, 1'b0);
+      check_lane_drop_accounting_and_credit(lane, 1'b0);
     end
     check_frame_table_counts();
 
@@ -119,16 +119,16 @@ class opq_cross_drr_allowance_test extends opq_base_test;
     sample_lane_drr_snapshot(0, 4, 1'b1, 1'b1);
     sample_lane_drr_snapshot(1, 32, 1'b1, 1'b0);
 
-    if (lane0_beat_cnt != env.scoreboard.get_expected_lane_hit_cnt(0)) begin
+    if (lane0_beat_cnt != env.scoreboard.get_accepted_lane_hit_cnt(0)) begin
       `uvm_error(get_type_name(), $sformatf(
         "lane0 DRR beat count mismatch expected=%0d actual=%0d",
-        env.scoreboard.get_expected_lane_hit_cnt(0), lane0_beat_cnt
+        env.scoreboard.get_accepted_lane_hit_cnt(0), lane0_beat_cnt
       ))
     end
-    if (lane1_beat_cnt != env.scoreboard.get_expected_lane_hit_cnt(1)) begin
+    if (lane1_beat_cnt != env.scoreboard.get_accepted_lane_hit_cnt(1)) begin
       `uvm_error(get_type_name(), $sformatf(
         "lane1 DRR beat count mismatch expected=%0d actual=%0d",
-        env.scoreboard.get_expected_lane_hit_cnt(1), lane1_beat_cnt
+        env.scoreboard.get_accepted_lane_hit_cnt(1), lane1_beat_cnt
       ))
     end
     if (lane0_defer_cnt <= lane1_defer_cnt) begin
@@ -321,7 +321,7 @@ class opq_cross_drr_short_allowance_test extends opq_base_test;
 
     super.run_post_sequence_checks();
     for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
-      check_lane_no_drop_and_credit(lane, 1'b0);
+      check_lane_drop_accounting_and_credit(lane, 1'b0);
     end
     check_frame_table_counts();
 

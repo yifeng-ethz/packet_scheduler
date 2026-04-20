@@ -1020,7 +1020,18 @@ class opq_scoreboard extends uvm_component;
   endfunction
 
   function automatic int unsigned get_ingress_visible_lane_hdr_cnt(int lane_id);
-    return expected_lane_hdr_cnt[lane_id];
+    int unsigned pre_dropped_hdr_cnt;
+
+    if (dropped_lane_post_hdr_cnt[lane_id] > dropped_lane_hdr_cnt[lane_id]) begin
+      pre_dropped_hdr_cnt = 0;
+    end else begin
+      pre_dropped_hdr_cnt = dropped_lane_hdr_cnt[lane_id] - dropped_lane_post_hdr_cnt[lane_id];
+    end
+
+    if (pre_dropped_hdr_cnt > expected_lane_hdr_cnt[lane_id]) begin
+      return 0;
+    end
+    return expected_lane_hdr_cnt[lane_id] - pre_dropped_hdr_cnt;
   endfunction
 
   function automatic int unsigned get_ingress_visible_lane_shd_cnt(int lane_id);

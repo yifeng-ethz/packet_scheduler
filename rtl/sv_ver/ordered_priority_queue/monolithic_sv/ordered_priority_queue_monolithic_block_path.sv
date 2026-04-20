@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_block_path
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.25
-// Date    : 20260419
-// Change  : Keep payload_commit_idle low while the allocator is still fetching or allocating tickets so the presenter cannot launch a frame before payload commit is actually ready
+// Version : 26.3.26
+// Date    : 20260420
+// Change  : Keep payload_commit_idle low while the allocator is still fetching or allocating tickets so the presenter cannot launch a frame before payload commit is actually ready, and latch newly picked mover grants before exposing them to the page-RAM write mux so the DRR compare/select cone does not feed page write data in the same cycle
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_block_path #(
@@ -186,6 +186,7 @@ module ordered_priority_queue_monolithic_block_path #(
   logic [N_LANE-1:0] block_mover_reset_done;
   logic [N_LANE-1:0] b2p_arb_req_raw;
   logic [N_LANE-1:0] b2p_arb_req_eligible;
+  logic [N_LANE-1:0] b2p_arb_pick;
   logic [N_LANE-1:0] b2p_arb_gnt;
   logic [N_LANE-1:0] drr_lock_event_dbg;
   logic [N_LANE-1:0] drr_defer_event_dbg;
@@ -196,7 +197,6 @@ module ordered_priority_queue_monolithic_block_path #(
   logic [PAGE_RAM_ADDR_WIDTH-1:0] page_ram_wr_addr_comb;
   logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_wr_data_comb;
   logic              payload_commit_idle_comb;
-  logic [$clog2(N_LANE)-1:0] grant_code;
 
   always_comb begin : proc_block_mover_comb
     logic pa_writing_v;
@@ -263,19 +263,14 @@ module ordered_priority_queue_monolithic_block_path #(
   end
 
   always_comb begin : proc_b2p_arbiter_comb
-    b2p_arb_gnt = rr_grant(b2p_arb_req_eligible, b2p_arb.priority_mask);
+    b2p_arb_pick = rr_grant(b2p_arb_req_eligible, b2p_arb.priority_mask);
+    b2p_arb_gnt = '0;
     if (arbiter_state == ARBITER_LOCKED) begin
       b2p_arb_gnt = b2p_arb.sel_mask;
     end
     if (page_allocator_write_page_i || page_allocator_write_head_i || page_allocator_write_tail_i || page_allocator_page_we_i) begin
+      b2p_arb_pick = '0;
       b2p_arb_gnt = '0;
-    end
-
-    grant_code = '0;
-    for (int i = 0; i < N_LANE; i++) begin
-      if (b2p_arb_gnt[i]) begin
-        grant_code = i[$clog2(N_LANE)-1:0];
-      end
     end
 
     page_ram_we_comb = 1'b0;
@@ -283,7 +278,7 @@ module ordered_priority_queue_monolithic_block_path #(
     page_ram_wr_data_comb = '0;
 
     for (int i = 0; i < N_LANE; i++) begin
-      if ((grant_code == i[$clog2(N_LANE)-1:0]) && (|b2p_arb_gnt) && block_mover_page_wreq[i]) begin
+      if (b2p_arb_gnt[i] && block_mover_page_wreq[i]) begin
         page_ram_we_comb = 1'b1;
         page_ram_wr_addr_comb = block_mover_page_wptr[i] + page_ram_addr_t'(block_mover_word_wr_cnt[i]);
         page_ram_wr_data_comb = lane_fifos_rd_data_i[i];
@@ -489,13 +484,13 @@ module ordered_priority_queue_monolithic_block_path #(
     unique case (arbiter_state)
       ARBITER_IDLE: begin
         if (|b2p_arb_req_raw) begin
-        if (|b2p_arb_gnt) begin
-          b2p_arb.sel_mask <= b2p_arb_gnt;
+        if (|b2p_arb_pick) begin
+          b2p_arb.sel_mask <= b2p_arb_pick;
           arbiter_state <= ARBITER_LOCKED;
-          drr_lock_event_dbg <= b2p_arb_gnt;
+          drr_lock_event_dbg <= b2p_arb_pick;
 `ifdef OPQ_OSS_FORMAL
-          lock_req_raw_dbg_oss <= b2p_arb_gnt & b2p_arb_req_raw;
-          lock_req_eligible_dbg_oss <= b2p_arb_gnt & b2p_arb_req_eligible;
+          lock_req_raw_dbg_oss <= b2p_arb_pick & b2p_arb_req_raw;
+          lock_req_eligible_dbg_oss <= b2p_arb_pick & b2p_arb_req_eligible;
 `endif
         end else begin
           for (int i = 0; i < N_LANE; i++) begin
@@ -514,13 +509,13 @@ module ordered_priority_queue_monolithic_block_path #(
       end
 
       ARBITER_LOCKING: begin
-        if (|b2p_arb_gnt) begin
-          b2p_arb.sel_mask <= b2p_arb_gnt;
+        if (|b2p_arb_pick) begin
+          b2p_arb.sel_mask <= b2p_arb_pick;
           arbiter_state <= ARBITER_LOCKED;
-          drr_lock_event_dbg <= b2p_arb_gnt;
+          drr_lock_event_dbg <= b2p_arb_pick;
 `ifdef OPQ_OSS_FORMAL
-          lock_req_raw_dbg_oss <= b2p_arb_gnt & b2p_arb_req_raw;
-          lock_req_eligible_dbg_oss <= b2p_arb_gnt & b2p_arb_req_eligible;
+          lock_req_raw_dbg_oss <= b2p_arb_pick & b2p_arb_req_raw;
+          lock_req_eligible_dbg_oss <= b2p_arb_pick & b2p_arb_req_eligible;
 `endif
         end else if (|b2p_arb_req_raw) begin
           for (int i = 0; i < N_LANE; i++) begin

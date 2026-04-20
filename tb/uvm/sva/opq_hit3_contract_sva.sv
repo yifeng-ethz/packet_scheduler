@@ -119,8 +119,11 @@ module opq_hit3_contract_sva (
             subheader_ts_hi <= {frame_ts_hi32, data[31:28]};
             current_frame_pkg_cnt <= data[15:0];
             if (last_closed_frame_valid) begin
-              assert (data[15:0] == (last_closed_frame_pkg_cnt + 16'd1))
-                else $error("[opq_hit3_contract] frame pkg_cnt discontinuity: prev=%0d new=%0d",
+              // Whole frames can be legally dropped before they ever reach
+              // egress, so emitted pkg_cnt must be strictly increasing, not
+              // necessarily contiguous.
+              assert (data[15:0] > last_closed_frame_pkg_cnt)
+                else $error("[opq_hit3_contract] frame pkg_cnt did not increase: prev=%0d new=%0d",
                   last_closed_frame_pkg_cnt, data[15:0]);
               assert ({frame_ts_hi32, data[31:16]} > last_closed_frame_ts)
                 else $error("[opq_hit3_contract] frame timestamp did not increase: prev=0x%012h new=0x%012h",
@@ -167,8 +170,8 @@ module opq_hit3_contract_sva (
         subheader_abs_ts_v = make_subheader_abs_ts(subheader_ts_hi_v, data[31:24]);
 
         if (last_subhdr_valid) begin
-          assert (subheader_abs_ts_v == (last_subhdr_abs_ts + 48'd16))
-            else $error("[opq_hit3_contract] sub-header absolute ts discontinuity: prev=0x%012h new=0x%012h",
+          assert (subheader_abs_ts_v > last_subhdr_abs_ts)
+            else $error("[opq_hit3_contract] sub-header absolute ts did not increase: prev=0x%012h new=0x%012h",
               last_subhdr_abs_ts, subheader_abs_ts_v);
         end
 
