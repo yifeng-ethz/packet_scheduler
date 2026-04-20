@@ -1,4 +1,4 @@
-# ❌ DV Report — packet_scheduler ordered_priority_queue native_sv
+# ✅ DV Report — packet_scheduler ordered_priority_queue native_sv
 
 **DUT:** `ordered_priority_queue_monolithic_sv` &nbsp; **Date:** `2026-04-20` &nbsp; **RTL variant:** `after` &nbsp; **Seed:** `1`
 
@@ -8,8 +8,8 @@ This page is the chief-architect dashboard. All per-case evidence lives under [`
 
 | status | field | value |
 |:---:|---|---|
-| ❌ | failed_cases | `1` |
-| ❌ | signoff_runs_with_failures | `1` |
+| ✅ | failed_cases | `0` |
+| ✅ | signoff_runs_with_failures | `0` |
 | ⚠️ | catalog_backlog_cases | `947` |
 | ✅ | unimplemented_cases | `0` |
 | ✅ | stale_artifacts | `0` |
@@ -43,25 +43,25 @@ This page is the chief-architect dashboard. All per-case evidence lives under [`
 | ⚠️ | [`PARAM`](REPORT/buckets/PARAM.md) | 180 | 6 | 6 | 174 | stmt=84.28, branch=72.12, cond=48.15, expr=70.91, fsm_state=85.71, fsm_trans=43.75, toggle=46.76 | 67.37% (6/6) |
 | ⚠️ | [`EDGE`](REPORT/buckets/EDGE.md) | 168 | 9 | 9 | 159 | stmt=74.21, branch=64.99, cond=34.56, expr=55.21, fsm_state=84.09, fsm_trans=41.00, toggle=27.95 | 68.42% (9/9) |
 | ⚠️ | [`PROF`](REPORT/buckets/PROF.md) | 168 | 8 | 8 | 160 | stmt=75.50, branch=66.49, cond=35.69, expr=57.29, fsm_state=84.09, fsm_trans=42.00, toggle=30.59 | 64.03% (8/8) |
-| ⚠️ | [`ERROR`](REPORT/buckets/ERROR.md) | 166 | 9 | 8 | 157 | stmt=79.30, branch=74.66, cond=43.34, expr=65.62, fsm_state=93.18, fsm_trans=56.00, toggle=26.96 | 63.25% (8/9) |
+| ⚠️ | [`ERROR`](REPORT/buckets/ERROR.md) | 166 | 9 | 9 | 157 | stmt=82.87, branch=76.57, cond=46.74, expr=69.79, fsm_state=95.45, fsm_trans=58.00, toggle=34.10 | 71.74% (9/9) |
 | ⚠️ | [`CROSS`](REPORT/buckets/CROSS.md) | 165 | 7 | 7 | 158 | stmt=81.54, branch=72.64, cond=49.78, expr=66.67, fsm_state=85.71, fsm_trans=43.62, toggle=45.76 | 77.81% (7/7) |
 
 ## Totals
 
 | status | metric | pct | target |
 |:---:|---|---|---|
-| ⚠️ | stmt | 83.73 | 95.0 |
-| ⚠️ | branch | 80.83 | 90.0 |
-| ℹ️ | cond | 55.34 | - |
-| ℹ️ | expr | 69.64 | - |
-| ✅ | fsm_state | 95.45 | 95.0 |
-| ⚠️ | fsm_trans | 58.00 | 90.0 |
-| ⚠️ | toggle | 46.48 | 80.0 |
+| ⚠️ | stmt | 86.91 | 95.0 |
+| ⚠️ | branch | 82.38 | 90.0 |
+| ℹ️ | cond | 58.36 | - |
+| ℹ️ | expr | 73.21 | - |
+| ✅ | fsm_state | 97.73 | 95.0 |
+| ⚠️ | fsm_trans | 60.00 | 90.0 |
+| ⚠️ | toggle | 47.50 | 80.0 |
 
 - catalog_planned_cases: `993`
 - promoted_signoff_cases: `46`
-- evidenced_promoted_cases: `45`
-- promoted functional coverage: `90.04% (45/46)`
+- evidenced_promoted_cases: `46`
+- promoted functional coverage: `91.07% (46/46)`
 
 ## Signoff Runs
 
@@ -71,7 +71,7 @@ This page is the chief-architect dashboard. All per-case evidence lives under [`
 | ✅ | [`all_buckets_frame_native_sv`](REPORT/cross/all_buckets_frame_native_sv.md) | all_buckets_frame | native_sv | OPQ_ALL_BUCKETS_FRAME_NATIVE_SV | 434 | 77.74 |
 | ✅ | [`mixed_bucket_random_soak_native_sv`](REPORT/cross/mixed_bucket_random_soak_native_sv.md) | mixed_bucket_random_soak | native_sv | OPQ_MIXED_BUCKET_RANDOM_SOAK | 1160 | 70.96 |
 | ⚠️ | [`error_counter_clear_native_sv`](REPORT/cross/error_counter_clear_native_sv.md) | error_counter_clear | native_sv | OPQ_ERROR_COUNTER_CLEAR | 2 | 38.3 |
-| ❌ | [`error_ftable_overflow_depth512_native_sv`](REPORT/cross/error_ftable_overflow_depth512_native_sv.md) | error_ftable_overflow_depth512 | native_sv_depth512 | OPQ_ERROR_FTABLE_OVERFLOW_DEPTH512 | 64 | 60.27 |
+| ✅ | [`error_ftable_overflow_depth512_native_sv`](REPORT/cross/error_ftable_overflow_depth512_native_sv.md) | error_ftable_overflow_depth512 | native_sv_depth512 | OPQ_ERROR_FTABLE_OVERFLOW_DEPTH512 | 64 | 60.27 |
 
 ## Index
 

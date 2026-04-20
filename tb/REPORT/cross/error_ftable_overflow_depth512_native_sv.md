@@ -1,4 +1,4 @@
-# ❌ error_ftable_overflow_depth512_native_sv
+# ✅ error_ftable_overflow_depth512_native_sv
 
 **Kind:** `error_ftable_overflow_depth512` &nbsp; **Build:** `native_sv_depth512` &nbsp; **Sequence:** `OPQ_ERROR_FTABLE_OVERFLOW_DEPTH512`
 
@@ -9,8 +9,8 @@
 | ℹ️ | case_count | `1` |
 | ℹ️ | effort | `practical` |
 | ℹ️ | txns | `64` |
-| ❌ | functional_cross_pct | `60.27` |
-| ❌ | counter_checks_failed | `1` |
+| ✅ | functional_cross_pct | `60.27` |
+| ✅ | counter_checks_failed | `0` |
 | ✅ | unexpected_outputs | `0` |
 | ⚠️ | limitation | This is a supplemental signoff run that intentionally uses OPQ_PAGE_RAM_DEPTH=512 to force the overwrite / frame-table-drop path. |
 | ⚠️ | limitation | Because it requires a separate elaboration point, it cannot be folded into the fixed default-build no-restart baselines. |

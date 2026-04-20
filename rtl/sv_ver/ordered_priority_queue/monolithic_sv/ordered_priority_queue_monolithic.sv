@@ -127,6 +127,8 @@ module ordered_priority_queue_monolithic_sv #(
   logic [PAGE_RAM_ADDR_WIDTH-1:0] packet_complete_frame_start_addr_dbg;
   logic [$clog2(N_SHD * N_LANE):0] frame_shr_cnt_this_dbg;
   logic [15:0] frame_hit_cnt_this_dbg;
+  logic [N_LANE-1:0][$clog2(N_SHD * N_LANE):0] frame_lane_shd_cnt_this_dbg;
+  logic [N_LANE-1:0][15:0] frame_lane_hit_cnt_this_dbg;
   logic page_we_dbg;
   logic [PAGE_RAM_ADDR_WIDTH-1:0] page_waddr_dbg;
   logic [PAGE_RAM_DATA_WIDTH-1:0] page_wdata_dbg;
@@ -143,14 +145,20 @@ module ordered_priority_queue_monolithic_sv #(
   logic [PAGE_RAM_ADDR_WIDTH-1:0] packet_complete_addr_presenter_dbg;
   logic [$clog2(N_SHD * N_LANE):0] packet_complete_shr_cnt_presenter_delay_dbg [1:0];
   logic [15:0] packet_complete_hit_cnt_presenter_delay_dbg [1:0];
+  logic [N_LANE-1:0][$clog2(N_SHD * N_LANE):0] packet_complete_lane_shd_cnt_presenter_delay_dbg [1:0];
+  logic [N_LANE-1:0][15:0] packet_complete_lane_hit_cnt_presenter_delay_dbg [1:0];
   logic [$clog2(N_SHD * N_LANE):0] packet_complete_shr_cnt_presenter_new_frame_dbg;
   logic [15:0] packet_complete_hit_cnt_presenter_new_frame_dbg;
+  logic [N_LANE-1:0][$clog2(N_SHD * N_LANE):0] packet_complete_lane_shd_cnt_presenter_dbg;
+  logic [N_LANE-1:0][15:0] packet_complete_lane_hit_cnt_presenter_dbg;
   logic [$clog2(N_SHD * N_LANE):0] packet_complete_shr_cnt_presenter_dbg;
   logic [15:0] packet_complete_hit_cnt_presenter_dbg;
   logic ft_drop_valid_dbg;
   logic [31:0] ft_drop_hdr_cnt_dbg;
   logic [31:0] ft_drop_shd_cnt_dbg;
   logic [31:0] ft_drop_hit_cnt_dbg;
+  logic [N_LANE-1:0][$clog2(N_SHD * N_LANE):0] ft_drop_lane_shd_cnt_dbg;
+  logic [N_LANE-1:0][15:0] ft_drop_lane_hit_cnt_dbg;
 
   always_comb begin : proc_lane_credit_update_mux
     for (int i = 0; i < N_LANE; i++) begin
@@ -305,6 +313,8 @@ module ordered_priority_queue_monolithic_sv #(
     .frame_start_addr_o(frame_start_addr_dbg),
     .frame_shr_cnt_this_o(frame_shr_cnt_this_dbg),
     .frame_hit_cnt_this_o(frame_hit_cnt_this_dbg),
+    .frame_lane_shd_cnt_this_o(frame_lane_shd_cnt_this_dbg),
+    .frame_lane_hit_cnt_this_o(frame_lane_hit_cnt_this_dbg),
     .packet_complete_frame_start_addr_o(packet_complete_frame_start_addr_dbg),
     .packet_complete_pulse_o(packet_complete_pulse_dbg),
     .d_clk(d_clk),
@@ -366,6 +376,8 @@ module ordered_priority_queue_monolithic_sv #(
       packet_complete_addr_presenter_delay_dbg[1] <= '0;
       packet_complete_shr_cnt_presenter_delay_dbg[1] <= '0;
       packet_complete_hit_cnt_presenter_delay_dbg[1] <= '0;
+      packet_complete_lane_shd_cnt_presenter_delay_dbg[1] <= '{default:'0};
+      packet_complete_lane_hit_cnt_presenter_delay_dbg[1] <= '{default:'0};
     end else begin
       packet_complete_presenter_delay_dbg[0] <= packet_complete_pulse_dbg;
       packet_complete_presenter_delay_dbg[1] <= packet_complete_presenter_delay_dbg[0];
@@ -373,6 +385,8 @@ module ordered_priority_queue_monolithic_sv #(
         packet_complete_addr_presenter_delay_dbg[1] <= packet_complete_frame_start_addr_dbg;
         packet_complete_shr_cnt_presenter_delay_dbg[1] <= frame_shr_cnt_this_dbg;
         packet_complete_hit_cnt_presenter_delay_dbg[1] <= frame_hit_cnt_this_dbg;
+        packet_complete_lane_shd_cnt_presenter_delay_dbg[1] <= frame_lane_shd_cnt_this_dbg;
+        packet_complete_lane_hit_cnt_presenter_delay_dbg[1] <= frame_lane_hit_cnt_this_dbg;
       end
     end
   end
@@ -381,6 +395,8 @@ module ordered_priority_queue_monolithic_sv #(
   assign packet_complete_addr_presenter_dbg = packet_complete_addr_presenter_delay_dbg[1];
   assign packet_complete_shr_cnt_presenter_new_frame_dbg = packet_complete_shr_cnt_presenter_delay_dbg[1];
   assign packet_complete_hit_cnt_presenter_new_frame_dbg = packet_complete_hit_cnt_presenter_delay_dbg[1];
+  assign packet_complete_lane_shd_cnt_presenter_dbg = packet_complete_lane_shd_cnt_presenter_delay_dbg[1];
+  assign packet_complete_lane_hit_cnt_presenter_dbg = packet_complete_lane_hit_cnt_presenter_delay_dbg[1];
   assign packet_complete_shr_cnt_presenter_dbg = packet_complete_shr_cnt_presenter_delay_dbg[1];
   assign packet_complete_hit_cnt_presenter_dbg = packet_complete_hit_cnt_presenter_delay_dbg[1];
 
@@ -509,6 +525,8 @@ module ordered_priority_queue_monolithic_sv #(
     .new_frame_raw_addr_i(packet_complete_addr_presenter_dbg),
     .frame_shr_cnt_this_i(packet_complete_shr_cnt_presenter_new_frame_dbg),
     .frame_hit_cnt_this_i(packet_complete_hit_cnt_presenter_new_frame_dbg),
+    .frame_lane_shd_cnt_this_i(packet_complete_lane_shd_cnt_presenter_dbg),
+    .frame_lane_hit_cnt_this_i(packet_complete_lane_hit_cnt_presenter_dbg),
     .packet_complete_i(packet_complete_presenter_dbg),
     .packet_complete_shr_cnt_i(packet_complete_shr_cnt_presenter_dbg),
     .packet_complete_hit_cnt_i(packet_complete_hit_cnt_presenter_dbg),
@@ -519,6 +537,8 @@ module ordered_priority_queue_monolithic_sv #(
     .ft_drop_hdr_cnt_o(ft_drop_hdr_cnt_dbg),
     .ft_drop_shd_cnt_o(ft_drop_shd_cnt_dbg),
     .ft_drop_hit_cnt_o(ft_drop_hit_cnt_dbg),
+    .ft_drop_lane_shd_cnt_o(ft_drop_lane_shd_cnt_dbg),
+    .ft_drop_lane_hit_cnt_o(ft_drop_lane_hit_cnt_dbg),
     .aso_egress_data(aso_egress_data),
     .aso_egress_valid(aso_egress_valid),
     .aso_egress_ready(aso_egress_ready),

@@ -227,6 +227,8 @@ module ordered_priority_queue_dut_sv (
   logic [31:0] native_ft_drop_hdr_dbg;
   logic [31:0] native_ft_drop_shd_dbg;
   logic [31:0] native_ft_drop_hit_dbg;
+  logic [OPQ_N_LANE_LOCAL-1:0][15:0] native_ft_drop_lane_shd_dbg;
+  logic [OPQ_N_LANE_LOCAL-1:0][15:0] native_ft_drop_lane_hit_dbg;
   logic native_page_allocator_active_dbg;
   logic native_arbiter_active_dbg;
 
@@ -502,6 +504,10 @@ module ordered_priority_queue_dut_sv (
   assign native_ft_drop_hdr_dbg = u_native.ft_drop_hdr_cnt_dbg;
   assign native_ft_drop_shd_dbg = u_native.ft_drop_shd_cnt_dbg;
   assign native_ft_drop_hit_dbg = u_native.ft_drop_hit_cnt_dbg;
+  for (genvar g_ft = 0; g_ft < OPQ_N_LANE_LOCAL; g_ft++) begin : g_ft_drop_lane_dbg
+    assign native_ft_drop_lane_shd_dbg[g_ft] = u_native.ft_drop_lane_shd_cnt_dbg[g_ft];
+    assign native_ft_drop_lane_hit_dbg[g_ft] = u_native.ft_drop_lane_hit_cnt_dbg[g_ft];
+  end
   assign native_page_allocator_active_dbg = u_native.fetch_ticket_active_dbg ||
     u_native.write_head_active_dbg || u_native.write_tail_active_dbg || u_native.write_page_active_dbg;
   assign native_arbiter_active_dbg = |native_drr_req_dbg || |u_native.block_path_i.b2p_arb.sel_mask;
@@ -802,6 +808,15 @@ module ordered_priority_queue_dut_sv (
             native_exact_post_shd_dbg[lane] <= 16'd1;
             native_exact_post_hit_dbg[lane] <=
               {{(16-MAX_PKT_LENGTH_BITS_CONST){1'b0}}, native_handle_block_len_dbg[lane]};
+          end
+
+          if (native_ft_drop_valid_dbg &&
+              ((native_ft_drop_lane_shd_dbg[lane] != '0) ||
+               (native_ft_drop_lane_hit_dbg[lane] != '0))) begin
+            drop_shd_delta_v = drop_shd_delta_v + {{16{1'b0}}, native_ft_drop_lane_shd_dbg[lane]};
+            drop_hit_delta_v = drop_hit_delta_v + {{16{1'b0}}, native_ft_drop_lane_hit_dbg[lane]};
+            drop_post_shd_delta_v = drop_post_shd_delta_v + {{16{1'b0}}, native_ft_drop_lane_shd_dbg[lane]};
+            drop_post_hit_delta_v = drop_post_hit_delta_v + {{16{1'b0}}, native_ft_drop_lane_hit_dbg[lane]};
           end
 
           if (drop_hdr_delta_v != '0) begin

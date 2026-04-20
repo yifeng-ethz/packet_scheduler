@@ -44,8 +44,8 @@ This page is the coverage summary only. Per-case incremental coverage lives unde
 |---|---|---|---|---|
 | Ingress parser recovery states | stmt=76.96, branch=75.53, cond=32.50, fsm_trans=66.66, toggle=51.76 (min across 2 instances) | real gap: The promoted header-error and header-word recovery cases now exercise the repaired parser re-entry path, but MASK_PKT_EXTENDED cleanup and the broader malformed-header recovery state space still sit below the merged signoff targets. | ordered_priority_queue_monolithic_ingress_parser.sv:305-320, 409-410; BUG-005-R / BUG-010-R; opq_error_header_mask_recovery_test, opq_error_header_word_mask_recovery_test | Keep the header-recovery cases in the promoted ERROR bucket and add more chained malformed-header variants only if parser recovery coverage remains the limiting closure gap. |
 | Allocator and DRR transition space | stmt=92.03, branch=86.38, cond=60.00, fsm_trans=56.66, toggle=42.21 (min across 2 instances) | real gap: The remaining low FSM-transition coverage still lines up with the bursty DRR large-random screen, which re-opened hit-accounting loss on the latest native-SV rerun, plus the lack of dedicated signed-off 4-lane DV evidence. | BUG-009-R; opq_cross_drr_bursty_random_test; opq_prof_missing_empty_frame_test @ OPQ_N_LANE=4; doc/SIGNOFF.md standalone_syn | Keep the bursty DRR large-random screen probe-only, root-cause the remaining lane0 unexplained-hit loss, and record real 4-lane DV plus A10 standalone closure before expanding the signoff claim. |
-| Presenter flush/backpressure hybrids | toggle=57.48 (min across 1 instance) | needs-new-test: The reduced-depth overwrite screen is now wired into the supplemental signoff flow, but the fresh 2026-04-20 rerun reopened accepted-egress contract errors and the promoted suite still lacks a directed hybrid that couples flush pressure with legal backpressure windows over a default-build runtime. | ordered_priority_queue_monolithic_basic_presenter.sv:128-145, 165-188; DV_FORMAL.md B27/B28; CORNER_OPQ_409_error_ftable_overflow_test | Add the directed backpressure-plus-flush hybrid testcase and use it to raise presenter transition and toggle coverage. |
-| Native wrapper fixed-scope decode paths | stmt=86.66, branch=77.68, cond=60.52, toggle=29.61 (min across 2 instances) | justified exclusion: A large part of the wrapper hole count comes from fixed-scope native-SV configuration, dormant CSR decode/default branches, and status/meta observability that are outside the active 2-lane signoff claim. | ordered_priority_queue_dut_sv.sv:227-245, 268-337, 494-505; DV_REPORT non-claims for OPQ_N_LANE=2 and the reduced-depth supplemental overflow point | Keep the wrapper holes documented as non-claims unless a dedicated CSR decode sweep becomes a signoff requirement. |
+| Presenter flush/backpressure hybrids | toggle=60.08 (min across 1 instance) | needs-new-test: The reduced-depth overwrite screen now closes cleanly on the repaired presenter path, but the promoted suite still lacks a directed hybrid that couples legal backpressure windows with default-build overwrite pressure and proves when frame-table drops must, and must not, appear. | ordered_priority_queue_monolithic_basic_presenter.sv:128-145, 165-188; DV_FORMAL.md B27/B28; CORNER_OPQ_409_error_ftable_overflow_test | Add the default-build backpressure-plus-overwrite directed hybrid and use it to raise presenter transition and toggle coverage. |
+| Native wrapper fixed-scope decode paths | stmt=86.66, branch=77.68, cond=60.52, toggle=30.38 (min across 2 instances) | justified exclusion: A large part of the wrapper hole count comes from fixed-scope native-SV configuration, dormant CSR decode/default branches, and status/meta observability that are outside the active 2-lane signoff claim. | ordered_priority_queue_dut_sv.sv:227-245, 268-337, 494-505; DV_REPORT non-claims for OPQ_N_LANE=2 and the reduced-depth supplemental overflow point | Keep the wrapper holes documented as non-claims unless a dedicated CSR decode sweep becomes a signoff requirement. |
 | FIFO and page-RAM data-bit toggles | stmt=100.00, branch=100.00, cond=100.00, toggle=50.34 (min across 7 instances) | redundant case: The lowest remaining toggle bins are wide storage-array data bits. Extra fill-pattern tests would mostly churn memory bit coverage without closing a new architectural contract. | ticket_fifo / lane_fifo / handle_fifo / page_ram toggle summaries in the merged native-SV UCDB | Do not promote memory-bit churn tests for signoff; only revisit if a real storage-corruption bug appears. |
 
 ## Targets vs merged totals
@@ -54,13 +54,13 @@ This page is the coverage summary only. Per-case incremental coverage lives unde
 
 | status | metric | merged_pct | target |
 |:---:|---|---|---|
-| ⚠️ | stmt | 83.73 | 95.0 |
-| ⚠️ | branch | 80.83 | 90.0 |
-| ℹ️ | cond | 55.34 | - |
-| ℹ️ | expr | 69.64 | - |
-| ✅ | fsm_state | 95.45 | 95.0 |
-| ⚠️ | fsm_trans | 58.00 | 90.0 |
-| ⚠️ | toggle | 46.48 | 80.0 |
+| ⚠️ | stmt | 86.91 | 95.0 |
+| ⚠️ | branch | 82.38 | 90.0 |
+| ℹ️ | cond | 58.36 | - |
+| ℹ️ | expr | 73.21 | - |
+| ✅ | fsm_state | 97.73 | 95.0 |
+| ⚠️ | fsm_trans | 60.00 | 90.0 |
+| ⚠️ | toggle | 47.50 | 80.0 |
 
 ## Per-bucket merged totals
 
@@ -70,7 +70,7 @@ This page is the coverage summary only. Per-case incremental coverage lives unde
 | ⚠️ | [`PARAM`](REPORT/buckets/PARAM.md) | 180 | 6 | 6 | 84.28 | 72.12 | 48.15 | 70.91 | 85.71 | 43.75 | 46.76 |
 | ⚠️ | [`EDGE`](REPORT/buckets/EDGE.md) | 168 | 9 | 9 | 74.21 | 64.99 | 34.56 | 55.21 | 84.09 | 41.00 | 27.95 |
 | ⚠️ | [`PROF`](REPORT/buckets/PROF.md) | 168 | 8 | 8 | 75.50 | 66.49 | 35.69 | 57.29 | 84.09 | 42.00 | 30.59 |
-| ⚠️ | [`ERROR`](REPORT/buckets/ERROR.md) | 166 | 9 | 8 | 79.30 | 74.66 | 43.34 | 65.62 | 93.18 | 56.00 | 26.96 |
+| ⚠️ | [`ERROR`](REPORT/buckets/ERROR.md) | 166 | 9 | 9 | 82.87 | 76.57 | 46.74 | 69.79 | 95.45 | 58.00 | 34.10 |
 | ⚠️ | [`CROSS`](REPORT/buckets/CROSS.md) | 165 | 7 | 7 | 81.54 | 72.64 | 49.78 | 66.67 | 85.71 | 43.62 | 45.76 |
 
 ## Isolated execution order and traceability
@@ -92,7 +92,7 @@ This page is the coverage summary only. Per-case incremental coverage lives unde
 | ✅ | [`all_buckets_frame_native_sv`](REPORT/cross/all_buckets_frame_native_sv.md) | all_buckets_frame | native_sv | 37 | 83.39 | 81.06 | 43.85 | 77.74 | 434 |
 | ✅ | [`mixed_bucket_random_soak_native_sv`](REPORT/cross/mixed_bucket_random_soak_native_sv.md) | mixed_bucket_random_soak | native_sv | 1 | 82.40 | 79.02 | 45.23 | 70.96 | 1160 |
 | ⚠️ | [`error_counter_clear_native_sv`](REPORT/cross/error_counter_clear_native_sv.md) | error_counter_clear | native_sv | 1 | 47.84 | 33.11 | 4.15 | 38.3 | 2 |
-| ❌ | [`error_ftable_overflow_depth512_native_sv`](REPORT/cross/error_ftable_overflow_depth512_native_sv.md) | error_ftable_overflow_depth512 | native_sv_depth512 | 1 | 77.08 | 64.85 | 30.11 | 60.27 | 64 |
+| ✅ | [`error_ftable_overflow_depth512_native_sv`](REPORT/cross/error_ftable_overflow_depth512_native_sv.md) | error_ftable_overflow_depth512 | native_sv_depth512 | 1 | 77.08 | 64.85 | 30.11 | 60.27 | 64 |
 
 ## Fixed baseline execution order
 

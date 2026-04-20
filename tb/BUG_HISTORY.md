@@ -41,9 +41,9 @@ Encounter sim-time legend:
 | [BUG-021-R](#bug-021-r-late-frame-drop-accounting-counted-whole-frame-sop-metadata-instead-of-the-unread-ticket-tail) | R | non-datapath-refactor | `n/a (overflow random-ready)` | fixed | `opq_cross_random_ready_overflow_seconds_soak_test` on `2026-04-19` | `5c0d90f` | Late-frame drop accounting used full-frame SOP metadata instead of the unread ticket tail, which double-counted already credit-dropped subheaders and broke long overflow hit conservation. |
 | [BUG-022-R](#bug-022-r-new-frame-running-ts-seeded-from-frame-header-ts-instead-of-the-current-subheader-ts) | R | hard stuck error | `n/a (exact repro)` | fixed | `opq_cross_hit3_exact_183_190_repro_test` on `2026-04-19` | `466b935` | A new frame seeded allocator `running_ts` from the frame header timestamp instead of the parser's current running subheader timestamp, so same-frame payload tickets were misclassified as `future` and the allocator could emit an empty tail before fetching payload. |
 | [BUG-023-H](#bug-023-h-expanded-no-restart-signoff-matrix-reused-stale-frame-identity-and-under-specified-credit-restore-idle) | H | non-datapath-refactor | `n/a (no-restart directed)` | fixed | `opq_bucket_frame_native_sv_test`, `opq_all_buckets_frame_native_sv_test` on `2026-04-20` | `36de7a3` | The expanded no-restart signoff matrix falsely failed until composed sequences carried monotonic frame identity across lanes and waited for true idle credit restore. |
-| [BUG-024-R](#bug-024-r-overwrite-launch-window-can-still-flush-the-live-head-before-first-accept) | R | soft error | `n/a (reduced-depth directed)` | open | `opq_error_ftable_overflow_test` on `2026-04-20` | `pending` | The reduced-depth overwrite screen still hits accepted-egress trailer / `pkg_cnt` / timestamp corruption because the presenter does not protect a just-launched head until the first beat is actually accepted or visible. |
+| [BUG-024-R](#bug-024-r-overwrite-launch-window-can-still-flush-the-live-head-before-first-accept) | R | soft error | `n/a (reduced-depth directed)` | fixed | `opq_error_ftable_overflow_test` on `2026-04-20` | `pending` | The reduced-depth overwrite screen is clean again after the presenter protects the live head through the first visible beat and exports lane-resolved overwrite-drop accounting. |
 | [BUG-025-R](#bug-025-r-active-lane-retirement-still-depends-on-a-level-eop-flag-that-the-parser-can-clear-too-early) | R | hard stuck error | `n/a (large constrained-random)` | open | `opq_cross_drr_bursty_random_test` on `2026-04-20` | `pending` | The larger bursty DRR probe can strand accepted lane0 hits because the allocator keeps `frame_lane_active` set after tail state is forgotten, blocking frame retirement with no pending tickets left. |
-| [BUG-026-R](#bug-026-r-live-head-overwrite-protection-suppresses-unread-tail-drop-accounting) | R | soft error | `n/a (overflow random-ready)` | open | `opq_cross_random_ready_overflow_seconds_soak_test` on `2026-04-20` | `pending` | Default-build random-ready overflow still loses unread resident tail traffic because the presenter suppresses the whole overlap-drop scan while a live head is present, so `ft_wr < ft_rd + ft_drop` and accepted hits become unexplained. |
+| [BUG-026-R](#bug-026-r-live-head-overwrite-protection-suppresses-unread-tail-drop-accounting) | R | soft error | `n/a (overflow random-ready)` | open | `opq_cross_random_ready_overflow_seconds_soak_test` on `2026-04-20` | `pending` | The old default-build step-0/1 overflow mismatch is no longer reproduced in a trimmed probe, but full-depth evidence for legal frame-table overwrite accounting is still pending. |
 
 ## 2026-04-17
 
@@ -676,17 +676,21 @@ Encounter sim-time legend:
     `overwrite_drop_flush_head`, reset the presenter state, and discard the
     just-launched resident head before the first legal acceptance boundary
 - Fix status:
-  - open
+  - fixed
 - Runtime / coverage context:
-  - this is the current reduced-depth overflow blocker that keeps
-    `opq_error_ftable_overflow_test` outside the signoff-clean supplemental
-    matrix on `2026-04-20`
-  - clean rerun on the baseline presenter path still fails:
-    `BUILD_DIR=/tmp/opq_bug24_build RUN_DIR=/tmp/opq_bug24_run LOG_DIR=/tmp/opq_bug24_run/logs COV_DIR=/tmp/opq_bug24_run/coverage bash packet_scheduler/tb/scripts/run_uvm.sh opq_error_ftable_overflow_test`
-  - that rerun ends with `UVM_ERROR : 0`, but still fires early
-    `opq_hit3_contract` trailer / `pkg_cnt` / timestamp assertion errors and
-    leaves both lane drop monitors at zero observed drop events, so the bug is
-    still a real accepted-egress corruption and missing-drop-identity failure
+  - the repaired reduced-depth rerun on `2026-04-20`
+    `BUILD_DIR=/tmp/opq_wrapfix9_build RUN_DIR=/tmp/opq_wrapfix9_run LOG_DIR=/tmp/opq_wrapfix9_run/logs COV_DIR=/tmp/opq_wrapfix9_run/coverage DUT_IMPL=native_sv UVM_TESTNAME=opq_error_ftable_overflow_test UVM_TEST_SEQ=opq_error_ftable_overflow_seq OPQ_PAGE_RAM_DEPTH=512 OPQ_N_SHD=256 OPQ_TICKET_FIFO_DEPTH=512 OPQ_N_LANE=2 VSIM_PLUSARGS='+OPQ_NATIVE_TRACE_OWNERSHIP +OPQ_NATIVE_TRACE_FT_DROP +OPQ_TRACE_AFTER_PS=0' bash packet_scheduler/tb/scripts/run_uvm.sh opq_error_ftable_overflow_test`
+    now closes with:
+    - `UVM_ERROR : 0`
+    - reduced-depth frame-table ledger
+      `wr_hdr=32 rd_hdr=20 drop_hdr=12 wr_shd=8191 rd_shd=5120 drop_shd=3071 wr_hit=44 rd_hit=28 drop_hit=16`
+    - lane0 and lane1 both ending
+      `expected=22 accepted=14 dropped=8 delivered=14 unexplained=0`
+    - `core_principles first_break=clean ft_ownership= ok hit_conservation= ok accepted_delivery= ok drained= ok`
+  - the same closure depended on carrying per-frame lane summaries through the
+    reduced-depth overwrite path so the presenter can surface overwrite drops
+    as lane-resolved post-drop deltas instead of leaving drained hits
+    unexplained
 - Commit:
   - pending
 
@@ -763,15 +767,22 @@ Encounter sim-time legend:
 - Fix status:
   - open
 - Runtime / coverage context:
-  - this is the current default-build overflow bug anchor beside the
-    reduced-depth `BUG-024-R` path
-  - clean default-build rerun on `2026-04-20` still fails at the first two
-    overflow checkpoints with:
-    - `overflow_step_0`: `wr_shd=5 rd_shd=7 drop_shd=0`,
-      `wr_hit=540 rd_hit=545 drop_hit=0`, lane1 `unexplained=174`
-    - `overflow_step_1`: `wr_shd=13 rd_shd=15 drop_shd=0`,
-      `wr_hit=1129 rd_hit=1155 drop_hit=0`, lane0 `unexplained=153`
-  - the existing per-step overflow ledgers are therefore proving a real DUT
-    hole rather than a missing harness observable
+  - the original default-build failure is no longer reproduced by the trimmed
+    two-step probe on `2026-04-20`:
+    `BUILD_DIR=/tmp/opq_overflow_probe1_build RUN_DIR=/tmp/opq_overflow_probe1_run LOG_DIR=/tmp/opq_overflow_probe1_run/logs COV_DIR=/tmp/opq_overflow_probe1_run/coverage DUT_IMPL=native_sv UVM_TESTNAME=opq_cross_random_ready_overflow_seconds_soak_test VSIM_PLUSARGS='+OPQ_OVERFLOW_SOAK_STEPS=2' bash packet_scheduler/tb/scripts/run_uvm.sh opq_cross_random_ready_overflow_seconds_soak_test`
+  - that probe now keeps the first two overflow checkpoints clean:
+    - `overflow_step_0`: `wr_shd=5 rd_shd=5 drop_shd=0`,
+      `wr_hit=540 rd_hit=540 drop_hit=0`, aggregate `unexplained=0`
+    - `overflow_step_1`: `wr_shd=13 rd_shd=13 drop_shd=0`,
+      `wr_hit=1129 rd_hit=1129 drop_hit=0`, aggregate `unexplained=0`
+    - both checkpoints end with
+      `core_principles first_break=clean ft_ownership= ok hit_conservation= ok accepted_delivery= ok drained= ok`
+  - the trimmed probe still exits red only because the testcase is configured
+    to require non-zero `ft_drop_*`, and the shortened run does not yet reach
+    an actual frame-table overwrite event:
+    - `Expected non-zero frame-table drop counters during random-ready overflow soak`
+    - `Random-ready overflow soak never advanced the frame-table drop counters`
+  - full-depth default-build overflow evidence is therefore still pending
+    before this bug can be closed or downgraded to a testcase-depth issue
 - Commit:
   - pending

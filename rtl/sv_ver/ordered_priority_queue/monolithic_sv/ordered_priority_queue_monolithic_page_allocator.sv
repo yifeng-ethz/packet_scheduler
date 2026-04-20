@@ -82,6 +82,8 @@ module ordered_priority_queue_monolithic_page_allocator #(
   output logic [PAGE_RAM_ADDR_WIDTH-1:0]                    frame_start_addr_o,
   output logic [MAX_SHR_CNT_BITS-1:0]                       frame_shr_cnt_this_o,
   output logic [MAX_HIT_CNT_BITS-1:0]                       frame_hit_cnt_this_o,
+  output logic [N_LANE-1:0][MAX_SHR_CNT_BITS-1:0]           frame_lane_shd_cnt_this_o,
+  output logic [N_LANE-1:0][MAX_HIT_CNT_BITS-1:0]           frame_lane_hit_cnt_this_o,
   output logic [PAGE_RAM_ADDR_WIDTH-1:0]                    packet_complete_frame_start_addr_o,
   output logic                                              packet_complete_pulse_o,
   input  logic                                              d_clk,
@@ -232,8 +234,12 @@ module ordered_priority_queue_monolithic_page_allocator #(
     logic [FRAME_SERIAL_SIZE-1:0] frame_serial_this;
     frame_shr_cnt_t        frame_shr_cnt;
     frame_shr_cnt_t        frame_shr_cnt_this;
+    frame_shr_cnt_t        frame_lane_shd_cnt [N_LANE];
+    frame_shr_cnt_t        frame_lane_shd_cnt_this [N_LANE];
     frame_hit_cnt_t        frame_hit_cnt;
     frame_hit_cnt_t        frame_hit_cnt_this;
+    frame_hit_cnt_t        frame_lane_hit_cnt [N_LANE];
+    frame_hit_cnt_t        frame_lane_hit_cnt_this [N_LANE];
     logic [47:0]           frame_ts;
     logic [47:0]           running_ts;
     logic [N_LANE-1:0]     frame_lane_active;
@@ -269,8 +275,12 @@ module ordered_priority_queue_monolithic_page_allocator #(
     frame_serial_this: '0,
     frame_shr_cnt: '0,
     frame_shr_cnt_this: '0,
+    frame_lane_shd_cnt: '{default:'0},
+    frame_lane_shd_cnt_this: '{default:'0},
     frame_hit_cnt: '0,
     frame_hit_cnt_this: '0,
+    frame_lane_hit_cnt: '{default:'0},
+    frame_lane_hit_cnt_this: '{default:'0},
     frame_ts: '0,
     running_ts: '0,
     frame_lane_active: '0,
@@ -613,6 +623,10 @@ module ordered_priority_queue_monolithic_page_allocator #(
     frame_start_addr_o = page_allocator.frame_start_addr;
     frame_shr_cnt_this_o = page_allocator.frame_shr_cnt_this;
     frame_hit_cnt_this_o = page_allocator.frame_hit_cnt_this;
+    for (int lane_idx = 0; lane_idx < N_LANE; lane_idx++) begin
+      frame_lane_shd_cnt_this_o[lane_idx] = page_allocator.frame_lane_shd_cnt_this[lane_idx];
+      frame_lane_hit_cnt_this_o[lane_idx] = page_allocator.frame_lane_hit_cnt_this[lane_idx];
+    end
     packet_complete_frame_start_addr_o = packet_complete_frame_start_addr;
     packet_complete_pulse_o = packet_complete_pulse;
     unique case (page_allocator_state)
@@ -1207,6 +1221,8 @@ module ordered_priority_queue_monolithic_page_allocator #(
           page_allocator.write_trailer <= 1'b0;
           page_allocator.frame_shr_cnt_this <= page_allocator.frame_shr_cnt;
           page_allocator.frame_hit_cnt_this <= page_allocator.frame_hit_cnt;
+          page_allocator.frame_lane_shd_cnt_this <= page_allocator.frame_lane_shd_cnt;
+          page_allocator.frame_lane_hit_cnt_this <= page_allocator.frame_lane_hit_cnt;
           packet_complete_frame_start_addr <= page_allocator.frame_start_addr_last;
           packet_complete_pulse <= 1'b1;
           if (page_allocator.tail_only_flush) begin
@@ -1225,6 +1241,8 @@ module ordered_priority_queue_monolithic_page_allocator #(
           page_allocator.frame_join_wait <= '0;
           page_allocator.frame_shr_cnt <= '0;
           page_allocator.frame_hit_cnt <= '0;
+          page_allocator.frame_lane_shd_cnt <= '{default:'0};
+          page_allocator.frame_lane_hit_cnt <= '{default:'0};
         end
       end
 
@@ -1239,6 +1257,8 @@ module ordered_priority_queue_monolithic_page_allocator #(
         page_length_t page_length_v;
         frame_shr_cnt_t frame_shr_cnt_v;
         frame_hit_cnt_t frame_hit_cnt_v;
+        frame_shr_cnt_t frame_lane_shd_cnt_v [N_LANE];
+        frame_hit_cnt_t frame_lane_hit_cnt_v [N_LANE];
 
         lane_sel_v = int'(page_allocator.alloc_page_flow);
         lane_accept_v = 1'b0;
@@ -1250,6 +1270,10 @@ module ordered_priority_queue_monolithic_page_allocator #(
         page_length_v = page_allocator.page_length;
         frame_shr_cnt_v = page_allocator.frame_shr_cnt;
         frame_hit_cnt_v = page_allocator.frame_hit_cnt;
+        for (int lane_idx = 0; lane_idx < N_LANE; lane_idx++) begin
+          frame_lane_shd_cnt_v[lane_idx] = page_allocator.frame_lane_shd_cnt[lane_idx];
+          frame_lane_hit_cnt_v[lane_idx] = page_allocator.frame_lane_hit_cnt[lane_idx];
+        end
 
         if (page_allocator.alloc_page_flow == ALLOC_PAGE_FLOW_LAST) begin
           page_allocator.alloc_page_flow <= '0;
@@ -1265,6 +1289,9 @@ module ordered_priority_queue_monolithic_page_allocator #(
             frame_shr_cnt_v = frame_shr_cnt_v + 1'b1;
           end
           frame_hit_cnt_v = frame_hit_cnt_v + frame_hit_cnt_t'(ticket_v.block_length);
+          frame_lane_shd_cnt_v[lane_sel_v] = frame_lane_shd_cnt_v[lane_sel_v] + frame_shr_cnt_t'(1);
+          frame_lane_hit_cnt_v[lane_sel_v] =
+            frame_lane_hit_cnt_v[lane_sel_v] + frame_hit_cnt_t'(ticket_v.block_length);
         end else if (!lane_skipped_v && !lane_masked_v &&
                      (ticket_v.block_length != '0)) begin
           lane_skip_v = 1'b1;
@@ -1320,6 +1347,10 @@ module ordered_priority_queue_monolithic_page_allocator #(
         page_allocator.page_length <= page_length_v;
         page_allocator.frame_shr_cnt <= frame_shr_cnt_v;
         page_allocator.frame_hit_cnt <= frame_hit_cnt_v;
+        for (int lane_idx = 0; lane_idx < N_LANE; lane_idx++) begin
+          page_allocator.frame_lane_shd_cnt[lane_idx] <= frame_lane_shd_cnt_v[lane_idx];
+          page_allocator.frame_lane_hit_cnt[lane_idx] <= frame_lane_hit_cnt_v[lane_idx];
+        end
 
         if (page_allocator.alloc_page_flow == ALLOC_PAGE_FLOW_LAST) begin
           page_allocator.alloc_page_flow <= '0;

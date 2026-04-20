@@ -80,19 +80,18 @@ INSTANCE_HOLE_SPECS = [
         ],
         "classification": "needs-new-test",
         "reason": (
-            "The reduced-depth overwrite screen is now wired into the supplemental "
-            "signoff flow, but the fresh 2026-04-20 rerun reopened accepted-egress "
-            "contract errors and the promoted suite still lacks a directed hybrid "
-            "that couples flush pressure with legal backpressure windows over a "
-            "default-build runtime."
+            "The reduced-depth overwrite screen now closes cleanly on the repaired "
+            "presenter path, but the promoted suite still lacks a directed hybrid "
+            "that couples legal backpressure windows with default-build overwrite "
+            "pressure and proves when frame-table drops must, and must not, appear."
         ),
         "evidence_anchor": (
             "ordered_priority_queue_monolithic_basic_presenter.sv:128-145, 165-188; "
             "DV_FORMAL.md B27/B28; CORNER_OPQ_409_error_ftable_overflow_test"
         ),
         "next_action": (
-            "Add the directed backpressure-plus-flush hybrid testcase and use it to "
-            "raise presenter transition and toggle coverage."
+            "Add the default-build backpressure-plus-overwrite directed hybrid and "
+            "use it to raise presenter transition and toggle coverage."
         ),
     },
     {

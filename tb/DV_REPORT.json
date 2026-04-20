@@ -271,9 +271,7 @@
     },
     "unsupported": {}
   },
-  "failed_cases": [
-    "CORNER_OPQ_409_error_ftable_overflow_test"
-  ],
+  "failed_cases": [],
   "catalog_inventory": {
     "BASIC": {
       "count": 146,
@@ -7030,7 +7028,7 @@
       "test_name": "opq_error_ftable_overflow_test",
       "report_case_id": "CORNER_OPQ_409_error_ftable_overflow_test",
       "implemented": true,
-      "passed": false,
+      "passed": true,
       "log_summary": {
         "cg_cfg": 49.4,
         "cg_frame": 63.33,
@@ -7038,7 +7036,7 @@
         "cg_bp": 25.0,
         "cg_csr": 81.43,
         "cg_credit": 60.0,
-        "cg_drop": 62.5,
+        "cg_drop": 54.17,
         "cg_drr": 0.0,
         "cg_ingress": 100.0,
         "cg_egress": 100.0,
@@ -7097,71 +7095,71 @@
       },
       "bucket_gain_by_case": {
         "branch": {
-          "pct": 0.0
+          "pct": 1.91
         },
         "cond": {
-          "pct": 0.0
+          "pct": 3.4
         },
         "expr": {
-          "pct": 0.0
+          "pct": 4.17
         },
         "fsm_state": {
-          "pct": 0.0
+          "pct": 2.27
         },
         "fsm_trans": {
-          "pct": 0.0
+          "pct": 2.0
         },
         "stmt": {
-          "pct": 0.0
+          "pct": 3.57
         },
         "toggle": {
-          "pct": 0.0
+          "pct": 7.14
         }
       },
       "bucket_merged_total_after_case": {
         "branch": {
-          "pct": 74.66
+          "pct": 76.57
         },
         "cond": {
-          "pct": 43.34
+          "pct": 46.74
         },
         "expr": {
-          "pct": 65.62
+          "pct": 69.79
         },
         "fsm_state": {
-          "pct": 93.18
+          "pct": 95.45
         },
         "fsm_trans": {
-          "pct": 56.0
+          "pct": 58.0
         },
         "stmt": {
-          "pct": 79.3
+          "pct": 82.87
         },
         "toggle": {
-          "pct": 26.96
+          "pct": 34.1
         }
       },
       "bucket_gain_per_txn": {
         "branch": {
-          "pct": 0.0
+          "pct": 1.91
         },
         "cond": {
-          "pct": 0.0
+          "pct": 3.4
         },
         "expr": {
-          "pct": 0.0
+          "pct": 4.17
         },
         "fsm_state": {
-          "pct": 0.0
+          "pct": 2.27
         },
         "fsm_trans": {
-          "pct": 0.0
+          "pct": 2.0
         },
         "stmt": {
-          "pct": 0.0
+          "pct": 3.57
         },
         "toggle": {
-          "pct": 0.0
+          "pct": 7.14
         }
       }
     },
@@ -8592,39 +8590,16 @@
       "catalog_source": "legacy/tb/DV_ERROR.md",
       "catalog_summary": "Archived directed ERROR catalog preserved in tb/legacy/tb/DV_ERROR.md.",
       "promoted_cases": 9,
-      "evidenced_cases": 8,
+      "evidenced_cases": 9,
       "merged_bucket_total": {
         "branch": {
-          "pct": 74.66
+          "pct": 76.57
         },
         "cond": {
-          "pct": 43.34
+          "pct": 46.74
         },
         "expr": {
-          "pct": 65.62
-        },
-        "fsm_state": {
-          "pct": 93.18
-        },
-        "fsm_trans": {
-          "pct": 56.0
-        },
-        "stmt": {
-          "pct": 79.3
-        },
-        "toggle": {
-          "pct": 26.96
-        }
-      },
-      "merged_all_buckets_total_after_bucket": {
-        "branch": {
-          "pct": 78.33
-        },
-        "cond": {
-          "pct": 50.0
-        },
-        "expr": {
-          "pct": 65.38
+          "pct": 69.79
         },
         "fsm_state": {
           "pct": 95.45
@@ -8633,15 +8608,38 @@
           "pct": 58.0
         },
         "stmt": {
-          "pct": 81.91
+          "pct": 82.87
         },
         "toggle": {
-          "pct": 38.55
+          "pct": 34.1
+        }
+      },
+      "merged_all_buckets_total_after_bucket": {
+        "branch": {
+          "pct": 79.97
+        },
+        "cond": {
+          "pct": 53.06
+        },
+        "expr": {
+          "pct": 69.23
+        },
+        "fsm_state": {
+          "pct": 97.73
+        },
+        "fsm_trans": {
+          "pct": 60.0
+        },
+        "stmt": {
+          "pct": 85.25
+        },
+        "toggle": {
+          "pct": 39.71
         }
       },
       "functional_coverage": {
-        "pct": 63.25,
-        "evidenced": 8,
+        "pct": 71.74,
+        "evidenced": 9,
         "planned": 9
       },
       "ordered_case_ids": [
@@ -8690,25 +8688,25 @@
       },
       "merged_all_buckets_total_after_bucket": {
         "branch": {
-          "pct": 80.83
+          "pct": 82.38
         },
         "cond": {
-          "pct": 55.34
+          "pct": 58.36
         },
         "expr": {
-          "pct": 69.64
+          "pct": 73.21
         },
         "fsm_state": {
-          "pct": 95.45
+          "pct": 97.73
         },
         "fsm_trans": {
-          "pct": 58.0
+          "pct": 60.0
         },
         "stmt": {
-          "pct": 83.73
+          "pct": 86.91
         },
         "toggle": {
-          "pct": 46.48
+          "pct": 47.5
         }
       },
       "functional_coverage": {
@@ -14667,33 +14665,33 @@
       "catalog_source": "legacy/tb/DV_ERROR.md",
       "catalog_summary": "Archived directed ERROR catalog preserved in tb/legacy/tb/DV_ERROR.md.",
       "promoted_cases": 9,
-      "evidenced_cases": 8,
+      "evidenced_cases": 9,
       "merged_bucket_total": {
         "branch": {
-          "pct": 74.66
+          "pct": 76.57
         },
         "cond": {
-          "pct": 43.34
+          "pct": 46.74
         },
         "expr": {
-          "pct": 65.62
+          "pct": 69.79
         },
         "fsm_state": {
-          "pct": 93.18
+          "pct": 95.45
         },
         "fsm_trans": {
-          "pct": 56.0
+          "pct": 58.0
         },
         "stmt": {
-          "pct": 79.3
+          "pct": 82.87
         },
         "toggle": {
-          "pct": 26.96
+          "pct": 34.1
         }
       },
       "functional_coverage": {
-        "pct": 63.25,
-        "evidenced": 8,
+        "pct": 71.74,
+        "evidenced": 9,
         "planned": 9
       },
       "merge_trace": [
@@ -14926,6 +14924,35 @@
             },
             "toggle": {
               "pct": 26.96
+            }
+          }
+        },
+        {
+          "step": 9,
+          "case_id": "CORNER_OPQ_409_error_ftable_overflow_test",
+          "full_case_id": "CORNER_OPQ_409_error_ftable_overflow_test",
+          "legacy_test_name": "opq_error_ftable_overflow_test",
+          "merged_total_after_case": {
+            "branch": {
+              "pct": 76.57
+            },
+            "cond": {
+              "pct": 46.74
+            },
+            "expr": {
+              "pct": 69.79
+            },
+            "fsm_state": {
+              "pct": 95.45
+            },
+            "fsm_trans": {
+              "pct": 58.0
+            },
+            "stmt": {
+              "pct": 82.87
+            },
+            "toggle": {
+              "pct": 34.1
             }
           }
         }
@@ -16245,7 +16272,7 @@
           "test_name": "opq_error_ftable_overflow_test",
           "report_case_id": "CORNER_OPQ_409_error_ftable_overflow_test",
           "implemented": true,
-          "passed": false,
+          "passed": true,
           "log_summary": {
             "cg_cfg": 49.4,
             "cg_frame": 63.33,
@@ -16253,7 +16280,7 @@
             "cg_bp": 25.0,
             "cg_csr": 81.43,
             "cg_credit": 60.0,
-            "cg_drop": 62.5,
+            "cg_drop": 54.17,
             "cg_drr": 0.0,
             "cg_ingress": 100.0,
             "cg_egress": 100.0,
@@ -16312,71 +16339,71 @@
           },
           "bucket_gain_by_case": {
             "branch": {
-              "pct": 0.0
+              "pct": 1.91
             },
             "cond": {
-              "pct": 0.0
+              "pct": 3.4
             },
             "expr": {
-              "pct": 0.0
+              "pct": 4.17
             },
             "fsm_state": {
-              "pct": 0.0
+              "pct": 2.27
             },
             "fsm_trans": {
-              "pct": 0.0
+              "pct": 2.0
             },
             "stmt": {
-              "pct": 0.0
+              "pct": 3.57
             },
             "toggle": {
-              "pct": 0.0
+              "pct": 7.14
             }
           },
           "bucket_merged_total_after_case": {
             "branch": {
-              "pct": 74.66
+              "pct": 76.57
             },
             "cond": {
-              "pct": 43.34
+              "pct": 46.74
             },
             "expr": {
-              "pct": 65.62
+              "pct": 69.79
             },
             "fsm_state": {
-              "pct": 93.18
+              "pct": 95.45
             },
             "fsm_trans": {
-              "pct": 56.0
+              "pct": 58.0
             },
             "stmt": {
-              "pct": 79.3
+              "pct": 82.87
             },
             "toggle": {
-              "pct": 26.96
+              "pct": 34.1
             }
           },
           "bucket_gain_per_txn": {
             "branch": {
-              "pct": 0.0
+              "pct": 1.91
             },
             "cond": {
-              "pct": 0.0
+              "pct": 3.4
             },
             "expr": {
-              "pct": 0.0
+              "pct": 4.17
             },
             "fsm_state": {
-              "pct": 0.0
+              "pct": 2.27
             },
             "fsm_trans": {
-              "pct": 0.0
+              "pct": 2.0
             },
             "stmt": {
-              "pct": 0.0
+              "pct": 3.57
             },
             "toggle": {
-              "pct": 0.0
+              "pct": 7.14
             }
           }
         }
@@ -17821,16 +17848,16 @@
     {
       "area": "Presenter flush/backpressure hybrids",
       "classification": "needs-new-test",
-      "reason": "The reduced-depth overwrite screen is now wired into the supplemental signoff flow, but the fresh 2026-04-20 rerun reopened accepted-egress contract errors and the promoted suite still lacks a directed hybrid that couples flush pressure with legal backpressure windows over a default-build runtime.",
+      "reason": "The reduced-depth overwrite screen now closes cleanly on the repaired presenter path, but the promoted suite still lacks a directed hybrid that couples legal backpressure windows with default-build overwrite pressure and proves when frame-table drops must, and must not, appear.",
       "evidence_anchor": "ordered_priority_queue_monolithic_basic_presenter.sv:128-145, 165-188; DV_FORMAL.md B27/B28; CORNER_OPQ_409_error_ftable_overflow_test",
-      "next_action": "Add the directed backpressure-plus-flush hybrid testcase and use it to raise presenter transition and toggle coverage.",
+      "next_action": "Add the default-build backpressure-plus-overwrite directed hybrid and use it to raise presenter transition and toggle coverage.",
       "instance_summary": {
         "instance_count": 1,
         "instances": [
           "/tb_top/gen_dut_2lane/dut/u_native/presenter_i"
         ],
         "metrics": {
-          "toggle": 57.48
+          "toggle": 60.08
         }
       }
     },
@@ -17851,7 +17878,7 @@
           "cond": 60.52,
           "expr": 54.34,
           "stmt": 86.66,
-          "toggle": 29.61
+          "toggle": 30.38
         }
       }
     },
@@ -17886,34 +17913,34 @@
     "catalog_planned_cases": 993,
     "catalog_pending_cases": 947,
     "promoted_cases": 46,
-    "evidenced_cases": 45,
+    "evidenced_cases": 46,
     "excluded_cases": 1,
     "merged_total_code_coverage": {
       "branch": {
-        "pct": 80.83
+        "pct": 82.38
       },
       "cond": {
-        "pct": 55.34
+        "pct": 58.36
       },
       "expr": {
-        "pct": 69.64
+        "pct": 73.21
       },
       "fsm_state": {
-        "pct": 95.45
+        "pct": 97.73
       },
       "fsm_trans": {
-        "pct": 58.0
+        "pct": 60.0
       },
       "stmt": {
-        "pct": 83.73
+        "pct": 86.91
       },
       "toggle": {
-        "pct": 46.48
+        "pct": 47.5
       }
     },
     "functional_coverage": {
-      "pct": 90.04,
-      "evidenced": 45,
+      "pct": 91.07,
+      "evidenced": 46,
       "planned": 46
     }
   },
@@ -18220,7 +18247,7 @@
         "Because it requires a separate elaboration point, it cannot be folded into the fixed default-build no-restart baselines."
       ],
       "implemented": true,
-      "passed": false,
+      "passed": true,
       "code_coverage": {
         "branch": {
           "pct": 64.85
@@ -18248,7 +18275,7 @@
         "pct": 60.27,
         "txns": 64,
         "queued_overlap": 0,
-        "counter_checks_failed": 1,
+        "counter_checks_failed": 0,
         "unexpected_outputs": 0,
         "curve": ""
       },
@@ -18259,7 +18286,7 @@
         "cg_bp": 25.0,
         "cg_csr": 81.43,
         "cg_credit": 60.0,
-        "cg_drop": 62.5,
+        "cg_drop": 54.17,
         "cg_drr": 0.0,
         "cg_ingress": 100.0,
         "cg_egress": 100.0,

@@ -10,6 +10,7 @@ class opq_error_lane_mask_test extends opq_base_test;
     cfg = super.create_scoreboard_cfg();
     cfg.check_hit_integrity = 1'b0;
     cfg.require_egress_preamble = 1'b0;
+    cfg.allow_drop_accounting = 1'b1;
     cfg.min_sop_count = 0;
     return cfg;
   endfunction
@@ -199,6 +200,7 @@ class opq_error_ftable_overflow_test extends opq_base_test;
     cfg = super.create_scoreboard_cfg();
     cfg.check_hit_integrity = 1'b0;
     cfg.require_egress_preamble = 1'b0;
+    cfg.allow_drop_accounting = 1'b1;
     cfg.min_sop_count = 0;
     return cfg;
   endfunction
