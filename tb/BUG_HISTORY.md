@@ -41,7 +41,7 @@ Encounter sim-time legend:
 | [BUG-021-R](#bug-021-r-late-frame-drop-accounting-counted-whole-frame-sop-metadata-instead-of-the-unread-ticket-tail) | R | non-datapath-refactor | `n/a (overflow random-ready)` | fixed | `opq_cross_random_ready_overflow_seconds_soak_test` on `2026-04-19` | `5c0d90f` | Late-frame drop accounting used full-frame SOP metadata instead of the unread ticket tail, which double-counted already credit-dropped subheaders and broke long overflow hit conservation. |
 | [BUG-022-R](#bug-022-r-new-frame-running-ts-seeded-from-frame-header-ts-instead-of-the-current-subheader-ts) | R | hard stuck error | `n/a (exact repro)` | fixed | `opq_cross_hit3_exact_183_190_repro_test` on `2026-04-19` | `466b935` | A new frame seeded allocator `running_ts` from the frame header timestamp instead of the parser's current running subheader timestamp, so same-frame payload tickets were misclassified as `future` and the allocator could emit an empty tail before fetching payload. |
 | [BUG-023-H](#bug-023-h-expanded-no-restart-signoff-matrix-reused-stale-frame-identity-and-under-specified-credit-restore-idle) | H | non-datapath-refactor | `n/a (no-restart directed)` | fixed | `opq_bucket_frame_native_sv_test`, `opq_all_buckets_frame_native_sv_test` on `2026-04-20` | `36de7a3` | The expanded no-restart signoff matrix falsely failed until composed sequences carried monotonic frame identity across lanes and waited for true idle credit restore. |
-| [BUG-024-R](#bug-024-r-overwrite-launch-window-can-still-flush-the-live-head-before-first-accept) | R | soft error | `n/a (reduced-depth directed)` | fixed | `opq_error_ftable_overflow_test` on `2026-04-20` | `pending` | The reduced-depth overwrite screen is clean again after the presenter protects the live head through the first visible beat and exports lane-resolved overwrite-drop accounting. |
+| [BUG-024-R](#bug-024-r-overwrite-launch-window-can-still-flush-the-live-head-before-first-accept) | R | soft error | `n/a (reduced-depth directed)` | fixed | `opq_error_ftable_overflow_test` on `2026-04-20` | `89de4bf` | The reduced-depth overwrite screen is clean again after the presenter protects the live head through the first visible beat and exports lane-resolved overwrite-drop accounting. |
 | [BUG-025-R](#bug-025-r-active-lane-retirement-still-depends-on-a-level-eop-flag-that-the-parser-can-clear-too-early) | R | hard stuck error | `n/a (large constrained-random)` | open | `opq_cross_drr_bursty_random_test` on `2026-04-20` | `pending` | The larger bursty DRR probe can strand accepted lane0 hits because the allocator keeps `frame_lane_active` set after tail state is forgotten, blocking frame retirement with no pending tickets left. |
 | [BUG-026-R](#bug-026-r-live-head-overwrite-protection-suppresses-unread-tail-drop-accounting) | R | soft error | `n/a (overflow random-ready)` | open | `opq_cross_random_ready_overflow_seconds_soak_test` on `2026-04-20` | `pending` | The old default-build step-0/1 overflow mismatch is no longer reproduced in a trimmed probe, but full-depth evidence for legal frame-table overwrite accounting is still pending. |
 
@@ -692,7 +692,7 @@ Encounter sim-time legend:
     as lane-resolved post-drop deltas instead of leaving drained hits
     unexplained
 - Commit:
-  - pending
+  - `89de4bf` `Fix OPQ reduced-depth overwrite closure and refresh DV docs`
 
 ### BUG-025-R: Active-lane retirement still depends on a level EOP flag that the parser can clear too early
 - First seen in:
