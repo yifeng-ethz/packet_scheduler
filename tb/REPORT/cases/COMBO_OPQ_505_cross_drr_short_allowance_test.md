@@ -23,8 +23,8 @@
 | ℹ️ | build_knobs.OPQ_TICKET_FIFO_DEPTH | `512` |
 | ℹ️ | build_knobs.OPQ_PAGE_RAM_DEPTH | `65536` |
 | ℹ️ | build_knobs.MODE | `MERGING` |
-| ℹ️ | log.hit_expected | `864` |
-| ℹ️ | log.hit_actual | `864` |
+| ℹ️ | log.hit_expected | `720` |
+| ℹ️ | log.hit_actual | `720` |
 | ℹ️ | log.hit_missing | `0` |
 | ℹ️ | log.hit_ghost | `0` |
 | ℹ️ | log.cg_cfg | `49.4` |
@@ -33,8 +33,8 @@
 | ℹ️ | log.cg_bp | `0.0` |
 | ℹ️ | log.cg_csr | `95.24` |
 | ℹ️ | log.cg_credit | `46.67` |
-| ℹ️ | log.cg_drop | `48.61` |
-| ℹ️ | log.cg_drr | `35.33` |
+| ℹ️ | log.cg_drop | `56.94` |
+| ℹ️ | log.cg_drr | `37.33` |
 | ℹ️ | log.cg_ingress | `100.0` |
 | ℹ️ | log.cg_egress | `100.0` |
 | ℹ️ | log.lane0_monitored_frames | `3` |

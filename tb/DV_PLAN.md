@@ -85,9 +85,10 @@ current implementation scope is intentionally narrower than the archived plan:
 - DUT implementation under signoff is the native monolithic SystemVerilog core
 - mixed-language UVM harness in `packet_scheduler/tb/uvm`
 - active lane count in the current harness is `OPQ_N_LANE=2`
-- 4-lane native-SV execution exists for debug/integration work but is
-  explicitly out of signoff scope until the sparse-frame cadence bug in
-  `BUG_HISTORY.md` is closed
+- 4-lane native-SV execution exists for debug/integration work, but it remains
+  explicitly out of signoff scope until dedicated 4-lane DV evidence is
+  promoted; the old sparse-frame cadence bug family is green in focused reruns
+  and no longer drives the non-claim by itself
 - build-time sweep knobs that already work today:
   - `OPQ_N_SHD = 128 / 256 / 512`
   - derived or explicit `OPQ_TICKET_FIFO_DEPTH`
@@ -110,12 +111,12 @@ matching script wrappers under `packet_scheduler/tb/scripts/`.
 
 | Bucket | Markdown | Wrapper | Current promoted tests | Contract exercised |
 |--------|----------|---------|------------------------|--------------------|
-| `DV_BASIC` | `DV_BASIC.md` | `run_basic.sh` | `opq_basic_smoke_test`, `opq_basic_ts_boundary_test`, `opq_basic_subheader_shape_test`, `opq_basic_feb_packet_contract_test` | End-to-end hit preservation, full-ts boundary behavior, subheader shape, native FEB whole-frame contract, zero-drop healthy path |
+| `DV_BASIC` | `DV_BASIC.md` | `run_basic.sh` | `opq_basic_smoke_test`, `opq_basic_ts_boundary_test`, `opq_basic_subheader_shape_test`, `opq_basic_feb_packet_contract_test`, `opq_basic_single_active_lane_test`, `opq_basic_single_active_lane_lane1_test`, `opq_basic_single_active_lane_dense_test` | End-to-end hit preservation, full-ts boundary behavior, subheader shape, native FEB whole-frame contract, and single-active-lane healthy-path closure |
 | `DV_PARAM` | `DV_PARAM.md` | `run_param.sh` | `opq_basic_smoke_test`, `opq_basic_ts_boundary_test`, `opq_edge_max_hits_test` across `N_SHD=128/256/512` | Compile / elaboration-time configuration sweep for the active harness |
-| `DV_EDGE` | `DV_EDGE.md` | `run_edge.sh` | `opq_edge_backpressure_test`, `opq_edge_always_ready_test`, `opq_edge_ready_medium_profile_test`, `opq_edge_stuck_low_backpressure_test`, `opq_edge_max_hits_test`, `opq_edge_toggle_backpressure_test` | Backpressure restart, always-ready baseline, medium/stuck-low ready profiles, max-hit packet shape, short-toggle ready behavior |
-| `DV_PROF` | `DV_PROF.md` | `run_perf.sh` | `opq_prof_stress_test`, `opq_prof_lane_skew_test`, `opq_prof_whole_frame_skew_test`, `opq_prof_missing_empty_frame_test` | Sustained traffic without drop, lane skew, whole-frame cadence skew, and sparse-frame residency under the healthy 2-lane contract |
-| `DV_ERROR` | `DV_ERROR.md` | `run_error.sh` | `opq_error_lane_mask_test`, `opq_error_lane_mask_single_hit_test`, `opq_error_lane_mask_burst_test`, `opq_error_counter_clear_test` | Mask-at-boundary and CSR clear semantics across single-hit and burst packets on the current promoted path |
-| `DV_CROSS` | `DV_CROSS.md` | `run_cross.sh` | `opq_cross_bp_credit_test`, `opq_cross_drr_allowance_test`, `opq_cross_drr_idle_lane_test`, `opq_cross_drr_zero_allowance_test`, `opq_cross_drr_short_allowance_test` | Backpressure × credit, block-level DRR allowance/defer accounting, empty-frame-cadence idle lane, zero/short allowance behavior |
+| `DV_EDGE` | `DV_EDGE.md` | `run_edge.sh` | `opq_edge_backpressure_test`, `opq_edge_always_ready_test`, `opq_edge_ready_medium_profile_test`, `opq_edge_stuck_low_backpressure_test`, `opq_edge_max_hits_test`, `opq_edge_toggle_backpressure_test`, `opq_edge_burst_restart_profile_test`, `opq_edge_long_toggle_backpressure_test`, `opq_edge_max_hits_backpressure_test` | Backpressure restart, always-ready baseline, medium/stuck-low ready profiles, max-hit packet shape, short/long-toggle ready behavior, and max-hit under healthy restart |
+| `DV_PROF` | `DV_PROF.md` | `run_perf.sh` | `opq_prof_stress_test`, `opq_prof_lane_skew_test`, `opq_prof_whole_frame_skew_test`, `opq_prof_missing_empty_frame_test`, `opq_prof_long_soak_test`, `opq_prof_heavy_lane_skew_test`, `opq_prof_deep_whole_frame_skew_test`, `opq_prof_asymmetric_missing_empty_frame_test` | Sustained traffic without drop, lane skew, deeper whole-frame cadence skew, asymmetric missing-empty-frame residency, and longer healthy soaks on the active 2-lane contract |
+| `DV_ERROR` | `DV_ERROR.md` | `run_error.sh` | `opq_error_lane_mask_test`, `opq_error_lane_mask_single_hit_test`, `opq_error_lane_mask_burst_test`, `opq_error_lane_mask_recovery_test`, `opq_error_subheader_mask_recovery_test`, `opq_error_counter_clear_test`, `opq_error_ftable_overflow_test` | Mask-at-boundary recovery, CSR clear semantics, and reduced-depth overflow/drop accounting on the promoted native-SV path |
+| `DV_CROSS` | `DV_CROSS.md` | `run_cross.sh` | `opq_cross_bp_credit_test`, `opq_cross_drr_allowance_test`, `opq_cross_drr_idle_lane_test`, `opq_cross_drr_zero_allowance_test`, `opq_cross_drr_short_allowance_test`, `opq_cross_idle_lane_backpressure_test`, `opq_cross_mixed_bucket_random_soak_test` | Backpressure × credit, block-level DRR allowance/defer accounting, idle-lane backpressure, and promoted mixed-bucket random soak evidence |
 
 Open reproducers stay outside the default bucket runners and are grouped under
 `packet_scheduler/tb/scripts/run_probes.sh`, documented in `DV_PROBE.md`.
@@ -131,6 +132,19 @@ The generated `DV_REPORT.md` / `DV_COV.md` intentionally separate:
 
 This prevents the dashboard from collapsing the full verification plan into the
 much smaller currently promoted closure set.
+
+Promoted into the live wrappers, generated report flow, and default-build
+continuous-frame baselines on `2026-04-20`:
+
+- `DV_BASIC`: `opq_basic_single_active_lane_test`,
+  `opq_basic_single_active_lane_lane1_test`,
+  `opq_basic_single_active_lane_dense_test`
+- `DV_EDGE`: `opq_edge_burst_restart_profile_test`,
+  `opq_edge_long_toggle_backpressure_test`,
+  `opq_edge_max_hits_backpressure_test`
+- `DV_PROF`: `opq_prof_long_soak_test`, `opq_prof_heavy_lane_skew_test`,
+  `opq_prof_deep_whole_frame_skew_test`,
+  `opq_prof_asymmetric_missing_empty_frame_test`
 
 ---
 
@@ -150,6 +164,15 @@ These checks are currently valid and rerun against the live DUT:
 - `opq_basic_feb_packet_contract_test`
   - validates the native FEB whole-frame packet contract
   - checks monitor-side reconstruction from the real ingress pins
+- `opq_basic_single_active_lane_test`
+  - validates one active hit lane while the peer lane stays on legal
+    empty-frame cadence
+- `opq_basic_single_active_lane_lane1_test`
+  - validates the same single-hit-lane contract when lane 1 owns the active
+    traffic and lane 0 provides only legal empty-frame cadence
+- `opq_basic_single_active_lane_dense_test`
+  - validates denser single-lane subheader and hit packing without changing the
+    no-drop healthy-path contract
 - `opq_edge_backpressure_test`
   - validates presenter restart behavior under periodic stall
 - `opq_edge_always_ready_test`
@@ -163,6 +186,15 @@ These checks are currently valid and rerun against the live DUT:
   - currently green at `N_SHD=128`, `256`, and `512`
 - `opq_edge_toggle_backpressure_test`
   - validates single-cycle ready toggling on the healthy datapath
+- `opq_edge_burst_restart_profile_test`
+  - validates short ready bursts with deeper low stretches to stress repeated
+    presenter restart
+- `opq_edge_long_toggle_backpressure_test`
+  - extends the one-cycle toggle profile deep enough to sample repeated
+    presenter restart without crossing into overwrite forcing
+- `opq_edge_max_hits_backpressure_test`
+  - combines the max-hit packet-shape path with healthy periodic restart so the
+    shape and restart cones are exercised together
 - `opq_prof_stress_test`
   - validates short soak behavior on the live harness
 - `opq_prof_lane_skew_test`
@@ -171,7 +203,21 @@ These checks are currently valid and rerun against the live DUT:
   - validates whole-frame skew with alternating active and empty FEB frames
 - `opq_prof_missing_empty_frame_test`
   - validates uneven per-lane frame counts on the active 2-lane harness
-  - remains separate from the open 4-lane sparse-frame cadence bug
+  - remains separate from the current 4-lane debug-only scope; focused 4-lane
+    reruns are green, but they are not part of the promoted signoff claim
+- `opq_prof_long_soak_test`
+  - validates a longer directed FEB whole-frame soak beyond the short promoted
+    stress run
+- `opq_prof_heavy_lane_skew_test`
+  - extends the healthy skew envelope beyond the promoted lane-skew case while
+    remaining inside zero-drop accounting
+- `opq_prof_deep_whole_frame_skew_test`
+  - extends the whole-frame skew cadence beyond the promoted case with a deeper
+    frame chain and reduced subheader density
+- `opq_prof_asymmetric_missing_empty_frame_test`
+  - explicitly drives uneven 2-lane frame counts on the native-SV harness,
+    instead of relying on the 4-lane-only default asymmetry in the shared
+    sequence
 - `opq_error_lane_mask_test`
   - validates packet-boundary lane mask control and per-lane drop counters
 - `opq_error_lane_mask_single_hit_test`
@@ -202,20 +248,27 @@ These checks are currently valid and rerun against the live DUT:
   - validates that a malformed subheader is masked without poisoning the next
     legal FEB packet
 - `opq_error_header_mask_recovery_test`
-  - implemented as a probe, not a promoted signoff test
-  - currently exposes an open parser recovery bug: a header-error masked frame
-    still corrupts the timestamp context of the next legal frame
+  - implemented as isolated native-SV recovery evidence, not yet a promoted
+    signoff test
+  - now passes after the ingress header timestamp-base repair; remaining work
+    is report hygiene and ERROR-bucket reinsertion
+- `opq_error_header_word_mask_recovery_test`
+  - implemented as isolated native-SV recovery evidence, not yet a promoted
+    signoff test
+  - now passes after the same header timestamp-base repair; it remains outside
+    the generated signoff set until the ERROR-bucket baseline is refreshed
 - `opq_error_ftable_overflow_test`
-  - implemented as a probe, not a promoted signoff test
-  - currently exposes an open overwrite/presenter bug: forced overwrite under
-    always-stall backpressure still produces malformed accepted egress beats
+  - promoted isolated-only native-SV evidence at reduced depth
+  - now passes with non-zero `FT_DROP_*` accounting and clean accepted egress,
+    but it remains outside the fixed default-build no-restart baseline because
+    it requires a separate `OPQ_PAGE_RAM_DEPTH=512` elaboration point
 - `opq_cross_drr_bursty_random_test`
   - constrained-random hot-lane / cold-lane DRR stress with periodic egress stalls
-  - intentionally not promoted yet
-  - currently reproduces two live closure gaps:
-    - a monolithic presenter stall-boundary corruption bug under periodic egress backpressure
-    - insufficient late-drop observability for promoted hit-integrity closure when only final CSR totals are available
-  - this testcase must remain unpromoted until both gaps are closed
+  - intentionally kept probe-only until a refreshed large-random rerun is
+    captured on the repaired RTL
+  - the focused native-SV reproducer is now fixed and closes with
+    `unexplained=0`; remaining work is promotion hygiene, not a known live DUT
+    corruption on the directed failing window
 
 ---
 
@@ -261,8 +314,8 @@ closure progress without reading the whole testcase catalog.
 | Lane mask at packet boundary | `DV_ERROR` | CSR lane-mask helpers + counter checks | Implemented / green | Medium | Medium |
 | DRR allowance programming | `DV_CROSS` | `opq_cross_drr_allowance_test`, DRR CSR reads | Implemented / green | Medium | Medium |
 | DRR defer / lock contract | `DV_CROSS`, formal backlog | `opq_drr_sva`, DRR covergroup bins, DRR CSR counters | Implemented / green on directed allowance case | Medium | Medium |
-| Bursty hot-lane DRR stress | `DV_CROSS`, formal backlog | `opq_cross_drr_bursty_random_test` | Implemented / open: exact late-drop identity is still not observable enough for promoted hit-integrity closure | High | High |
-| Backpressure hold / restart | `DV_EDGE`, `DV_CROSS`, `DV_ERROR` probe path | `opq_avst_egress_sva`, `opq_hit3_contract_sva`, presenter logic | Implemented / open: bursty DRR and forced-overwrite probes still expose presenter/egress bugs | High | High |
+| Bursty hot-lane DRR stress | `DV_CROSS`, formal backlog | `opq_cross_drr_bursty_random_test` | Focused repro fixed; full constrained-random refresh still pending before promotion | High | High |
+| Backpressure hold / restart | `DV_EDGE`, `DV_CROSS`, `DV_ERROR` probe path | `opq_avst_egress_sva`, `opq_hit3_contract_sva`, presenter logic | Implemented / green on the promoted default-build matrix; reduced-depth overflow is green in isolated evidence and the remaining DRR work is the larger random refresh | High | High |
 
 ---
 
@@ -277,7 +330,7 @@ states which items are really closed and which are still backlog.
 | UVM-only `HIT_ID` for missing/ghost-hit tracking | Implemented / green | scoreboard contract in `DV_HARNESS.md`, promoted integrity tests |
 | `N_SHD=256` default plus `128/256/512` signoff sweep | Implemented / green | `DV_PARAM.md`, `run_param.sh`, `cg_cfg` |
 | DRR per-lane allowance through CSR plus monitors/counters | Implemented / green on directed path | `DV_CROSS.md`, `opq_cross_drr_allowance_test`, DRR CSR checks |
-| DRR SVA and constrained-random stress | Partial: directed SVA closure is green, bursty constrained-random remains probe-only | `opq_drr_sva`, `opq_cross_drr_bursty_random_test`, `DV_FORMAL.md`, `DV_PROBE.md` |
+| DRR SVA and constrained-random stress | Partial: directed SVA closure is green, focused bursty repro is fixed, and the larger constrained-random screen remains probe-only pending a refreshed rerun | `opq_drr_sva`, `opq_cross_drr_bursty_random_test`, `DV_FORMAL.md`, `DV_PROBE.md` |
 | Formal section separate from directed/random | Implemented in plan | `DV_FORMAL.md` |
 | Realistic FEB-like driver contract derived from frontend frame format | Implemented at FEB-frame contract level, not yet the full `online_dpv2` IP chain | `DV_HARNESS.md`, packet builders in `opq_pkg.sv` |
 | Full `online_dpv2` FEB datapath in the active harness | Open backlog | not yet wired into the current-tree harness |
@@ -288,12 +341,12 @@ states which items are really closed and which are still backlog.
 
 | Metric | Current live evidence | Status |
 |--------|-----------------------|--------|
-| Functional coverage | `80.42%` merged covergroup coverage on the promoted suite plus active `N_SHD` sweep | Active baseline |
-| Structural code coverage | `68.40%` filtered total on the current merged UCDB flow | Active baseline, not closed |
+| Functional coverage | `90.71%` promoted functional closure (`44/44` promoted cases evidenced); per-bucket merged covergroup totals are rendered in `DV_COV.md` | Active promoted baseline |
+| Structural code coverage | `stmt=76.86`, `branch=68.01`, `fsm_state=86.36`, `fsm_trans=44.00`, `toggle=42.57` on the current merged UCDB flow | Active baseline, not closed |
 | Directive coverage | `100.00%` on the current merged UCDB flow | Active baseline |
 | DRR directed closure | `opq_cross_drr_allowance_test` green | Closed for directed allowance path |
-| DRR bursty closure | `opq_cross_drr_bursty_random_test` still reproduces SVA / integrity failures | Open |
-| Forced overwrite closure | `opq_error_ftable_overflow_test` still reproduces malformed accepted egress | Open |
+| DRR bursty closure | Focused `opq_cross_drr_bursty_repro_test` is green with closed late-drop ledgers; the larger `opq_cross_drr_bursty_random_test` still needs a refreshed rerun before promotion | Probe-only pending refresh |
+| Forced overwrite closure | `opq_error_ftable_overflow_test` passes as isolated reduced-depth native-SV evidence with non-zero `FT_DROP_*` accounting | Closed for the isolated reduced-depth point |
 
 ---
 

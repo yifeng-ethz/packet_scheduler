@@ -1060,10 +1060,14 @@ Current ingress probe classification:
 - `opq_error_header_mask_recovery_test` is **probe-only** in the
   fallback flow because it intentionally launches a new preamble before
   the masked bad frame closes, which violates the top-level
-  `opq_avst_ingress_sva` no-nested-SOP contract by construction.
-- `opq_error_header_word_mask_recovery_test` remains **probe-only**
-  because it is already an open native-SV recovery probe in the main DV
-  plan.
+  `opq_avst_ingress_sva` no-nested-SOP contract by construction, even
+  though the isolated native-SV simulation testcase is now green after
+  the header timestamp-base repair.
+- `opq_error_header_word_mask_recovery_test` likewise remains
+  **probe-only** in the fallback flow: the isolated native-SV testcase is
+  now green, but the malformed-header fallback stimulus still sits
+  outside the fixed promoted matrix and is not part of the default
+  stress suite.
 - `opq_error_subheader_mask_recovery_test` is **not** probe-only, but
   it does require the non-shrunken `N_SHD=256` ingress abstraction in
   the current simulation fallback. The more aggressive

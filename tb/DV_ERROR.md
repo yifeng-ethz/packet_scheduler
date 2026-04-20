@@ -3,7 +3,7 @@
 **Companion to:** `DV_PLAN.md`, `DV_HARNESS.md`  
 **Author:** Yifeng Wang (yifenwan@phys.ethz.ch)  
 **Date:** 2026-04-14  
-**Status:** Active current-tree bucket for passing control/error cases, including the reduced-depth overwrite closure, plus isolated recovery cases that are fixed in native-SV and awaiting regenerated report promotion.
+**Status:** Active current-tree bucket for passing control/error cases, including the reduced-depth overwrite closure, plus isolated recovery cases that are fixed in native-SV and awaiting regenerated report integration.
 
 ---
 
@@ -15,8 +15,8 @@
 - recovery after masking / malformed subheader suppression
 - counter-clear behavior
 
-This bucket also carries non-promoted reproducers when they expose real DUT
-recovery gaps.
+This bucket also carries non-default elaboration points and not-yet-promoted
+recovery cases when they need separate report integration.
 
 ---
 
@@ -38,8 +38,8 @@ recovery gaps.
 
 | Test | Purpose | Current status |
 |------|---------|----------------|
-| `opq_error_header_mask_recovery_test` | Malformed preamble/header suppression followed by a legal recovery frame | Passing in isolated native-SV after the `2026-04-18` header timestamp-base repair; remove from report exclusions after the next ERROR-bucket / continuous-frame refresh |
-| `opq_error_header_word_mask_recovery_test` | Header-word error injection followed by a legal recovery frame | Passing in isolated native-SV after the `2026-04-18` header timestamp-base repair; reinsert into the generated ERROR bucket on the next report refresh |
+| `opq_error_header_mask_recovery_test` | Malformed preamble/header suppression followed by a legal recovery frame | Passing in isolated native-SV after the `2026-04-18` header timestamp-base repair; still outside the generated signoff set pending ERROR-bucket/report refresh |
+| `opq_error_header_word_mask_recovery_test` | Header-word error injection followed by a legal recovery frame | Passing in isolated native-SV after the `2026-04-18` header timestamp-base repair; still outside the generated ERROR bucket pending baseline refresh |
 | `opq_error_ftable_overflow_test` | Reduced-depth forced overwrite / frame-table drop accounting | Passing isolated-only at reduced depth; remains outside the fixed default no-restart baseline because it requires a separate `OPQ_PAGE_RAM_DEPTH=512` elaboration point |
 
 ---

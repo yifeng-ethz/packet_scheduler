@@ -2,7 +2,7 @@
 
 **Target report:** `packet_scheduler/tb/DV_REPORT.md`  
 **Target DUT:** `packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic.sv` via `DUT_IMPL=native_sv`  
-**Date:** 2026-04-17
+**Date:** 2026-04-20
 
 This checklist is the worklist required to produce a full `dv-workflow`
 report for the native-SV OPQ path. The final `DV_REPORT.md` must be generated
@@ -234,8 +234,8 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       - the former `BUG-018-H` long-run hit-accounting risk is closed by the
         clean full stretched mixed-bucket seconds soak rerun
       - 4-lane scope statement remains the only active out-of-scope parameter /
-        lane non-claim until native-SV 4-lane DV evidence and A10 synthesis
-        evidence are both live
+        lane non-claim until native-SV 4-lane DV evidence is live; standalone
+        A10 synthesis evidence is already closed
 - [x] Resolve the forced-overwrite / malformed-egress bug before promoting
       `opq_error_ftable_overflow_test`.
       Status: the reduced-depth `OPQ_PAGE_RAM_DEPTH=512` native-SV overflow
@@ -255,6 +255,27 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       - remaining work is promotion hygiene: rerun the larger bursty random
         testcase on the repaired RTL and either promote it or keep only the
         longer random envelope probe-only
+- [x] Promote the `2026-04-20` isolated-pass bucket expansions into the live
+      report flow only after wrapper order, bucket-frame coverage ordering, and
+      no-restart evidence are captured:
+      - `DV_BASIC`: `opq_basic_single_active_lane_lane1_test`,
+        `opq_basic_single_active_lane_dense_test`
+      - `DV_EDGE`: `opq_edge_long_toggle_backpressure_test`,
+        `opq_edge_max_hits_backpressure_test`
+      - `DV_PROF`: `opq_prof_heavy_lane_skew_test`,
+        `opq_prof_deep_whole_frame_skew_test`,
+        `opq_prof_asymmetric_missing_empty_frame_test`
+      Status on `2026-04-20`:
+      - `run_basic.sh`, `run_edge.sh`, and `run_perf.sh` now wire the expanded
+        promoted sets by default
+      - `opq_frame_signoff_tests.sv` and `build_dv_report_json.py` now include
+        the expanded BASIC / EDGE / PROF matrices in both isolated ordering and
+        default-build no-restart baselines
+      - clean native-SV reruns now close the expanded isolated buckets plus
+        `opq_bucket_frame_native_sv_test` and
+        `opq_all_buckets_frame_native_sv_test`
+      - regenerated report totals now record `promoted_signoff_cases=44` and
+        `evidenced_promoted_cases=44`
 - [ ] Resolve the chained header-word recovery corruption before promoting
       `opq_error_header_word_mask_recovery_test`.
       Status on `2026-04-18`:
@@ -327,7 +348,7 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       - scoreboard and SVA parity between native-SV and prior reference runs
       - build/run support for every promoted bucket under `DUT_IMPL=native_sv`
       - native-SV-only closure for any parameter points claimed in the report
-- [ ] Refresh the 4-lane native-SV scope statement in the report:
+- [x] Refresh the 4-lane native-SV scope statement in the report:
       - the old sparse-frame cadence reproducer (`BUG-007-R`) is now green on
         current RTL and should no longer be treated as an automatic non-claim
       - keep 4-lane signoff tied to real evidence instead:
@@ -335,6 +356,13 @@ Execution order frozen on 2026-04-18 for the next closure phase:
         result
       - remove the stale 4-lane non-claim wording from the report only after
         the active A10 standalone refresh is recorded
+      Status on `2026-04-20`:
+      - generated `DV_REPORT.md` / `DV_COV.md` now state that 4-lane native-SV
+        is out of the current signoff claim because dedicated 4-lane DV
+        evidence is not yet promoted, not because the old sparse-cadence bug is
+        still live
+      - the separate standalone Arria 10 synthesis result remains recorded as a
+        signoff-side note without widening the active DV claim
 
 ## 9. Update BUG_HISTORY With Signoff Discipline
 

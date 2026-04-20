@@ -39,9 +39,14 @@ Signoff evidence in this tree is required to come from `DUT_IMPL=native_sv`.
 - The master signoff dashboard is `packet_scheduler/doc/SIGNOFF.md`.
 - `packet_scheduler/doc/VERIFICATION_SIGNOFF.md` is preserved as the older long-form narrative note.
 - Native-SV signoff scope is currently the 2-lane harness plus the
-  `N_SHD=128/256/512` sweep; 4-lane native-SV remains a non-claim until the
-  sparse-frame cadence bug in `BUG_HISTORY.md` is closed.
-- The probe runner carries the currently useful non-promoted reproducers, including the forced-overwrite error case and the bursty DRR stress case.
+  `N_SHD=128/256/512` sweep; 4-lane native-SV remains a non-claim until
+  dedicated 4-lane DV evidence is promoted. The old sparse-frame cadence bug
+  family is green in focused reruns and no longer drives that non-claim by
+  itself.
+- The probe runner carries the currently useful non-promoted screens,
+  including the bursty DRR large-random stress and the long-runtime mixed-bucket
+  seconds soak. The reduced-depth overwrite case is now tracked under
+  `DV_ERROR.md` as isolated promoted evidence.
 - In the current monolithic harness, a lane may be idle in hits but not silent in frame cadence. Directed single-lane tests therefore drive empty frames on the inactive peer lane instead of holding it permanently quiet.
 - On this host the working floating-license path is `questa_fse` with `LM_LICENSE_FILE` and `MGLS_LICENSE_FILE`
   chained to `8161@lic-mentor.ethz.ch:/data1/intelFPGA_pro/23.1/questa_fse/LR-287689_License.dat`.

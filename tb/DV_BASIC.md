@@ -17,7 +17,6 @@ the current harness contract:
 - correct subheader slot placement
 - zero unexpected lane or frame-table drops
 
-The current harness only claims the live 2-lane monolithic VHDL DUT.
 The current signoff claim is the live 2-lane native monolithic SystemVerilog
 DUT; the archived VHDL image remains reference-only.
 
@@ -32,6 +31,12 @@ DUT; the archived VHDL image remains reference-only.
 | `opq_basic_subheader_shape_test` | Mixed empty / non-empty subheader structure on the healthy path | Passing |
 | `opq_basic_feb_packet_contract_test` | Native FEB whole-frame packet contract, including monitor-side frame reconstruction from real DUT pins | Passing |
 | `opq_basic_single_active_lane_test` | One hit-producing lane while the peer lane stays on legal empty-frame cadence | Passing |
+| `opq_basic_single_active_lane_lane1_test` | Mirrors the single-active-lane contract with lane 1 as the producer and lane 0 on empty-frame cadence | Passing |
+| `opq_basic_single_active_lane_dense_test` | Denser single-lane subheader and hit packing without leaving the healthy no-drop path | Passing |
+
+The `2026-04-20` single-lane expansion set is now part of the default
+`run_basic.sh` wrapper, the generated signoff report flow, and the default-build
+continuous-frame baselines.
 
 ---
 

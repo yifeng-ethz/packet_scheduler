@@ -52,8 +52,9 @@ Current harness limits:
 
 - signoff scope is `OPQ_N_LANE=2`
 - the current `tb_top.sv` wiring supports `2` and `4` lanes, but 4-lane
-  native-SV remains a non-claim until the sparse-frame cadence bug recorded in
-  `BUG_HISTORY.md` is closed
+  native-SV remains a non-claim until dedicated 4-lane DV evidence is
+  promoted; the old sparse-frame cadence bug family is green in focused reruns
+  and no longer drives that non-claim by itself
 - width sweeps beyond the default 36-bit symbol path are not yet wired into the
   live harness contract
 
@@ -208,9 +209,9 @@ The DRR path now has both directed and constrained-random evidence:
   - constrained-random hot-lane / cold-lane burst asymmetry
   - applies periodic egress backpressure on top of asymmetric block sizes and
     inter-frame gaps
-  - is intended to trigger SVA / scoreboard failures if the timing contract
-    between page allocator, DRR arbiter, block mover, and presenter is
-    incomplete
+  - remains the large-random promotion screen after the focused native-SV
+    failing window was repaired; a refreshed rerun is still required before it
+    moves out of probe-only status
 - `opq_cross_drr_idle_lane_test`, `opq_cross_drr_zero_allowance_test`, and
   `opq_cross_drr_short_allowance_test`
   - directed DRR stress around empty-frame cadence, allowance starvation, and

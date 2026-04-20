@@ -3,7 +3,7 @@
 **Companion to:** `DV_PLAN.md`, `DV_HARNESS.md`  
 **Author:** Yifeng Wang (yifenwan@phys.ethz.ch)  
 **Date:** 2026-04-14  
-**Status:** Active current-tree bucket for promoted mixed-axis cases and explicit stress reproducers.
+**Status:** Active current-tree bucket for promoted mixed-axis cases and explicit non-promoted stress screens.
 
 ---
 
@@ -29,13 +29,14 @@
 | `opq_cross_drr_short_allowance_test` | Short-quantum reload behavior with repeated directed service handoff | Passing |
 | `opq_cross_idle_lane_backpressure_test` | Idle-lane cadence crossed with periodic egress stalls on the active lane | Passing |
 | `opq_cross_mixed_bucket_random_soak_test` | Random mixed-bucket soak that chains safe BASIC/EDGE/PROF/ERROR/CROSS cases without restart | Passing |
+
 ---
 
-## Open Probes
+## Non-Promoted Stress Screens
 
 | Test | Purpose | Current status |
 |------|---------|----------------|
-| `opq_cross_drr_bursty_random_test` | Constrained-random hot-lane / cold-lane DRR stress with periodic egress stalls | Open repro: still exposes the monolithic presenter stall-boundary bug and incomplete late-drop observability for promoted hit-integrity closure |
+| `opq_cross_drr_bursty_random_test` | Constrained-random hot-lane / cold-lane DRR stress with periodic egress stalls | Focused native-SV repro is fixed and closes per-lane `unexplained=0`; the larger constrained-random testcase still needs a refreshed rerun before promotion or retirement from probe-only status |
 | `opq_cross_mixed_bucket_seconds_soak_test` | Earlier extended mixed-bucket random soak with longer chained no-restart traffic and stretched simulated time | Passing extended probe: the full stretched rerun now crosses the old `mixed_sparse_191`, `mixed_soak_261`, `mixed_whole_skew_275`, `mixed_whole_skew_418`, and `mixed_whole_skew_435` windows cleanly and exits with `UVM_ERROR : 0`; kept probe-only because it is a long runtime stress screen rather than a promoted matrix case |
 
 ---
@@ -64,4 +65,5 @@ The archived cross catalog remains relevant for:
 
 - broader parameter crosses
 - MODE parity once live `MULTIPLEXING` support exists
-- longer chained mixed-axis regressions after the current open DRR bug is fixed
+- longer chained mixed-axis regressions after the larger bursty DRR random
+  screen is refreshed and either promoted or explicitly retired

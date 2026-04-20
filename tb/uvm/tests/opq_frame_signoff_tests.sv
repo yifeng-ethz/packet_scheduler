@@ -2,7 +2,7 @@ class opq_frame_signoff_base_test extends opq_base_test;
   `uvm_component_utils(opq_frame_signoff_base_test)
 
   localparam int unsigned TB_REF_CLK_PERIOD_NS = 4;
-  localparam int unsigned CREDIT_RESTORE_TIMEOUT_CYCLES = 125_000;
+  localparam int unsigned CREDIT_RESTORE_TIMEOUT_CYCLES = 625_000;
   localparam int unsigned CREDIT_RESTORE_POLL_CYCLES = 125;
   localparam int unsigned INTER_CASE_GAP_CYCLES = 500;
   localparam int unsigned BP_START_DELAY_CYCLES = 250;
@@ -97,13 +97,24 @@ class opq_frame_signoff_base_test extends opq_base_test;
     bit [47:0] frame_duration_cycles;
     int unsigned frame_slots_emitted;
     bit emits_egress_frames;
+    bit [15:0] next_pkg_cnt_base;
 
     frame_duration_cycles = 48'(OPQ_N_SHD * 16);
     frame_slots_emitted = seq.get_continuous_frame_slots_emitted();
     emits_egress_frames = seq.continuous_frame_emits_egress_frames();
     if (emits_egress_frames) begin
+      next_pkg_cnt_base = '0;
       foreach (no_restart_next_pkg_cnt_base[lane]) begin
-        no_restart_next_pkg_cnt_base[lane] = seq.get_next_pkg_cnt_base(lane);
+        if (seq.get_next_pkg_cnt_base(lane) > next_pkg_cnt_base) begin
+          next_pkg_cnt_base = seq.get_next_pkg_cnt_base(lane);
+        end
+      end
+      foreach (no_restart_next_pkg_cnt_base[lane]) begin
+        // The native continuous-frame handoff needs one monotonic SOP serial
+        // across lanes once a later case resumes traffic on a previously idle
+        // lane. Keeping the max next pkg_cnt across the composed step avoids
+        // reusing stale per-lane serial windows after asymmetric frame counts.
+        no_restart_next_pkg_cnt_base[lane] = next_pkg_cnt_base;
       end
       no_restart_next_frame_ts_base = no_restart_next_frame_ts_base +
         (frame_duration_cycles * frame_slots_emitted);
@@ -322,26 +333,50 @@ class opq_frame_signoff_base_test extends opq_base_test;
     opq_basic_feb_packet_virtual_sequence feb_seq;
     opq_subheader_shape_virtual_sequence shd_seq;
     opq_single_lane_virtual_sequence single_lane_seq;
+    opq_single_lane_virtual_sequence single_lane_lane1_seq;
+    opq_single_lane_virtual_sequence single_lane_dense_seq;
+    int unsigned dense_subheaders_per_frame;
 
     basic_seq = opq_basic_virtual_sequence::type_id::create("basic_seq");
     ts_seq = opq_boundary_ts_virtual_sequence::type_id::create("ts_seq");
     feb_seq = opq_basic_feb_packet_virtual_sequence::type_id::create("feb_seq");
     shd_seq = opq_subheader_shape_virtual_sequence::type_id::create("shd_seq");
     single_lane_seq = opq_single_lane_virtual_sequence::type_id::create("single_lane_seq");
+    single_lane_lane1_seq =
+      opq_single_lane_virtual_sequence::type_id::create("single_lane_lane1_seq");
+    single_lane_dense_seq =
+      opq_single_lane_virtual_sequence::type_id::create("single_lane_dense_seq");
     single_lane_seq.active_lane = 0;
     single_lane_seq.frame_count = 4;
     single_lane_seq.subheaders_per_frame = 4;
     single_lane_seq.hit_count = 4;
+    single_lane_lane1_seq.active_lane = 1;
+    single_lane_lane1_seq.frame_count = 6;
+    single_lane_lane1_seq.subheaders_per_frame = 6;
+    single_lane_lane1_seq.hit_count = 3;
+    dense_subheaders_per_frame = (OPQ_N_SHD >= 16) ? 16 : OPQ_N_SHD;
+    if (dense_subheaders_per_frame < 4) begin
+      dense_subheaders_per_frame = 4;
+    end
+    single_lane_dense_seq.active_lane = 0;
+    single_lane_dense_seq.frame_count = 6;
+    single_lane_dense_seq.subheaders_per_frame = dense_subheaders_per_frame;
+    single_lane_dense_seq.hit_count = 4;
 
     run_vseq(basic_seq);
     run_vseq(ts_seq);
     run_vseq(feb_seq);
     run_vseq(shd_seq);
     run_vseq(single_lane_seq);
+    run_vseq(single_lane_lane1_seq);
+    run_vseq(single_lane_dense_seq);
   endtask
 
   task automatic run_edge_bucket();
     opq_max_hits_virtual_sequence max_hits_seq;
+    opq_bp_sequence bp_seq;
+    opq_bp_item bp_item;
+    opq_max_hits_virtual_sequence max_hits_bp_seq;
 
     run_basic_with_bp(BP_PERIODIC_STALL, 6, 4, 24);
     run_basic_with_bp(BP_ALWAYS_READY, 32, 4, 1);
@@ -353,6 +388,36 @@ class opq_frame_signoff_base_test extends opq_base_test;
     run_vseq(max_hits_seq);
 
     run_basic_with_bp(BP_PERIODIC_STALL, 1, 1, 24);
+    run_basic_with_bp(BP_PERIODIC_STALL, 1, 1, 96);
+
+    bp_seq = opq_bp_sequence::type_id::create("max_hits_bp_seq");
+    bp_item = opq_bp_item::type_id::create("max_hits_bp_item");
+    bp_item.mode = BP_PERIODIC_STALL;
+    bp_item.high_cycles = 6;
+    bp_item.low_cycles = 4;
+    bp_item.repeat_count = 20;
+    bp_seq.items.push_back(bp_item);
+    max_hits_bp_seq = opq_max_hits_virtual_sequence::type_id::create("max_hits_bp_seq");
+    configure_no_restart_sequence(max_hits_bp_seq);
+    fork
+      max_hits_bp_seq.start(env.vseqr);
+      begin
+        #(bp_start_delay_time());
+        bp_seq.start(env.vseqr.egress_seqr);
+      end
+    join
+    wait_for_ingress_idle(
+      $sformatf("%s_ingress_idle", max_hits_bp_seq.get_name()),
+      credit_restore_timeout(),
+      credit_restore_poll()
+    );
+    advance_no_restart_sequence(max_hits_bp_seq);
+    wait_for_credit_restore(
+      $sformatf("%s_credit_restore", max_hits_bp_seq.get_name()),
+      credit_restore_timeout(),
+      credit_restore_poll()
+    );
+    #(inter_case_gap_time());
   endtask
 
   task automatic run_prof_bucket();
@@ -361,6 +426,10 @@ class opq_frame_signoff_base_test extends opq_base_test;
     opq_whole_frame_skew_virtual_sequence whole_frame_seq;
     opq_missing_empty_frame_virtual_sequence sparse_seq;
     opq_soak_virtual_sequence long_soak_seq;
+    opq_stress_virtual_sequence heavy_skew_seq;
+    opq_whole_frame_skew_virtual_sequence deep_whole_frame_seq;
+    opq_missing_empty_frame_virtual_sequence asym_sparse_seq;
+    int unsigned deep_subheaders_per_frame;
 
     soak_seq = opq_soak_virtual_sequence::type_id::create("soak_seq");
     soak_seq.frame_count = 6;
@@ -387,6 +456,37 @@ class opq_frame_signoff_base_test extends opq_base_test;
     long_soak_seq = opq_soak_virtual_sequence::type_id::create("long_soak_seq");
     long_soak_seq.frame_count = 24;
     run_vseq(long_soak_seq);
+
+    heavy_skew_seq = opq_stress_virtual_sequence::type_id::create("heavy_skew_seq");
+    heavy_skew_seq.frame_count = 10;
+    heavy_skew_seq.subheaders_per_frame = 6;
+    heavy_skew_seq.hit_count = 2;
+    heavy_skew_seq.inter_frame_gap_cycles = OPQ_MIN_SOP_GAP_CYCLES;
+    heavy_skew_seq.lane1_extra_gap_cycles = 64;
+    run_vseq(heavy_skew_seq);
+
+    deep_whole_frame_seq =
+      opq_whole_frame_skew_virtual_sequence::type_id::create("deep_whole_frame_seq");
+    deep_whole_frame_seq.frame_count = 28;
+    deep_subheaders_per_frame = (OPQ_N_SHD >= 128) ? 128 : OPQ_N_SHD;
+    if (deep_subheaders_per_frame < 32) begin
+      deep_subheaders_per_frame = 32;
+    end
+    deep_whole_frame_seq.subheaders_per_frame = deep_subheaders_per_frame;
+    deep_whole_frame_seq.hit_period = 3;
+    deep_whole_frame_seq.hit_count_when_active = 2;
+    deep_whole_frame_seq.inter_frame_gap_cycles = OPQ_MIN_SOP_GAP_CYCLES;
+    run_vseq(deep_whole_frame_seq);
+
+    asym_sparse_seq = opq_missing_empty_frame_virtual_sequence::type_id::create("asym_sparse_seq");
+    asym_sparse_seq.lane_frame_count[0] = 4;
+    if (OPQ_N_LANE >= 2) begin
+      asym_sparse_seq.lane_frame_count[1] = 10;
+      asym_sparse_seq.lane_extra_gap_cycles[1] = 64;
+    end
+    asym_sparse_seq.hit_period = 3;
+    asym_sparse_seq.hit_count_when_active = 2;
+    run_vseq(asym_sparse_seq);
   endtask
 
   task automatic run_error_bucket();

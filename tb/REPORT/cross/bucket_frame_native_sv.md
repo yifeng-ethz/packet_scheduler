@@ -6,9 +6,9 @@
 
 | status | field | value |
 |:---:|---|---|
-| ℹ️ | case_count | `28` |
+| ℹ️ | case_count | `35` |
 | ℹ️ | effort | `practical` |
-| ℹ️ | txns | `276` |
+| ℹ️ | txns | `400` |
 | ✅ | functional_cross_pct | `77.94` |
 | ✅ | counter_checks_failed | `0` |
 | ✅ | unexpected_outputs | `0` |
@@ -28,6 +28,8 @@
   `BASIC` -> [`STD_OPQ_004_basic_feb_packet_contract_test`](../cases/STD_OPQ_004_basic_feb_packet_contract_test.md) (`opq_basic_feb_packet_contract_test`)
   `BASIC` -> [`STD_OPQ_003_basic_subheader_shape_test`](../cases/STD_OPQ_003_basic_subheader_shape_test.md) (`opq_basic_subheader_shape_test`)
   `BASIC` -> [`STD_OPQ_005_basic_single_active_lane_test`](../cases/STD_OPQ_005_basic_single_active_lane_test.md) (`opq_basic_single_active_lane_test`)
+  `BASIC` -> [`STD_OPQ_006_basic_single_active_lane_lane1_test`](../cases/STD_OPQ_006_basic_single_active_lane_lane1_test.md) (`opq_basic_single_active_lane_lane1_test`)
+  `BASIC` -> [`STD_OPQ_007_basic_single_active_lane_dense_test`](../cases/STD_OPQ_007_basic_single_active_lane_dense_test.md) (`opq_basic_single_active_lane_dense_test`)
   `EDGE` -> [`CORNER_OPQ_201_edge_backpressure_test`](../cases/CORNER_OPQ_201_edge_backpressure_test.md) (`opq_edge_backpressure_test`)
   `EDGE` -> [`CORNER_OPQ_202_edge_always_ready_test`](../cases/CORNER_OPQ_202_edge_always_ready_test.md) (`opq_edge_always_ready_test`)
   `EDGE` -> [`CORNER_OPQ_203_edge_ready_medium_profile_test`](../cases/CORNER_OPQ_203_edge_ready_medium_profile_test.md) (`opq_edge_ready_medium_profile_test`)
@@ -35,11 +37,16 @@
   `EDGE` -> [`CORNER_OPQ_204_edge_stuck_low_backpressure_test`](../cases/CORNER_OPQ_204_edge_stuck_low_backpressure_test.md) (`opq_edge_stuck_low_backpressure_test`)
   `EDGE` -> [`CORNER_OPQ_205_edge_max_hits_test`](../cases/CORNER_OPQ_205_edge_max_hits_test.md) (`opq_edge_max_hits_test`)
   `EDGE` -> [`CORNER_OPQ_206_edge_toggle_backpressure_test`](../cases/CORNER_OPQ_206_edge_toggle_backpressure_test.md) (`opq_edge_toggle_backpressure_test`)
+  `EDGE` -> [`CORNER_OPQ_208_edge_long_toggle_backpressure_test`](../cases/CORNER_OPQ_208_edge_long_toggle_backpressure_test.md) (`opq_edge_long_toggle_backpressure_test`)
+  `EDGE` -> [`CORNER_OPQ_209_edge_max_hits_backpressure_test`](../cases/CORNER_OPQ_209_edge_max_hits_backpressure_test.md) (`opq_edge_max_hits_backpressure_test`)
   `PROF` -> [`COMBO_OPQ_301_prof_stress_test`](../cases/COMBO_OPQ_301_prof_stress_test.md) (`opq_prof_stress_test`)
   `PROF` -> [`COMBO_OPQ_302_prof_lane_skew_test`](../cases/COMBO_OPQ_302_prof_lane_skew_test.md) (`opq_prof_lane_skew_test`)
   `PROF` -> [`COMBO_OPQ_303_prof_whole_frame_skew_test`](../cases/COMBO_OPQ_303_prof_whole_frame_skew_test.md) (`opq_prof_whole_frame_skew_test`)
   `PROF` -> [`COMBO_OPQ_304_prof_missing_empty_frame_test`](../cases/COMBO_OPQ_304_prof_missing_empty_frame_test.md) (`opq_prof_missing_empty_frame_test`)
   `PROF` -> [`COMBO_OPQ_305_prof_long_soak_test`](../cases/COMBO_OPQ_305_prof_long_soak_test.md) (`opq_prof_long_soak_test`)
+  `PROF` -> [`COMBO_OPQ_306_prof_heavy_lane_skew_test`](../cases/COMBO_OPQ_306_prof_heavy_lane_skew_test.md) (`opq_prof_heavy_lane_skew_test`)
+  `PROF` -> [`COMBO_OPQ_307_prof_deep_whole_frame_skew_test`](../cases/COMBO_OPQ_307_prof_deep_whole_frame_skew_test.md) (`opq_prof_deep_whole_frame_skew_test`)
+  `PROF` -> [`COMBO_OPQ_308_prof_asymmetric_missing_empty_frame_test`](../cases/COMBO_OPQ_308_prof_asymmetric_missing_empty_frame_test.md) (`opq_prof_asymmetric_missing_empty_frame_test`)
   `ERROR` -> [`CORNER_OPQ_401_error_lane_mask_test`](../cases/CORNER_OPQ_401_error_lane_mask_test.md) (`opq_error_lane_mask_test`)
   `ERROR` -> [`CORNER_OPQ_402_error_lane_mask_single_hit_test`](../cases/CORNER_OPQ_402_error_lane_mask_single_hit_test.md) (`opq_error_lane_mask_single_hit_test`)
   `ERROR` -> [`CORNER_OPQ_403_error_lane_mask_burst_test`](../cases/CORNER_OPQ_403_error_lane_mask_burst_test.md) (`opq_error_lane_mask_burst_test`)
@@ -60,13 +67,13 @@
 
 | metric | pct |
 |---|---|
-| stmt | 83.57 |
-| branch | 78.50 |
-| cond | 56.10 |
-| expr | 71.43 |
-| fsm_state | 94.29 |
-| fsm_trans | 51.22 |
-| toggle | 44.22 |
+| stmt | 82.46 |
+| branch | 78.88 |
+| cond | 54.11 |
+| expr | 77.08 |
+| fsm_state | 90.91 |
+| fsm_trans | 48.00 |
+| toggle | 43.48 |
 
 ## Transaction growth curve
 

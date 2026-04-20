@@ -33,9 +33,10 @@ INSTANCE_HOLE_SPECS = [
         ],
         "classification": "real gap",
         "reason": (
-            "Header-error and header-word recovery remain probe-only, so the "
-            "MASK_PKT_EXTENDED re-entry and stale-context cleanup paths are still "
-            "under-covered in promoted native-SV evidence."
+            "Header-error and header-word recovery are fixed in isolated native-SV "
+            "evidence, but they remain outside the generated promoted matrix, so "
+            "the MASK_PKT_EXTENDED re-entry and stale-context cleanup paths are "
+            "still under-covered in merged signoff totals."
         ),
         "evidence_anchor": (
             "ordered_priority_queue_monolithic_ingress_parser.sv:305-320, 409-410; "
@@ -43,8 +44,8 @@ INSTANCE_HOLE_SPECS = [
             "opq_error_header_mask_recovery_test, opq_error_header_word_mask_recovery_test"
         ),
         "next_action": (
-            "Fix parser recovery reinitialization, promote the clean recovery cases, "
-            "and rerun merged coverage."
+            "Reinsert the clean header-recovery cases into the generated ERROR "
+            "bucket and rerun merged coverage."
         ),
     },
     {
@@ -55,9 +56,9 @@ INSTANCE_HOLE_SPECS = [
         ],
         "classification": "real gap",
         "reason": (
-            "The remaining low FSM-transition coverage lines up with the still-open "
-            "bursty DRR random probe plus the lack of signed-off 4-lane DV and "
-            "Arria 10 synthesis evidence."
+            "The remaining low FSM-transition coverage lines up with the still "
+            "non-promoted bursty DRR large-random screen plus the lack of "
+            "dedicated signed-off 4-lane DV evidence."
         ),
         "evidence_anchor": (
             "BUG-009-R; opq_cross_drr_bursty_random_test; "
@@ -65,8 +66,8 @@ INSTANCE_HOLE_SPECS = [
             "doc/SIGNOFF.md standalone_syn"
         ),
         "next_action": (
-            "Refresh the bursty DRR random evidence and record real 4-lane DV plus "
-            "A10 standalone closure before expanding the signoff claim."
+            "Refresh the bursty DRR large-random evidence and record real 4-lane "
+            "DV plus A10 standalone closure before expanding the signoff claim."
         ),
     },
     {
@@ -241,6 +242,18 @@ BUCKET_CASES = OrderedDict(
                     "Hit integrity and credit restore with asymmetric legal FEB frame cadence.",
                     "DV_BASIC single-active-lane closure.",
                 ),
+                case_entry(
+                    "opq_basic_single_active_lane_lane1_test",
+                    "Only lane 1 produces hits while lane 0 remains on legal empty-frame cadence.",
+                    "Hit integrity and credit restore when the non-default active lane owns all live traffic.",
+                    "DV_BASIC single-active-lane lane-1 closure.",
+                ),
+                case_entry(
+                    "opq_basic_single_active_lane_dense_test",
+                    "Denser single-lane subheader packing on the healthy no-drop path.",
+                    "Single-lane hit integrity under deeper subheader occupancy without introducing legal drops.",
+                    "DV_BASIC dense single-lane closure.",
+                ),
             ],
         ),
         (
@@ -335,6 +348,18 @@ BUCKET_CASES = OrderedDict(
                     "Presenter hold/restart behavior across repeated medium-depth stall bursts.",
                     "DV_EDGE burst-restart profile closure.",
                 ),
+                case_entry(
+                    "opq_edge_long_toggle_backpressure_test",
+                    "Extended one-cycle ready toggling deep enough to revisit repeated presenter restart edges.",
+                    "Longer toggle-driven restart stress without crossing into overwrite forcing.",
+                    "DV_EDGE long-toggle closure.",
+                ),
+                case_entry(
+                    "opq_edge_max_hits_backpressure_test",
+                    "Maximum-hit packet shape crossed with legal periodic backpressure.",
+                    "Hit preservation and presenter restart when the widest healthy packet shape meets repeated stalls.",
+                    "DV_EDGE max-hit x backpressure closure.",
+                ),
             ],
         ),
         (
@@ -369,6 +394,24 @@ BUCKET_CASES = OrderedDict(
                     "Longer directed FEB whole-frame soak on the default 2-lane native-SV path.",
                     "Sustained hit integrity and clean credit restore beyond the short promoted soak.",
                     "DV_PROF extended directed soak closure.",
+                ),
+                case_entry(
+                    "opq_prof_heavy_lane_skew_test",
+                    "Heavier deterministic two-lane skew with the same healthy no-drop contract.",
+                    "Sustained hit integrity under a wider active-lane skew gap than the base promoted case.",
+                    "DV_PROF heavy lane-skew closure.",
+                ),
+                case_entry(
+                    "opq_prof_deep_whole_frame_skew_test",
+                    "Deeper whole-frame skew residency with reduced subheader density.",
+                    "Longer packet-level cadence skew while preserving hit integrity and legal frame ordering.",
+                    "DV_PROF deep whole-frame skew closure.",
+                ),
+                case_entry(
+                    "opq_prof_asymmetric_missing_empty_frame_test",
+                    "Explicit 2-lane asymmetry in whole-frame counts instead of relying on the shared 4-lane default stress shape.",
+                    "Sparse-frame cadence accounting and hit integrity under directed asymmetric lane residency.",
+                    "DV_PROF asymmetric missing-empty-frame closure.",
                 ),
             ],
         ),
@@ -525,6 +568,8 @@ BUCKET_FRAME_LEGACY_ORDER = [
     ("BASIC", "opq_basic_feb_packet_contract_test"),
     ("BASIC", "opq_basic_subheader_shape_test"),
     ("BASIC", "opq_basic_single_active_lane_test"),
+    ("BASIC", "opq_basic_single_active_lane_lane1_test"),
+    ("BASIC", "opq_basic_single_active_lane_dense_test"),
     ("EDGE", "opq_edge_backpressure_test"),
     ("EDGE", "opq_edge_always_ready_test"),
     ("EDGE", "opq_edge_ready_medium_profile_test"),
@@ -532,11 +577,16 @@ BUCKET_FRAME_LEGACY_ORDER = [
     ("EDGE", "opq_edge_stuck_low_backpressure_test"),
     ("EDGE", "opq_edge_max_hits_test"),
     ("EDGE", "opq_edge_toggle_backpressure_test"),
+    ("EDGE", "opq_edge_long_toggle_backpressure_test"),
+    ("EDGE", "opq_edge_max_hits_backpressure_test"),
     ("PROF", "opq_prof_stress_test"),
     ("PROF", "opq_prof_lane_skew_test"),
     ("PROF", "opq_prof_whole_frame_skew_test"),
     ("PROF", "opq_prof_missing_empty_frame_test"),
     ("PROF", "opq_prof_long_soak_test"),
+    ("PROF", "opq_prof_heavy_lane_skew_test"),
+    ("PROF", "opq_prof_deep_whole_frame_skew_test"),
+    ("PROF", "opq_prof_asymmetric_missing_empty_frame_test"),
     ("ERROR", "opq_error_lane_mask_test"),
     ("ERROR", "opq_error_lane_mask_single_hit_test"),
     ("ERROR", "opq_error_lane_mask_burst_test"),

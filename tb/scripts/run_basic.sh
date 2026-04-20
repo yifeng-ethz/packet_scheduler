@@ -14,7 +14,10 @@ if [[ "$#" -eq 0 ]]; then
     opq_basic_smoke_test \
     opq_basic_ts_boundary_test \
     opq_basic_subheader_shape_test \
-    opq_basic_feb_packet_contract_test
+    opq_basic_feb_packet_contract_test \
+    opq_basic_single_active_lane_test \
+    opq_basic_single_active_lane_lane1_test \
+    opq_basic_single_active_lane_dense_test
 fi
 
 DUT_IMPL="${DUT_IMPL}" "${SCRIPT_DIR}/run_uvm.sh" "$@"

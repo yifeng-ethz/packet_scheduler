@@ -23,18 +23,38 @@
 | ℹ️ | build_knobs.OPQ_TICKET_FIFO_DEPTH | `512` |
 | ℹ️ | build_knobs.OPQ_PAGE_RAM_DEPTH | `65536` |
 | ℹ️ | build_knobs.MODE | `MERGING` |
+| ℹ️ | log.hit_expected | `4` |
+| ℹ️ | log.hit_actual | `4` |
+| ℹ️ | log.hit_missing | `0` |
+| ℹ️ | log.hit_ghost | `0` |
+| ℹ️ | log.cg_cfg | `49.4` |
+| ℹ️ | log.cg_frame | `53.33` |
+| ℹ️ | log.cg_subh | `38.89` |
+| ℹ️ | log.cg_bp | `0.0` |
+| ℹ️ | log.cg_csr | `92.26` |
+| ℹ️ | log.cg_credit | `46.67` |
+| ℹ️ | log.cg_drop | `48.61` |
+| ℹ️ | log.cg_drr | `40.33` |
+| ℹ️ | log.cg_ingress | `100.0` |
+| ℹ️ | log.cg_egress | `100.0` |
+| ℹ️ | log.lane0_monitored_frames | `3` |
+| ℹ️ | log.lane0_orphan_beats | `0` |
+| ℹ️ | log.lane0_capture_err | `0` |
+| ℹ️ | log.lane1_monitored_frames | `3` |
+| ℹ️ | log.lane1_orphan_beats | `0` |
+| ℹ️ | log.lane1_capture_err | `0` |
 
 ## Coverage
 
 | metric | standalone | isolated_per_txn | bucket_gain | bucket_merged_after | bucket_gain_per_txn |
 |---|---|---|---|---|---|
-| stmt | 83.53 | 83.53 | 83.53 | 83.53 | 83.53 |
-| branch | 71.35 | 71.35 | 71.35 | 71.35 | 71.35 |
-| cond | 45.50 | 45.50 | 45.50 | 45.50 | 45.50 |
-| expr | 67.27 | 67.27 | 67.27 | 67.27 | 67.27 |
-| fsm_state | 85.71 | 85.71 | 85.71 | 85.71 | 85.71 |
-| fsm_trans | 43.75 | 43.75 | 43.75 | 43.75 | 43.75 |
-| toggle | 39.17 | 39.17 | 39.17 | 39.17 | 39.17 |
+| stmt | 74.09 | 74.09 | 74.09 | 74.09 | 74.09 |
+| branch | 64.44 | 64.44 | 64.44 | 64.44 | 64.44 |
+| cond | 32.29 | 32.29 | 32.29 | 32.29 | 32.29 |
+| expr | 54.17 | 54.17 | 54.17 | 54.17 | 54.17 |
+| fsm_state | 84.09 | 84.09 | 84.09 | 84.09 | 84.09 |
+| fsm_trans | 41.00 | 41.00 | 41.00 | 41.00 | 41.00 |
+| toggle | 25.02 | 25.02 | 25.02 | 25.02 | 25.02 |
 
 ---
 _Back to [bucket](../buckets/BASIC.md) &middot; [dashboard](../../DV_REPORT.md)_

@@ -29,6 +29,12 @@
 | `opq_edge_max_hits_test` | Max-hit packet shape on the live symbol path | Passing |
 | `opq_edge_toggle_backpressure_test` | One-cycle ready toggle stress to close short backpressure bins | Passing |
 | `opq_edge_burst_restart_profile_test` | Short ready bursts with deeper low stretches to stress repeated presenter restart | Passing |
+| `opq_edge_long_toggle_backpressure_test` | Extends one-cycle ready toggling deep enough to stress repeated restart transitions under the healthy path | Passing |
+| `opq_edge_max_hits_backpressure_test` | Exercises the max-hit packet shape while periodic egress stalls force presenter restart | Passing |
+
+The `2026-04-20` edge expansion set is now part of the default `run_edge.sh`
+wrapper, the generated signoff report flow, and the default-build
+continuous-frame baselines.
 
 ---
 

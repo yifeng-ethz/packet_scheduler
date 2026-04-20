@@ -34,7 +34,7 @@
 | ℹ️ | log.cg_csr | `92.26` |
 | ℹ️ | log.cg_credit | `60.0` |
 | ℹ️ | log.cg_drop | `48.61` |
-| ℹ️ | log.cg_drr | `43.67` |
+| ℹ️ | log.cg_drr | `40.33` |
 | ℹ️ | log.cg_ingress | `100.0` |
 | ℹ️ | log.cg_egress | `100.0` |
 | ℹ️ | log.lane0_monitored_frames | `24` |
@@ -48,13 +48,13 @@
 
 | metric | standalone | isolated_per_txn | bucket_gain | bucket_merged_after | bucket_gain_per_txn |
 |---|---|---|---|---|---|
-| stmt | 83.53 | 83.53 | 0.00 | 83.80 | 0.00 |
-| branch | 71.35 | 71.35 | 0.00 | 71.54 | 0.00 |
-| cond | 45.50 | 45.50 | 0.00 | 46.03 | 0.00 |
-| expr | 67.27 | 67.27 | 0.00 | 69.09 | 0.00 |
-| fsm_state | 85.71 | 85.71 | 0.00 | 85.71 | 0.00 |
-| fsm_trans | 43.75 | 43.75 | 0.00 | 43.75 | 0.00 |
-| toggle | 44.22 | 44.22 | 0.00 | 44.68 | 0.00 |
+| stmt | 74.09 | 74.09 | 0.00 | 75.50 | 0.00 |
+| branch | 64.44 | 64.44 | 0.00 | 66.49 | 0.00 |
+| cond | 32.29 | 32.29 | 0.00 | 35.69 | 0.00 |
+| expr | 54.17 | 54.17 | 0.00 | 57.29 | 0.00 |
+| fsm_state | 84.09 | 84.09 | 0.00 | 84.09 | 0.00 |
+| fsm_trans | 41.00 | 41.00 | 0.00 | 42.00 | 0.00 |
+| toggle | 29.59 | 29.59 | 0.07 | 30.20 | 0.07 |
 
 ---
 _Back to [bucket](../buckets/PROF.md) &middot; [dashboard](../../DV_REPORT.md)_

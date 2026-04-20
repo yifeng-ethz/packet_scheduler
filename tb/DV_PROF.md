@@ -24,6 +24,13 @@ lane skew.
 | `opq_prof_whole_frame_skew_test` | Whole-frame skew with alternating active/empty FEB frames to close packet-level cadence under sustained traffic | Passing |
 | `opq_prof_missing_empty_frame_test` | Uneven per-lane frame-count stress for the active 2-lane harness contract, preserving hit integrity while sampling sparse-frame cadence | Passing |
 | `opq_prof_long_soak_test` | Longer directed FEB whole-frame soak beyond the short promoted stress run | Passing |
+| `opq_prof_heavy_lane_skew_test` | Extends the skew-gap envelope beyond the promoted stress pair while keeping zero-drop accounting | Passing |
+| `opq_prof_deep_whole_frame_skew_test` | Extends the whole-frame skew chain with deeper residency and reduced subheader density | Passing |
+| `opq_prof_asymmetric_missing_empty_frame_test` | Explicitly drives uneven 2-lane frame counts instead of relying on the 4-lane-only default sequence asymmetry | Passing |
+
+The `2026-04-20` stress/skew expansion set is now part of the default
+`run_perf.sh` wrapper, the generated signoff report flow, and the default-build
+continuous-frame baselines.
 
 ---
 

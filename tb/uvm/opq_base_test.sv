@@ -646,8 +646,13 @@ class opq_base_test extends uvm_test;
         bit [31:0] status_word;
 
         csr_peek32(OPQ_CSR_WORD_STATUS, status_word);
-        dut_idle = 1'b1;
-        egress_idle = (env.egress_vif.valid !== 1'b1);
+        // Continuous-frame signoff needs the page allocator and effective lane
+        // mask to settle between composed cases; the exported arbiter-active
+        // bit remains asserted in some fully drained idle states.
+        dut_idle = (status_word[16] == 1'b0) &&
+                   (status_word[19] == 1'b0);
+        egress_idle = (status_word[18] == 1'b0) &&
+                      (env.egress_vif.valid !== 1'b1);
         if (dut_idle && egress_idle) begin
           stable_samples++;
         end else begin

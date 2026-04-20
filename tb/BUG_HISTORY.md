@@ -40,6 +40,7 @@ Encounter sim-time legend:
 | [BUG-020-R](#bug-020-r-late-drop-lane-credit-return-added-stale-block-path-credit-and-poisoned-no-restart-state) | R | hard stuck error | `n/a (exact repro)` | fixed | `opq_cross_hit3_exact_183_190_repro_test` on `2026-04-19` | `466b935` | Late-drop lane-credit return pulses were adding stale block-path credit data when only one source was valid, corrupting no-restart lane-credit state and the mixed-soak exact failing window. |
 | [BUG-021-R](#bug-021-r-late-frame-drop-accounting-counted-whole-frame-sop-metadata-instead-of-the-unread-ticket-tail) | R | non-datapath-refactor | `n/a (overflow random-ready)` | fixed | `opq_cross_random_ready_overflow_seconds_soak_test` on `2026-04-19` | `5c0d90f` | Late-frame drop accounting used full-frame SOP metadata instead of the unread ticket tail, which double-counted already credit-dropped subheaders and broke long overflow hit conservation. |
 | [BUG-022-R](#bug-022-r-new-frame-running-ts-seeded-from-frame-header-ts-instead-of-the-current-subheader-ts) | R | hard stuck error | `n/a (exact repro)` | fixed | `opq_cross_hit3_exact_183_190_repro_test` on `2026-04-19` | `466b935` | A new frame seeded allocator `running_ts` from the frame header timestamp instead of the parser's current running subheader timestamp, so same-frame payload tickets were misclassified as `future` and the allocator could emit an empty tail before fetching payload. |
+| [BUG-023-H](#bug-023-h-expanded-no-restart-signoff-matrix-reused-stale-frame-identity-and-under-specified-credit-restore-idle) | H | non-datapath-refactor | `n/a (no-restart directed)` | fixed | `opq_bucket_frame_native_sv_test`, `opq_all_buckets_frame_native_sv_test` on `2026-04-20` | `pending` | The expanded no-restart signoff matrix falsely failed until composed sequences carried monotonic frame identity across lanes and waited for true idle credit restore. |
 
 ## 2026-04-17
 
@@ -592,3 +593,58 @@ Encounter sim-time legend:
     `/tmp/opq_pa_trace_fixed2.log` also ends with `EXIT:0`
 - Commit:
   - `466b935` `Fix OPQ mixed-soak exact-window allocator state and refresh signoff docs`
+
+## 2026-04-20
+
+### BUG-023-H: Expanded no-restart signoff matrix reused stale frame identity and under-specified credit-restore idle
+- First seen in:
+  - `packet_scheduler/tb/uvm`
+    `TEST=opq_bucket_frame_native_sv_test DUT_IMPL=native_sv`
+    on `2026-04-20` while promoting the expanded BASIC / EDGE / PROF matrix
+  - `packet_scheduler/tb/uvm`
+    `TEST=opq_all_buckets_frame_native_sv_test DUT_IMPL=native_sv`
+    on `2026-04-20` under the same full-case promotion rerun
+- Symptom:
+  - after wiring the new passing BASIC / EDGE / PROF cases into the
+    continuous-frame baselines, the composed native-SV signoff runs were no
+    longer reliably clean
+  - intermediate reruns could either:
+    - hand the next sequence a reused frame identity when active traffic moved
+      from one lane to the other, or
+    - hang on the harness-side credit-restore wait even though the datapath was
+      still draining toward a legal idle boundary
+  - the user-visible failure signature on the clean reproducer family was the
+    repeated no-restart message
+    `timed out waiting for lane/ticket credit restore`
+- Root cause:
+  - `tb/uvm/tests/opq_frame_signoff_tests.sv`
+    `advance_no_restart_sequence()` still tracked per-lane `pkg_cnt` bases and
+    advanced them lane-locally after each composed sequence
+  - that was no longer sufficient once the promoted matrix included more
+    single-lane and asymmetric traffic shapes: a later composed sequence could
+    legitimately switch which lane owned the active frame stream, while the
+    harness still reused an earlier frame serial on the newly active lane
+  - `tb/uvm/opq_base_test.sv` `wait_for_credit_restore()` also treated
+    restored lane/ticket credits as the only quiescence condition and used a
+    timeout sized for the smaller pre-expansion matrix
+  - the expanded full-case baseline needed the harness to wait for true idle:
+    credits restored, error-path restore bits clear, and no residual egress
+    beat still pending
+- Fix status:
+  - fixed in the live native-SV harness on `2026-04-20`
+- Runtime / coverage context:
+  - the signoff runner now carries one monotonic `pkg_cnt` base across lanes
+    after every composed sequence, instead of lane-local bases
+  - `wait_for_credit_restore()` now requires full credits, cleared restore
+    status, and idle egress before handing off to the next sequence, and the
+    timeout was widened for the expanded promoted matrix
+  - after the fix, the clean rerun
+    `BUILD_DIR=/tmp/opq_uvm_frame_clean_20260420 DUT_IMPL=native_sv bash packet_scheduler/tb/scripts/run_frame_signoff.sh`
+    closes with:
+    - `opq_bucket_frame_native_sv_test`: `UVM_ERROR : 0`
+    - `opq_all_buckets_frame_native_sv_test`: `UVM_ERROR : 0`
+    - aggregate summary `pass=2 fail=0 total=2`
+  - this is a harness-only signoff-closure bug; it does not change the DUT's
+    architectural packet contract
+- Commit:
+  - `pending`

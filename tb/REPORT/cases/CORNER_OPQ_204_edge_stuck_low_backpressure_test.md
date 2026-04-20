@@ -28,8 +28,8 @@
 | ℹ️ | log.hit_missing | `0` |
 | ℹ️ | log.hit_ghost | `0` |
 | ℹ️ | log.cg_cfg | `49.4` |
-| ℹ️ | log.cg_frame | `63.33` |
-| ℹ️ | log.cg_subh | `59.72` |
+| ℹ️ | log.cg_frame | `53.33` |
+| ℹ️ | log.cg_subh | `38.89` |
 | ℹ️ | log.cg_bp | `25.0` |
 | ℹ️ | log.cg_csr | `92.26` |
 | ℹ️ | log.cg_credit | `60.0` |
@@ -48,13 +48,13 @@
 
 | metric | standalone | isolated_per_txn | bucket_gain | bucket_merged_after | bucket_gain_per_txn |
 |---|---|---|---|---|---|
-| stmt | 83.53 | 83.53 | 0.00 | 83.53 | 0.00 |
-| branch | 71.54 | 71.54 | 0.09 | 71.44 | 0.09 |
-| cond | 47.62 | 47.62 | 1.06 | 46.56 | 1.06 |
-| expr | 70.91 | 70.91 | 1.82 | 69.09 | 1.82 |
-| fsm_state | 85.71 | 85.71 | 0.00 | 85.71 | 0.00 |
-| fsm_trans | 43.75 | 43.75 | 0.00 | 43.75 | 0.00 |
-| toggle | 39.20 | 39.20 | 0.01 | 39.20 | 0.01 |
+| stmt | 74.09 | 74.09 | 0.00 | 74.09 | 0.00 |
+| branch | 64.58 | 64.58 | 0.14 | 64.58 | 0.14 |
+| cond | 32.58 | 32.58 | 0.29 | 32.58 | 0.29 |
+| expr | 54.17 | 54.17 | 0.00 | 54.17 | 0.00 |
+| fsm_state | 84.09 | 84.09 | 0.00 | 84.09 | 0.00 |
+| fsm_trans | 41.00 | 41.00 | 0.00 | 41.00 | 0.00 |
+| toggle | 25.04 | 25.04 | 0.00 | 25.04 | 0.00 |
 
 ---
 _Back to [bucket](../buckets/EDGE.md) &middot; [dashboard](../../DV_REPORT.md)_

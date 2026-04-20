@@ -1,23 +1,23 @@
-# ✅ CORNER_OPQ_205_edge_max_hits_test
+# ✅ CORNER_OPQ_209_edge_max_hits_backpressure_test
 
 **Bucket:** `EDGE` &nbsp; **Method:** `D` &nbsp; **Build:** `after` &nbsp; **Effort:** `practical` &nbsp; **Result:** `pass`
 
 ## Intent
 
-- **Scenario:** Default-build maximum-hit packet shape on the live symbol path.
-- **Primary checks:** Max-hit frame shape and full hit preservation at the default build point.
-- **Contract anchor:** DV_EDGE max-hit closure.
+- **Scenario:** Maximum-hit packet shape crossed with legal periodic backpressure.
+- **Primary checks:** Hit preservation and presenter restart when the widest healthy packet shape meets repeated stalls.
+- **Contract anchor:** DV_EDGE max-hit x backpressure closure.
 
 ## Execution Evidence
 
 | status | field | value |
 |:---:|---|---|
-| ✅ | report_case_id | `CORNER_OPQ_205_edge_max_hits_test` |
-| ℹ️ | legacy_test_name | `opq_edge_max_hits_test` |
+| ✅ | report_case_id | `CORNER_OPQ_209_edge_max_hits_backpressure_test` |
+| ℹ️ | legacy_test_name | `opq_edge_max_hits_backpressure_test` |
 | ℹ️ | observed_txn | `1` |
 | ℹ️ | implementation_mode | `native_sv` |
-| ℹ️ | log | [`uvm/logs/CORNER_OPQ_205_edge_max_hits_test_after_s1.log`](../../uvm/logs/CORNER_OPQ_205_edge_max_hits_test_after_s1.log) |
-| ℹ️ | ucdb | [`uvm/cov_after/CORNER_OPQ_205_edge_max_hits_test_s1.ucdb`](../../uvm/cov_after/CORNER_OPQ_205_edge_max_hits_test_s1.ucdb) |
+| ℹ️ | log | [`uvm/logs/CORNER_OPQ_209_edge_max_hits_backpressure_test_after_s1.log`](../../uvm/logs/CORNER_OPQ_209_edge_max_hits_backpressure_test_after_s1.log) |
+| ℹ️ | ucdb | [`uvm/cov_after/CORNER_OPQ_209_edge_max_hits_backpressure_test_s1.ucdb`](../../uvm/cov_after/CORNER_OPQ_209_edge_max_hits_backpressure_test_s1.ucdb) |
 | ℹ️ | build_knobs.OPQ_N_LANE | `2` |
 | ℹ️ | build_knobs.OPQ_N_SHD | `256` |
 | ℹ️ | build_knobs.OPQ_TICKET_FIFO_DEPTH | `512` |
@@ -30,7 +30,7 @@
 | ℹ️ | log.cg_cfg | `49.4` |
 | ℹ️ | log.cg_frame | `48.33` |
 | ℹ️ | log.cg_subh | `15.28` |
-| ℹ️ | log.cg_bp | `0.0` |
+| ℹ️ | log.cg_bp | `20.0` |
 | ℹ️ | log.cg_csr | `92.26` |
 | ℹ️ | log.cg_credit | `46.67` |
 | ℹ️ | log.cg_drop | `48.61` |
@@ -48,13 +48,13 @@
 
 | metric | standalone | isolated_per_txn | bucket_gain | bucket_merged_after | bucket_gain_per_txn |
 |---|---|---|---|---|---|
-| stmt | 73.51 | 73.51 | 0.12 | 74.21 | 0.12 |
-| branch | 63.35 | 63.35 | 0.41 | 64.99 | 0.41 |
-| cond | 32.01 | 32.01 | 1.98 | 34.56 | 1.98 |
-| expr | 55.21 | 55.21 | 1.04 | 55.21 | 1.04 |
+| stmt | 73.51 | 73.51 | 0.00 | 74.21 | 0.00 |
+| branch | 63.35 | 63.35 | 0.00 | 64.99 | 0.00 |
+| cond | 32.01 | 32.01 | 0.00 | 34.56 | 0.00 |
+| expr | 55.21 | 55.21 | 0.00 | 55.21 | 0.00 |
 | fsm_state | 84.09 | 84.09 | 0.00 | 84.09 | 0.00 |
 | fsm_trans | 41.00 | 41.00 | 0.00 | 41.00 | 0.00 |
-| toggle | 16.17 | 16.17 | 2.91 | 27.95 | 2.91 |
+| toggle | 16.19 | 16.19 | 0.00 | 27.95 | 0.00 |
 
 ---
 _Back to [bucket](../buckets/EDGE.md) &middot; [dashboard](../../DV_REPORT.md)_

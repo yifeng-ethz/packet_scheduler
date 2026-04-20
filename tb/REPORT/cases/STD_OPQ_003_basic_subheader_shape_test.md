@@ -24,8 +24,8 @@
 | ℹ️ | build_knobs.OPQ_PAGE_RAM_DEPTH | `65536` |
 | ℹ️ | build_knobs.MODE | `MERGING` |
 | ℹ️ | log.hit_expected | `136` |
-| ℹ️ | log.hit_actual | `104` |
-| ℹ️ | log.hit_missing | `32` |
+| ℹ️ | log.hit_actual | `136` |
+| ℹ️ | log.hit_missing | `0` |
 | ℹ️ | log.hit_ghost | `0` |
 | ℹ️ | log.cg_cfg | `49.4` |
 | ℹ️ | log.cg_frame | `58.33` |
@@ -33,7 +33,7 @@
 | ℹ️ | log.cg_bp | `0.0` |
 | ℹ️ | log.cg_csr | `92.26` |
 | ℹ️ | log.cg_credit | `46.67` |
-| ℹ️ | log.cg_drop | `63.19` |
+| ℹ️ | log.cg_drop | `48.61` |
 | ℹ️ | log.cg_drr | `43.67` |
 | ℹ️ | log.cg_ingress | `100.0` |
 | ℹ️ | log.cg_egress | `100.0` |
@@ -48,13 +48,13 @@
 
 | metric | standalone | isolated_per_txn | bucket_gain | bucket_merged_after | bucket_gain_per_txn |
 |---|---|---|---|---|---|
-| stmt | 82.56 | 82.56 | 0.00 | 84.07 | 0.00 |
-| branch | 70.37 | 70.37 | 0.00 | 71.93 | 0.00 |
-| cond | 44.44 | 44.44 | 0.53 | 46.56 | 0.53 |
-| expr | 70.91 | 70.91 | 0.00 | 70.91 | 0.00 |
-| fsm_state | 85.71 | 85.71 | 0.00 | 85.71 | 0.00 |
-| fsm_trans | 43.75 | 43.75 | 0.00 | 43.75 | 0.00 |
-| toggle | 31.85 | 31.85 | 3.56 | 45.27 | 3.56 |
+| stmt | 75.32 | 75.32 | 1.52 | 75.91 | 1.52 |
+| branch | 66.21 | 66.21 | 2.45 | 67.30 | 2.45 |
+| cond | 36.54 | 36.54 | 4.53 | 37.39 | 4.53 |
+| expr | 58.33 | 58.33 | 1.04 | 58.33 | 1.04 |
+| fsm_state | 84.09 | 84.09 | 0.00 | 84.09 | 0.00 |
+| fsm_trans | 42.00 | 42.00 | 1.00 | 42.00 | 1.00 |
+| toggle | 21.02 | 21.02 | 2.44 | 29.09 | 2.44 |
 
 ---
 _Back to [bucket](../buckets/BASIC.md) &middot; [dashboard](../../DV_REPORT.md)_

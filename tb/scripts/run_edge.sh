@@ -16,7 +16,10 @@ if [[ "$#" -eq 0 ]]; then
     opq_edge_ready_medium_profile_test \
     opq_edge_stuck_low_backpressure_test \
     opq_edge_max_hits_test \
-    opq_edge_toggle_backpressure_test
+    opq_edge_toggle_backpressure_test \
+    opq_edge_burst_restart_profile_test \
+    opq_edge_long_toggle_backpressure_test \
+    opq_edge_max_hits_backpressure_test
 fi
 
 DUT_IMPL="${DUT_IMPL}" "${SCRIPT_DIR}/run_uvm.sh" "$@"

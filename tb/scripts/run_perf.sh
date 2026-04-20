@@ -14,7 +14,11 @@ if [[ "$#" -eq 0 ]]; then
     opq_prof_stress_test \
     opq_prof_lane_skew_test \
     opq_prof_whole_frame_skew_test \
-    opq_prof_missing_empty_frame_test
+    opq_prof_missing_empty_frame_test \
+    opq_prof_long_soak_test \
+    opq_prof_heavy_lane_skew_test \
+    opq_prof_deep_whole_frame_skew_test \
+    opq_prof_asymmetric_missing_empty_frame_test
 fi
 
 DUT_IMPL="${DUT_IMPL}" "${SCRIPT_DIR}/run_uvm.sh" "$@"

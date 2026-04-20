@@ -28,8 +28,8 @@
 | ℹ️ | log.hit_missing | `0` |
 | ℹ️ | log.hit_ghost | `0` |
 | ℹ️ | log.cg_cfg | `49.4` |
-| ℹ️ | log.cg_frame | `63.33` |
-| ℹ️ | log.cg_subh | `59.72` |
+| ℹ️ | log.cg_frame | `53.33` |
+| ℹ️ | log.cg_subh | `38.89` |
 | ℹ️ | log.cg_bp | `0.0` |
 | ℹ️ | log.cg_csr | `92.26` |
 | ℹ️ | log.cg_credit | `46.67` |

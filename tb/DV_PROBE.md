@@ -12,9 +12,12 @@
 `DV_PROBE` is intentionally separate from the promoted signoff buckets.
 
 These cases are still valuable because they exercise the right contract edges,
-but they currently expose real DUT or observability bugs. They therefore add
-debug value and coverage evidence, but they must not be counted as promoted
-signoff closure until the failing behavior is fixed and rerun cleanly.
+but they are intentionally outside the fixed promoted signoff matrix. Some are
+still open bug reproducers, while others are longer-runtime or report-hygiene
+screens whose clean evidence has not yet been folded into the promoted set.
+They therefore add debug value and coverage evidence, but they must not be
+counted as promoted signoff closure until the required refresh or promotion
+step is complete.
 
 The runner for this bucket is `packet_scheduler/tb/scripts/run_probes.sh`.
 
@@ -24,9 +27,10 @@ The runner for this bucket is `packet_scheduler/tb/scripts/run_probes.sh`.
 
 | Test | Purpose | Current status |
 |------|---------|----------------|
-| `opq_cross_drr_bursty_random_test` | Constrained-random hot-lane / cold-lane DRR stress with periodic egress stalls | Open repro: still exposes presenter stall-boundary corruption and repeated subheaders under asymmetric block sizes |
-| `opq_error_header_mask_recovery_test` | Inject a malformed preamble/header, then expect the next legal FEB frame to recover cleanly | Open repro: the next legal frame currently emerges with corrupted timestamp context after the header-error mask path |
-| `opq_error_ftable_overflow_test` | Reduced-depth forced overwrite with always-stall egress to exercise frame-table drop accounting | Open repro: forced overwrite still produces malformed accepted egress beats |
+| `opq_cross_drr_bursty_random_test` | Constrained-random hot-lane / cold-lane DRR stress with periodic egress stalls | Focused reproducer is fixed on current native-SV RTL; the larger constrained-random testcase remains probe-only until a refreshed rerun is recorded |
+| `opq_cross_mixed_bucket_seconds_soak_test` | Earlier extended mixed-bucket random soak with longer chained no-restart traffic and stretched simulated time | Passing long-runtime probe; retained outside the promoted matrix because it is a runtime stress screen rather than a fixed signoff case |
+| `opq_error_header_mask_recovery_test` | Inject a malformed preamble/header, then expect the next legal FEB frame to recover cleanly | Passing isolated native-SV after the header timestamp-base repair; still excluded from the generated signoff set pending ERROR-bucket/report refresh |
+| `opq_error_header_word_mask_recovery_test` | Header-word error injection followed by a legal recovery frame | Passing isolated native-SV after the same repair; still outside the generated ERROR bucket until the baseline is refreshed |
 
 ---
 
@@ -38,7 +42,8 @@ not:
 - `cg_drop` on frame-table overwrite paths
 - `cg_drr` hot-lane defer-heavy behavior
 - replay of malformed-header recovery sequences
-- assertion firing points that should later move from probe-only to green
+- runtime-stress checkpoints and assertion firing points that should later move
+  from probe-only to green
 
 Probe coverage is diagnostic evidence, not closure evidence.
 
