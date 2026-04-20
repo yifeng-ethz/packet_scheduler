@@ -648,3 +648,47 @@ Encounter sim-time legend:
     architectural packet contract
 - Commit:
   - `36de7a3` `Wire OPQ full-case signoff expansions and refresh DV docs`
+
+### BUG-024-H: Count-aware OSS packet-format proofs were not yet closed on the live ingress/egress wrappers
+- First seen in:
+  - `packet_scheduler/tb/scripts/formal_ingress.sh`
+    `FORMAL_BACKEND=sby`
+    `FORMAL_SBY_TASKS=prove`
+    on `2026-04-20` while promoting count-aware frame grammar
+  - `packet_scheduler/tb/scripts/formal_egress.sh`
+    `FORMAL_BACKEND=sby`
+    `FORMAL_SBY_TASKS=prove`
+    on `2026-04-20` under the same packet-format closure push
+- Symptom:
+  - the strengthened live `opq_oss_ingress` and `opq_oss_basic_presenter`
+    packet-format harnesses now tracked declared frame subheader/hit counts,
+    but only ingress was proof-clean on the first pass
+  - egress basecase still passed, while induction stopped with hit-phase
+    assertions in `tb/uvm/formal/opq_oss_basic_presenter_formal_tb.sv`
+    after the witness entered an impossible helper-state combination:
+    `f_out_frame_open=1`, `f_frame_queued=0`, and stale expected/emitted
+    count trackers
+- Root cause status:
+  - fixed in the formal harnesses and checker plumbing on `2026-04-20`
+  - the failing state was a shadow-monitor inductiveness bug, not a DUT
+    packet-shape bug on the live presenter path
+- Fix:
+  - promote the ingress and egress packet-format checkers from marker-only
+    framing into count-aware header/body/trailer grammars
+  - plumb `N_SHD` / count limits into the live native-SV checkers so the
+    parser and presenter assertions can reject impossible declared counts
+  - add helper-state consistency assumptions to the OSS egress harness so
+    induction cannot start from unreachable mid-frame monitor states, and
+    clear stale per-frame counters on trailer close
+- Runtime / proof context:
+  - `opq_oss_ingress` now closes with `PASS 0 1` on the count-aware ingress
+    frame grammar slice
+  - `opq_oss_basic_presenter` now closes with `PASS 0 8` on the accepted-beat
+    egress frame grammar slice
+  - refreshed native-SV formal compile/elaboration still passes for both the
+    ingress and egress checker planes after the count-aware SVA updates
+  - non-claim: the OSS egress proof still relies on helper-state consistency
+    assumptions for the harness shadow monitor, and the unread-overwrite scan
+    remains outside the current OSS proof subset
+- Commit:
+  - `38d32bf` `packet_scheduler: tighten formal packet format checks`

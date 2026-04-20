@@ -121,10 +121,10 @@ module ordered_priority_queue_dut_sv (
   localparam logic [31:0] UID_CONST = 32'h4F50_514D;
   localparam int unsigned VERSION_MAJOR_CONST = 26;
   localparam int unsigned VERSION_MINOR_CONST = 3;
-  localparam int unsigned VERSION_PATCH_CONST = 19;
-  localparam int unsigned VERSION_BUILD_CONST = 418;
-  localparam logic [31:0] VERSION_DATE_CONST = 32'd20260418;
-  localparam logic [31:0] VERSION_GIT_CONST = 32'h0A48_AEF4;
+  localparam int unsigned VERSION_PATCH_CONST = 30;
+  localparam int unsigned VERSION_BUILD_CONST = 420;
+  localparam logic [31:0] VERSION_DATE_CONST = 32'd20260420;
+  localparam logic [31:0] VERSION_GIT_CONST = 32'h38D3_2BFD;
   localparam logic [31:0] INSTANCE_ID_CONST = 32'd0;
   localparam logic [9:0] DRR_DEFAULT_ALLOWANCE_CONST = 10'd256;
 
