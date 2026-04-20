@@ -212,6 +212,7 @@ module ordered_priority_queue_monolithic_sv #(
       .LANE_FIFO_DEPTH(LANE_FIFO_DEPTH),
       .LANE_FIFO_WIDTH(LANE_FIFO_WIDTH),
       .TICKET_FIFO_DEPTH(TICKET_FIFO_DEPTH),
+      .N_SHD(N_SHD),
       .N_HIT(N_HIT),
       .HIT_SIZE(HIT_SIZE),
       .FRAME_SERIAL_SIZE(FRAME_SERIAL_SIZE),

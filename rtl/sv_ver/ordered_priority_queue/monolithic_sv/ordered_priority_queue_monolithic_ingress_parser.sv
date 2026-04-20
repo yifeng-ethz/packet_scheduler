@@ -11,6 +11,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
   parameter int unsigned LANE_FIFO_DEPTH = 1024,
   parameter int unsigned LANE_FIFO_WIDTH = 40,
   parameter int unsigned TICKET_FIFO_DEPTH = 256,
+  parameter int unsigned N_SHD = 256,
   parameter int unsigned N_HIT = 255,
   parameter int unsigned HIT_SIZE = 1,
   parameter int unsigned FRAME_SERIAL_SIZE = 16,
@@ -103,6 +104,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
   localparam ticket_fifo_addr_t TICKET_FIFO_MAX_CREDIT_CONST = TICKET_FIFO_MAX_CREDIT;
 
 `ifndef SYNTHESIS
+`ifndef OPQ_OSS_FORMAL
   bit opq_trace_boundary_en;
   time opq_trace_after_ps;
 
@@ -111,6 +113,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
     opq_trace_after_ps = 0;
     void'($value$plusargs("OPQ_TRACE_AFTER_PS=%d", opq_trace_after_ps));
   end
+`endif
 `endif
 
   typedef enum logic [2:0] {
@@ -177,7 +180,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
       if ((last_subheader_count != '0) && (curr_subheader_byte < last_running_ts[11:4])) begin
         ts_v[47:12] = last_running_ts[47:12] + 36'd1;
       end
-      return ts_v;
+      ingress_parser_extend_subheader_ts = ts_v;
     end
   endfunction
 
@@ -324,6 +327,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
               ingress_parser.ticket_wptr <= ingress_parser.ticket_wptr + TICKET_FIFO_ADDR_ONE_CONST;
               ingress_parser.ticket_wdata <= ingress_parser_if_write_ticket_data;
 `ifndef SYNTHESIS
+`ifndef OPQ_OSS_FORMAL
               if (opq_trace_boundary_en && ($time >= opq_trace_after_ps)) begin
                 $display("[opq_boundary] t=%0t parser_ticket_we ts=0x%0h lane_start=0x%0h len=%0d sop=%0b eop=%0b next_ticket_wptr=0x%0h",
                   $time,
@@ -334,6 +338,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
                   ingress_parser_if_write_ticket_data[TICKET_ALT_EOP_LOC],
                   ingress_parser.ticket_wptr + TICKET_FIFO_ADDR_ONE_CONST);
               end
+`endif
 `endif
               if (ticket_credit_update_valid) begin
                 ingress_parser.ticket_credit <= ingress_parser.ticket_credit + ticket_credit_update -
@@ -401,6 +406,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
                 ingress_parser.ticket_wptr <= ingress_parser.ticket_wptr + TICKET_FIFO_ADDR_ONE_CONST;
                 ingress_parser.ticket_wdata <= ingress_parser_if_write_ticket_data;
 `ifndef SYNTHESIS
+`ifndef OPQ_OSS_FORMAL
                 if (opq_trace_boundary_en && ($time >= opq_trace_after_ps)) begin
                   $display("[opq_boundary] t=%0t parser_ticket_we ts=0x%0h lane_start=0x%0h len=%0d sop=%0b eop=%0b next_ticket_wptr=0x%0h",
                     $time,
@@ -411,6 +417,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
                     ingress_parser_if_write_ticket_data[TICKET_ALT_EOP_LOC],
                     ingress_parser.ticket_wptr + TICKET_FIFO_ADDR_ONE_CONST);
                 end
+`endif
 `endif
                 ingress_parser_state <= INGRESS_PARSER_IDLE;
               end else begin
@@ -480,6 +487,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
               ingress_parser.ticket_wptr <= ingress_parser.ticket_wptr + TICKET_FIFO_ADDR_ONE_CONST;
               ingress_parser.ticket_wdata <= ingress_parser_if_write_ticket_data;
 `ifndef SYNTHESIS
+`ifndef OPQ_OSS_FORMAL
               if (opq_trace_boundary_en && ($time >= opq_trace_after_ps)) begin
                 $display("[opq_boundary] t=%0t parser_ticket_we ts=0x%0h lane_start=0x%0h len=%0d sop=%0b eop=%0b next_ticket_wptr=0x%0h",
                   $time,
@@ -490,6 +498,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
                   ingress_parser_if_write_ticket_data[TICKET_ALT_EOP_LOC],
                   ingress_parser.ticket_wptr + TICKET_FIFO_ADDR_ONE_CONST);
               end
+`endif
 `endif
               ingress_parser.alert_eop <= 1'b0;
               if (ticket_credit_update_valid) begin
@@ -533,6 +542,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
               ingress_parser.ticket_wptr <= ingress_parser.ticket_wptr + TICKET_FIFO_ADDR_ONE_CONST;
               ingress_parser.ticket_wdata <= ingress_parser_if_write_ticket_data;
 `ifndef SYNTHESIS
+`ifndef OPQ_OSS_FORMAL
               if (opq_trace_boundary_en && ($time >= opq_trace_after_ps)) begin
                 $display("[opq_boundary] t=%0t parser_ticket_we ts=0x%0h lane_start=0x%0h len=%0d sop=%0b eop=%0b next_ticket_wptr=0x%0h",
                   $time,
@@ -543,6 +553,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
                   ingress_parser_if_write_ticket_data[TICKET_ALT_EOP_LOC],
                   ingress_parser.ticket_wptr + TICKET_FIFO_ADDR_ONE_CONST);
               end
+`endif
 `endif
             if (ticket_credit_update_valid) begin
               ingress_parser.ticket_credit <= ingress_parser.ticket_credit + ticket_credit_update -
@@ -620,6 +631,11 @@ module ordered_priority_queue_monolithic_ingress_parser #(
 
 `ifdef OPQ_ENABLE_NATIVE_FORMAL_INGRESS
   opq_native_ingress_formal_sva #(
+    .N_SHD(N_SHD),
+    .N_HIT(N_HIT),
+    .FRAME_HDR_AUX_WORDS(4),
+    .FRAME_SUBH_CNT_SIZE(FRAME_SUBH_CNT_SIZE),
+    .FRAME_HIT_CNT_SIZE(FRAME_HIT_CNT_SIZE),
     .LANE_FIFO_DEPTH(LANE_FIFO_DEPTH),
     .TICKET_FIFO_DEPTH(TICKET_FIFO_DEPTH),
     .LANE_FIFO_ADDR_WIDTH(LANE_FIFO_ADDR_WIDTH),

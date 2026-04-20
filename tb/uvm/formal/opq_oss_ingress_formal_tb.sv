@@ -12,7 +12,11 @@ module opq_oss_ingress_formal_tb;
   localparam int unsigned LANE_FIFO_DEPTH = 8;
   localparam int unsigned LANE_FIFO_WIDTH = 40;
   localparam int unsigned TICKET_FIFO_DEPTH = 8;
+  localparam int unsigned N_SHD = 8;
   localparam int unsigned N_HIT = 8;
+  localparam int unsigned FRAME_HDR_AUX_WORDS = 4;
+  localparam int unsigned FRAME_HDR_AUX_WORDS_WIDTH =
+    (FRAME_HDR_AUX_WORDS <= 1) ? 1 : $clog2(FRAME_HDR_AUX_WORDS + 1);
   localparam int unsigned HIT_SIZE = 1;
   localparam int unsigned FRAME_SERIAL_SIZE = 16;
   localparam int unsigned FRAME_SUBH_CNT_SIZE = 16;
@@ -43,6 +47,13 @@ module opq_oss_ingress_formal_tb;
   reg [15:0] f_ticket_credit_outstanding = '0;
   reg [15:0] f_lane_credit_model = LANE_FIFO_MAX_CREDIT;
   reg [15:0] f_ticket_credit_model = TICKET_FIFO_MAX_CREDIT;
+  reg        f_frame_open = 1'b0;
+  reg [FRAME_HDR_AUX_WORDS_WIDTH-1:0] f_frame_hdr_aux_words_left = '0;
+  reg [FRAME_SUBH_CNT_SIZE-1:0] f_expected_frame_subhdr_cnt = '0;
+  reg [FRAME_HIT_CNT_SIZE-1:0] f_expected_frame_hit_cnt = '0;
+  reg [FRAME_SUBH_CNT_SIZE-1:0] f_observed_frame_subhdr_cnt = '0;
+  reg [FRAME_HIT_CNT_SIZE-1:0] f_observed_frame_hit_cnt = '0;
+  reg [7:0]  f_subheader_hits_left = '0;
 
   wire d_reset = f_reset_sr[1];
 
@@ -102,6 +113,22 @@ module opq_oss_ingress_formal_tb;
     is_trailer_word = (word_v[35:32] == 4'b0001) && (word_v[7:0] == K284);
   endfunction
 
+  function automatic logic is_hit_word(input logic [35:0] word_v);
+    is_hit_word = (word_v[35:32] == 4'b0000);
+  endfunction
+
+  function automatic logic [FRAME_SUBH_CNT_SIZE-1:0] decode_frame_subhdr_cnt(
+    input logic [35:0] word_v
+  );
+    decode_frame_subhdr_cnt = FRAME_SUBH_CNT_SIZE'({1'b0, word_v[30:16]});
+  endfunction
+
+  function automatic logic [FRAME_HIT_CNT_SIZE-1:0] decode_frame_hit_cnt(
+    input logic [35:0] word_v
+  );
+    decode_frame_hit_cnt = FRAME_HIT_CNT_SIZE'(word_v[15:0]);
+  endfunction
+
   assign credit_tracking_active =
     f_past_valid && (&f_post_reset_sr) && !d_reset && (ingress_state_dbg_oss != INGRESS_PARSER_RESET);
   assign lane_credit_consume_amt =
@@ -129,6 +156,7 @@ module opq_oss_ingress_formal_tb;
     .LANE_FIFO_DEPTH(LANE_FIFO_DEPTH),
     .LANE_FIFO_WIDTH(LANE_FIFO_WIDTH),
     .TICKET_FIFO_DEPTH(TICKET_FIFO_DEPTH),
+    .N_SHD(N_SHD),
     .N_HIT(N_HIT),
     .HIT_SIZE(HIT_SIZE),
     .FRAME_SERIAL_SIZE(FRAME_SERIAL_SIZE),
@@ -199,6 +227,13 @@ module opq_oss_ingress_formal_tb;
       assume(ticket_credit_dbg_oss == TICKET_FIFO_MAX_CREDIT);
       assume(ingress_state_dbg_oss == INGRESS_PARSER_RESET);
       assume(!lane_we && !ticket_we);
+      f_frame_open <= 1'b0;
+      f_frame_hdr_aux_words_left <= '0;
+      f_expected_frame_subhdr_cnt <= '0;
+      f_expected_frame_hit_cnt <= '0;
+      f_observed_frame_subhdr_cnt <= '0;
+      f_observed_frame_hit_cnt <= '0;
+      f_subheader_hits_left <= '0;
     end
 
     if (!(&f_post_reset_sr)) begin
@@ -215,11 +250,9 @@ module opq_oss_ingress_formal_tb;
       assume(!asi_ingress_startofpacket || asi_ingress_valid);
       assume(!asi_ingress_endofpacket || asi_ingress_valid);
       assume(asi_ingress_valid || (!asi_ingress_startofpacket && !asi_ingress_endofpacket));
-      assume(!asi_ingress_startofpacket ||
-        is_preamble_word(asi_ingress_data) || is_subheader_word(asi_ingress_data));
-      assume(!asi_ingress_endofpacket ||
-        is_trailer_word(asi_ingress_data) ||
-        (asi_ingress_startofpacket && is_preamble_word(asi_ingress_data)));
+      assume(!asi_ingress_startofpacket || is_preamble_word(asi_ingress_data));
+      assume(!asi_ingress_endofpacket || is_trailer_word(asi_ingress_data));
+      assume(!asi_ingress_valid || (asi_ingress_error == '0));
 
       // Credit returns are modeled as an external environment contract. They
       // may restore capacity but cannot return more credits than the modeled
@@ -236,6 +269,73 @@ module opq_oss_ingress_formal_tb;
       if (credit_drop_valid_o) begin
         assume(!lane_issue_dbg_oss && !ticket_issue_dbg_oss);
         assume(credit_drop_lane_o || credit_drop_ticket_o);
+      end
+
+      if (asi_ingress_valid) begin
+        if (!f_frame_open) begin
+          assume(asi_ingress_startofpacket);
+          assume(!asi_ingress_endofpacket);
+          assume(is_preamble_word(asi_ingress_data));
+
+          f_frame_open <= 1'b1;
+          f_frame_hdr_aux_words_left <= FRAME_HDR_AUX_WORDS_WIDTH'(FRAME_HDR_AUX_WORDS);
+          f_expected_frame_subhdr_cnt <= '0;
+          f_expected_frame_hit_cnt <= '0;
+          f_observed_frame_subhdr_cnt <= '0;
+          f_observed_frame_hit_cnt <= '0;
+          f_subheader_hits_left <= '0;
+        end else if (f_frame_hdr_aux_words_left != 0) begin
+          logic [FRAME_SUBH_CNT_SIZE-1:0] declared_subhdr_cnt_v;
+          logic [FRAME_HIT_CNT_SIZE-1:0] declared_hit_cnt_v;
+
+          assume(!asi_ingress_startofpacket);
+          assume(!asi_ingress_endofpacket);
+          assume(!is_preamble_word(asi_ingress_data));
+          assume(!is_subheader_word(asi_ingress_data));
+          assume(!is_trailer_word(asi_ingress_data));
+
+          if (f_frame_hdr_aux_words_left == FRAME_HDR_AUX_WORDS_WIDTH'(2)) begin
+            declared_subhdr_cnt_v = decode_frame_subhdr_cnt(asi_ingress_data);
+            declared_hit_cnt_v = decode_frame_hit_cnt(asi_ingress_data);
+
+            assume(asi_ingress_data[31] == 1'b0);
+            assume(declared_subhdr_cnt_v <= FRAME_SUBH_CNT_SIZE'(N_SHD));
+            assume(declared_hit_cnt_v <= FRAME_HIT_CNT_SIZE'(N_SHD * N_HIT));
+
+            f_expected_frame_subhdr_cnt <= declared_subhdr_cnt_v;
+            f_expected_frame_hit_cnt <= declared_hit_cnt_v;
+          end
+
+          f_frame_hdr_aux_words_left <= f_frame_hdr_aux_words_left - FRAME_HDR_AUX_WORDS_WIDTH'(1);
+        end else if (is_trailer_word(asi_ingress_data)) begin
+          assume(!asi_ingress_startofpacket);
+          assume(asi_ingress_endofpacket);
+          assume(f_subheader_hits_left == 0);
+          assume(f_observed_frame_subhdr_cnt == f_expected_frame_subhdr_cnt);
+          assume(f_observed_frame_hit_cnt == f_expected_frame_hit_cnt);
+
+          f_frame_open <= 1'b0;
+          f_frame_hdr_aux_words_left <= '0;
+          f_subheader_hits_left <= '0;
+        end else if (is_subheader_word(asi_ingress_data)) begin
+          assume(!asi_ingress_startofpacket);
+          assume(!asi_ingress_endofpacket);
+          assume(f_subheader_hits_left == 0);
+          assume(f_observed_frame_subhdr_cnt < f_expected_frame_subhdr_cnt);
+          assume(asi_ingress_data[15:8] <= 8'(N_HIT));
+
+          f_observed_frame_subhdr_cnt <= f_observed_frame_subhdr_cnt + FRAME_SUBH_CNT_SIZE'(1);
+          f_subheader_hits_left <= asi_ingress_data[15:8];
+        end else begin
+          assume(!asi_ingress_startofpacket);
+          assume(!asi_ingress_endofpacket);
+          assume(is_hit_word(asi_ingress_data));
+          assume(f_subheader_hits_left != 0);
+          assume(f_observed_frame_hit_cnt < f_expected_frame_hit_cnt);
+
+          f_observed_frame_hit_cnt <= f_observed_frame_hit_cnt + FRAME_HIT_CNT_SIZE'(1);
+          f_subheader_hits_left <= f_subheader_hits_left - 8'd1;
+        end
       end
     end
 

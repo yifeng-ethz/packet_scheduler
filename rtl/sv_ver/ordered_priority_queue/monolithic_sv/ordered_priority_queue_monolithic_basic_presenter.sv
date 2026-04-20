@@ -662,6 +662,9 @@ module ordered_priority_queue_monolithic_basic_presenter #(
 
 `ifdef OPQ_ENABLE_NATIVE_FORMAL_EGRESS
   opq_native_basic_presenter_formal_sva #(
+    .N_LANE(N_LANE),
+    .N_SHD(N_SHD),
+    .N_HIT(N_HIT),
     .PAGE_RAM_DEPTH(PAGE_RAM_DEPTH),
     .PAGE_RAM_RD_WIDTH(PAGE_RAM_RD_WIDTH),
     .PAGE_RAM_DATA_WIDTH(PAGE_RAM_DATA_WIDTH),
