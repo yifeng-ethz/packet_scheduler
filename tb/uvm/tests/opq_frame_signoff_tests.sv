@@ -229,6 +229,32 @@ class opq_frame_signoff_base_test extends opq_base_test;
     run_vseq(recovery_seq);
   endtask
 
+  task automatic run_header_recovery_case(
+    opq_virtual_sequence_base seq,
+    bit allow_unmatched_ingress_preamble = 0
+  );
+    bit saved_allow_unmatched_ingress_preamble;
+
+    saved_allow_unmatched_ingress_preamble = sb_cfg.allow_unmatched_ingress_preamble;
+    sb_cfg.allow_unmatched_ingress_preamble = allow_unmatched_ingress_preamble;
+    configure_no_restart_sequence(seq);
+    `uvm_info(get_type_name(), $sformatf("Starting no-restart case %s", seq.get_name()), UVM_LOW)
+    seq.start(env.vseqr);
+    wait_for_ingress_idle(
+      $sformatf("%s_ingress_idle", seq.get_name()),
+      credit_restore_timeout(),
+      credit_restore_poll()
+    );
+    advance_no_restart_sequence(seq);
+    wait_for_credit_restore(
+      $sformatf("%s_credit_restore", seq.get_name()),
+      credit_restore_timeout(),
+      credit_restore_poll()
+    );
+    sb_cfg.allow_unmatched_ingress_preamble = saved_allow_unmatched_ingress_preamble;
+    #(inter_case_gap_time());
+  endtask
+
   task automatic run_cross_idle_lane_bp_case(
     string seq_name,
     int unsigned active_lane,
@@ -491,6 +517,8 @@ class opq_frame_signoff_base_test extends opq_base_test;
 
   task automatic run_error_bucket();
     opq_subheader_error_recovery_virtual_sequence shd_recovery_seq;
+    opq_header_error_recovery_virtual_sequence header_recovery_seq;
+    opq_header_word_error_recovery_virtual_sequence header_word_recovery_seq;
 
     run_masked_drop_case(opq_masked_drop_virtual_sequence::get_type());
     run_masked_drop_case(opq_single_hit_masked_drop_virtual_sequence::get_type());
@@ -499,6 +527,14 @@ class opq_frame_signoff_base_test extends opq_base_test;
 
     shd_recovery_seq = opq_subheader_error_recovery_virtual_sequence::type_id::create("shd_recovery_seq");
     run_vseq(shd_recovery_seq);
+
+    header_recovery_seq =
+      opq_header_error_recovery_virtual_sequence::type_id::create("header_recovery_seq");
+    run_header_recovery_case(header_recovery_seq, 1'b1);
+
+    header_word_recovery_seq =
+      opq_header_word_error_recovery_virtual_sequence::type_id::create("header_word_recovery_seq");
+    run_header_recovery_case(header_word_recovery_seq);
   endtask
 
   task automatic run_cross_bucket();

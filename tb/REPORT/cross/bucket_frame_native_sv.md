@@ -6,9 +6,9 @@
 
 | status | field | value |
 |:---:|---|---|
-| ℹ️ | case_count | `35` |
+| ℹ️ | case_count | `37` |
 | ℹ️ | effort | `practical` |
-| ℹ️ | txns | `400` |
+| ℹ️ | txns | `406` |
 | ✅ | functional_cross_pct | `77.94` |
 | ✅ | counter_checks_failed | `0` |
 | ✅ | unexpected_outputs | `0` |
@@ -52,6 +52,8 @@
   `ERROR` -> [`CORNER_OPQ_403_error_lane_mask_burst_test`](../cases/CORNER_OPQ_403_error_lane_mask_burst_test.md) (`opq_error_lane_mask_burst_test`)
   `ERROR` -> [`CORNER_OPQ_404_error_lane_mask_recovery_test`](../cases/CORNER_OPQ_404_error_lane_mask_recovery_test.md) (`opq_error_lane_mask_recovery_test`)
   `ERROR` -> [`CORNER_OPQ_405_error_subheader_mask_recovery_test`](../cases/CORNER_OPQ_405_error_subheader_mask_recovery_test.md) (`opq_error_subheader_mask_recovery_test`)
+  `ERROR` -> [`CORNER_OPQ_406_error_header_mask_recovery_test`](../cases/CORNER_OPQ_406_error_header_mask_recovery_test.md) (`opq_error_header_mask_recovery_test`)
+  `ERROR` -> [`CORNER_OPQ_407_error_header_word_mask_recovery_test`](../cases/CORNER_OPQ_407_error_header_word_mask_recovery_test.md) (`opq_error_header_word_mask_recovery_test`)
   `CROSS` -> [`COMBO_OPQ_501_cross_bp_credit_test`](../cases/COMBO_OPQ_501_cross_bp_credit_test.md) (`opq_cross_bp_credit_test`)
   `CROSS` -> [`COMBO_OPQ_502_cross_drr_allowance_test`](../cases/COMBO_OPQ_502_cross_drr_allowance_test.md) (`opq_cross_drr_allowance_test`)
   `CROSS` -> [`COMBO_OPQ_503_cross_drr_idle_lane_test`](../cases/COMBO_OPQ_503_cross_drr_idle_lane_test.md) (`opq_cross_drr_idle_lane_test`)
@@ -67,13 +69,13 @@
 
 | metric | pct |
 |---|---|
-| stmt | 82.46 |
-| branch | 78.88 |
-| cond | 54.11 |
+| stmt | 83.39 |
+| branch | 81.06 |
+| cond | 55.52 |
 | expr | 77.08 |
-| fsm_state | 90.91 |
-| fsm_trans | 48.00 |
-| toggle | 43.48 |
+| fsm_state | 95.45 |
+| fsm_trans | 58.00 |
+| toggle | 43.56 |
 
 ## Transaction growth curve
 

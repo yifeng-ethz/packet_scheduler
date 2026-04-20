@@ -1,35 +1,35 @@
-# ✅ CORNER_OPQ_405_error_subheader_mask_recovery_test
+# ✅ CORNER_OPQ_407_error_header_word_mask_recovery_test
 
 **Bucket:** `ERROR` &nbsp; **Method:** `D` &nbsp; **Build:** `after` &nbsp; **Effort:** `practical` &nbsp; **Result:** `pass`
 
 ## Intent
 
-- **Scenario:** Inject a malformed subheader, then follow with a legal recovery frame on both active lanes.
-- **Primary checks:** Ingress subheader-error masking without poisoning the following legal packet.
-- **Contract anchor:** DV_ERROR malformed-subheader recovery closure.
+- **Scenario:** Inject a header-word error, then follow with a legal recovery frame on both active lanes.
+- **Primary checks:** Header-word suppression without corrupting the next legal frame timestamp base.
+- **Contract anchor:** DV_ERROR header-word recovery closure.
 
 ## Execution Evidence
 
 | status | field | value |
 |:---:|---|---|
-| ✅ | report_case_id | `CORNER_OPQ_405_error_subheader_mask_recovery_test` |
-| ℹ️ | legacy_test_name | `opq_error_subheader_mask_recovery_test` |
+| ✅ | report_case_id | `CORNER_OPQ_407_error_header_word_mask_recovery_test` |
+| ℹ️ | legacy_test_name | `opq_error_header_word_mask_recovery_test` |
 | ℹ️ | observed_txn | `1` |
 | ℹ️ | implementation_mode | `native_sv` |
-| ℹ️ | log | [`uvm/logs/CORNER_OPQ_405_error_subheader_mask_recovery_test_after_s1.log`](../../uvm/logs/CORNER_OPQ_405_error_subheader_mask_recovery_test_after_s1.log) |
-| ℹ️ | ucdb | [`uvm/cov_after/CORNER_OPQ_405_error_subheader_mask_recovery_test_s1.ucdb`](../../uvm/cov_after/CORNER_OPQ_405_error_subheader_mask_recovery_test_s1.ucdb) |
+| ℹ️ | log | [`uvm/logs/CORNER_OPQ_407_error_header_word_mask_recovery_test_after_s1.log`](../../uvm/logs/CORNER_OPQ_407_error_header_word_mask_recovery_test_after_s1.log) |
+| ℹ️ | ucdb | [`uvm/cov_after/CORNER_OPQ_407_error_header_word_mask_recovery_test_s1.ucdb`](../../uvm/cov_after/CORNER_OPQ_407_error_header_word_mask_recovery_test_s1.ucdb) |
 | ℹ️ | build_knobs.OPQ_N_LANE | `2` |
 | ℹ️ | build_knobs.OPQ_N_SHD | `256` |
 | ℹ️ | build_knobs.OPQ_TICKET_FIFO_DEPTH | `512` |
 | ℹ️ | build_knobs.OPQ_PAGE_RAM_DEPTH | `65536` |
 | ℹ️ | build_knobs.MODE | `MERGING` |
-| ℹ️ | log.hit_expected | `2` |
-| ℹ️ | log.hit_actual | `2` |
+| ℹ️ | log.hit_expected | `4` |
+| ℹ️ | log.hit_actual | `4` |
 | ℹ️ | log.hit_missing | `0` |
 | ℹ️ | log.hit_ghost | `0` |
 | ℹ️ | log.cg_cfg | `49.4` |
 | ℹ️ | log.cg_frame | `58.33` |
-| ℹ️ | log.cg_subh | `23.61` |
+| ℹ️ | log.cg_subh | `15.28` |
 | ℹ️ | log.cg_bp | `0.0` |
 | ℹ️ | log.cg_csr | `92.26` |
 | ℹ️ | log.cg_credit | `46.67` |
@@ -48,13 +48,13 @@
 
 | metric | standalone | isolated_per_txn | bucket_gain | bucket_merged_after | bucket_gain_per_txn |
 |---|---|---|---|---|---|
-| stmt | 74.62 | 74.62 | 1.28 | 77.89 | 1.28 |
-| branch | 65.94 | 65.94 | 3.27 | 71.53 | 3.27 |
-| cond | 31.44 | 31.44 | 1.99 | 41.08 | 1.99 |
-| expr | 55.21 | 55.21 | 1.04 | 65.62 | 1.04 |
-| fsm_state | 88.64 | 88.64 | 4.55 | 88.64 | 4.55 |
-| fsm_trans | 45.00 | 45.00 | 4.00 | 45.00 | 4.00 |
-| toggle | 13.99 | 13.99 | 0.98 | 26.76 | 0.98 |
+| stmt | 73.98 | 73.98 | 0.23 | 79.24 | 0.23 |
+| branch | 65.26 | 65.26 | 0.54 | 74.52 | 0.54 |
+| cond | 30.88 | 30.88 | 0.00 | 43.34 | 0.00 |
+| expr | 55.21 | 55.21 | 0.00 | 65.62 | 0.00 |
+| fsm_state | 88.64 | 88.64 | 0.00 | 93.18 | 0.00 |
+| fsm_trans | 48.00 | 48.00 | 6.00 | 56.00 | 6.00 |
+| toggle | 13.20 | 13.20 | 0.04 | 26.95 | 0.04 |
 
 ---
 _Back to [bucket](../buckets/ERROR.md) &middot; [dashboard](../../DV_REPORT.md)_

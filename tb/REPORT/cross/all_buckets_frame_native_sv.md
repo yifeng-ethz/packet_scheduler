@@ -6,9 +6,9 @@
 
 | status | field | value |
 |:---:|---|---|
-| ℹ️ | case_count | `35` |
+| ℹ️ | case_count | `37` |
 | ℹ️ | effort | `practical` |
-| ℹ️ | txns | `428` |
+| ℹ️ | txns | `434` |
 | ✅ | functional_cross_pct | `77.74` |
 | ✅ | counter_checks_failed | `0` |
 | ✅ | unexpected_outputs | `0` |
@@ -16,7 +16,7 @@
 | ⚠️ | limitation | opq_error_ftable_overflow_test is isolated-only evidence because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration. |
 | ⚠️ | limitation | opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow. |
 | ⚠️ | limitation | opq_cross_mixed_bucket_random_soak_test is isolated-only evidence; it intentionally randomizes across buckets rather than serving as the fixed promoted no-restart baseline. |
-| ⚠️ | limitation | This run appends two extra tail sequences after the 28 promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases. |
+| ⚠️ | limitation | This run appends two extra tail sequences after the 37 promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases. |
 
 ## Execution Order
 
@@ -53,6 +53,8 @@
   `ERROR` -> [`CORNER_OPQ_403_error_lane_mask_burst_test`](../cases/CORNER_OPQ_403_error_lane_mask_burst_test.md) (`opq_error_lane_mask_burst_test`)
   `ERROR` -> [`CORNER_OPQ_404_error_lane_mask_recovery_test`](../cases/CORNER_OPQ_404_error_lane_mask_recovery_test.md) (`opq_error_lane_mask_recovery_test`)
   `ERROR` -> [`CORNER_OPQ_405_error_subheader_mask_recovery_test`](../cases/CORNER_OPQ_405_error_subheader_mask_recovery_test.md) (`opq_error_subheader_mask_recovery_test`)
+  `ERROR` -> [`CORNER_OPQ_406_error_header_mask_recovery_test`](../cases/CORNER_OPQ_406_error_header_mask_recovery_test.md) (`opq_error_header_mask_recovery_test`)
+  `ERROR` -> [`CORNER_OPQ_407_error_header_word_mask_recovery_test`](../cases/CORNER_OPQ_407_error_header_word_mask_recovery_test.md) (`opq_error_header_word_mask_recovery_test`)
   `CROSS` -> [`COMBO_OPQ_501_cross_bp_credit_test`](../cases/COMBO_OPQ_501_cross_bp_credit_test.md) (`opq_cross_bp_credit_test`)
   `CROSS` -> [`COMBO_OPQ_502_cross_drr_allowance_test`](../cases/COMBO_OPQ_502_cross_drr_allowance_test.md) (`opq_cross_drr_allowance_test`)
   `CROSS` -> [`COMBO_OPQ_503_cross_drr_idle_lane_test`](../cases/COMBO_OPQ_503_cross_drr_idle_lane_test.md) (`opq_cross_drr_idle_lane_test`)
@@ -65,19 +67,19 @@
 - limitation: opq_error_ftable_overflow_test is isolated-only evidence because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration.
 - limitation: opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow.
 - limitation: opq_cross_mixed_bucket_random_soak_test is isolated-only evidence; it intentionally randomizes across buckets rather than serving as the fixed promoted no-restart baseline.
-- limitation: This run appends two extra tail sequences after the 28 promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases.
+- limitation: This run appends two extra tail sequences after the 37 promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases.
 
 ## Code coverage
 
 | metric | pct |
 |---|---|
-| stmt | 82.46 |
-| branch | 78.88 |
-| cond | 54.11 |
+| stmt | 83.39 |
+| branch | 81.06 |
+| cond | 55.52 |
 | expr | 77.08 |
-| fsm_state | 90.91 |
-| fsm_trans | 48.00 |
-| toggle | 43.76 |
+| fsm_state | 95.45 |
+| fsm_trans | 58.00 |
+| toggle | 43.85 |
 
 ## Transaction growth curve
 

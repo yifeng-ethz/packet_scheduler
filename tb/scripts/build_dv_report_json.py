@@ -33,10 +33,10 @@ INSTANCE_HOLE_SPECS = [
         ],
         "classification": "real gap",
         "reason": (
-            "Header-error and header-word recovery are fixed in isolated native-SV "
-            "evidence, but they remain outside the generated promoted matrix, so "
-            "the MASK_PKT_EXTENDED re-entry and stale-context cleanup paths are "
-            "still under-covered in merged signoff totals."
+            "The promoted header-error and header-word recovery cases now exercise "
+            "the repaired parser re-entry path, but MASK_PKT_EXTENDED cleanup and "
+            "the broader malformed-header recovery state space still sit below the "
+            "merged signoff targets."
         ),
         "evidence_anchor": (
             "ordered_priority_queue_monolithic_ingress_parser.sv:305-320, 409-410; "
@@ -44,8 +44,9 @@ INSTANCE_HOLE_SPECS = [
             "opq_error_header_mask_recovery_test, opq_error_header_word_mask_recovery_test"
         ),
         "next_action": (
-            "Reinsert the clean header-recovery cases into the generated ERROR "
-            "bucket and rerun merged coverage."
+            "Keep the header-recovery cases in the promoted ERROR bucket and add "
+            "more chained malformed-header variants only if parser recovery "
+            "coverage remains the limiting closure gap."
         ),
     },
     {
@@ -56,9 +57,10 @@ INSTANCE_HOLE_SPECS = [
         ],
         "classification": "real gap",
         "reason": (
-            "The remaining low FSM-transition coverage lines up with the still "
-            "non-promoted bursty DRR large-random screen plus the lack of "
-            "dedicated signed-off 4-lane DV evidence."
+            "The remaining low FSM-transition coverage still lines up with the "
+            "bursty DRR large-random screen, which re-opened hit-accounting loss "
+            "on the latest native-SV rerun, plus the lack of dedicated signed-off "
+            "4-lane DV evidence."
         ),
         "evidence_anchor": (
             "BUG-009-R; opq_cross_drr_bursty_random_test; "
@@ -66,8 +68,9 @@ INSTANCE_HOLE_SPECS = [
             "doc/SIGNOFF.md standalone_syn"
         ),
         "next_action": (
-            "Refresh the bursty DRR large-random evidence and record real 4-lane "
-            "DV plus A10 standalone closure before expanding the signoff claim."
+            "Keep the bursty DRR large-random screen probe-only, root-cause the "
+            "remaining lane0 unexplained-hit loss, and record real 4-lane DV plus "
+            "A10 standalone closure before expanding the signoff claim."
         ),
     },
     {
@@ -449,6 +452,18 @@ BUCKET_CASES = OrderedDict(
                     "DV_ERROR malformed-subheader recovery closure.",
                 ),
                 case_entry(
+                    "opq_error_header_mask_recovery_test",
+                    "Inject a malformed preamble/header, then follow with a legal recovery frame on both active lanes.",
+                    "Header-error suppression without stale timestamp context leaking into the next legal FEB packet.",
+                    "DV_ERROR malformed-header recovery closure.",
+                ),
+                case_entry(
+                    "opq_error_header_word_mask_recovery_test",
+                    "Inject a header-word error, then follow with a legal recovery frame on both active lanes.",
+                    "Header-word suppression without corrupting the next legal frame timestamp base.",
+                    "DV_ERROR header-word recovery closure.",
+                ),
+                case_entry(
                     "opq_error_counter_clear_test",
                     "Runtime counter clear after drop-producing traffic.",
                     "Visible CSR counter reset semantics and post-clear clean state.",
@@ -517,8 +532,6 @@ BUCKET_CASES = OrderedDict(
 )
 
 EXCLUDED_CASES = [
-    "opq_error_header_mask_recovery_test",
-    "opq_error_header_word_mask_recovery_test",
     "opq_cross_drr_bursty_random_test",
 ]
 
@@ -592,6 +605,8 @@ BUCKET_FRAME_LEGACY_ORDER = [
     ("ERROR", "opq_error_lane_mask_burst_test"),
     ("ERROR", "opq_error_lane_mask_recovery_test"),
     ("ERROR", "opq_error_subheader_mask_recovery_test"),
+    ("ERROR", "opq_error_header_mask_recovery_test"),
+    ("ERROR", "opq_error_header_word_mask_recovery_test"),
     ("CROSS", "opq_cross_bp_credit_test"),
     ("CROSS", "opq_cross_drr_allowance_test"),
     ("CROSS", "opq_cross_drr_idle_lane_test"),
@@ -666,7 +681,7 @@ SIGNOFF_RUN_SPECS = [
             "opq_error_ftable_overflow_test is isolated-only evidence because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration.",
             "opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow.",
             "opq_cross_mixed_bucket_random_soak_test is isolated-only evidence; it intentionally randomizes across buckets rather than serving as the fixed promoted no-restart baseline.",
-            "This run appends two extra tail sequences after the 28 promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases.",
+            f"This run appends two extra tail sequences after the {SIGNOFF_CASE_COUNT} promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases.",
         ],
     },
 ]
@@ -1201,6 +1216,7 @@ def build() -> dict:
             "mode_scope": "MERGING mode only is claimed in the active native-SV report",
             "n_shd_scope": "native-SV signoff claim covers OPQ_N_SHD = 128 / 256 / 512 only",
             "four_lane_status": "4-lane native-SV remains out of signoff scope until dedicated 4-lane DV evidence is promoted; the standalone Arria 10 synthesis result is now recorded separately in signoff",
+            "bursty_drr_probe_status": "the focused bursty DRR reproducer is green, but the refreshed larger constrained-random rerun on 2026-04-20 still fails with lane0 unexplained=368 and hit-integrity summary expected=852 actual=622 missing=368 ghost=138; the screen remains probe-only",
             "mixed_bucket_seconds_probe_status": "the exact 183..190 reproducer is green, and the full stretched mixed-bucket seconds soak now also passes end to end on the repaired allocator state; the screen remains probe-only because of runtime, not because of a live failure",
             "continuous_frame_scope": "continuous-frame baselines currently cover the default-build promoted matrix only; PARAM build points and the reduced-depth overflow point require separate elaboration and are excluded from no-restart baselines",
         },

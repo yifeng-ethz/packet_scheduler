@@ -244,17 +244,19 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       ERROR evidence because it requires a separate reduced-depth elaboration
       point and is therefore still excluded from the fixed no-restart
       baselines.
-- [x] Resolve the bursty DRR stall-boundary corruption before promoting
+- [ ] Refresh the larger bursty DRR random closure path before promoting
       `opq_cross_drr_bursty_random_test`.
-      Status on `2026-04-19`:
+      Status on `2026-04-20`:
       - the focused reproducer `opq_cross_drr_bursty_repro_test` is now clean
         with `expected=1864 actual=1864 missing=0 ghost=0`
       - root cause was the page allocator advancing merged-frame progress
         ahead of an already-active busy lane that had not yet surfaced its
         current ticket, which silently discarded same-frame late tickets
-      - remaining work is promotion hygiene: rerun the larger bursty random
-        testcase on the repaired RTL and either promote it or keep only the
-        longer random envelope probe-only
+      - the fresh larger constrained-random rerun on `2026-04-20` still fails
+        with `expected=852 actual=622 missing=368 ghost=138` and lane0
+        `unexplained=368`
+      - keep the larger random envelope probe-only until that remaining
+        hit-accounting loss is debugged or explicitly retired
 - [x] Promote the `2026-04-20` isolated-pass bucket expansions into the live
       report flow only after wrapper order, bucket-frame coverage ordering, and
       no-restart evidence are captured:
@@ -265,25 +267,30 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       - `DV_PROF`: `opq_prof_heavy_lane_skew_test`,
         `opq_prof_deep_whole_frame_skew_test`,
         `opq_prof_asymmetric_missing_empty_frame_test`
+      - `DV_ERROR`: `opq_error_header_mask_recovery_test`,
+        `opq_error_header_word_mask_recovery_test`
       Status on `2026-04-20`:
       - `run_basic.sh`, `run_edge.sh`, and `run_perf.sh` now wire the expanded
         promoted sets by default
       - `opq_frame_signoff_tests.sv` and `build_dv_report_json.py` now include
-        the expanded BASIC / EDGE / PROF matrices in both isolated ordering and
-        default-build no-restart baselines
+        the expanded BASIC / EDGE / PROF / ERROR matrices in both isolated
+        ordering and default-build no-restart baselines
       - clean native-SV reruns now close the expanded isolated buckets plus
         `opq_bucket_frame_native_sv_test` and
         `opq_all_buckets_frame_native_sv_test`
-      - regenerated report totals now record `promoted_signoff_cases=44` and
-        `evidenced_promoted_cases=44`
-- [ ] Resolve the chained header-word recovery corruption before promoting
+      - regenerated report totals now record `promoted_signoff_cases=46` and
+        `evidenced_promoted_cases=46`
+- [x] Resolve the chained malformed-header recovery corruption before
+      promoting `opq_error_header_mask_recovery_test` and
       `opq_error_header_word_mask_recovery_test`.
-      Status on `2026-04-18`:
-      - isolated native-SV is now fixed and green after the ingress header
-        timestamp-base handoff was routed into the page allocator
-      - remaining work is report hygiene, not DUT repair:
-        rerun the ERROR bucket continuous-frame baseline with the restored
-        case, then remove it from the generated report exclusions
+      Status on `2026-04-20`:
+      - isolated native-SV is green for both restored header-recovery cases
+      - the live ERROR runner now wires both cases by default
+      - `opq_bucket_frame_native_sv_test` and
+        `opq_all_buckets_frame_native_sv_test` both pass with
+        `header_recovery_seq` and `header_word_recovery_seq` live
+      - the generated report exclusions now leave only
+        `opq_cross_drr_bursty_random_test` outside the signoff claim
 - [x] Resolve the chained malformed-subheader recovery corruption before adding
       `opq_error_subheader_mask_recovery_test` back into the mixed-bucket soak
       pool.
@@ -442,9 +449,7 @@ Execution order frozen on 2026-04-18 for the next closure phase:
         - `FORMAL_STRESS_TESTS=opq_formal_like_egress_flush_backpressure_stress_test`
           now passes as a clean backpressure/hold regression after the
           `BUG-014-R` presenter read-data skid fix
-      - ingress probe-only exclusions:
-        `opq_error_header_mask_recovery_test`,
-        `opq_error_header_word_mask_recovery_test`
+      - ingress probe-only exclusions: none in the current promoted matrix
 - [x] Add the first OSS-friendly formal harness subset for
       `FORMAL_BACKEND=sby`.
       Status on `2026-04-18`:

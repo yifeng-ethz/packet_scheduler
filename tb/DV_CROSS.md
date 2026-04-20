@@ -2,7 +2,7 @@
 
 **Companion to:** `DV_PLAN.md`, `DV_HARNESS.md`  
 **Author:** Yifeng Wang (yifenwan@phys.ethz.ch)  
-**Date:** 2026-04-14  
+**Date:** 2026-04-20
 **Status:** Active current-tree bucket for promoted mixed-axis cases and explicit non-promoted stress screens.
 
 ---
@@ -36,7 +36,7 @@
 
 | Test | Purpose | Current status |
 |------|---------|----------------|
-| `opq_cross_drr_bursty_random_test` | Constrained-random hot-lane / cold-lane DRR stress with periodic egress stalls | Focused native-SV repro is fixed and closes per-lane `unexplained=0`; the larger constrained-random testcase still needs a refreshed rerun before promotion or retirement from probe-only status |
+| `opq_cross_drr_bursty_random_test` | Constrained-random hot-lane / cold-lane DRR stress with periodic egress stalls | Focused native-SV repro remains fixed, but the refreshed larger constrained-random rerun on `2026-04-20` still fails with lane0 `unexplained=368` and hit-integrity summary `expected=852 actual=622 missing=368 ghost=138`; keep probe-only |
 | `opq_cross_mixed_bucket_seconds_soak_test` | Earlier extended mixed-bucket random soak with longer chained no-restart traffic and stretched simulated time | Passing extended probe: the full stretched rerun now crosses the old `mixed_sparse_191`, `mixed_soak_261`, `mixed_whole_skew_275`, `mixed_whole_skew_418`, and `mixed_whole_skew_435` windows cleanly and exits with `UVM_ERROR : 0`; kept probe-only because it is a long runtime stress screen rather than a promoted matrix case |
 
 ---

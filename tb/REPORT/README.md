@@ -12,7 +12,7 @@
 | OPQ_N_LANE | `2` |
 | OPQ_N_SHD | `128`, `256`, `512` |
 | MODE | `MERGING` |
-| probe_only_exclusions | `opq_error_header_mask_recovery_test`, `opq_error_header_word_mask_recovery_test`, `opq_cross_drr_bursty_random_test` |
+| probe_only_exclusions | `opq_cross_drr_bursty_random_test` |
 
 ## Buckets
 
@@ -22,26 +22,26 @@
 | ⚠️ | [`PARAM`](buckets/PARAM.md) | 180 | 6 | 6 | 174 | stmt=84.28, branch=72.12, cond=48.15, expr=70.91, fsm_state=85.71, fsm_trans=43.75, toggle=46.76 |
 | ⚠️ | [`EDGE`](buckets/EDGE.md) | 168 | 9 | 9 | 159 | stmt=74.21, branch=64.99, cond=34.56, expr=55.21, fsm_state=84.09, fsm_trans=41.00, toggle=27.95 |
 | ⚠️ | [`PROF`](buckets/PROF.md) | 168 | 8 | 8 | 160 | stmt=75.50, branch=66.49, cond=35.69, expr=57.29, fsm_state=84.09, fsm_trans=42.00, toggle=30.59 |
-| ⚠️ | [`ERROR`](buckets/ERROR.md) | 166 | 7 | 7 | 159 | stmt=85.44, branch=76.11, cond=53.88, expr=69.44, fsm_state=91.43, fsm_trans=48.75, toggle=46.04 |
+| ⚠️ | [`ERROR`](buckets/ERROR.md) | 166 | 9 | 9 | 157 | stmt=82.87, branch=76.57, cond=46.74, expr=69.79, fsm_state=95.45, fsm_trans=58.00, toggle=34.10 |
 | ⚠️ | [`CROSS`](buckets/CROSS.md) | 165 | 7 | 7 | 158 | stmt=86.65, branch=75.73, cond=54.76, expr=81.82, fsm_state=88.57, fsm_trans=46.25, toggle=64.10 |
 
 ## Cross / continuous-frame runs
 
 | status | run_id | kind | seq | txns | cross_pct |
 |:---:|---|---|---|---:|---:|
-| ✅ | [`bucket_frame_native_sv`](cross/bucket_frame_native_sv.md) | bucket_frame | OPQ_BUCKET_FRAME_NATIVE_SV | 400 | 77.94 |
-| ✅ | [`all_buckets_frame_native_sv`](cross/all_buckets_frame_native_sv.md) | all_buckets_frame | OPQ_ALL_BUCKETS_FRAME_NATIVE_SV | 428 | 77.74 |
+| ✅ | [`bucket_frame_native_sv`](cross/bucket_frame_native_sv.md) | bucket_frame | OPQ_BUCKET_FRAME_NATIVE_SV | 406 | 77.94 |
+| ✅ | [`all_buckets_frame_native_sv`](cross/all_buckets_frame_native_sv.md) | all_buckets_frame | OPQ_ALL_BUCKETS_FRAME_NATIVE_SV | 434 | 77.74 |
 
 ## Totals
 
 - catalog_planned_cases: `993`
-- promoted_signoff_cases: `44`
-- catalog_pending_cases: `949`
-- evidenced_promoted_cases: `44`
-- excluded_cases: `3`
+- promoted_signoff_cases: `46`
+- catalog_pending_cases: `947`
+- evidenced_promoted_cases: `46`
+- excluded_cases: `1`
 - promoted_random_cases: `1`
-- merged total code coverage across promoted isolated evidence: `stmt=76.86, branch=68.01, cond=39.19, expr=58.33, fsm_state=86.36, fsm_trans=44.00, toggle=42.57`
-- promoted functional coverage: `90.71% (44/44)`
+- merged total code coverage across promoted isolated evidence: `stmt=85.25, branch=79.52, cond=52.60, expr=69.64, fsm_state=97.73, fsm_trans=60.00, toggle=44.31`
+- promoted functional coverage: `91.2% (46/46)`
 
 ---
 _[Dashboard](../DV_REPORT.md) &middot; [Coverage](../DV_COV.md)_

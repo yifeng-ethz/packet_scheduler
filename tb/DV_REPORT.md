@@ -10,7 +10,7 @@ This page is the chief-architect dashboard. All per-case evidence lives under [`
 |:---:|---|---|
 | ✅ | failed_cases | `0` |
 | ✅ | signoff_runs_with_failures | `0` |
-| ⚠️ | catalog_backlog_cases | `949` |
+| ⚠️ | catalog_backlog_cases | `947` |
 | ✅ | unimplemented_cases | `0` |
 | ✅ | stale_artifacts | `0` |
 
@@ -22,15 +22,16 @@ This page is the chief-architect dashboard. All per-case evidence lives under [`
 | OPQ_N_LANE | `2` |
 | OPQ_N_SHD | `128`, `256`, `512` |
 | MODE | `MERGING` |
-| probe_only_exclusions | `opq_error_header_mask_recovery_test`, `opq_error_header_word_mask_recovery_test`, `opq_cross_drr_bursty_random_test` |
+| probe_only_exclusions | `opq_cross_drr_bursty_random_test` |
 
 ## Non-Claims
 
 - lane scope: native-SV signoff claim is OPQ_N_LANE=2 only
-- excluded probe cases: `opq_error_header_mask_recovery_test`, `opq_error_header_word_mask_recovery_test`, `opq_cross_drr_bursty_random_test`
+- excluded probe cases: `opq_cross_drr_bursty_random_test`
 - mode scope: MERGING mode only is claimed in the active native-SV report
 - n shd scope: native-SV signoff claim covers OPQ_N_SHD = 128 / 256 / 512 only
 - four lane status: 4-lane native-SV remains out of signoff scope until dedicated 4-lane DV evidence is promoted; the standalone Arria 10 synthesis result is now recorded separately in signoff
+- bursty drr probe status: the focused bursty DRR reproducer is green, but the refreshed larger constrained-random rerun on 2026-04-20 still fails with lane0 unexplained=368 and hit-integrity summary expected=852 actual=622 missing=368 ghost=138; the screen remains probe-only
 - mixed bucket seconds probe status: the exact 183..190 reproducer is green, and the full stretched mixed-bucket seconds soak now also passes end to end on the repaired allocator state; the screen remains probe-only because of runtime, not because of a live failure
 - continuous frame scope: continuous-frame baselines currently cover the default-build promoted matrix only; PARAM build points and the reduced-depth overflow point require separate elaboration and are excluded from no-restart baselines
 
@@ -42,32 +43,32 @@ This page is the chief-architect dashboard. All per-case evidence lives under [`
 | ⚠️ | [`PARAM`](REPORT/buckets/PARAM.md) | 180 | 6 | 6 | 174 | stmt=84.28, branch=72.12, cond=48.15, expr=70.91, fsm_state=85.71, fsm_trans=43.75, toggle=46.76 | 67.37% (6/6) |
 | ⚠️ | [`EDGE`](REPORT/buckets/EDGE.md) | 168 | 9 | 9 | 159 | stmt=74.21, branch=64.99, cond=34.56, expr=55.21, fsm_state=84.09, fsm_trans=41.00, toggle=27.95 | 68.42% (9/9) |
 | ⚠️ | [`PROF`](REPORT/buckets/PROF.md) | 168 | 8 | 8 | 160 | stmt=75.50, branch=66.49, cond=35.69, expr=57.29, fsm_state=84.09, fsm_trans=42.00, toggle=30.59 | 64.03% (8/8) |
-| ⚠️ | [`ERROR`](REPORT/buckets/ERROR.md) | 166 | 7 | 7 | 159 | stmt=85.44, branch=76.11, cond=53.88, expr=69.44, fsm_state=91.43, fsm_trans=48.75, toggle=46.04 | 71.26% (7/7) |
+| ⚠️ | [`ERROR`](REPORT/buckets/ERROR.md) | 166 | 9 | 9 | 157 | stmt=82.87, branch=76.57, cond=46.74, expr=69.79, fsm_state=95.45, fsm_trans=58.00, toggle=34.10 | 71.74% (9/9) |
 | ⚠️ | [`CROSS`](REPORT/buckets/CROSS.md) | 165 | 7 | 7 | 158 | stmt=86.65, branch=75.73, cond=54.76, expr=81.82, fsm_state=88.57, fsm_trans=46.25, toggle=64.10 | 77.51% (7/7) |
 
 ## Totals
 
 | status | metric | pct | target |
 |:---:|---|---|---|
-| ⚠️ | stmt | 76.86 | 95.0 |
-| ⚠️ | branch | 68.01 | 90.0 |
-| ℹ️ | cond | 39.19 | - |
-| ℹ️ | expr | 58.33 | - |
-| ⚠️ | fsm_state | 86.36 | 95.0 |
-| ⚠️ | fsm_trans | 44.00 | 90.0 |
-| ⚠️ | toggle | 42.57 | 80.0 |
+| ⚠️ | stmt | 85.25 | 95.0 |
+| ⚠️ | branch | 79.52 | 90.0 |
+| ℹ️ | cond | 52.60 | - |
+| ℹ️ | expr | 69.64 | - |
+| ✅ | fsm_state | 97.73 | 95.0 |
+| ⚠️ | fsm_trans | 60.00 | 90.0 |
+| ⚠️ | toggle | 44.31 | 80.0 |
 
 - catalog_planned_cases: `993`
-- promoted_signoff_cases: `44`
-- evidenced_promoted_cases: `44`
-- promoted functional coverage: `90.71% (44/44)`
+- promoted_signoff_cases: `46`
+- evidenced_promoted_cases: `46`
+- promoted functional coverage: `91.2% (46/46)`
 
 ## Cross / Continuous-Frame Signoff
 
 | status | run_id | kind | build | seq | txns | cross_pct |
 |:---:|---|---|---|---|---:|---:|
-| ✅ | [`bucket_frame_native_sv`](REPORT/cross/bucket_frame_native_sv.md) | bucket_frame | native_sv | OPQ_BUCKET_FRAME_NATIVE_SV | 400 | 77.94 |
-| ✅ | [`all_buckets_frame_native_sv`](REPORT/cross/all_buckets_frame_native_sv.md) | all_buckets_frame | native_sv | OPQ_ALL_BUCKETS_FRAME_NATIVE_SV | 428 | 77.74 |
+| ✅ | [`bucket_frame_native_sv`](REPORT/cross/bucket_frame_native_sv.md) | bucket_frame | native_sv | OPQ_BUCKET_FRAME_NATIVE_SV | 406 | 77.94 |
+| ✅ | [`all_buckets_frame_native_sv`](REPORT/cross/all_buckets_frame_native_sv.md) | all_buckets_frame | native_sv | OPQ_ALL_BUCKETS_FRAME_NATIVE_SV | 434 | 77.74 |
 
 ## Index
 

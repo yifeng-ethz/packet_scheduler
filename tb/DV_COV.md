@@ -12,15 +12,16 @@ This page is the coverage summary only. Per-case incremental coverage lives unde
 | OPQ_N_LANE | `2` |
 | OPQ_N_SHD | `128`, `256`, `512` |
 | MODE | `MERGING` |
-| probe_only_exclusions | `opq_error_header_mask_recovery_test`, `opq_error_header_word_mask_recovery_test`, `opq_cross_drr_bursty_random_test` |
+| probe_only_exclusions | `opq_cross_drr_bursty_random_test` |
 
 ## Non-Claims
 
 - lane scope: native-SV signoff claim is OPQ_N_LANE=2 only
-- excluded probe cases: `opq_error_header_mask_recovery_test`, `opq_error_header_word_mask_recovery_test`, `opq_cross_drr_bursty_random_test`
+- excluded probe cases: `opq_cross_drr_bursty_random_test`
 - mode scope: MERGING mode only is claimed in the active native-SV report
 - n shd scope: native-SV signoff claim covers OPQ_N_SHD = 128 / 256 / 512 only
 - four lane status: 4-lane native-SV remains out of signoff scope until dedicated 4-lane DV evidence is promoted; the standalone Arria 10 synthesis result is now recorded separately in signoff
+- bursty drr probe status: the focused bursty DRR reproducer is green, but the refreshed larger constrained-random rerun on 2026-04-20 still fails with lane0 unexplained=368 and hit-integrity summary expected=852 actual=622 missing=368 ghost=138; the screen remains probe-only
 - mixed bucket seconds probe status: the exact 183..190 reproducer is green, and the full stretched mixed-bucket seconds soak now also passes end to end on the repaired allocator state; the screen remains probe-only because of runtime, not because of a live failure
 - continuous frame scope: continuous-frame baselines currently cover the default-build promoted matrix only; PARAM build points and the reduced-depth overflow point require separate elaboration and are excluded from no-restart baselines
 
@@ -41,10 +42,10 @@ This page is the coverage summary only. Per-case incremental coverage lives unde
 
 | area | measured summary | disposition | evidence anchor | next action |
 |---|---|---|---|---|
-| Ingress parser recovery states | stmt=66.29, branch=54.25, cond=20.00, fsm_trans=37.50, toggle=48.71 (min across 2 instances) | real gap: Header-error and header-word recovery are fixed in isolated native-SV evidence, but they remain outside the generated promoted matrix, so the MASK_PKT_EXTENDED re-entry and stale-context cleanup paths are still under-covered in merged signoff totals. | ordered_priority_queue_monolithic_ingress_parser.sv:305-320, 409-410; BUG-005-R / BUG-010-R; opq_error_header_mask_recovery_test, opq_error_header_word_mask_recovery_test | Reinsert the clean header-recovery cases into the generated ERROR bucket and rerun merged coverage. |
-| Allocator and DRR transition space | stmt=88.82, branch=80.20, cond=54.00, fsm_trans=56.66, toggle=37.46 (min across 2 instances) | real gap: The remaining low FSM-transition coverage lines up with the still non-promoted bursty DRR large-random screen plus the lack of dedicated signed-off 4-lane DV evidence. | BUG-009-R; opq_cross_drr_bursty_random_test; opq_prof_missing_empty_frame_test @ OPQ_N_LANE=4; doc/SIGNOFF.md standalone_syn | Refresh the bursty DRR large-random evidence and record real 4-lane DV plus A10 standalone closure before expanding the signoff claim. |
-| Presenter flush/backpressure hybrids | stmt=7.69, branch=0.00, toggle=52.16 (min across 1 instance) | needs-new-test: The reduced-depth overwrite repro is now green in isolation, but the promoted suite still lacks a directed hybrid that couples flush pressure with legal backpressure windows over a default-build runtime. | ordered_priority_queue_monolithic_basic_presenter.sv:128-145, 165-188; DV_FORMAL.md B27/B28; CORNER_OPQ_407_error_ftable_overflow_test | Add the directed backpressure-plus-flush hybrid testcase and use it to raise presenter transition and toggle coverage. |
-| Native wrapper fixed-scope decode paths | stmt=76.00, branch=61.74, cond=17.28, toggle=24.55 (min across 2 instances) | justified exclusion: A large part of the wrapper hole count comes from fixed-scope native-SV configuration, dormant CSR decode/default branches, and status/meta observability that are outside the active 2-lane signoff claim. | ordered_priority_queue_dut_sv.sv:227-245, 268-337, 494-505; DV_REPORT non-claims for OPQ_N_LANE=2 and reduced-depth isolated points | Keep the wrapper holes documented as non-claims unless a dedicated CSR decode sweep becomes a signoff requirement. |
+| Ingress parser recovery states | stmt=76.40, branch=74.46, cond=32.50, fsm_trans=66.66, toggle=48.93 (min across 2 instances) | real gap: The promoted header-error and header-word recovery cases now exercise the repaired parser re-entry path, but MASK_PKT_EXTENDED cleanup and the broader malformed-header recovery state space still sit below the merged signoff targets. | ordered_priority_queue_monolithic_ingress_parser.sv:305-320, 409-410; BUG-005-R / BUG-010-R; opq_error_header_mask_recovery_test, opq_error_header_word_mask_recovery_test | Keep the header-recovery cases in the promoted ERROR bucket and add more chained malformed-header variants only if parser recovery coverage remains the limiting closure gap. |
+| Allocator and DRR transition space | stmt=88.82, branch=80.20, cond=56.00, fsm_trans=56.66, toggle=37.63 (min across 2 instances) | real gap: The remaining low FSM-transition coverage still lines up with the bursty DRR large-random screen, which re-opened hit-accounting loss on the latest native-SV rerun, plus the lack of dedicated signed-off 4-lane DV evidence. | BUG-009-R; opq_cross_drr_bursty_random_test; opq_prof_missing_empty_frame_test @ OPQ_N_LANE=4; doc/SIGNOFF.md standalone_syn | Keep the bursty DRR large-random screen probe-only, root-cause the remaining lane0 unexplained-hit loss, and record real 4-lane DV plus A10 standalone closure before expanding the signoff claim. |
+| Presenter flush/backpressure hybrids | toggle=66.01 (min across 1 instance) | needs-new-test: The reduced-depth overwrite repro is now green in isolation, but the promoted suite still lacks a directed hybrid that couples flush pressure with legal backpressure windows over a default-build runtime. | ordered_priority_queue_monolithic_basic_presenter.sv:128-145, 165-188; DV_FORMAL.md B27/B28; CORNER_OPQ_407_error_ftable_overflow_test | Add the directed backpressure-plus-flush hybrid testcase and use it to raise presenter transition and toggle coverage. |
+| Native wrapper fixed-scope decode paths | stmt=84.44, branch=75.29, cond=50.00, toggle=26.73 (min across 2 instances) | justified exclusion: A large part of the wrapper hole count comes from fixed-scope native-SV configuration, dormant CSR decode/default branches, and status/meta observability that are outside the active 2-lane signoff claim. | ordered_priority_queue_dut_sv.sv:227-245, 268-337, 494-505; DV_REPORT non-claims for OPQ_N_LANE=2 and reduced-depth isolated points | Keep the wrapper holes documented as non-claims unless a dedicated CSR decode sweep becomes a signoff requirement. |
 | FIFO and page-RAM data-bit toggles | stmt=100.00, branch=100.00, cond=50.00, toggle=46.93 (min across 7 instances) | redundant case: The lowest remaining toggle bins are wide storage-array data bits. Extra fill-pattern tests would mostly churn memory bit coverage without closing a new architectural contract. | ticket_fifo / lane_fifo / handle_fifo / page_ram toggle summaries in the merged native-SV UCDB | Do not promote memory-bit churn tests for signoff; only revisit if a real storage-corruption bug appears. |
 
 ## Targets vs merged totals
@@ -53,13 +54,13 @@ This page is the coverage summary only. Per-case incremental coverage lives unde
 
 | status | metric | merged_pct | target |
 |:---:|---|---|---|
-| ⚠️ | stmt | 76.86 | 95.0 |
-| ⚠️ | branch | 68.01 | 90.0 |
-| ℹ️ | cond | 39.19 | - |
-| ℹ️ | expr | 58.33 | - |
-| ⚠️ | fsm_state | 86.36 | 95.0 |
-| ⚠️ | fsm_trans | 44.00 | 90.0 |
-| ⚠️ | toggle | 42.57 | 80.0 |
+| ⚠️ | stmt | 85.25 | 95.0 |
+| ⚠️ | branch | 79.52 | 90.0 |
+| ℹ️ | cond | 52.60 | - |
+| ℹ️ | expr | 69.64 | - |
+| ✅ | fsm_state | 97.73 | 95.0 |
+| ⚠️ | fsm_trans | 60.00 | 90.0 |
+| ⚠️ | toggle | 44.31 | 80.0 |
 
 ## Per-bucket merged totals
 
@@ -69,7 +70,7 @@ This page is the coverage summary only. Per-case incremental coverage lives unde
 | ⚠️ | [`PARAM`](REPORT/buckets/PARAM.md) | 180 | 6 | 6 | 84.28 | 72.12 | 48.15 | 70.91 | 85.71 | 43.75 | 46.76 |
 | ⚠️ | [`EDGE`](REPORT/buckets/EDGE.md) | 168 | 9 | 9 | 74.21 | 64.99 | 34.56 | 55.21 | 84.09 | 41.00 | 27.95 |
 | ⚠️ | [`PROF`](REPORT/buckets/PROF.md) | 168 | 8 | 8 | 75.50 | 66.49 | 35.69 | 57.29 | 84.09 | 42.00 | 30.59 |
-| ⚠️ | [`ERROR`](REPORT/buckets/ERROR.md) | 166 | 7 | 7 | 85.44 | 76.11 | 53.88 | 69.44 | 91.43 | 48.75 | 46.04 |
+| ⚠️ | [`ERROR`](REPORT/buckets/ERROR.md) | 166 | 9 | 9 | 82.87 | 76.57 | 46.74 | 69.79 | 95.45 | 58.00 | 34.10 |
 | ⚠️ | [`CROSS`](REPORT/buckets/CROSS.md) | 165 | 7 | 7 | 86.65 | 75.73 | 54.76 | 81.82 | 88.57 | 46.25 | 64.10 |
 
 ## Isolated execution order and traceability
@@ -80,15 +81,15 @@ This page is the coverage summary only. Per-case incremental coverage lives unde
 | PARAM | [`COMBO_OPQ_101_basic_smoke_test_nshd128`](REPORT/cases/COMBO_OPQ_101_basic_smoke_test_nshd128.md), [`COMBO_OPQ_102_basic_smoke_test_nshd512`](REPORT/cases/COMBO_OPQ_102_basic_smoke_test_nshd512.md), [`COMBO_OPQ_103_basic_ts_boundary_test_nshd128`](REPORT/cases/COMBO_OPQ_103_basic_ts_boundary_test_nshd128.md), [`COMBO_OPQ_104_basic_ts_boundary_test_nshd512`](REPORT/cases/COMBO_OPQ_104_basic_ts_boundary_test_nshd512.md), [`COMBO_OPQ_105_edge_max_hits_test_nshd128`](REPORT/cases/COMBO_OPQ_105_edge_max_hits_test_nshd128.md), [`COMBO_OPQ_106_edge_max_hits_test_nshd512`](REPORT/cases/COMBO_OPQ_106_edge_max_hits_test_nshd512.md) | [`REPORT/buckets/PARAM.md`](REPORT/buckets/PARAM.md) |
 | EDGE | [`CORNER_OPQ_201_edge_backpressure_test`](REPORT/cases/CORNER_OPQ_201_edge_backpressure_test.md), [`CORNER_OPQ_202_edge_always_ready_test`](REPORT/cases/CORNER_OPQ_202_edge_always_ready_test.md), [`CORNER_OPQ_203_edge_ready_medium_profile_test`](REPORT/cases/CORNER_OPQ_203_edge_ready_medium_profile_test.md), [`CORNER_OPQ_204_edge_stuck_low_backpressure_test`](REPORT/cases/CORNER_OPQ_204_edge_stuck_low_backpressure_test.md), [`CORNER_OPQ_205_edge_max_hits_test`](REPORT/cases/CORNER_OPQ_205_edge_max_hits_test.md), [`CORNER_OPQ_206_edge_toggle_backpressure_test`](REPORT/cases/CORNER_OPQ_206_edge_toggle_backpressure_test.md), [`CORNER_OPQ_207_edge_burst_restart_profile_test`](REPORT/cases/CORNER_OPQ_207_edge_burst_restart_profile_test.md), [`CORNER_OPQ_208_edge_long_toggle_backpressure_test`](REPORT/cases/CORNER_OPQ_208_edge_long_toggle_backpressure_test.md), [`CORNER_OPQ_209_edge_max_hits_backpressure_test`](REPORT/cases/CORNER_OPQ_209_edge_max_hits_backpressure_test.md) | [`REPORT/buckets/EDGE.md`](REPORT/buckets/EDGE.md) |
 | PROF | [`COMBO_OPQ_301_prof_stress_test`](REPORT/cases/COMBO_OPQ_301_prof_stress_test.md), [`COMBO_OPQ_302_prof_lane_skew_test`](REPORT/cases/COMBO_OPQ_302_prof_lane_skew_test.md), [`COMBO_OPQ_303_prof_whole_frame_skew_test`](REPORT/cases/COMBO_OPQ_303_prof_whole_frame_skew_test.md), [`COMBO_OPQ_304_prof_missing_empty_frame_test`](REPORT/cases/COMBO_OPQ_304_prof_missing_empty_frame_test.md), [`COMBO_OPQ_305_prof_long_soak_test`](REPORT/cases/COMBO_OPQ_305_prof_long_soak_test.md), [`COMBO_OPQ_306_prof_heavy_lane_skew_test`](REPORT/cases/COMBO_OPQ_306_prof_heavy_lane_skew_test.md), [`COMBO_OPQ_307_prof_deep_whole_frame_skew_test`](REPORT/cases/COMBO_OPQ_307_prof_deep_whole_frame_skew_test.md), [`COMBO_OPQ_308_prof_asymmetric_missing_empty_frame_test`](REPORT/cases/COMBO_OPQ_308_prof_asymmetric_missing_empty_frame_test.md) | [`REPORT/buckets/PROF.md`](REPORT/buckets/PROF.md) |
-| ERROR | [`CORNER_OPQ_401_error_lane_mask_test`](REPORT/cases/CORNER_OPQ_401_error_lane_mask_test.md), [`CORNER_OPQ_402_error_lane_mask_single_hit_test`](REPORT/cases/CORNER_OPQ_402_error_lane_mask_single_hit_test.md), [`CORNER_OPQ_403_error_lane_mask_burst_test`](REPORT/cases/CORNER_OPQ_403_error_lane_mask_burst_test.md), [`CORNER_OPQ_404_error_lane_mask_recovery_test`](REPORT/cases/CORNER_OPQ_404_error_lane_mask_recovery_test.md), [`CORNER_OPQ_405_error_subheader_mask_recovery_test`](REPORT/cases/CORNER_OPQ_405_error_subheader_mask_recovery_test.md), [`CORNER_OPQ_406_error_counter_clear_test`](REPORT/cases/CORNER_OPQ_406_error_counter_clear_test.md), [`CORNER_OPQ_407_error_ftable_overflow_test`](REPORT/cases/CORNER_OPQ_407_error_ftable_overflow_test.md) | [`REPORT/buckets/ERROR.md`](REPORT/buckets/ERROR.md) |
+| ERROR | [`CORNER_OPQ_401_error_lane_mask_test`](REPORT/cases/CORNER_OPQ_401_error_lane_mask_test.md), [`CORNER_OPQ_402_error_lane_mask_single_hit_test`](REPORT/cases/CORNER_OPQ_402_error_lane_mask_single_hit_test.md), [`CORNER_OPQ_403_error_lane_mask_burst_test`](REPORT/cases/CORNER_OPQ_403_error_lane_mask_burst_test.md), [`CORNER_OPQ_404_error_lane_mask_recovery_test`](REPORT/cases/CORNER_OPQ_404_error_lane_mask_recovery_test.md), [`CORNER_OPQ_405_error_subheader_mask_recovery_test`](REPORT/cases/CORNER_OPQ_405_error_subheader_mask_recovery_test.md), [`CORNER_OPQ_406_error_header_mask_recovery_test`](REPORT/cases/CORNER_OPQ_406_error_header_mask_recovery_test.md), [`CORNER_OPQ_407_error_header_word_mask_recovery_test`](REPORT/cases/CORNER_OPQ_407_error_header_word_mask_recovery_test.md), [`CORNER_OPQ_408_error_counter_clear_test`](REPORT/cases/CORNER_OPQ_408_error_counter_clear_test.md), [`CORNER_OPQ_409_error_ftable_overflow_test`](REPORT/cases/CORNER_OPQ_409_error_ftable_overflow_test.md) | [`REPORT/buckets/ERROR.md`](REPORT/buckets/ERROR.md) |
 | CROSS | [`COMBO_OPQ_501_cross_bp_credit_test`](REPORT/cases/COMBO_OPQ_501_cross_bp_credit_test.md), [`COMBO_OPQ_502_cross_drr_allowance_test`](REPORT/cases/COMBO_OPQ_502_cross_drr_allowance_test.md), [`COMBO_OPQ_503_cross_drr_idle_lane_test`](REPORT/cases/COMBO_OPQ_503_cross_drr_idle_lane_test.md), [`COMBO_OPQ_504_cross_drr_zero_allowance_test`](REPORT/cases/COMBO_OPQ_504_cross_drr_zero_allowance_test.md), [`COMBO_OPQ_505_cross_drr_short_allowance_test`](REPORT/cases/COMBO_OPQ_505_cross_drr_short_allowance_test.md), [`COMBO_OPQ_506_cross_idle_lane_backpressure_test`](REPORT/cases/COMBO_OPQ_506_cross_idle_lane_backpressure_test.md), [`COMBO_OPQ_507_cross_mixed_bucket_random_soak_test`](REPORT/cases/COMBO_OPQ_507_cross_mixed_bucket_random_soak_test.md) | [`REPORT/buckets/CROSS.md`](REPORT/buckets/CROSS.md) |
 
 ## Continuous-frame baselines by build
 
 | status | run_id | kind | build | case_count | stmt | branch | toggle | functional_cross_pct | txns |
 |:---:|---|---|---|---:|---|---|---|---:|---:|
-| ✅ | [`bucket_frame_native_sv`](REPORT/cross/bucket_frame_native_sv.md) | bucket_frame | native_sv | 35 | 82.46 | 78.88 | 43.48 | 77.94 | 400 |
-| ✅ | [`all_buckets_frame_native_sv`](REPORT/cross/all_buckets_frame_native_sv.md) | all_buckets_frame | native_sv | 35 | 82.46 | 78.88 | 43.76 | 77.74 | 428 |
+| ✅ | [`bucket_frame_native_sv`](REPORT/cross/bucket_frame_native_sv.md) | bucket_frame | native_sv | 37 | 83.39 | 81.06 | 43.56 | 77.94 | 406 |
+| ✅ | [`all_buckets_frame_native_sv`](REPORT/cross/all_buckets_frame_native_sv.md) | all_buckets_frame | native_sv | 37 | 83.39 | 81.06 | 43.85 | 77.74 | 434 |
 
 ## Continuous-frame execution order
 
@@ -125,6 +126,8 @@ This page is the coverage summary only. Per-case incremental coverage lives unde
   `ERROR` -> [`CORNER_OPQ_403_error_lane_mask_burst_test`](REPORT/cases/CORNER_OPQ_403_error_lane_mask_burst_test.md) (`opq_error_lane_mask_burst_test`)
   `ERROR` -> [`CORNER_OPQ_404_error_lane_mask_recovery_test`](REPORT/cases/CORNER_OPQ_404_error_lane_mask_recovery_test.md) (`opq_error_lane_mask_recovery_test`)
   `ERROR` -> [`CORNER_OPQ_405_error_subheader_mask_recovery_test`](REPORT/cases/CORNER_OPQ_405_error_subheader_mask_recovery_test.md) (`opq_error_subheader_mask_recovery_test`)
+  `ERROR` -> [`CORNER_OPQ_406_error_header_mask_recovery_test`](REPORT/cases/CORNER_OPQ_406_error_header_mask_recovery_test.md) (`opq_error_header_mask_recovery_test`)
+  `ERROR` -> [`CORNER_OPQ_407_error_header_word_mask_recovery_test`](REPORT/cases/CORNER_OPQ_407_error_header_word_mask_recovery_test.md) (`opq_error_header_word_mask_recovery_test`)
   `CROSS` -> [`COMBO_OPQ_501_cross_bp_credit_test`](REPORT/cases/COMBO_OPQ_501_cross_bp_credit_test.md) (`opq_cross_bp_credit_test`)
   `CROSS` -> [`COMBO_OPQ_502_cross_drr_allowance_test`](REPORT/cases/COMBO_OPQ_502_cross_drr_allowance_test.md) (`opq_cross_drr_allowance_test`)
   `CROSS` -> [`COMBO_OPQ_503_cross_drr_idle_lane_test`](REPORT/cases/COMBO_OPQ_503_cross_drr_idle_lane_test.md) (`opq_cross_drr_idle_lane_test`)
@@ -169,6 +172,8 @@ This page is the coverage summary only. Per-case incremental coverage lives unde
   `ERROR` -> [`CORNER_OPQ_403_error_lane_mask_burst_test`](REPORT/cases/CORNER_OPQ_403_error_lane_mask_burst_test.md) (`opq_error_lane_mask_burst_test`)
   `ERROR` -> [`CORNER_OPQ_404_error_lane_mask_recovery_test`](REPORT/cases/CORNER_OPQ_404_error_lane_mask_recovery_test.md) (`opq_error_lane_mask_recovery_test`)
   `ERROR` -> [`CORNER_OPQ_405_error_subheader_mask_recovery_test`](REPORT/cases/CORNER_OPQ_405_error_subheader_mask_recovery_test.md) (`opq_error_subheader_mask_recovery_test`)
+  `ERROR` -> [`CORNER_OPQ_406_error_header_mask_recovery_test`](REPORT/cases/CORNER_OPQ_406_error_header_mask_recovery_test.md) (`opq_error_header_mask_recovery_test`)
+  `ERROR` -> [`CORNER_OPQ_407_error_header_word_mask_recovery_test`](REPORT/cases/CORNER_OPQ_407_error_header_word_mask_recovery_test.md) (`opq_error_header_word_mask_recovery_test`)
   `CROSS` -> [`COMBO_OPQ_501_cross_bp_credit_test`](REPORT/cases/COMBO_OPQ_501_cross_bp_credit_test.md) (`opq_cross_bp_credit_test`)
   `CROSS` -> [`COMBO_OPQ_502_cross_drr_allowance_test`](REPORT/cases/COMBO_OPQ_502_cross_drr_allowance_test.md) (`opq_cross_drr_allowance_test`)
   `CROSS` -> [`COMBO_OPQ_503_cross_drr_idle_lane_test`](REPORT/cases/COMBO_OPQ_503_cross_drr_idle_lane_test.md) (`opq_cross_drr_idle_lane_test`)
@@ -181,6 +186,6 @@ This page is the coverage summary only. Per-case incremental coverage lives unde
 - limitation: opq_error_ftable_overflow_test is isolated-only evidence because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration.
 - limitation: opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow.
 - limitation: opq_cross_mixed_bucket_random_soak_test is isolated-only evidence; it intentionally randomizes across buckets rather than serving as the fixed promoted no-restart baseline.
-- limitation: This run appends two extra tail sequences after the 28 promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases.
+- limitation: This run appends two extra tail sequences after the 37 promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases.
 
 _Regenerate with `bash packet_scheduler/tb/scripts/gen_dv_report.sh`._
