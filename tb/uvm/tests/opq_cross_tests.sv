@@ -469,6 +469,69 @@ class opq_cross_drr_bursty_random_test extends opq_base_test;
     end
   endfunction
 
+  virtual function void override_bursty_sequence_from_plusargs(opq_drr_bursty_random_virtual_sequence seq);
+    int unsigned override_word;
+
+    if ($value$plusargs("OPQ_DRR_BURSTY_HOT_LANE=%d", override_word) &&
+        (override_word < OPQ_N_LANE)) begin
+      seq.hot_lane = override_word;
+    end
+    if ($value$plusargs("OPQ_DRR_BURSTY_FRAME_COUNT=%d", override_word) &&
+        (override_word > 0)) begin
+      seq.frame_count = override_word;
+    end
+    if ($value$plusargs("OPQ_DRR_BURSTY_SUBHEADERS=%d", override_word) &&
+        (override_word > 0) &&
+        (override_word <= OPQ_N_SHD)) begin
+      seq.subheaders_per_frame = override_word;
+    end
+    if ($value$plusargs("OPQ_DRR_BURSTY_HOT_HITS=%d", override_word) &&
+        (override_word > 0) &&
+        (override_word <= OPQ_N_HIT)) begin
+      seq.hot_hits_per_subheader = override_word;
+    end
+    if ($value$plusargs("OPQ_DRR_BURSTY_COLD_HITS=%d", override_word) &&
+        (override_word > 0) &&
+        (override_word <= OPQ_N_HIT)) begin
+      seq.cold_hits_per_subheader = override_word;
+    end
+    if ($value$plusargs("OPQ_DRR_BURSTY_HOT_GAP=%d", override_word)) begin
+      seq.hot_gap_cycles = override_word;
+    end
+    if ($value$plusargs("OPQ_DRR_BURSTY_COLD_GAP=%d", override_word)) begin
+      seq.cold_gap_cycles = override_word;
+    end
+  endfunction
+
+  virtual function void validate_bursty_sequence(opq_drr_bursty_random_virtual_sequence seq);
+    if (seq.hot_lane >= OPQ_N_LANE) begin
+      `uvm_fatal(get_type_name(), $sformatf(
+        "Invalid hot lane override %0d for OPQ_N_LANE=%0d",
+        seq.hot_lane,
+        OPQ_N_LANE
+      ))
+    end
+    if (seq.frame_count == 0) begin
+      `uvm_fatal(get_type_name(), "Bursty DRR frame_count must be non-zero")
+    end
+    if ((seq.subheaders_per_frame == 0) || (seq.subheaders_per_frame > OPQ_N_SHD)) begin
+      `uvm_fatal(get_type_name(), $sformatf(
+        "Bursty DRR subheaders_per_frame=%0d is outside [1:%0d]",
+        seq.subheaders_per_frame,
+        OPQ_N_SHD
+      ))
+    end
+    if ((seq.hot_hits_per_subheader == 0) || (seq.hot_hits_per_subheader > OPQ_N_HIT) ||
+        (seq.cold_hits_per_subheader == 0) || (seq.cold_hits_per_subheader > OPQ_N_HIT)) begin
+      `uvm_fatal(get_type_name(), $sformatf(
+        "Bursty DRR hit config hot=%0d cold=%0d exceeds [1:%0d]",
+        seq.hot_hits_per_subheader,
+        seq.cold_hits_per_subheader,
+        OPQ_N_HIT
+      ))
+    end
+  endfunction
+
   virtual function void configure_bursty_allowance(
     output int unsigned hot_allowance,
     output int unsigned cold_allowance
@@ -482,6 +545,33 @@ class opq_cross_drr_bursty_random_test extends opq_base_test;
     end
   endfunction
 
+  virtual function void override_bursty_allowance_from_plusargs(
+    inout int unsigned hot_allowance,
+    inout int unsigned cold_allowance
+  );
+    int unsigned override_word;
+
+    if ($value$plusargs("OPQ_DRR_BURSTY_HOT_ALLOWANCE=%d", override_word)) begin
+      hot_allowance = override_word;
+    end
+    if ($value$plusargs("OPQ_DRR_BURSTY_COLD_ALLOWANCE=%d", override_word)) begin
+      cold_allowance = override_word;
+    end
+  endfunction
+
+  virtual function void validate_bursty_allowance(
+    input int unsigned hot_allowance,
+    input int unsigned cold_allowance
+  );
+    if ((hot_allowance == 0) || (cold_allowance == 0) || (hot_allowance >= cold_allowance)) begin
+      `uvm_fatal(get_type_name(), $sformatf(
+        "Invalid DRR bursty allowance pair hot=%0d cold=%0d",
+        hot_allowance,
+        cold_allowance
+      ))
+    end
+  endfunction
+
   virtual task run_main_sequence();
     opq_drr_bursty_random_virtual_sequence seq;
     opq_bp_sequence bp_seq;
@@ -491,7 +581,11 @@ class opq_cross_drr_bursty_random_test extends opq_base_test;
 
     seq = opq_drr_bursty_random_virtual_sequence::type_id::create("seq");
     configure_bursty_sequence(seq);
+    override_bursty_sequence_from_plusargs(seq);
+    validate_bursty_sequence(seq);
     configure_bursty_allowance(hot_allowance, cold_allowance);
+    override_bursty_allowance_from_plusargs(hot_allowance, cold_allowance);
+    validate_bursty_allowance(hot_allowance, cold_allowance);
 
     hot_lane = seq.hot_lane;
     lane_allowance_cfg[0] = (hot_lane == 0) ? hot_allowance : cold_allowance;
@@ -610,6 +704,64 @@ class opq_cross_drr_bursty_repro_test extends opq_cross_drr_bursty_random_test;
   virtual function void configure_bursty_sequence(opq_drr_bursty_random_virtual_sequence seq);
     seq.hot_lane = 0;
     seq.frame_count = 8;
+    seq.subheaders_per_frame = 11;
+    seq.hot_hits_per_subheader = 46;
+    seq.cold_hits_per_subheader = 4;
+    seq.hot_gap_cycles = 8;
+    seq.cold_gap_cycles = 4032;
+  endfunction
+
+  virtual function void configure_bursty_allowance(
+    output int unsigned hot_allowance,
+    output int unsigned cold_allowance
+  );
+    hot_allowance = 1;
+    cold_allowance = 46;
+  endfunction
+endclass
+
+class opq_cross_drr_bursty_frame2_boundary_test extends opq_cross_drr_bursty_random_test;
+  `uvm_component_utils(opq_cross_drr_bursty_frame2_boundary_test)
+
+  function new(string name = "opq_cross_drr_bursty_frame2_boundary_test", uvm_component parent = null);
+    super.new(name, parent);
+  endfunction
+
+  // Freeze the largest green bursty DRR envelope found on 2026-04-20 before the
+  // active-lane retirement bug trips:
+  // `frame_count=2` passes, while the identical `frame_count=3` envelope fails.
+  virtual function void configure_bursty_sequence(opq_drr_bursty_random_virtual_sequence seq);
+    seq.hot_lane = 0;
+    seq.frame_count = 2;
+    seq.subheaders_per_frame = 11;
+    seq.hot_hits_per_subheader = 46;
+    seq.cold_hits_per_subheader = 4;
+    seq.hot_gap_cycles = 8;
+    seq.cold_gap_cycles = 4032;
+  endfunction
+
+  virtual function void configure_bursty_allowance(
+    output int unsigned hot_allowance,
+    output int unsigned cold_allowance
+  );
+    hot_allowance = 1;
+    cold_allowance = 46;
+  endfunction
+endclass
+
+class opq_cross_drr_bursty_frame3_repro_test extends opq_cross_drr_bursty_random_test;
+  `uvm_component_utils(opq_cross_drr_bursty_frame3_repro_test)
+
+  function new(string name = "opq_cross_drr_bursty_frame3_repro_test", uvm_component parent = null);
+    super.new(name, parent);
+  endfunction
+
+  // Freeze the smallest bursty DRR envelope found on 2026-04-20 that still
+  // reproduces the active-lane retirement bug:
+  // `frame_count=2` passes, `frame_count=3` fails, and `frame_count=4` also fails.
+  virtual function void configure_bursty_sequence(opq_drr_bursty_random_virtual_sequence seq);
+    seq.hot_lane = 0;
+    seq.frame_count = 3;
     seq.subheaders_per_frame = 11;
     seq.hot_hits_per_subheader = 46;
     seq.cold_hits_per_subheader = 4;

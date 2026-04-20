@@ -15,7 +15,8 @@ if [[ "$#" -eq 0 ]]; then
     opq_cross_drr_allowance_test \
     opq_cross_drr_idle_lane_test \
     opq_cross_drr_zero_allowance_test \
-    opq_cross_drr_short_allowance_test
+    opq_cross_drr_short_allowance_test \
+    opq_cross_idle_lane_backpressure_test
 fi
 
 DUT_IMPL="${DUT_IMPL}" "${SCRIPT_DIR}/run_uvm.sh" "$@"

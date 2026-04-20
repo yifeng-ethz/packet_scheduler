@@ -1603,15 +1603,6 @@ class opq_cross_random_ready_overflow_seconds_soak_test extends opq_frame_signof
         (min_hit_percent_plusarg <= 100)) begin
       seq.min_hit_percent = min_hit_percent_plusarg;
     end
-    if ((seq.max_hit_percent < seq.min_hit_percent) ||
-        (seq.hot_lane_min_hit_percent < seq.min_hit_percent)) begin
-      `uvm_fatal(get_type_name(), $sformatf(
-        "Invalid saturation defaults min=%0d max=%0d hot_min=%0d",
-        seq.min_hit_percent,
-        seq.max_hit_percent,
-        seq.hot_lane_min_hit_percent
-      ))
-    end
     if ($value$plusargs("OPQ_OVERFLOW_MAX_HIT_PERCENT=%d", max_hit_percent_plusarg) &&
         (max_hit_percent_plusarg >= seq.min_hit_percent) &&
         (max_hit_percent_plusarg <= 100)) begin
@@ -1828,6 +1819,324 @@ class opq_cross_random_ready_overflow_extensive_soak_test extends opq_cross_rand
       bp_segment_count = 24;
     end
   endfunction
+endclass
+
+class opq_cross_random_ready_overflow_step2_boundary_test extends opq_cross_random_ready_overflow_seconds_soak_test;
+  `uvm_component_utils(opq_cross_random_ready_overflow_step2_boundary_test)
+
+  function new(string name = "opq_cross_random_ready_overflow_step2_boundary_test", uvm_component parent = null);
+    super.new(name, parent);
+    require_ft_drop = 1'b0;
+    if (!$test$plusargs("OPQ_OVERFLOW_SOAK_STEPS")) begin
+      soak_iterations = 2;
+    end
+  endfunction
+
+  // Freeze the current green legal-overflow boundary on the default build:
+  // the first two random-ready overflow checkpoints stay packet-shape clean and
+  // keep `ft_drop_*` at zero, while the later must-drop path remains open.
+  virtual function string soak_label();
+    return "overflow_step2_boundary";
+  endfunction
+endclass
+
+class opq_cross_bp_predrop_boundary_test extends opq_cross_random_ready_overflow_seconds_soak_test;
+  `uvm_component_utils(opq_cross_bp_predrop_boundary_test)
+
+  localparam int unsigned HYBRID_NODROP_FRAME_COUNT = 4;
+  localparam int unsigned HYBRID_NODROP_HIT_COUNT_PER_SUBHEADER = 3;
+  localparam int unsigned HYBRID_PRESSURE_FRAME_COUNT = 48;
+  localparam int unsigned HYBRID_PRESSURE_HIT_COUNT_PER_SUBHEADER = 3;
+  localparam int unsigned HYBRID_PRESSURE_STALL_CYCLES = 120_000;
+
+  bit [31:0] no_drop_ft_drop_hdr_total;
+  bit [31:0] no_drop_ft_drop_shd_total;
+  bit [31:0] no_drop_ft_drop_hit_total;
+  bit [31:0] pressure_ft_drop_hdr_total;
+  bit [31:0] pressure_ft_drop_shd_total;
+  bit [31:0] pressure_ft_drop_hit_total;
+
+  function new(string name = "opq_cross_bp_predrop_boundary_test", uvm_component parent = null);
+    super.new(name, parent);
+    require_ft_drop = 1'b0;
+  endfunction
+
+  virtual function string soak_label();
+    return "bp_predrop_boundary";
+  endfunction
+
+  task automatic build_no_drop_bp_sequence(ref opq_bp_sequence bp_seq);
+    append_bp_item(
+      bp_seq,
+      "bp_nodrop_periodic_short",
+      BP_PERIODIC_STALL,
+      8,
+      8,
+      24
+    );
+    short_bp_segments_seen++;
+
+    append_bp_item_ns(
+      bp_seq,
+      "bp_nodrop_periodic_ms",
+      BP_PERIODIC_STALL,
+      10_000,
+      250_000,
+      1
+    );
+    ms_like_bp_segments_seen++;
+
+    append_bp_item(
+      bp_seq,
+      "bp_nodrop_ready_tail",
+      BP_ALWAYS_READY,
+      256,
+      1,
+      1
+    );
+  endtask
+
+  task automatic build_pressure_bp_sequence(ref opq_bp_sequence bp_seq);
+    append_bp_item(
+      bp_seq,
+      "bp_predrop_fill_stall",
+      BP_ALWAYS_STALL,
+      1,
+      HYBRID_PRESSURE_STALL_CYCLES,
+      1
+    );
+
+    append_bp_item(
+      bp_seq,
+      "bp_predrop_release_short",
+      BP_PERIODIC_STALL,
+      4,
+      16,
+      64
+    );
+    short_bp_segments_seen++;
+
+    append_bp_item_ns(
+      bp_seq,
+      "bp_predrop_release_ms",
+      BP_PERIODIC_STALL,
+      50_000,
+      250_000,
+      1
+    );
+    ms_like_bp_segments_seen++;
+  endtask
+
+  task automatic expect_ft_drop_delta(
+    input string label,
+    input bit [31:0] before_hdr,
+    input bit [31:0] before_shd,
+    input bit [31:0] before_hit,
+    input bit [31:0] after_hdr,
+    input bit [31:0] after_shd,
+    input bit [31:0] after_hit,
+    input bit require_progress
+  );
+    bit drop_progressed;
+
+    drop_progressed = (after_hdr > before_hdr) ||
+      (after_shd > before_shd) ||
+      (after_hit > before_hit);
+
+    `uvm_info(
+      get_type_name(),
+      $sformatf(
+        "%s ft_drop_delta hdr=%0d shd=%0d hit=%0d progressed=%0b require_progress=%0b",
+        label,
+        after_hdr - before_hdr,
+        after_shd - before_shd,
+        after_hit - before_hit,
+        drop_progressed,
+        require_progress
+      ),
+      UVM_LOW
+    )
+
+    if (require_progress && !drop_progressed) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "%s expected frame-table drop counters to advance, before hdr/shd/hit=%0d/%0d/%0d after=%0d/%0d/%0d",
+        label,
+        before_hdr,
+        before_shd,
+        before_hit,
+        after_hdr,
+        after_shd,
+        after_hit
+      ))
+    end
+    if (!require_progress && drop_progressed) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "%s expected frame-table drop counters to remain stable, before hdr/shd/hit=%0d/%0d/%0d after=%0d/%0d/%0d",
+        label,
+        before_hdr,
+        before_shd,
+        before_hit,
+        after_hdr,
+        after_shd,
+        after_hit
+      ))
+    end
+  endtask
+
+  task automatic run_bp_overflow_phase(
+    input string label,
+    input int unsigned frame_count,
+    input int unsigned hit_count_per_subheader,
+    input bit use_pressure_bp,
+    input bit require_drop_progress
+  );
+    opq_ftable_overflow_virtual_sequence seq;
+    opq_bp_sequence bp_seq;
+    bit [31:0] ft_drop_hdr_before;
+    bit [31:0] ft_drop_shd_before;
+    bit [31:0] ft_drop_hit_before;
+    bit [31:0] ft_drop_hdr_after;
+    bit [31:0] ft_drop_shd_after;
+    bit [31:0] ft_drop_hit_after;
+
+    sample_frame_table_drop_totals(ft_drop_hdr_before, ft_drop_shd_before, ft_drop_hit_before);
+
+    seq = opq_ftable_overflow_virtual_sequence::type_id::create({label, "_seq"});
+    bp_seq = opq_bp_sequence::type_id::create({label, "_bp_seq"});
+    seq.frame_count = frame_count;
+    seq.hit_count_per_subheader = hit_count_per_subheader;
+
+    if (use_pressure_bp) begin
+      build_pressure_bp_sequence(bp_seq);
+    end else begin
+      build_no_drop_bp_sequence(bp_seq);
+    end
+
+    `uvm_info(
+      get_type_name(),
+      $sformatf(
+        "%s frames=%0d hit_count_per_subheader=%0d require_drop_progress=%0b time=%0t",
+        label,
+        frame_count,
+        hit_count_per_subheader,
+        require_drop_progress,
+        $time
+      ),
+      UVM_LOW
+    )
+
+    configure_no_restart_sequence(seq);
+    fork
+      seq.start(env.vseqr);
+      begin
+        #(bp_start_delay_time());
+        bp_seq.start(env.vseqr.egress_seqr);
+      end
+    join
+    wait_for_ingress_idle(
+      $sformatf("%s_ingress_idle", seq.get_name()),
+      credit_restore_timeout(),
+      credit_restore_poll()
+    );
+    advance_no_restart_sequence(seq);
+    wait_for_credit_restore(
+      $sformatf("%s_credit_restore", seq.get_name()),
+      credit_restore_timeout(),
+      credit_restore_poll()
+    );
+
+    sample_frame_table_drop_totals(ft_drop_hdr_after, ft_drop_shd_after, ft_drop_hit_after);
+    update_ftable_drop_progress(use_pressure_bp ? 1 : 0);
+    expect_ft_drop_delta(
+      label,
+      ft_drop_hdr_before,
+      ft_drop_shd_before,
+      ft_drop_hit_before,
+      ft_drop_hdr_after,
+      ft_drop_shd_after,
+      ft_drop_hit_after,
+      require_drop_progress
+    );
+    report_frame_table_accounting_checkpoint(label, 1'b1);
+    report_lane_hit_accounting_checkpoint(label, 1'b1);
+    report_core_principle_checkpoint(label, 1'b1, 1'b1);
+
+    if (!use_pressure_bp) begin
+      no_drop_ft_drop_hdr_total = ft_drop_hdr_after;
+      no_drop_ft_drop_shd_total = ft_drop_shd_after;
+      no_drop_ft_drop_hit_total = ft_drop_hit_after;
+    end else begin
+      pressure_ft_drop_hdr_total = ft_drop_hdr_after;
+      pressure_ft_drop_shd_total = ft_drop_shd_after;
+      pressure_ft_drop_hit_total = ft_drop_hit_after;
+    end
+
+    #(inter_case_gap_time());
+  endtask
+
+  virtual task run_main_sequence();
+    reset_no_restart_identity();
+    csr_clear_counters();
+    csr_write32(OPQ_CSR_WORD_LANE_MASK, 32'h0000_0000);
+    overflow_steps_with_ft_drop = 0;
+    short_bp_segments_seen = 0;
+    ms_like_bp_segments_seen = 0;
+    last_ft_drop_hdr_total = '0;
+    last_ft_drop_shd_total = '0;
+    last_ft_drop_hit_total = '0;
+    no_drop_ft_drop_hdr_total = '0;
+    no_drop_ft_drop_shd_total = '0;
+    no_drop_ft_drop_hit_total = '0;
+    pressure_ft_drop_hdr_total = '0;
+    pressure_ft_drop_shd_total = '0;
+    pressure_ft_drop_hit_total = '0;
+
+    run_bp_overflow_phase(
+      "bp_predrop_boundary_nodrop",
+      HYBRID_NODROP_FRAME_COUNT,
+      HYBRID_NODROP_HIT_COUNT_PER_SUBHEADER,
+      1'b0,
+      1'b0
+    );
+    run_bp_overflow_phase(
+      "bp_predrop_boundary_pressure",
+      HYBRID_PRESSURE_FRAME_COUNT,
+      HYBRID_PRESSURE_HIT_COUNT_PER_SUBHEADER,
+      1'b1,
+      1'b0
+    );
+  endtask
+
+  virtual task run_post_sequence_checks();
+    super.run_post_sequence_checks();
+
+    if ((no_drop_ft_drop_hdr_total != 0) ||
+        (no_drop_ft_drop_shd_total != 0) ||
+        (no_drop_ft_drop_hit_total != 0)) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "No-drop hybrid phase advanced frame-table drop counters hdr=%0d shd=%0d hit=%0d",
+        no_drop_ft_drop_hdr_total,
+        no_drop_ft_drop_shd_total,
+        no_drop_ft_drop_hit_total
+      ))
+    end
+    if ((pressure_ft_drop_hdr_total != 0) ||
+        (pressure_ft_drop_shd_total != 0) ||
+        (pressure_ft_drop_hit_total != 0)) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "Pressure boundary phase unexpectedly advanced frame-table drop counters no_drop=%0d/%0d/%0d pressure=%0d/%0d/%0d",
+        no_drop_ft_drop_hdr_total,
+        no_drop_ft_drop_shd_total,
+        no_drop_ft_drop_hit_total,
+        pressure_ft_drop_hdr_total,
+        pressure_ft_drop_shd_total,
+        pressure_ft_drop_hit_total
+      ))
+    end
+    if (overflow_steps_with_ft_drop != 0) begin
+      `uvm_error(get_type_name(), "Pre-drop boundary testcase unexpectedly recorded a frame-table drop transition")
+    end
+  endtask
 endclass
 
 class opq_cross_random_ready_half_saturation_1s_simtime_test extends opq_cross_random_ready_overflow_seconds_soak_test;

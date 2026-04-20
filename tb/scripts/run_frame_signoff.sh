@@ -8,6 +8,9 @@ if [[ "$#" -eq 0 ]]; then
     opq_bucket_frame_native_sv_test \
     opq_all_buckets_frame_native_sv_test \
     opq_cross_mixed_bucket_random_soak_test \
+    opq_cross_drr_bursty_frame2_boundary_test \
+    opq_cross_bp_predrop_boundary_test \
+    opq_cross_random_ready_overflow_step2_boundary_test \
     opq_error_counter_clear_test
 
   COV_ENABLE=1 DUT_IMPL="${DUT_IMPL:-native_sv}" OPQ_PAGE_RAM_DEPTH=512 "${SCRIPT_DIR}/run_uvm.sh" \

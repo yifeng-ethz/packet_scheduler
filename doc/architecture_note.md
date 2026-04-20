@@ -100,6 +100,27 @@ Useful checkpoints are:
 The first checkpoint with non-zero unexplained hits is the primary debug
 anchor.
 
+## Current Closure Readout
+
+The latest DV evidence now splits the default-build overflow space into two
+architecturally different halves:
+
+- `opq_cross_bp_predrop_boundary_test` is the green proof that sustained
+  default-build backpressure can stay entirely in the legal ingress pre-drop
+  regime. In that case `ft_drop_*` remains zero, the per-lane hit ledgers close
+  with `unexplained=0`, and `frame_table_write = frame_table_read + frame_table_drop`
+  still holds.
+- `opq_cross_random_ready_overflow_step2_boundary_test` is the green proof
+  that the first two default-build random-ready overflow windows may also stay
+  entirely legal: `ft_drop_*` remains zero, the per-step hit ledgers close
+  with `unexplained=0`, and `frame_table_write = frame_table_read + frame_table_drop`
+  still holds at both checkpoints and at end-of-test.
+- `opq_error_ftable_overflow_test` at `OPQ_PAGE_RAM_DEPTH=512` remains the
+  current must-drop proof point for write-thread overwrite accounting.
+- `opq_cross_random_ready_overflow_seconds_soak_test` remains the open
+  default-build must-drop bug anchor, because it can still reach a window where
+  unread tail ownership is consumed without matching `ft_drop_*` identity.
+
 ## Current Debug Reading
 
 The current open bug family is consistent with three separate architectural
@@ -108,9 +129,12 @@ violations, not one:
 - `BUG-024-R`: accepted-egress framing corruption at the reduced-depth
   overwrite launch boundary
 - `BUG-025-R`: large random mixed traffic still shows silent hit loss / ghost
-  creation before the failing boundary is fully proven
+  creation before the failing boundary is fully proven; the named
+  `opq_cross_drr_bursty_frame2_boundary_test` is green, while the current
+  shortest failing anchor is `opq_cross_drr_bursty_frame3_repro_test`
 - `BUG-026-R`: random-ready overflow still shows unread tail traffic being
-  consumed without matching frame-table drop identity
+  consumed without matching frame-table drop identity once the testcase moves
+  past the named green `opq_cross_random_ready_overflow_step2_boundary_test`
 
 Those bugs should be judged against this note, not against an informal "avoid
 overflow" goal. Overflow is allowed. Silent or malformed overflow is not.

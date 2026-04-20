@@ -42,8 +42,8 @@ Encounter sim-time legend:
 | [BUG-022-R](#bug-022-r-new-frame-running-ts-seeded-from-frame-header-ts-instead-of-the-current-subheader-ts) | R | hard stuck error | `n/a (exact repro)` | fixed | `opq_cross_hit3_exact_183_190_repro_test` on `2026-04-19` | `466b935` | A new frame seeded allocator `running_ts` from the frame header timestamp instead of the parser's current running subheader timestamp, so same-frame payload tickets were misclassified as `future` and the allocator could emit an empty tail before fetching payload. |
 | [BUG-023-H](#bug-023-h-expanded-no-restart-signoff-matrix-reused-stale-frame-identity-and-under-specified-credit-restore-idle) | H | non-datapath-refactor | `n/a (no-restart directed)` | fixed | `opq_bucket_frame_native_sv_test`, `opq_all_buckets_frame_native_sv_test` on `2026-04-20` | `36de7a3` | The expanded no-restart signoff matrix falsely failed until composed sequences carried monotonic frame identity across lanes and waited for true idle credit restore. |
 | [BUG-024-R](#bug-024-r-overwrite-launch-window-can-still-flush-the-live-head-before-first-accept) | R | soft error | `n/a (reduced-depth directed)` | fixed | `opq_error_ftable_overflow_test` on `2026-04-20` | `89de4bf` | The reduced-depth overwrite screen is clean again after the presenter protects the live head through the first visible beat and exports lane-resolved overwrite-drop accounting. |
-| [BUG-025-R](#bug-025-r-active-lane-retirement-still-depends-on-a-level-eop-flag-that-the-parser-can-clear-too-early) | R | hard stuck error | `n/a (large constrained-random)` | open | `opq_cross_drr_bursty_random_test` on `2026-04-20` | `pending` | The larger bursty DRR probe can strand accepted lane0 hits because the allocator keeps `frame_lane_active` set after tail state is forgotten, blocking frame retirement with no pending tickets left. |
-| [BUG-026-R](#bug-026-r-live-head-overwrite-protection-suppresses-unread-tail-drop-accounting) | R | soft error | `n/a (overflow random-ready)` | open | `opq_cross_random_ready_overflow_seconds_soak_test` on `2026-04-20` | `pending` | The old default-build step-0/1 overflow mismatch is no longer reproduced in a trimmed probe, but full-depth evidence for legal frame-table overwrite accounting is still pending. |
+| [BUG-025-R](#bug-025-r-active-lane-retirement-still-depends-on-a-level-eop-flag-that-the-parser-can-clear-too-early) | R | hard stuck error | `n/a (large constrained-random)` | open | `opq_cross_drr_bursty_random_test` on `2026-04-20` | `pending` | The named `frame_count=2` bursty boundary is green, but the allocator can still strand accepted lane0 hits once the same envelope grows to `frame_count=3+`, leaving `frame_lane_active` set after tail state is forgotten. |
+| [BUG-026-R](#bug-026-r-live-head-overwrite-protection-suppresses-unread-tail-drop-accounting) | R | soft error | `n/a (overflow random-ready)` | open | `opq_cross_random_ready_overflow_seconds_soak_test` on `2026-04-20` | `pending` | The named two-step legal-overflow boundary is now green, but full-depth evidence for legal frame-table overwrite accounting beyond that early window is still pending. |
 
 ## 2026-04-17
 
@@ -212,11 +212,14 @@ Encounter sim-time legend:
 - Fix status:
   - fixed in focused native-SV repro on `2026-04-19`
 - Runtime / coverage context:
-  - `opq_cross_drr_bursty_repro_test` now ends with `expected=1864 actual=1864 missing=0 ghost=0`
-  - the repaired focused repro also closes the per-lane hit ledger:
+  - at fix landing, `opq_cross_drr_bursty_repro_test` closed with
+    `expected=1864 actual=1864 missing=0 ghost=0`
+  - the repaired focused repro at that point also closed the per-lane hit ledger:
     - lane0 `accepted=1840 dropped=2208 pre_drop=0 post_drop=2208 delivered=1840 unexplained=0`
     - lane1 `accepted=24 dropped=328 pre_drop=0 post_drop=328 delivered=24 unexplained=0`
-  - the full constrained-random bursty testcase still needs a refresh run before promotion, but the invariant family that caused silent hit loss is now closed on the directed reproducer
+  - the original running-timestamp loss is still closed at commit `9b516d7`, but
+    the same testcase is no longer a current-tree green proof because the
+    separate active-lane retirement bug family in `BUG-025-R` now reopens it
 - Commit:
   - `9b516d7` `Fix OPQ bursty DRR frame-progress loss`
 
@@ -723,16 +726,20 @@ Encounter sim-time legend:
 - Fix status:
   - open
 - Runtime / coverage context:
-  - the focused `opq_cross_drr_bursty_repro_test` remains green, so this is a
-    larger-envelope retirement bug rather than a regression of the earlier
-    focused running-timestamp fix in `BUG-009-R`
+  - the remaining bug is now bracketed by a reduced deterministic boundary:
+    the named `opq_cross_drr_bursty_frame2_boundary_test` passes with
+    `expected=298 actual=298 missing=0 ghost=0`, while the named
+    `opq_cross_drr_bursty_frame3_repro_test` fails with
+    `expected=484 actual=254 missing=230 ghost=0`, lane0
+    `accepted=460 dropped=1058 delivered=230 unexplained=230`, and lane1
+    `accepted=24 dropped=108 delivered=24 unexplained=0`
   - clean rerun on `2026-04-20` with an isolated build still reproduces the
-    same failure signature:
+    full-envelope failure signature:
     `BUILD_DIR=/tmp/opq_bug25_build RUN_DIR=/tmp/opq_bug25_run LOG_DIR=/tmp/opq_bug25_run/logs COV_DIR=/tmp/opq_bug25_run/coverage bash packet_scheduler/tb/scripts/run_uvm.sh opq_cross_drr_bursty_random_test`
-  - that rerun again ends with
-    `expected=896 actual=920 missing=368 ghost=392`, lane0
-    `accepted=828 dropped=3220 delivered=460 unexplained=368`, and an early
-    `opq_hit3_contract` monotonicity failure at `15346 ns`
+  - that rerun ends with
+    `expected=852 actual=622 missing=368 ghost=138`, lane0
+    `accepted=828 dropped=3220 delivered=460 unexplained=368`, and the traced
+    end-state still leaves `frame_lane_active=0x3` with `pending=0`
   - an attempted sticky-EOP allocator experiment was reverted after it failed
     to move the large-random signature, so the missing per-lane tail memory is
     still a working hypothesis, not a proved full fix
@@ -767,21 +774,31 @@ Encounter sim-time legend:
 - Fix status:
   - open
 - Runtime / coverage context:
-  - the original default-build failure is no longer reproduced by the trimmed
-    two-step probe on `2026-04-20`:
-    `BUILD_DIR=/tmp/opq_overflow_probe1_build RUN_DIR=/tmp/opq_overflow_probe1_run LOG_DIR=/tmp/opq_overflow_probe1_run/logs COV_DIR=/tmp/opq_overflow_probe1_run/coverage DUT_IMPL=native_sv UVM_TESTNAME=opq_cross_random_ready_overflow_seconds_soak_test VSIM_PLUSARGS='+OPQ_OVERFLOW_SOAK_STEPS=2' bash packet_scheduler/tb/scripts/run_uvm.sh opq_cross_random_ready_overflow_seconds_soak_test`
-  - that probe now keeps the first two overflow checkpoints clean:
+  - the original default-build failure is no longer reproduced by the named
+    two-step boundary testcase `opq_cross_random_ready_overflow_step2_boundary_test`
+    on `2026-04-20`
+  - that testcase keeps the first two overflow checkpoints clean:
     - `overflow_step_0`: `wr_shd=5 rd_shd=5 drop_shd=0`,
       `wr_hit=540 rd_hit=540 drop_hit=0`, aggregate `unexplained=0`
     - `overflow_step_1`: `wr_shd=13 rd_shd=13 drop_shd=0`,
       `wr_hit=1129 rd_hit=1129 drop_hit=0`, aggregate `unexplained=0`
     - both checkpoints end with
       `core_principles first_break=clean ft_ownership= ok hit_conservation= ok accepted_delivery= ok drained= ok`
-  - the trimmed probe still exits red only because the testcase is configured
-    to require non-zero `ft_drop_*`, and the shortened run does not yet reach
-    an actual frame-table overwrite event:
-    - `Expected non-zero frame-table drop counters during random-ready overflow soak`
-    - `Random-ready overflow soak never advanced the frame-table drop counters`
+  - the named testcase also exits green with final
+    `ft_drop_hdr/shd/hit=0/0/0`, `wr_hdr/shd/hit=6/13/1129`,
+    `rd_hdr/shd/hit=6/13/1129`, and aggregate
+    `accepted=1129 delivered=1129 unexplained=0`
+  - the new default-build supplemental signoff run
+    `opq_cross_bp_predrop_boundary_test` now closes the legal pre-drop half of
+    the contract on `2026-04-20`:
+    - final `ft_drop_hdr/shd/hit=0/0/0`
+    - aggregate `accepted=13260 dropped=66612 delivered=13260 unexplained=0`
+    - `core_principles first_break=clean ft_ownership= ok hit_conservation= ok accepted_delivery= ok drained= ok`
+  - that narrows this open bug to the remaining default-build must-drop path:
+    the issue is no longer whether early heavy overflow/backpressure can stay
+    legal, but whether a real later default-build overwrite window can retire
+    unread tail ownership with visible `ft_drop_*` identity and no malformed
+    accepted egress
   - full-depth default-build overflow evidence is therefore still pending
     before this bug can be closed or downgraded to a testcase-depth issue
 - Commit:

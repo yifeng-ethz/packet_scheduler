@@ -29,6 +29,9 @@
 | `opq_cross_drr_short_allowance_test` | Short-quantum reload behavior with repeated directed service handoff | Passing |
 | `opq_cross_idle_lane_backpressure_test` | Idle-lane cadence crossed with periodic egress stalls on the active lane | Passing |
 | `opq_cross_mixed_bucket_random_soak_test` | Random mixed-bucket soak that chains safe BASIC/EDGE/PROF/ERROR/CROSS cases without restart | Passing; tracked as a dedicated supplemental native-SV signoff run outside the fixed case-ordered bucket-frame baselines |
+| `opq_cross_drr_bursty_frame2_boundary_test` | Deterministic bursty DRR green-side boundary below the open retirement failure | Passing on `2026-04-20` with `expected=298 actual=298 missing=0 ghost=0`; tracked as a dedicated supplemental native-SV signoff run outside the fixed case-ordered bucket-frame baselines |
+| `opq_cross_bp_predrop_boundary_test` | Directed default-build backpressure boundary proof that shows heavy sustained pressure can stay in the legal ingress pre-drop regime with `ft_drop_* = 0` while hit and frame-table ledgers still close | Passing; tracked as a dedicated supplemental native-SV signoff run outside the fixed case-ordered bucket-frame baselines |
+| `opq_cross_random_ready_overflow_step2_boundary_test` | Named default-build two-step legal-overflow boundary in random-ready shape-check mode | Passing on `2026-04-20` with final `wr_hdr/shd/hit=6/13/1129`, `rd_hdr/shd/hit=6/13/1129`, `ft_drop_hdr/shd/hit=0/0/0`, and aggregate `unexplained=0`; tracked as a dedicated supplemental native-SV signoff run outside the fixed case-ordered bucket-frame baselines |
 
 ---
 
@@ -36,9 +39,24 @@
 
 | Test | Purpose | Current status |
 |------|---------|----------------|
-| `opq_cross_drr_bursty_random_test` | Constrained-random hot-lane / cold-lane DRR stress with periodic egress stalls | Focused native-SV repro remains fixed, but the refreshed larger constrained-random rerun on `2026-04-20` still fails with lane0 `unexplained=368` and hit-integrity summary `expected=852 actual=622 missing=368 ghost=138`; the traced end-state leaves `frame_lane_active=0x3` with `pending=0`, so keep probe-only while active-lane retirement is repaired |
-| `opq_cross_random_ready_overflow_seconds_soak_test` | Default-build random-ready overflow / backpressure soak with ledger checkpoints after each step | Fresh rerun on `2026-04-20` fails immediately at `overflow_step_0` with `ft_wr_shd wr=5 rd=7 drop=0`, `ft_wr_hit wr=540 rd=545 drop=0`, and lane1 `unexplained=174`; keep probe-only while the presenter overwrite path is debugged |
+| `opq_cross_drr_bursty_random_test` | Constrained-random hot-lane / cold-lane DRR stress with periodic egress stalls | Fresh full-envelope rerun on `2026-04-20` still fails with lane0 `unexplained=368` and hit-integrity summary `expected=852 actual=622 missing=368 ghost=138`; the traced end-state leaves `frame_lane_active=0x3` with `pending=0`, so keep probe-only while active-lane retirement is repaired |
+| `opq_cross_drr_bursty_frame3_repro_test` | Reduced deterministic bursty DRR retirement anchor for `BUG-025-R` | New `2026-04-20` named repro fails with `expected=484 actual=254 missing=230 ghost=0`; the named green companion `opq_cross_drr_bursty_frame2_boundary_test` passes, so this is the current shortest named failure anchor |
+| `opq_cross_random_ready_overflow_seconds_soak_test` | Default-build random-ready overflow / backpressure soak with ledger checkpoints after each step | Fresh rerun on `2026-04-20` fails immediately at `overflow_step_0` with `ft_wr_shd wr=5 rd=7 drop=0`, `ft_wr_hit wr=540 rd=545 drop=0`, and lane1 `unexplained=174`; keep probe-only while the presenter overwrite path is debugged, with `opq_cross_random_ready_overflow_step2_boundary_test` holding the current named green early-window boundary |
 | `opq_cross_mixed_bucket_seconds_soak_test` | Earlier extended mixed-bucket random soak with longer chained no-restart traffic and stretched simulated time | Passing extended probe: the full stretched rerun now crosses the old `mixed_sparse_191`, `mixed_soak_261`, `mixed_whole_skew_275`, `mixed_whole_skew_418`, and `mixed_whole_skew_435` windows cleanly and exits with `UVM_ERROR : 0`; kept probe-only because it is a long runtime stress screen rather than a promoted matrix case |
+
+The current default-build overflow/backpressure space is therefore split
+deliberately:
+
+- `opq_cross_bp_predrop_boundary_test` is the green proof that sustained
+  default-build backpressure may remain entirely in the legal ingress pre-drop
+  regime with clean `wr = rd + drop` accounting and `unexplained = 0`.
+- `opq_cross_random_ready_overflow_step2_boundary_test` is the green proof
+  that the first two default-build random-ready overflow windows may still stay
+  legal even under very heavy pre-drop pressure: both checkpoints keep
+  `ft_drop_* = 0`, `wr = rd + drop`, and `unexplained = 0`.
+- `opq_cross_random_ready_overflow_seconds_soak_test` remains the open
+  default-build must-drop bug anchor for the path that still reaches malformed
+  overwrite behavior without matching `ft_drop_*` identity.
 
 ---
 

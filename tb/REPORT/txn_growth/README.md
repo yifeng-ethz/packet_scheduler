@@ -3,3 +3,4 @@
 Promoted random testcase checkpoint curves:
 
 - [`COMBO_OPQ_507_cross_mixed_bucket_random_soak_test`](COMBO_OPQ_507_cross_mixed_bucket_random_soak_test.md)
+- [`COMBO_OPQ_509_cross_random_ready_overflow_step2_boundary_test`](COMBO_OPQ_509_cross_random_ready_overflow_step2_boundary_test.md)

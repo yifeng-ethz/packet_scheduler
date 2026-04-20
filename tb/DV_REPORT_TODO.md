@@ -196,17 +196,23 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       signoff runs instead of leaving them as isolated evidence only.
       Status on `2026-04-20`:
       - `run_frame_signoff.sh` now refreshes the fixed bucket-frame baselines
-        plus three supplemental signoff runs:
+        plus six supplemental signoff runs:
         `opq_cross_mixed_bucket_random_soak_test`,
+        `opq_cross_drr_bursty_frame2_boundary_test`,
+        `opq_cross_bp_predrop_boundary_test`,
+        `opq_cross_random_ready_overflow_step2_boundary_test`,
         `opq_error_counter_clear_test`, and
         `opq_error_ftable_overflow_test`
       - the generated dashboard now gives each of those screens its own
         `REPORT/cross/*.md` page and keeps the fixed baselines explicit about
         their limited default-build scope
-      - the fresh reduced-depth overflow rerun reopened
-        `opq_hit3_contract` frame-trailer/pkg_cnt/timestamp errors, so only
-        the mixed-soak and counter-clear supplemental screens are currently
-        green
+      - the current green supplemental screens are the mixed-soak run, the
+        bursty DRR `frame_count=2` boundary, the legal pre-drop boundary, the
+        legal two-step random-ready overflow boundary, and the counter-clear
+        screen
+      - the reduced-depth overflow rerun still reopens `opq_hit3_contract`
+        frame-trailer/pkg_cnt/timestamp errors, so that elaboration point
+        remains red
 
 ## 7. Add Random-Test Transaction-Growth Evidence
 
@@ -265,15 +271,18 @@ Execution order frozen on 2026-04-18 for the next closure phase:
 - [ ] Refresh the larger bursty DRR random closure path before promoting
       `opq_cross_drr_bursty_random_test`.
       Status on `2026-04-20`:
-      - the focused reproducer `opq_cross_drr_bursty_repro_test` is now clean
-        with `expected=1864 actual=1864 missing=0 ghost=0`
       - root cause was the page allocator advancing merged-frame progress
         ahead of an already-active busy lane that had not yet surfaced its
         current ticket, which silently discarded same-frame late tickets
+      - the same envelope now brackets a clean reduction boundary:
+        `frame_count=2` passes, while the new named
+        `opq_cross_drr_bursty_frame3_repro_test` fails with
+        `expected=484 actual=254 missing=230 ghost=0`
       - the fresh larger constrained-random rerun on `2026-04-20` still fails
         with `expected=852 actual=622 missing=368 ghost=138` and lane0
         `unexplained=368`
-      - keep the larger random envelope probe-only until that remaining
+      - keep both the reduced `frame3` anchor and the larger random envelope
+        probe-only until that remaining
         hit-accounting loss is debugged or explicitly retired
 - [x] Promote the `2026-04-20` isolated-pass bucket expansions into the live
       report flow only after wrapper order, bucket-frame coverage ordering, and
@@ -353,9 +362,11 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       Status on `2026-04-19`:
       - native-SV now exports pre/post ingress drop-event visibility into the
         live drop monitor and scoreboard
-      - the focused bursty repro closes with per-lane `unexplained=0`, so the
-        repaired path no longer depends on final CSR totals alone for
-        hit-integrity proof
+      - that observability now brackets the live retirement bug cleanly on the
+        current tree: the identical bursty envelope passes at `frame_count=2`
+        and fails at `frame_count=3`, with explicit per-lane
+        `accepted / dropped / delivered / unexplained` evidence instead of
+        only final CSR totals
 - [ ] Add checkpoint summaries to the long mixed soak so each checkpoint
       reports, per lane:
       accepted hits, legal dropped hits, delivered hits, unexplained hits, and
@@ -378,6 +389,18 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       - this confirms the checkpoint plumbing is useful, but the default-build
         overflow path is still not signoff-clean because the presenter can
         suppress unread-tail drop accounting while a live head is resident
+- [x] Add a dedicated default-build legal pre-drop boundary screen so the
+      report distinguishes "must not drop" evidence from the still-open
+      default-build must-drop bug anchor.
+      Status on `2026-04-20`:
+      - implemented as `opq_cross_bp_predrop_boundary_test`
+      - the passing native-SV signoff rerun closes with
+        `ft_drop_hdr/shd/hit=0/0/0`, aggregate
+        `accepted=13260 dropped=66612 delivered=13260 unexplained=0`, and
+        `core_principles first_break=clean`
+      - keep the testcase as a supplemental signoff run outside the fixed
+        bucket-frame baselines because it qualifies the legal default-build
+        pre-drop boundary instead of widening the promoted fixed matrix
 - [ ] Close the remaining harness-upgrade gaps that would block full native-SV
       ownership:
       - scoreboard and SVA parity between native-SV and prior reference runs

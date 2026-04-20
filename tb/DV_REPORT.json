@@ -254,6 +254,16 @@
         "bucket": "CROSS",
         "report_case_id": "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test",
         "legacy_test_name": "opq_cross_mixed_bucket_random_soak_test"
+      },
+      {
+        "bucket": "CROSS",
+        "report_case_id": "COMBO_OPQ_508_cross_drr_bursty_frame2_boundary_test",
+        "legacy_test_name": "opq_cross_drr_bursty_frame2_boundary_test"
+      },
+      {
+        "bucket": "CROSS",
+        "report_case_id": "COMBO_OPQ_509_cross_random_ready_overflow_step2_boundary_test",
+        "legacy_test_name": "opq_cross_random_ready_overflow_step2_boundary_test"
       }
     ]
   },
@@ -318,9 +328,9 @@
     "mode_scope": "MERGING mode only is claimed in the active native-SV report",
     "n_shd_scope": "native-SV signoff claim covers OPQ_N_SHD = 128 / 256 / 512 only",
     "four_lane_status": "4-lane native-SV remains out of signoff scope until dedicated 4-lane DV evidence is promoted; the standalone Arria 10 synthesis result is now recorded separately in signoff",
-    "bursty_drr_probe_status": "the focused bursty DRR reproducer is green, but the refreshed larger constrained-random rerun on 2026-04-20 still fails with lane0 unexplained=368 and hit-integrity summary expected=852 actual=622 missing=368 ghost=138; the screen remains probe-only",
+    "bursty_drr_probe_status": "the named green-side companion opq_cross_drr_bursty_frame2_boundary_test now passes with expected=298 actual=298 missing=0 ghost=0, but the reduced deterministic opq_cross_drr_bursty_frame3_repro_test still fails with expected=484 actual=254 missing=230 ghost=0 and the full 8-frame screen still fails with lane0 unexplained=368; the larger failure family remains probe-only",
     "mixed_bucket_seconds_probe_status": "the exact 183..190 reproducer is green, and the full stretched mixed-bucket seconds soak now also passes end to end on the repaired allocator state; the screen remains probe-only because of runtime, not because of a live failure",
-    "continuous_frame_scope": "fixed bucket-frame baselines cover the default-build promoted matrix only; dedicated supplemental signoff runs now track mixed-bucket random soak, counter-clear semantics, and the reduced-depth overflow build point, while PARAM elaboration points still remain separate"
+    "continuous_frame_scope": "fixed bucket-frame baselines cover the default-build promoted matrix only; dedicated supplemental signoff runs now track mixed-bucket random soak, the bursty DRR frame_count=2 green boundary, the default-build legal pre-drop boundary, the default-build two-step legal overflow boundary, counter-clear semantics, and the reduced-depth overflow build point, while PARAM elaboration points still remain separate"
   },
   "execution_modes": {
     "isolated": {
@@ -389,7 +399,9 @@
           "COMBO_OPQ_504_cross_drr_zero_allowance_test",
           "COMBO_OPQ_505_cross_drr_short_allowance_test",
           "COMBO_OPQ_506_cross_idle_lane_backpressure_test",
-          "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test"
+          "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test",
+          "COMBO_OPQ_508_cross_drr_bursty_frame2_boundary_test",
+          "COMBO_OPQ_509_cross_random_ready_overflow_step2_boundary_test"
         ]
       }
     },
@@ -592,6 +604,9 @@
       "limitations": [
         "PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.",
         "opq_cross_mixed_bucket_random_soak_test is tracked as a dedicated supplemental signoff run; this fixed baseline remains case-ordered and deterministic.",
+        "opq_cross_drr_bursty_frame2_boundary_test is tracked as a dedicated supplemental signoff run because it freezes the last known green bursty DRR envelope below the open frame_count=3 retirement failure.",
+        "opq_cross_bp_predrop_boundary_test is tracked as a dedicated supplemental signoff run because it proves the default-build legal pre-drop boundary under sustained backpressure rather than a promoted fixed bucket-frame case.",
+        "opq_cross_random_ready_overflow_step2_boundary_test is tracked as a dedicated supplemental signoff run because it freezes the current green two-step legal-overflow boundary while the later must-drop path remains probe-only.",
         "opq_error_counter_clear_test is tracked as a dedicated supplemental signoff run because it intentionally clears live CSR counters mid-run.",
         "opq_error_ftable_overflow_test is tracked as a dedicated supplemental signoff run because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration."
       ]
@@ -807,6 +822,9 @@
       "limitations": [
         "PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.",
         "opq_cross_mixed_bucket_random_soak_test is tracked as a dedicated supplemental signoff run; this fixed baseline remains case-ordered and deterministic.",
+        "opq_cross_drr_bursty_frame2_boundary_test is tracked as a dedicated supplemental signoff run because it freezes the last known green bursty DRR envelope below the open frame_count=3 retirement failure.",
+        "opq_cross_bp_predrop_boundary_test is tracked as a dedicated supplemental signoff run because it proves the default-build legal pre-drop boundary under sustained backpressure rather than a promoted fixed bucket-frame case.",
+        "opq_cross_random_ready_overflow_step2_boundary_test is tracked as a dedicated supplemental signoff run because it freezes the current green two-step legal-overflow boundary while the later must-drop path remains probe-only.",
         "opq_error_counter_clear_test is tracked as a dedicated supplemental signoff run because it intentionally clears live CSR counters mid-run.",
         "opq_error_ftable_overflow_test is tracked as a dedicated supplemental signoff run because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration.",
         "This run appends two extra tail sequences after the 37 promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases."
@@ -827,6 +845,50 @@
       "limitations": [
         "This is a supplemental signoff run, not the fixed bucket-frame baseline; execution order is intentionally seed-driven rather than case-id ordered.",
         "The run reuses only already-promoted safe bucket slices so it can stress chained no-restart behavior without reopening known probe-only bursty DRR loss."
+      ]
+    },
+    "drr_bursty_frame2_boundary": {
+      "run_id": "drr_bursty_frame2_boundary_native_sv",
+      "bucket_order": [
+        "CROSS"
+      ],
+      "ordered_steps": [
+        {
+          "bucket": "CROSS",
+          "report_case_id": "COMBO_OPQ_508_cross_drr_bursty_frame2_boundary_test",
+          "legacy_test_name": "opq_cross_drr_bursty_frame2_boundary_test"
+        }
+      ],
+      "limitations": [
+        "This is a supplemental signoff run that freezes the largest green bursty DRR envelope below the open frame_count=3 active-lane retirement failure.",
+        "It is intentionally tracked outside the promoted fixed bucket-frame baselines because the larger bursty DRR probe family remains open."
+      ]
+    },
+    "bp_predrop_boundary": {
+      "run_id": "bp_predrop_boundary_native_sv",
+      "bucket_order": [
+        "CROSS"
+      ],
+      "limitations": [
+        "This is a supplemental signoff run that proves the default-build legal pre-drop boundary under sustained backpressure while keeping frame-table drop counters at zero.",
+        "The testcase intentionally stages a mild no-drop phase followed by a heavier pressure phase, so it is tracked outside the promoted fixed bucket-frame baselines."
+      ]
+    },
+    "overflow_step2_boundary": {
+      "run_id": "overflow_step2_boundary_native_sv",
+      "bucket_order": [
+        "CROSS"
+      ],
+      "ordered_steps": [
+        {
+          "bucket": "CROSS",
+          "report_case_id": "COMBO_OPQ_509_cross_random_ready_overflow_step2_boundary_test",
+          "legacy_test_name": "opq_cross_random_ready_overflow_step2_boundary_test"
+        }
+      ],
+      "limitations": [
+        "This is a supplemental signoff run that freezes the current green two-step legal-overflow boundary on the default build with ft_drop counters held at zero.",
+        "It does not close the later must-drop path; the longer random-ready overflow soak remains probe-only until the presenter overwrite accounting bug is fixed."
       ]
     },
     "error_counter_clear": {
@@ -7211,117 +7273,117 @@
       },
       "standalone_coverage": {
         "branch": {
-          "pct": 71.35
+          "pct": 63.13
         },
         "cond": {
-          "pct": 45.5
+          "pct": 32.02
         },
         "expr": {
-          "pct": 67.27
+          "pct": 53.06
         },
         "fsm_state": {
-          "pct": 85.71
+          "pct": 84.09
         },
         "fsm_trans": {
-          "pct": 43.75
+          "pct": 41.0
         },
         "stmt": {
-          "pct": 83.53
+          "pct": 71.36
         },
         "toggle": {
-          "pct": 38.28
+          "pct": 25.16
         }
       },
       "isolated_cov_per_txn": {
         "branch": {
-          "pct": 71.35
+          "pct": 63.13
         },
         "cond": {
-          "pct": 45.5
+          "pct": 32.02
         },
         "expr": {
-          "pct": 67.27
+          "pct": 53.06
         },
         "fsm_state": {
-          "pct": 85.71
+          "pct": 84.09
         },
         "fsm_trans": {
-          "pct": 43.75
+          "pct": 41.0
         },
         "stmt": {
-          "pct": 83.53
+          "pct": 71.36
         },
         "toggle": {
-          "pct": 38.28
+          "pct": 25.16
         }
       },
       "bucket_gain_by_case": {
         "branch": {
-          "pct": 71.35
+          "pct": 63.13
         },
         "cond": {
-          "pct": 45.5
+          "pct": 32.02
         },
         "expr": {
-          "pct": 67.27
+          "pct": 53.06
         },
         "fsm_state": {
-          "pct": 85.71
+          "pct": 84.09
         },
         "fsm_trans": {
-          "pct": 43.75
+          "pct": 41.0
         },
         "stmt": {
-          "pct": 83.53
+          "pct": 71.36
         },
         "toggle": {
-          "pct": 38.28
+          "pct": 25.16
         }
       },
       "bucket_merged_total_after_case": {
         "branch": {
-          "pct": 71.35
+          "pct": 63.13
         },
         "cond": {
-          "pct": 45.5
+          "pct": 32.02
         },
         "expr": {
-          "pct": 67.27
+          "pct": 53.06
         },
         "fsm_state": {
-          "pct": 85.71
+          "pct": 84.09
         },
         "fsm_trans": {
-          "pct": 43.75
+          "pct": 41.0
         },
         "stmt": {
-          "pct": 83.53
+          "pct": 71.36
         },
         "toggle": {
-          "pct": 38.28
+          "pct": 25.16
         }
       },
       "bucket_gain_per_txn": {
         "branch": {
-          "pct": 71.35
+          "pct": 63.13
         },
         "cond": {
-          "pct": 45.5
+          "pct": 32.02
         },
         "expr": {
-          "pct": 67.27
+          "pct": 53.06
         },
         "fsm_state": {
-          "pct": 85.71
+          "pct": 84.09
         },
         "fsm_trans": {
-          "pct": 43.75
+          "pct": 41.0
         },
         "stmt": {
-          "pct": 83.53
+          "pct": 71.36
         },
         "toggle": {
-          "pct": 38.28
+          "pct": 25.16
         }
       }
     },
@@ -7373,117 +7435,117 @@
       },
       "standalone_coverage": {
         "branch": {
-          "pct": 73.1
+          "pct": 65.78
         },
         "cond": {
-          "pct": 48.68
+          "pct": 39.04
         },
         "expr": {
-          "pct": 67.27
+          "pct": 58.16
         },
         "fsm_state": {
-          "pct": 88.57
+          "pct": 86.36
         },
         "fsm_trans": {
-          "pct": 46.25
+          "pct": 43.0
         },
         "stmt": {
-          "pct": 84.61
+          "pct": 73.49
         },
         "toggle": {
-          "pct": 35.82
+          "pct": 21.85
         }
       },
       "isolated_cov_per_txn": {
         "branch": {
-          "pct": 73.1
+          "pct": 65.78
         },
         "cond": {
-          "pct": 48.68
+          "pct": 39.04
         },
         "expr": {
-          "pct": 67.27
+          "pct": 58.16
         },
         "fsm_state": {
-          "pct": 88.57
+          "pct": 86.36
         },
         "fsm_trans": {
-          "pct": 46.25
+          "pct": 43.0
         },
         "stmt": {
-          "pct": 84.61
+          "pct": 73.49
         },
         "toggle": {
-          "pct": 35.82
+          "pct": 21.85
         }
       },
       "bucket_gain_by_case": {
         "branch": {
-          "pct": 3.11
+          "pct": 4.11
         },
         "cond": {
-          "pct": 6.35
+          "pct": 9.55
         },
         "expr": {
-          "pct": 0.0
+          "pct": 5.1
         },
         "fsm_state": {
-          "pct": 2.86
+          "pct": 2.27
         },
         "fsm_trans": {
-          "pct": 2.5
+          "pct": 2.0
         },
         "stmt": {
-          "pct": 2.26
+          "pct": 2.78
         },
         "toggle": {
-          "pct": 9.56
+          "pct": 5.82
         }
       },
       "bucket_merged_total_after_case": {
         "branch": {
-          "pct": 74.46
+          "pct": 67.24
         },
         "cond": {
-          "pct": 51.85
+          "pct": 41.57
         },
         "expr": {
-          "pct": 67.27
+          "pct": 58.16
         },
         "fsm_state": {
-          "pct": 88.57
+          "pct": 86.36
         },
         "fsm_trans": {
-          "pct": 46.25
+          "pct": 43.0
         },
         "stmt": {
-          "pct": 85.79
+          "pct": 74.14
         },
         "toggle": {
-          "pct": 47.84
+          "pct": 30.98
         }
       },
       "bucket_gain_per_txn": {
         "branch": {
-          "pct": 3.11
+          "pct": 4.11
         },
         "cond": {
-          "pct": 6.35
+          "pct": 9.55
         },
         "expr": {
-          "pct": 0.0
+          "pct": 5.1
         },
         "fsm_state": {
-          "pct": 2.86
+          "pct": 2.27
         },
         "fsm_trans": {
-          "pct": 2.5
+          "pct": 2.0
         },
         "stmt": {
-          "pct": 2.26
+          "pct": 2.78
         },
         "toggle": {
-          "pct": 9.56
+          "pct": 5.82
         }
       }
     },
@@ -7535,53 +7597,53 @@
       },
       "standalone_coverage": {
         "branch": {
-          "pct": 68.81
+          "pct": 61.41
         },
         "cond": {
-          "pct": 44.97
+          "pct": 33.15
         },
         "expr": {
-          "pct": 67.27
+          "pct": 54.08
         },
         "fsm_state": {
-          "pct": 82.86
+          "pct": 81.82
         },
         "fsm_trans": {
-          "pct": 41.25
+          "pct": 39.0
         },
         "stmt": {
-          "pct": 81.59
+          "pct": 70.43
         },
         "toggle": {
-          "pct": 27.68
+          "pct": 17.41
         }
       },
       "isolated_cov_per_txn": {
         "branch": {
-          "pct": 68.81
+          "pct": 61.41
         },
         "cond": {
-          "pct": 44.97
+          "pct": 33.15
         },
         "expr": {
-          "pct": 67.27
+          "pct": 54.08
         },
         "fsm_state": {
-          "pct": 82.86
+          "pct": 81.82
         },
         "fsm_trans": {
-          "pct": 41.25
+          "pct": 39.0
         },
         "stmt": {
-          "pct": 81.59
+          "pct": 70.43
         },
         "toggle": {
-          "pct": 27.68
+          "pct": 17.41
         }
       },
       "bucket_gain_by_case": {
         "branch": {
-          "pct": 0.2
+          "pct": 0.27
         },
         "cond": {
           "pct": 0.0
@@ -7599,35 +7661,35 @@
           "pct": 0.11
         },
         "toggle": {
-          "pct": 1.19
+          "pct": 0.85
         }
       },
       "bucket_merged_total_after_case": {
         "branch": {
-          "pct": 74.66
+          "pct": 67.51
         },
         "cond": {
-          "pct": 51.85
+          "pct": 41.57
         },
         "expr": {
-          "pct": 67.27
+          "pct": 58.16
         },
         "fsm_state": {
-          "pct": 88.57
+          "pct": 86.36
         },
         "fsm_trans": {
-          "pct": 46.25
+          "pct": 43.0
         },
         "stmt": {
-          "pct": 85.9
+          "pct": 74.25
         },
         "toggle": {
-          "pct": 49.03
+          "pct": 31.83
         }
       },
       "bucket_gain_per_txn": {
         "branch": {
-          "pct": 0.2
+          "pct": 0.27
         },
         "cond": {
           "pct": 0.0
@@ -7645,7 +7707,7 @@
           "pct": 0.11
         },
         "toggle": {
-          "pct": 1.19
+          "pct": 0.85
         }
       }
     },
@@ -7697,59 +7759,59 @@
       },
       "standalone_coverage": {
         "branch": {
-          "pct": 69.59
+          "pct": 61.94
         },
         "cond": {
-          "pct": 45.5
+          "pct": 33.43
         },
         "expr": {
-          "pct": 70.91
+          "pct": 55.1
         },
         "fsm_state": {
-          "pct": 82.86
+          "pct": 81.82
         },
         "fsm_trans": {
-          "pct": 41.25
+          "pct": 39.0
         },
         "stmt": {
-          "pct": 82.13
+          "pct": 70.7
         },
         "toggle": {
-          "pct": 27.99
+          "pct": 17.69
         }
       },
       "isolated_cov_per_txn": {
         "branch": {
-          "pct": 69.59
+          "pct": 61.94
         },
         "cond": {
-          "pct": 45.5
+          "pct": 33.43
         },
         "expr": {
-          "pct": 70.91
+          "pct": 55.1
         },
         "fsm_state": {
-          "pct": 82.86
+          "pct": 81.82
         },
         "fsm_trans": {
-          "pct": 41.25
+          "pct": 39.0
         },
         "stmt": {
-          "pct": 82.13
+          "pct": 70.7
         },
         "toggle": {
-          "pct": 27.99
+          "pct": 17.69
         }
       },
       "bucket_gain_by_case": {
         "branch": {
-          "pct": 0.19
+          "pct": 0.26
         },
         "cond": {
           "pct": 0.0
         },
         "expr": {
-          "pct": 3.64
+          "pct": 1.02
         },
         "fsm_state": {
           "pct": 0.0
@@ -7761,41 +7823,41 @@
           "pct": 0.11
         },
         "toggle": {
-          "pct": 1.09
+          "pct": 0.66
         }
       },
       "bucket_merged_total_after_case": {
         "branch": {
-          "pct": 74.85
+          "pct": 67.77
         },
         "cond": {
-          "pct": 51.85
+          "pct": 41.57
         },
         "expr": {
-          "pct": 70.91
+          "pct": 59.18
         },
         "fsm_state": {
-          "pct": 88.57
+          "pct": 86.36
         },
         "fsm_trans": {
-          "pct": 46.25
+          "pct": 43.0
         },
         "stmt": {
-          "pct": 86.01
+          "pct": 74.36
         },
         "toggle": {
-          "pct": 50.12
+          "pct": 32.49
         }
       },
       "bucket_gain_per_txn": {
         "branch": {
-          "pct": 0.19
+          "pct": 0.26
         },
         "cond": {
           "pct": 0.0
         },
         "expr": {
-          "pct": 3.64
+          "pct": 1.02
         },
         "fsm_state": {
           "pct": 0.0
@@ -7807,7 +7869,7 @@
           "pct": 0.11
         },
         "toggle": {
-          "pct": 1.09
+          "pct": 0.66
         }
       }
     },
@@ -7859,56 +7921,56 @@
       },
       "standalone_coverage": {
         "branch": {
-          "pct": 73.1
+          "pct": 65.92
         },
         "cond": {
-          "pct": 48.68
+          "pct": 39.33
         },
         "expr": {
-          "pct": 67.27
+          "pct": 58.16
         },
         "fsm_state": {
-          "pct": 88.57
+          "pct": 86.36
         },
         "fsm_trans": {
-          "pct": 46.25
+          "pct": 43.0
         },
         "stmt": {
-          "pct": 84.61
+          "pct": 73.49
         },
         "toggle": {
-          "pct": 34.94
+          "pct": 22.26
         }
       },
       "isolated_cov_per_txn": {
         "branch": {
-          "pct": 73.1
+          "pct": 65.92
         },
         "cond": {
-          "pct": 48.68
+          "pct": 39.33
         },
         "expr": {
-          "pct": 67.27
+          "pct": 58.16
         },
         "fsm_state": {
-          "pct": 88.57
+          "pct": 86.36
         },
         "fsm_trans": {
-          "pct": 46.25
+          "pct": 43.0
         },
         "stmt": {
-          "pct": 84.61
+          "pct": 73.49
         },
         "toggle": {
-          "pct": 34.94
+          "pct": 22.26
         }
       },
       "bucket_gain_by_case": {
         "branch": {
-          "pct": 0.0
+          "pct": 0.13
         },
         "cond": {
-          "pct": 0.0
+          "pct": 0.28
         },
         "expr": {
           "pct": 0.0
@@ -7923,38 +7985,38 @@
           "pct": 0.0
         },
         "toggle": {
-          "pct": 1.06
+          "pct": 1.03
         }
       },
       "bucket_merged_total_after_case": {
         "branch": {
-          "pct": 74.85
+          "pct": 67.9
         },
         "cond": {
-          "pct": 51.85
+          "pct": 41.85
         },
         "expr": {
-          "pct": 70.91
+          "pct": 59.18
         },
         "fsm_state": {
-          "pct": 88.57
+          "pct": 86.36
         },
         "fsm_trans": {
-          "pct": 46.25
+          "pct": 43.0
         },
         "stmt": {
-          "pct": 86.01
+          "pct": 74.36
         },
         "toggle": {
-          "pct": 51.18
+          "pct": 33.52
         }
       },
       "bucket_gain_per_txn": {
         "branch": {
-          "pct": 0.0
+          "pct": 0.13
         },
         "cond": {
-          "pct": 0.0
+          "pct": 0.28
         },
         "expr": {
           "pct": 0.0
@@ -7969,7 +8031,7 @@
           "pct": 0.0
         },
         "toggle": {
-          "pct": 1.06
+          "pct": 1.03
         }
       }
     },
@@ -8021,48 +8083,48 @@
       },
       "standalone_coverage": {
         "branch": {
-          "pct": 70.18
+          "pct": 62.33
         },
         "cond": {
-          "pct": 45.5
+          "pct": 33.43
         },
         "expr": {
-          "pct": 67.27
+          "pct": 54.08
         },
         "fsm_state": {
-          "pct": 85.71
+          "pct": 84.09
         },
         "fsm_trans": {
-          "pct": 43.75
+          "pct": 41.0
         },
         "stmt": {
-          "pct": 82.78
+          "pct": 71.03
         },
         "toggle": {
-          "pct": 29.32
+          "pct": 18.74
         }
       },
       "isolated_cov_per_txn": {
         "branch": {
-          "pct": 70.18
+          "pct": 62.33
         },
         "cond": {
-          "pct": 45.5
+          "pct": 33.43
         },
         "expr": {
-          "pct": 67.27
+          "pct": 54.08
         },
         "fsm_state": {
-          "pct": 85.71
+          "pct": 84.09
         },
         "fsm_trans": {
-          "pct": 43.75
+          "pct": 41.0
         },
         "stmt": {
-          "pct": 82.78
+          "pct": 71.03
         },
         "toggle": {
-          "pct": 29.32
+          "pct": 18.74
         }
       },
       "bucket_gain_by_case": {
@@ -8085,30 +8147,30 @@
           "pct": 0.0
         },
         "toggle": {
-          "pct": 0.04
+          "pct": 0.06
         }
       },
       "bucket_merged_total_after_case": {
         "branch": {
-          "pct": 72.51
+          "pct": 67.9
         },
         "cond": {
-          "pct": 48.68
+          "pct": 41.85
         },
         "expr": {
-          "pct": 69.09
+          "pct": 59.18
         },
         "fsm_state": {
-          "pct": 88.57
+          "pct": 86.36
         },
         "fsm_trans": {
-          "pct": 46.25
+          "pct": 43.0
         },
         "stmt": {
-          "pct": 84.39
+          "pct": 74.36
         },
         "toggle": {
-          "pct": 51.22
+          "pct": 33.58
         }
       },
       "bucket_gain_per_txn": {
@@ -8131,7 +8193,7 @@
           "pct": 0.0
         },
         "toggle": {
-          "pct": 0.04
+          "pct": 0.06
         }
       }
     },
@@ -8230,59 +8292,175 @@
       },
       "bucket_gain_by_case": {
         "branch": {
-          "pct": 0.13
+          "pct": 3.01
         },
         "cond": {
-          "pct": 1.1
+          "pct": 2.51
         },
         "expr": {
-          "pct": 0.0
+          "pct": 8.06
         },
         "fsm_state": {
-          "pct": 0.0
+          "pct": 4.55
         },
         "fsm_trans": {
-          "pct": 0.0
+          "pct": 4.0
         },
         "stmt": {
-          "pct": 0.0
+          "pct": 1.38
         },
         "toggle": {
-          "pct": 0.0
+          "pct": 11.35
         }
       },
       "bucket_merged_total_after_case": {
         "branch": {
-          "pct": 72.64
+          "pct": 70.91
         },
         "cond": {
-          "pct": 49.78
+          "pct": 44.36
         },
         "expr": {
-          "pct": 66.67
+          "pct": 67.24
         },
         "fsm_state": {
-          "pct": 85.71
+          "pct": 90.91
         },
         "fsm_trans": {
-          "pct": 43.62
+          "pct": 47.0
         },
         "stmt": {
-          "pct": 81.54
+          "pct": 75.74
         },
         "toggle": {
-          "pct": 45.76
+          "pct": 44.93
         }
       },
       "bucket_gain_per_txn": {
         "branch": {
-          "pct": 0.001
+          "pct": 0.0235
         },
         "cond": {
-          "pct": 0.0086
+          "pct": 0.0196
         },
         "expr": {
-          "pct": 0.0
+          "pct": 0.063
+        },
+        "fsm_state": {
+          "pct": 0.0355
+        },
+        "fsm_trans": {
+          "pct": 0.0312
+        },
+        "stmt": {
+          "pct": 0.0108
+        },
+        "toggle": {
+          "pct": 0.0887
+        }
+      }
+    },
+    {
+      "case_id": "COMBO_OPQ_508_cross_drr_bursty_frame2_boundary_test",
+      "full_case_id": "COMBO_OPQ_508_cross_drr_bursty_frame2_boundary_test",
+      "method": "D",
+      "observed_txn": 1,
+      "scenario": "Deterministic bursty DRR boundary at the last green frame_count=2 envelope below the active retirement failure.",
+      "primary_checks": "Named green-side DRR boundary where the hot-lane/cold-lane asymmetry still closes with complete hit conservation and no ghost hits.",
+      "contract_anchor": "DV_CROSS bursty DRR green-side boundary evidence.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "high",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "CROSS",
+      "legacy_test_name": "opq_cross_drr_bursty_frame2_boundary_test",
+      "test_name": "opq_cross_drr_bursty_frame2_boundary_test",
+      "report_case_id": "COMBO_OPQ_508_cross_drr_bursty_frame2_boundary_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "hit_expected": 298,
+        "hit_actual": 298,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 43.33,
+        "cg_subh": 11.11,
+        "cg_bp": 20.0,
+        "cg_csr": 95.24,
+        "cg_credit": 46.67,
+        "cg_drop": 61.81,
+        "cg_drr": 46.0,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 2,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 2,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 67.51
+        },
+        "cond": {
+          "pct": 43.82
+        },
+        "expr": {
+          "pct": 60.2
+        },
+        "fsm_state": {
+          "pct": 86.36
+        },
+        "fsm_trans": {
+          "pct": 43.0
+        },
+        "stmt": {
+          "pct": 74.2
+        },
+        "toggle": {
+          "pct": 24.49
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 67.51
+        },
+        "cond": {
+          "pct": 43.82
+        },
+        "expr": {
+          "pct": 60.2
+        },
+        "fsm_state": {
+          "pct": 86.36
+        },
+        "fsm_trans": {
+          "pct": 43.0
+        },
+        "stmt": {
+          "pct": 74.2
+        },
+        "toggle": {
+          "pct": 24.49
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 0.97
+        },
+        "cond": {
+          "pct": 2.62
+        },
+        "expr": {
+          "pct": 0.86
         },
         "fsm_state": {
           "pct": 0.0
@@ -8291,10 +8469,214 @@
           "pct": 0.0
         },
         "stmt": {
-          "pct": 0.0
+          "pct": 0.53
         },
         "toggle": {
+          "pct": 0.4
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 71.88
+        },
+        "cond": {
+          "pct": 46.98
+        },
+        "expr": {
+          "pct": 68.1
+        },
+        "fsm_state": {
+          "pct": 90.91
+        },
+        "fsm_trans": {
+          "pct": 47.0
+        },
+        "stmt": {
+          "pct": 76.27
+        },
+        "toggle": {
+          "pct": 45.33
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 0.97
+        },
+        "cond": {
+          "pct": 2.62
+        },
+        "expr": {
+          "pct": 0.86
+        },
+        "fsm_state": {
           "pct": 0.0
+        },
+        "fsm_trans": {
+          "pct": 0.0
+        },
+        "stmt": {
+          "pct": 0.53
+        },
+        "toggle": {
+          "pct": 0.4
+        }
+      }
+    },
+    {
+      "case_id": "COMBO_OPQ_509_cross_random_ready_overflow_step2_boundary_test",
+      "full_case_id": "COMBO_OPQ_509_cross_random_ready_overflow_step2_boundary_test",
+      "method": "R",
+      "observed_txn": 2,
+      "scenario": "Two-step default-build random-ready overflow boundary in shape-check mode.",
+      "primary_checks": "The first two overflow windows stay legal with ft_drop counters at zero, wr = rd + drop closed at each checkpoint, and no incomplete accepted packets.",
+      "contract_anchor": "DV_CROSS legal default-build overflow boundary evidence.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "high",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "CROSS",
+      "legacy_test_name": "opq_cross_random_ready_overflow_step2_boundary_test",
+      "test_name": "opq_cross_random_ready_overflow_step2_boundary_test",
+      "report_case_id": "COMBO_OPQ_509_cross_random_ready_overflow_step2_boundary_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "cg_cfg": 49.4,
+        "cg_frame": 30.0,
+        "cg_subh": 22.22,
+        "cg_bp": 83.33,
+        "cg_csr": 92.26,
+        "cg_credit": 46.67,
+        "cg_drop": 52.78,
+        "cg_drr": 42.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 7,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 7,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 74.27
+        },
+        "cond": {
+          "pct": 50.84
+        },
+        "expr": {
+          "pct": 71.43
+        },
+        "fsm_state": {
+          "pct": 93.18
+        },
+        "fsm_trans": {
+          "pct": 52.0
+        },
+        "stmt": {
+          "pct": 80.25
+        },
+        "toggle": {
+          "pct": 36.91
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 37.135
+        },
+        "cond": {
+          "pct": 25.42
+        },
+        "expr": {
+          "pct": 35.715
+        },
+        "fsm_state": {
+          "pct": 46.59
+        },
+        "fsm_trans": {
+          "pct": 26.0
+        },
+        "stmt": {
+          "pct": 40.125
+        },
+        "toggle": {
+          "pct": 18.455
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 6.42
+        },
+        "cond": {
+          "pct": 7.35
+        },
+        "expr": {
+          "pct": 4.31
+        },
+        "fsm_state": {
+          "pct": 2.27
+        },
+        "fsm_trans": {
+          "pct": 5.0
+        },
+        "stmt": {
+          "pct": 6.16
+        },
+        "toggle": {
+          "pct": 5.18
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 78.3
+        },
+        "cond": {
+          "pct": 54.33
+        },
+        "expr": {
+          "pct": 72.41
+        },
+        "fsm_state": {
+          "pct": 93.18
+        },
+        "fsm_trans": {
+          "pct": 52.0
+        },
+        "stmt": {
+          "pct": 82.43
+        },
+        "toggle": {
+          "pct": 50.51
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 3.21
+        },
+        "cond": {
+          "pct": 3.675
+        },
+        "expr": {
+          "pct": 2.155
+        },
+        "fsm_state": {
+          "pct": 1.135
+        },
+        "fsm_trans": {
+          "pct": 2.5
+        },
+        "stmt": {
+          "pct": 3.08
+        },
+        "toggle": {
+          "pct": 2.59
         }
       }
     }
@@ -8656,63 +9038,63 @@
     },
     {
       "bucket": "CROSS",
-      "planned_cases": 7,
+      "planned_cases": 9,
       "catalog_planned_cases": 165,
-      "catalog_pending_cases": 158,
+      "catalog_pending_cases": 156,
       "catalog_source": "legacy/tb/DV_CROSS.md",
       "catalog_summary": "Archived chained CROSS catalog preserved in tb/legacy/tb/DV_CROSS.md.",
-      "promoted_cases": 7,
-      "evidenced_cases": 7,
+      "promoted_cases": 9,
+      "evidenced_cases": 9,
       "merged_bucket_total": {
         "branch": {
-          "pct": 72.64
+          "pct": 78.3
         },
         "cond": {
-          "pct": 49.78
+          "pct": 54.33
         },
         "expr": {
-          "pct": 66.67
+          "pct": 72.41
         },
         "fsm_state": {
-          "pct": 85.71
+          "pct": 93.18
         },
         "fsm_trans": {
-          "pct": 43.62
+          "pct": 52.0
         },
         "stmt": {
-          "pct": 81.54
+          "pct": 82.43
         },
         "toggle": {
-          "pct": 45.76
+          "pct": 50.51
         }
       },
       "merged_all_buckets_total_after_bucket": {
         "branch": {
-          "pct": 82.38
+          "pct": 83.53
         },
         "cond": {
-          "pct": 58.36
+          "pct": 59.22
         },
         "expr": {
-          "pct": 73.21
+          "pct": 72.58
         },
         "fsm_state": {
           "pct": 97.73
         },
         "fsm_trans": {
-          "pct": 60.0
+          "pct": 62.0
         },
         "stmt": {
-          "pct": 86.91
+          "pct": 88.75
         },
         "toggle": {
-          "pct": 47.5
+          "pct": 51.85
         }
       },
       "functional_coverage": {
-        "pct": 77.81,
-        "evidenced": 7,
-        "planned": 7
+        "pct": 83.26,
+        "evidenced": 9,
+        "planned": 9
       },
       "ordered_case_ids": [
         "COMBO_OPQ_501_cross_bp_credit_test",
@@ -8721,7 +9103,9 @@
         "COMBO_OPQ_504_cross_drr_zero_allowance_test",
         "COMBO_OPQ_505_cross_drr_short_allowance_test",
         "COMBO_OPQ_506_cross_idle_lane_backpressure_test",
-        "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test"
+        "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test",
+        "COMBO_OPQ_508_cross_drr_bursty_frame2_boundary_test",
+        "COMBO_OPQ_509_cross_random_ready_overflow_step2_boundary_test"
       ]
     }
   ],
@@ -16410,40 +16794,40 @@
       ]
     },
     "CROSS": {
-      "planned_cases": 7,
+      "planned_cases": 9,
       "catalog_planned_cases": 165,
-      "catalog_pending_cases": 158,
+      "catalog_pending_cases": 156,
       "catalog_source": "legacy/tb/DV_CROSS.md",
       "catalog_summary": "Archived chained CROSS catalog preserved in tb/legacy/tb/DV_CROSS.md.",
-      "promoted_cases": 7,
-      "evidenced_cases": 7,
+      "promoted_cases": 9,
+      "evidenced_cases": 9,
       "merged_bucket_total": {
         "branch": {
-          "pct": 72.64
+          "pct": 78.3
         },
         "cond": {
-          "pct": 49.78
+          "pct": 54.33
         },
         "expr": {
-          "pct": 66.67
+          "pct": 72.41
         },
         "fsm_state": {
-          "pct": 85.71
+          "pct": 93.18
         },
         "fsm_trans": {
-          "pct": 43.62
+          "pct": 52.0
         },
         "stmt": {
-          "pct": 81.54
+          "pct": 82.43
         },
         "toggle": {
-          "pct": 45.76
+          "pct": 50.51
         }
       },
       "functional_coverage": {
-        "pct": 77.81,
-        "evidenced": 7,
-        "planned": 7
+        "pct": 83.26,
+        "evidenced": 9,
+        "planned": 9
       },
       "merge_trace": [
         {
@@ -16453,25 +16837,25 @@
           "legacy_test_name": "opq_cross_bp_credit_test",
           "merged_total_after_case": {
             "branch": {
-              "pct": 71.35
+              "pct": 63.13
             },
             "cond": {
-              "pct": 45.5
+              "pct": 32.02
             },
             "expr": {
-              "pct": 67.27
+              "pct": 53.06
             },
             "fsm_state": {
-              "pct": 85.71
+              "pct": 84.09
             },
             "fsm_trans": {
-              "pct": 43.75
+              "pct": 41.0
             },
             "stmt": {
-              "pct": 83.53
+              "pct": 71.36
             },
             "toggle": {
-              "pct": 38.28
+              "pct": 25.16
             }
           }
         },
@@ -16482,25 +16866,25 @@
           "legacy_test_name": "opq_cross_drr_allowance_test",
           "merged_total_after_case": {
             "branch": {
-              "pct": 74.46
+              "pct": 67.24
             },
             "cond": {
-              "pct": 51.85
+              "pct": 41.57
             },
             "expr": {
-              "pct": 67.27
+              "pct": 58.16
             },
             "fsm_state": {
-              "pct": 88.57
+              "pct": 86.36
             },
             "fsm_trans": {
-              "pct": 46.25
+              "pct": 43.0
             },
             "stmt": {
-              "pct": 85.79
+              "pct": 74.14
             },
             "toggle": {
-              "pct": 47.84
+              "pct": 30.98
             }
           }
         },
@@ -16511,25 +16895,25 @@
           "legacy_test_name": "opq_cross_drr_idle_lane_test",
           "merged_total_after_case": {
             "branch": {
-              "pct": 74.66
+              "pct": 67.51
             },
             "cond": {
-              "pct": 51.85
+              "pct": 41.57
             },
             "expr": {
-              "pct": 67.27
+              "pct": 58.16
             },
             "fsm_state": {
-              "pct": 88.57
+              "pct": 86.36
             },
             "fsm_trans": {
-              "pct": 46.25
+              "pct": 43.0
             },
             "stmt": {
-              "pct": 85.9
+              "pct": 74.25
             },
             "toggle": {
-              "pct": 49.03
+              "pct": 31.83
             }
           }
         },
@@ -16540,25 +16924,25 @@
           "legacy_test_name": "opq_cross_drr_zero_allowance_test",
           "merged_total_after_case": {
             "branch": {
-              "pct": 74.85
+              "pct": 67.77
             },
             "cond": {
-              "pct": 51.85
+              "pct": 41.57
             },
             "expr": {
-              "pct": 70.91
+              "pct": 59.18
             },
             "fsm_state": {
-              "pct": 88.57
+              "pct": 86.36
             },
             "fsm_trans": {
-              "pct": 46.25
+              "pct": 43.0
             },
             "stmt": {
-              "pct": 86.01
+              "pct": 74.36
             },
             "toggle": {
-              "pct": 50.12
+              "pct": 32.49
             }
           }
         },
@@ -16569,25 +16953,25 @@
           "legacy_test_name": "opq_cross_drr_short_allowance_test",
           "merged_total_after_case": {
             "branch": {
-              "pct": 74.85
+              "pct": 67.9
             },
             "cond": {
-              "pct": 51.85
+              "pct": 41.85
             },
             "expr": {
-              "pct": 70.91
+              "pct": 59.18
             },
             "fsm_state": {
-              "pct": 88.57
+              "pct": 86.36
             },
             "fsm_trans": {
-              "pct": 46.25
+              "pct": 43.0
             },
             "stmt": {
-              "pct": 86.01
+              "pct": 74.36
             },
             "toggle": {
-              "pct": 51.18
+              "pct": 33.52
             }
           }
         },
@@ -16598,25 +16982,25 @@
           "legacy_test_name": "opq_cross_idle_lane_backpressure_test",
           "merged_total_after_case": {
             "branch": {
-              "pct": 72.51
+              "pct": 67.9
             },
             "cond": {
-              "pct": 48.68
+              "pct": 41.85
             },
             "expr": {
-              "pct": 69.09
+              "pct": 59.18
             },
             "fsm_state": {
-              "pct": 88.57
+              "pct": 86.36
             },
             "fsm_trans": {
-              "pct": 46.25
+              "pct": 43.0
             },
             "stmt": {
-              "pct": 84.39
+              "pct": 74.36
             },
             "toggle": {
-              "pct": 51.22
+              "pct": 33.58
             }
           }
         },
@@ -16627,25 +17011,83 @@
           "legacy_test_name": "opq_cross_mixed_bucket_random_soak_test",
           "merged_total_after_case": {
             "branch": {
-              "pct": 72.64
+              "pct": 70.91
             },
             "cond": {
-              "pct": 49.78
+              "pct": 44.36
             },
             "expr": {
-              "pct": 66.67
+              "pct": 67.24
             },
             "fsm_state": {
-              "pct": 85.71
+              "pct": 90.91
             },
             "fsm_trans": {
-              "pct": 43.62
+              "pct": 47.0
             },
             "stmt": {
-              "pct": 81.54
+              "pct": 75.74
             },
             "toggle": {
-              "pct": 45.76
+              "pct": 44.93
+            }
+          }
+        },
+        {
+          "step": 8,
+          "case_id": "COMBO_OPQ_508_cross_drr_bursty_frame2_boundary_test",
+          "full_case_id": "COMBO_OPQ_508_cross_drr_bursty_frame2_boundary_test",
+          "legacy_test_name": "opq_cross_drr_bursty_frame2_boundary_test",
+          "merged_total_after_case": {
+            "branch": {
+              "pct": 71.88
+            },
+            "cond": {
+              "pct": 46.98
+            },
+            "expr": {
+              "pct": 68.1
+            },
+            "fsm_state": {
+              "pct": 90.91
+            },
+            "fsm_trans": {
+              "pct": 47.0
+            },
+            "stmt": {
+              "pct": 76.27
+            },
+            "toggle": {
+              "pct": 45.33
+            }
+          }
+        },
+        {
+          "step": 9,
+          "case_id": "COMBO_OPQ_509_cross_random_ready_overflow_step2_boundary_test",
+          "full_case_id": "COMBO_OPQ_509_cross_random_ready_overflow_step2_boundary_test",
+          "legacy_test_name": "opq_cross_random_ready_overflow_step2_boundary_test",
+          "merged_total_after_case": {
+            "branch": {
+              "pct": 78.3
+            },
+            "cond": {
+              "pct": 54.33
+            },
+            "expr": {
+              "pct": 72.41
+            },
+            "fsm_state": {
+              "pct": 93.18
+            },
+            "fsm_trans": {
+              "pct": 52.0
+            },
+            "stmt": {
+              "pct": 82.43
+            },
+            "toggle": {
+              "pct": 50.51
             }
           }
         }
@@ -16657,7 +17099,9 @@
         "COMBO_OPQ_504_cross_drr_zero_allowance_test",
         "COMBO_OPQ_505_cross_drr_short_allowance_test",
         "COMBO_OPQ_506_cross_idle_lane_backpressure_test",
-        "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test"
+        "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test",
+        "COMBO_OPQ_508_cross_drr_bursty_frame2_boundary_test",
+        "COMBO_OPQ_509_cross_random_ready_overflow_step2_boundary_test"
       ],
       "cases": [
         {
@@ -16708,117 +17152,117 @@
           },
           "standalone_coverage": {
             "branch": {
-              "pct": 71.35
+              "pct": 63.13
             },
             "cond": {
-              "pct": 45.5
+              "pct": 32.02
             },
             "expr": {
-              "pct": 67.27
+              "pct": 53.06
             },
             "fsm_state": {
-              "pct": 85.71
+              "pct": 84.09
             },
             "fsm_trans": {
-              "pct": 43.75
+              "pct": 41.0
             },
             "stmt": {
-              "pct": 83.53
+              "pct": 71.36
             },
             "toggle": {
-              "pct": 38.28
+              "pct": 25.16
             }
           },
           "isolated_cov_per_txn": {
             "branch": {
-              "pct": 71.35
+              "pct": 63.13
             },
             "cond": {
-              "pct": 45.5
+              "pct": 32.02
             },
             "expr": {
-              "pct": 67.27
+              "pct": 53.06
             },
             "fsm_state": {
-              "pct": 85.71
+              "pct": 84.09
             },
             "fsm_trans": {
-              "pct": 43.75
+              "pct": 41.0
             },
             "stmt": {
-              "pct": 83.53
+              "pct": 71.36
             },
             "toggle": {
-              "pct": 38.28
+              "pct": 25.16
             }
           },
           "bucket_gain_by_case": {
             "branch": {
-              "pct": 71.35
+              "pct": 63.13
             },
             "cond": {
-              "pct": 45.5
+              "pct": 32.02
             },
             "expr": {
-              "pct": 67.27
+              "pct": 53.06
             },
             "fsm_state": {
-              "pct": 85.71
+              "pct": 84.09
             },
             "fsm_trans": {
-              "pct": 43.75
+              "pct": 41.0
             },
             "stmt": {
-              "pct": 83.53
+              "pct": 71.36
             },
             "toggle": {
-              "pct": 38.28
+              "pct": 25.16
             }
           },
           "bucket_merged_total_after_case": {
             "branch": {
-              "pct": 71.35
+              "pct": 63.13
             },
             "cond": {
-              "pct": 45.5
+              "pct": 32.02
             },
             "expr": {
-              "pct": 67.27
+              "pct": 53.06
             },
             "fsm_state": {
-              "pct": 85.71
+              "pct": 84.09
             },
             "fsm_trans": {
-              "pct": 43.75
+              "pct": 41.0
             },
             "stmt": {
-              "pct": 83.53
+              "pct": 71.36
             },
             "toggle": {
-              "pct": 38.28
+              "pct": 25.16
             }
           },
           "bucket_gain_per_txn": {
             "branch": {
-              "pct": 71.35
+              "pct": 63.13
             },
             "cond": {
-              "pct": 45.5
+              "pct": 32.02
             },
             "expr": {
-              "pct": 67.27
+              "pct": 53.06
             },
             "fsm_state": {
-              "pct": 85.71
+              "pct": 84.09
             },
             "fsm_trans": {
-              "pct": 43.75
+              "pct": 41.0
             },
             "stmt": {
-              "pct": 83.53
+              "pct": 71.36
             },
             "toggle": {
-              "pct": 38.28
+              "pct": 25.16
             }
           }
         },
@@ -16870,117 +17314,117 @@
           },
           "standalone_coverage": {
             "branch": {
-              "pct": 73.1
+              "pct": 65.78
             },
             "cond": {
-              "pct": 48.68
+              "pct": 39.04
             },
             "expr": {
-              "pct": 67.27
+              "pct": 58.16
             },
             "fsm_state": {
-              "pct": 88.57
+              "pct": 86.36
             },
             "fsm_trans": {
-              "pct": 46.25
+              "pct": 43.0
             },
             "stmt": {
-              "pct": 84.61
+              "pct": 73.49
             },
             "toggle": {
-              "pct": 35.82
+              "pct": 21.85
             }
           },
           "isolated_cov_per_txn": {
             "branch": {
-              "pct": 73.1
+              "pct": 65.78
             },
             "cond": {
-              "pct": 48.68
+              "pct": 39.04
             },
             "expr": {
-              "pct": 67.27
+              "pct": 58.16
             },
             "fsm_state": {
-              "pct": 88.57
+              "pct": 86.36
             },
             "fsm_trans": {
-              "pct": 46.25
+              "pct": 43.0
             },
             "stmt": {
-              "pct": 84.61
+              "pct": 73.49
             },
             "toggle": {
-              "pct": 35.82
+              "pct": 21.85
             }
           },
           "bucket_gain_by_case": {
             "branch": {
-              "pct": 3.11
+              "pct": 4.11
             },
             "cond": {
-              "pct": 6.35
+              "pct": 9.55
             },
             "expr": {
-              "pct": 0.0
+              "pct": 5.1
             },
             "fsm_state": {
-              "pct": 2.86
+              "pct": 2.27
             },
             "fsm_trans": {
-              "pct": 2.5
+              "pct": 2.0
             },
             "stmt": {
-              "pct": 2.26
+              "pct": 2.78
             },
             "toggle": {
-              "pct": 9.56
+              "pct": 5.82
             }
           },
           "bucket_merged_total_after_case": {
             "branch": {
-              "pct": 74.46
+              "pct": 67.24
             },
             "cond": {
-              "pct": 51.85
+              "pct": 41.57
             },
             "expr": {
-              "pct": 67.27
+              "pct": 58.16
             },
             "fsm_state": {
-              "pct": 88.57
+              "pct": 86.36
             },
             "fsm_trans": {
-              "pct": 46.25
+              "pct": 43.0
             },
             "stmt": {
-              "pct": 85.79
+              "pct": 74.14
             },
             "toggle": {
-              "pct": 47.84
+              "pct": 30.98
             }
           },
           "bucket_gain_per_txn": {
             "branch": {
-              "pct": 3.11
+              "pct": 4.11
             },
             "cond": {
-              "pct": 6.35
+              "pct": 9.55
             },
             "expr": {
-              "pct": 0.0
+              "pct": 5.1
             },
             "fsm_state": {
-              "pct": 2.86
+              "pct": 2.27
             },
             "fsm_trans": {
-              "pct": 2.5
+              "pct": 2.0
             },
             "stmt": {
-              "pct": 2.26
+              "pct": 2.78
             },
             "toggle": {
-              "pct": 9.56
+              "pct": 5.82
             }
           }
         },
@@ -17032,53 +17476,53 @@
           },
           "standalone_coverage": {
             "branch": {
-              "pct": 68.81
+              "pct": 61.41
             },
             "cond": {
-              "pct": 44.97
+              "pct": 33.15
             },
             "expr": {
-              "pct": 67.27
+              "pct": 54.08
             },
             "fsm_state": {
-              "pct": 82.86
+              "pct": 81.82
             },
             "fsm_trans": {
-              "pct": 41.25
+              "pct": 39.0
             },
             "stmt": {
-              "pct": 81.59
+              "pct": 70.43
             },
             "toggle": {
-              "pct": 27.68
+              "pct": 17.41
             }
           },
           "isolated_cov_per_txn": {
             "branch": {
-              "pct": 68.81
+              "pct": 61.41
             },
             "cond": {
-              "pct": 44.97
+              "pct": 33.15
             },
             "expr": {
-              "pct": 67.27
+              "pct": 54.08
             },
             "fsm_state": {
-              "pct": 82.86
+              "pct": 81.82
             },
             "fsm_trans": {
-              "pct": 41.25
+              "pct": 39.0
             },
             "stmt": {
-              "pct": 81.59
+              "pct": 70.43
             },
             "toggle": {
-              "pct": 27.68
+              "pct": 17.41
             }
           },
           "bucket_gain_by_case": {
             "branch": {
-              "pct": 0.2
+              "pct": 0.27
             },
             "cond": {
               "pct": 0.0
@@ -17096,35 +17540,35 @@
               "pct": 0.11
             },
             "toggle": {
-              "pct": 1.19
+              "pct": 0.85
             }
           },
           "bucket_merged_total_after_case": {
             "branch": {
-              "pct": 74.66
+              "pct": 67.51
             },
             "cond": {
-              "pct": 51.85
+              "pct": 41.57
             },
             "expr": {
-              "pct": 67.27
+              "pct": 58.16
             },
             "fsm_state": {
-              "pct": 88.57
+              "pct": 86.36
             },
             "fsm_trans": {
-              "pct": 46.25
+              "pct": 43.0
             },
             "stmt": {
-              "pct": 85.9
+              "pct": 74.25
             },
             "toggle": {
-              "pct": 49.03
+              "pct": 31.83
             }
           },
           "bucket_gain_per_txn": {
             "branch": {
-              "pct": 0.2
+              "pct": 0.27
             },
             "cond": {
               "pct": 0.0
@@ -17142,7 +17586,7 @@
               "pct": 0.11
             },
             "toggle": {
-              "pct": 1.19
+              "pct": 0.85
             }
           }
         },
@@ -17194,59 +17638,59 @@
           },
           "standalone_coverage": {
             "branch": {
-              "pct": 69.59
+              "pct": 61.94
             },
             "cond": {
-              "pct": 45.5
+              "pct": 33.43
             },
             "expr": {
-              "pct": 70.91
+              "pct": 55.1
             },
             "fsm_state": {
-              "pct": 82.86
+              "pct": 81.82
             },
             "fsm_trans": {
-              "pct": 41.25
+              "pct": 39.0
             },
             "stmt": {
-              "pct": 82.13
+              "pct": 70.7
             },
             "toggle": {
-              "pct": 27.99
+              "pct": 17.69
             }
           },
           "isolated_cov_per_txn": {
             "branch": {
-              "pct": 69.59
+              "pct": 61.94
             },
             "cond": {
-              "pct": 45.5
+              "pct": 33.43
             },
             "expr": {
-              "pct": 70.91
+              "pct": 55.1
             },
             "fsm_state": {
-              "pct": 82.86
+              "pct": 81.82
             },
             "fsm_trans": {
-              "pct": 41.25
+              "pct": 39.0
             },
             "stmt": {
-              "pct": 82.13
+              "pct": 70.7
             },
             "toggle": {
-              "pct": 27.99
+              "pct": 17.69
             }
           },
           "bucket_gain_by_case": {
             "branch": {
-              "pct": 0.19
+              "pct": 0.26
             },
             "cond": {
               "pct": 0.0
             },
             "expr": {
-              "pct": 3.64
+              "pct": 1.02
             },
             "fsm_state": {
               "pct": 0.0
@@ -17258,41 +17702,41 @@
               "pct": 0.11
             },
             "toggle": {
-              "pct": 1.09
+              "pct": 0.66
             }
           },
           "bucket_merged_total_after_case": {
             "branch": {
-              "pct": 74.85
+              "pct": 67.77
             },
             "cond": {
-              "pct": 51.85
+              "pct": 41.57
             },
             "expr": {
-              "pct": 70.91
+              "pct": 59.18
             },
             "fsm_state": {
-              "pct": 88.57
+              "pct": 86.36
             },
             "fsm_trans": {
-              "pct": 46.25
+              "pct": 43.0
             },
             "stmt": {
-              "pct": 86.01
+              "pct": 74.36
             },
             "toggle": {
-              "pct": 50.12
+              "pct": 32.49
             }
           },
           "bucket_gain_per_txn": {
             "branch": {
-              "pct": 0.19
+              "pct": 0.26
             },
             "cond": {
               "pct": 0.0
             },
             "expr": {
-              "pct": 3.64
+              "pct": 1.02
             },
             "fsm_state": {
               "pct": 0.0
@@ -17304,7 +17748,7 @@
               "pct": 0.11
             },
             "toggle": {
-              "pct": 1.09
+              "pct": 0.66
             }
           }
         },
@@ -17356,56 +17800,56 @@
           },
           "standalone_coverage": {
             "branch": {
-              "pct": 73.1
+              "pct": 65.92
             },
             "cond": {
-              "pct": 48.68
+              "pct": 39.33
             },
             "expr": {
-              "pct": 67.27
+              "pct": 58.16
             },
             "fsm_state": {
-              "pct": 88.57
+              "pct": 86.36
             },
             "fsm_trans": {
-              "pct": 46.25
+              "pct": 43.0
             },
             "stmt": {
-              "pct": 84.61
+              "pct": 73.49
             },
             "toggle": {
-              "pct": 34.94
+              "pct": 22.26
             }
           },
           "isolated_cov_per_txn": {
             "branch": {
-              "pct": 73.1
+              "pct": 65.92
             },
             "cond": {
-              "pct": 48.68
+              "pct": 39.33
             },
             "expr": {
-              "pct": 67.27
+              "pct": 58.16
             },
             "fsm_state": {
-              "pct": 88.57
+              "pct": 86.36
             },
             "fsm_trans": {
-              "pct": 46.25
+              "pct": 43.0
             },
             "stmt": {
-              "pct": 84.61
+              "pct": 73.49
             },
             "toggle": {
-              "pct": 34.94
+              "pct": 22.26
             }
           },
           "bucket_gain_by_case": {
             "branch": {
-              "pct": 0.0
+              "pct": 0.13
             },
             "cond": {
-              "pct": 0.0
+              "pct": 0.28
             },
             "expr": {
               "pct": 0.0
@@ -17420,38 +17864,38 @@
               "pct": 0.0
             },
             "toggle": {
-              "pct": 1.06
+              "pct": 1.03
             }
           },
           "bucket_merged_total_after_case": {
             "branch": {
-              "pct": 74.85
+              "pct": 67.9
             },
             "cond": {
-              "pct": 51.85
+              "pct": 41.85
             },
             "expr": {
-              "pct": 70.91
+              "pct": 59.18
             },
             "fsm_state": {
-              "pct": 88.57
+              "pct": 86.36
             },
             "fsm_trans": {
-              "pct": 46.25
+              "pct": 43.0
             },
             "stmt": {
-              "pct": 86.01
+              "pct": 74.36
             },
             "toggle": {
-              "pct": 51.18
+              "pct": 33.52
             }
           },
           "bucket_gain_per_txn": {
             "branch": {
-              "pct": 0.0
+              "pct": 0.13
             },
             "cond": {
-              "pct": 0.0
+              "pct": 0.28
             },
             "expr": {
               "pct": 0.0
@@ -17466,7 +17910,7 @@
               "pct": 0.0
             },
             "toggle": {
-              "pct": 1.06
+              "pct": 1.03
             }
           }
         },
@@ -17518,48 +17962,48 @@
           },
           "standalone_coverage": {
             "branch": {
-              "pct": 70.18
+              "pct": 62.33
             },
             "cond": {
-              "pct": 45.5
+              "pct": 33.43
             },
             "expr": {
-              "pct": 67.27
+              "pct": 54.08
             },
             "fsm_state": {
-              "pct": 85.71
+              "pct": 84.09
             },
             "fsm_trans": {
-              "pct": 43.75
+              "pct": 41.0
             },
             "stmt": {
-              "pct": 82.78
+              "pct": 71.03
             },
             "toggle": {
-              "pct": 29.32
+              "pct": 18.74
             }
           },
           "isolated_cov_per_txn": {
             "branch": {
-              "pct": 70.18
+              "pct": 62.33
             },
             "cond": {
-              "pct": 45.5
+              "pct": 33.43
             },
             "expr": {
-              "pct": 67.27
+              "pct": 54.08
             },
             "fsm_state": {
-              "pct": 85.71
+              "pct": 84.09
             },
             "fsm_trans": {
-              "pct": 43.75
+              "pct": 41.0
             },
             "stmt": {
-              "pct": 82.78
+              "pct": 71.03
             },
             "toggle": {
-              "pct": 29.32
+              "pct": 18.74
             }
           },
           "bucket_gain_by_case": {
@@ -17582,30 +18026,30 @@
               "pct": 0.0
             },
             "toggle": {
-              "pct": 0.04
+              "pct": 0.06
             }
           },
           "bucket_merged_total_after_case": {
             "branch": {
-              "pct": 72.51
+              "pct": 67.9
             },
             "cond": {
-              "pct": 48.68
+              "pct": 41.85
             },
             "expr": {
-              "pct": 69.09
+              "pct": 59.18
             },
             "fsm_state": {
-              "pct": 88.57
+              "pct": 86.36
             },
             "fsm_trans": {
-              "pct": 46.25
+              "pct": 43.0
             },
             "stmt": {
-              "pct": 84.39
+              "pct": 74.36
             },
             "toggle": {
-              "pct": 51.22
+              "pct": 33.58
             }
           },
           "bucket_gain_per_txn": {
@@ -17628,7 +18072,7 @@
               "pct": 0.0
             },
             "toggle": {
-              "pct": 0.04
+              "pct": 0.06
             }
           }
         },
@@ -17727,59 +18171,175 @@
           },
           "bucket_gain_by_case": {
             "branch": {
-              "pct": 0.13
+              "pct": 3.01
             },
             "cond": {
-              "pct": 1.1
+              "pct": 2.51
             },
             "expr": {
-              "pct": 0.0
+              "pct": 8.06
             },
             "fsm_state": {
-              "pct": 0.0
+              "pct": 4.55
             },
             "fsm_trans": {
-              "pct": 0.0
+              "pct": 4.0
             },
             "stmt": {
-              "pct": 0.0
+              "pct": 1.38
             },
             "toggle": {
-              "pct": 0.0
+              "pct": 11.35
             }
           },
           "bucket_merged_total_after_case": {
             "branch": {
-              "pct": 72.64
+              "pct": 70.91
             },
             "cond": {
-              "pct": 49.78
+              "pct": 44.36
             },
             "expr": {
-              "pct": 66.67
+              "pct": 67.24
             },
             "fsm_state": {
-              "pct": 85.71
+              "pct": 90.91
             },
             "fsm_trans": {
-              "pct": 43.62
+              "pct": 47.0
             },
             "stmt": {
-              "pct": 81.54
+              "pct": 75.74
             },
             "toggle": {
-              "pct": 45.76
+              "pct": 44.93
             }
           },
           "bucket_gain_per_txn": {
             "branch": {
-              "pct": 0.001
+              "pct": 0.0235
             },
             "cond": {
-              "pct": 0.0086
+              "pct": 0.0196
             },
             "expr": {
-              "pct": 0.0
+              "pct": 0.063
+            },
+            "fsm_state": {
+              "pct": 0.0355
+            },
+            "fsm_trans": {
+              "pct": 0.0312
+            },
+            "stmt": {
+              "pct": 0.0108
+            },
+            "toggle": {
+              "pct": 0.0887
+            }
+          }
+        },
+        {
+          "case_id": "COMBO_OPQ_508_cross_drr_bursty_frame2_boundary_test",
+          "full_case_id": "COMBO_OPQ_508_cross_drr_bursty_frame2_boundary_test",
+          "method": "D",
+          "observed_txn": 1,
+          "scenario": "Deterministic bursty DRR boundary at the last green frame_count=2 envelope below the active retirement failure.",
+          "primary_checks": "Named green-side DRR boundary where the hot-lane/cold-lane asymmetry still closes with complete hit conservation and no ghost hits.",
+          "contract_anchor": "DV_CROSS bursty DRR green-side boundary evidence.",
+          "implementation_mode": "native_sv",
+          "build_tag": "after",
+          "isolated_effort": "high",
+          "build_knobs": {
+            "OPQ_N_LANE": 2,
+            "OPQ_N_SHD": 256,
+            "OPQ_TICKET_FIFO_DEPTH": 512,
+            "OPQ_PAGE_RAM_DEPTH": 65536,
+            "MODE": "MERGING"
+          },
+          "bucket": "CROSS",
+          "legacy_test_name": "opq_cross_drr_bursty_frame2_boundary_test",
+          "test_name": "opq_cross_drr_bursty_frame2_boundary_test",
+          "report_case_id": "COMBO_OPQ_508_cross_drr_bursty_frame2_boundary_test",
+          "implemented": true,
+          "passed": true,
+          "log_summary": {
+            "hit_expected": 298,
+            "hit_actual": 298,
+            "hit_missing": 0,
+            "hit_ghost": 0,
+            "cg_cfg": 49.4,
+            "cg_frame": 43.33,
+            "cg_subh": 11.11,
+            "cg_bp": 20.0,
+            "cg_csr": 95.24,
+            "cg_credit": 46.67,
+            "cg_drop": 61.81,
+            "cg_drr": 46.0,
+            "cg_ingress": 100.0,
+            "cg_egress": 100.0,
+            "lane0_monitored_frames": 2,
+            "lane0_orphan_beats": 0,
+            "lane0_capture_err": 0,
+            "lane1_monitored_frames": 2,
+            "lane1_orphan_beats": 0,
+            "lane1_capture_err": 0
+          },
+          "standalone_coverage": {
+            "branch": {
+              "pct": 67.51
+            },
+            "cond": {
+              "pct": 43.82
+            },
+            "expr": {
+              "pct": 60.2
+            },
+            "fsm_state": {
+              "pct": 86.36
+            },
+            "fsm_trans": {
+              "pct": 43.0
+            },
+            "stmt": {
+              "pct": 74.2
+            },
+            "toggle": {
+              "pct": 24.49
+            }
+          },
+          "isolated_cov_per_txn": {
+            "branch": {
+              "pct": 67.51
+            },
+            "cond": {
+              "pct": 43.82
+            },
+            "expr": {
+              "pct": 60.2
+            },
+            "fsm_state": {
+              "pct": 86.36
+            },
+            "fsm_trans": {
+              "pct": 43.0
+            },
+            "stmt": {
+              "pct": 74.2
+            },
+            "toggle": {
+              "pct": 24.49
+            }
+          },
+          "bucket_gain_by_case": {
+            "branch": {
+              "pct": 0.97
+            },
+            "cond": {
+              "pct": 2.62
+            },
+            "expr": {
+              "pct": 0.86
             },
             "fsm_state": {
               "pct": 0.0
@@ -17788,10 +18348,214 @@
               "pct": 0.0
             },
             "stmt": {
-              "pct": 0.0
+              "pct": 0.53
             },
             "toggle": {
+              "pct": 0.4
+            }
+          },
+          "bucket_merged_total_after_case": {
+            "branch": {
+              "pct": 71.88
+            },
+            "cond": {
+              "pct": 46.98
+            },
+            "expr": {
+              "pct": 68.1
+            },
+            "fsm_state": {
+              "pct": 90.91
+            },
+            "fsm_trans": {
+              "pct": 47.0
+            },
+            "stmt": {
+              "pct": 76.27
+            },
+            "toggle": {
+              "pct": 45.33
+            }
+          },
+          "bucket_gain_per_txn": {
+            "branch": {
+              "pct": 0.97
+            },
+            "cond": {
+              "pct": 2.62
+            },
+            "expr": {
+              "pct": 0.86
+            },
+            "fsm_state": {
               "pct": 0.0
+            },
+            "fsm_trans": {
+              "pct": 0.0
+            },
+            "stmt": {
+              "pct": 0.53
+            },
+            "toggle": {
+              "pct": 0.4
+            }
+          }
+        },
+        {
+          "case_id": "COMBO_OPQ_509_cross_random_ready_overflow_step2_boundary_test",
+          "full_case_id": "COMBO_OPQ_509_cross_random_ready_overflow_step2_boundary_test",
+          "method": "R",
+          "observed_txn": 2,
+          "scenario": "Two-step default-build random-ready overflow boundary in shape-check mode.",
+          "primary_checks": "The first two overflow windows stay legal with ft_drop counters at zero, wr = rd + drop closed at each checkpoint, and no incomplete accepted packets.",
+          "contract_anchor": "DV_CROSS legal default-build overflow boundary evidence.",
+          "implementation_mode": "native_sv",
+          "build_tag": "after",
+          "isolated_effort": "high",
+          "build_knobs": {
+            "OPQ_N_LANE": 2,
+            "OPQ_N_SHD": 256,
+            "OPQ_TICKET_FIFO_DEPTH": 512,
+            "OPQ_PAGE_RAM_DEPTH": 65536,
+            "MODE": "MERGING"
+          },
+          "bucket": "CROSS",
+          "legacy_test_name": "opq_cross_random_ready_overflow_step2_boundary_test",
+          "test_name": "opq_cross_random_ready_overflow_step2_boundary_test",
+          "report_case_id": "COMBO_OPQ_509_cross_random_ready_overflow_step2_boundary_test",
+          "implemented": true,
+          "passed": true,
+          "log_summary": {
+            "cg_cfg": 49.4,
+            "cg_frame": 30.0,
+            "cg_subh": 22.22,
+            "cg_bp": 83.33,
+            "cg_csr": 92.26,
+            "cg_credit": 46.67,
+            "cg_drop": 52.78,
+            "cg_drr": 42.33,
+            "cg_ingress": 100.0,
+            "cg_egress": 100.0,
+            "lane0_monitored_frames": 7,
+            "lane0_orphan_beats": 0,
+            "lane0_capture_err": 0,
+            "lane1_monitored_frames": 7,
+            "lane1_orphan_beats": 0,
+            "lane1_capture_err": 0
+          },
+          "standalone_coverage": {
+            "branch": {
+              "pct": 74.27
+            },
+            "cond": {
+              "pct": 50.84
+            },
+            "expr": {
+              "pct": 71.43
+            },
+            "fsm_state": {
+              "pct": 93.18
+            },
+            "fsm_trans": {
+              "pct": 52.0
+            },
+            "stmt": {
+              "pct": 80.25
+            },
+            "toggle": {
+              "pct": 36.91
+            }
+          },
+          "isolated_cov_per_txn": {
+            "branch": {
+              "pct": 37.135
+            },
+            "cond": {
+              "pct": 25.42
+            },
+            "expr": {
+              "pct": 35.715
+            },
+            "fsm_state": {
+              "pct": 46.59
+            },
+            "fsm_trans": {
+              "pct": 26.0
+            },
+            "stmt": {
+              "pct": 40.125
+            },
+            "toggle": {
+              "pct": 18.455
+            }
+          },
+          "bucket_gain_by_case": {
+            "branch": {
+              "pct": 6.42
+            },
+            "cond": {
+              "pct": 7.35
+            },
+            "expr": {
+              "pct": 4.31
+            },
+            "fsm_state": {
+              "pct": 2.27
+            },
+            "fsm_trans": {
+              "pct": 5.0
+            },
+            "stmt": {
+              "pct": 6.16
+            },
+            "toggle": {
+              "pct": 5.18
+            }
+          },
+          "bucket_merged_total_after_case": {
+            "branch": {
+              "pct": 78.3
+            },
+            "cond": {
+              "pct": 54.33
+            },
+            "expr": {
+              "pct": 72.41
+            },
+            "fsm_state": {
+              "pct": 93.18
+            },
+            "fsm_trans": {
+              "pct": 52.0
+            },
+            "stmt": {
+              "pct": 82.43
+            },
+            "toggle": {
+              "pct": 50.51
+            }
+          },
+          "bucket_gain_per_txn": {
+            "branch": {
+              "pct": 3.21
+            },
+            "cond": {
+              "pct": 3.675
+            },
+            "expr": {
+              "pct": 2.155
+            },
+            "fsm_state": {
+              "pct": 1.135
+            },
+            "fsm_trans": {
+              "pct": 2.5
+            },
+            "stmt": {
+              "pct": 3.08
+            },
+            "toggle": {
+              "pct": 2.59
             }
           }
         }
@@ -17812,13 +18576,13 @@
           "/tb_top/gen_dut_2lane/dut/u_native/g_ingress_parser[1]/ingress_parser_i"
         ],
         "metrics": {
-          "branch": 75.53,
-          "cond": 32.5,
+          "branch": 80.85,
+          "cond": 45.0,
           "expr": 100.0,
           "fsm_state": 100.0,
-          "fsm_trans": 66.66,
-          "stmt": 76.96,
-          "toggle": 51.76
+          "fsm_trans": 70.83,
+          "stmt": 84.83,
+          "toggle": 56.32
         }
       }
     },
@@ -17835,29 +18599,29 @@
           "/tb_top/gen_dut_2lane/dut/u_native/block_path_i"
         ],
         "metrics": {
-          "branch": 86.38,
-          "cond": 60.0,
+          "branch": 86.15,
+          "cond": 59.4,
           "expr": 88.88,
           "fsm_state": 100.0,
           "fsm_trans": 56.66,
-          "stmt": 92.03,
-          "toggle": 42.21
+          "stmt": 92.24,
+          "toggle": 49.06
         }
       }
     },
     {
       "area": "Presenter flush/backpressure hybrids",
-      "classification": "needs-new-test",
-      "reason": "The reduced-depth overwrite screen now closes cleanly on the repaired presenter path, but the promoted suite still lacks a directed hybrid that couples legal backpressure windows with default-build overwrite pressure and proves when frame-table drops must, and must not, appear.",
-      "evidence_anchor": "ordered_priority_queue_monolithic_basic_presenter.sv:128-145, 165-188; DV_FORMAL.md B27/B28; CORNER_OPQ_409_error_ftable_overflow_test",
-      "next_action": "Add the default-build backpressure-plus-overwrite directed hybrid and use it to raise presenter transition and toggle coverage.",
+      "classification": "real gap",
+      "reason": "The new default-build pre-drop boundary screen now closes the \"must not drop\" half of the presenter/backpressure space, but the suite still lacks a complementary signed-off default-build hybrid that advances frame-table drop counters without falling back to the reduced-depth elaboration point.",
+      "evidence_anchor": "ordered_priority_queue_monolithic_basic_presenter.sv:128-145, 165-188; DV_FORMAL.md B27/B28; CORNER_OPQ_409_error_ftable_overflow_test; opq_cross_bp_predrop_boundary_test",
+      "next_action": "Keep the reduced-depth overwrite point as the current must-drop proof, use opq_cross_bp_predrop_boundary_test as the default-build legal pre-drop proof, and only promote a default-build must-drop hybrid once it can advance ft_drop_* cleanly with no malformed accepted egress.",
       "instance_summary": {
         "instance_count": 1,
         "instances": [
           "/tb_top/gen_dut_2lane/dut/u_native/presenter_i"
         ],
         "metrics": {
-          "toggle": 60.08
+          "toggle": 53.53
         }
       }
     },
@@ -17874,11 +18638,11 @@
           "/tb_top/gen_dut_2lane/dut"
         ],
         "metrics": {
-          "branch": 77.68,
-          "cond": 60.52,
-          "expr": 54.34,
-          "stmt": 86.66,
-          "toggle": 30.38
+          "branch": 78.43,
+          "cond": 53.19,
+          "expr": 58.92,
+          "stmt": 88.25,
+          "toggle": 36.83
         }
       }
     },
@@ -17903,45 +18667,45 @@
           "branch": 100.0,
           "cond": 100.0,
           "stmt": 100.0,
-          "toggle": 50.34
+          "toggle": 55.1
         }
       }
     }
   ],
   "totals": {
-    "planned_cases": 46,
+    "planned_cases": 48,
     "catalog_planned_cases": 993,
-    "catalog_pending_cases": 947,
-    "promoted_cases": 46,
-    "evidenced_cases": 46,
+    "catalog_pending_cases": 945,
+    "promoted_cases": 48,
+    "evidenced_cases": 48,
     "excluded_cases": 1,
     "merged_total_code_coverage": {
       "branch": {
-        "pct": 82.38
+        "pct": 83.53
       },
       "cond": {
-        "pct": 58.36
+        "pct": 59.22
       },
       "expr": {
-        "pct": 73.21
+        "pct": 72.58
       },
       "fsm_state": {
         "pct": 97.73
       },
       "fsm_trans": {
-        "pct": 60.0
+        "pct": 62.0
       },
       "stmt": {
-        "pct": 86.91
+        "pct": 88.75
       },
       "toggle": {
-        "pct": 47.5
+        "pct": 51.85
       }
     },
     "functional_coverage": {
-      "pct": 91.07,
-      "evidenced": 46,
-      "planned": 46
+      "pct": 92.94,
+      "evidenced": 48,
+      "planned": 48
     }
   },
   "signoff_runs": [
@@ -17959,6 +18723,9 @@
       "limitations": [
         "PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.",
         "opq_cross_mixed_bucket_random_soak_test is tracked as a dedicated supplemental signoff run; this fixed baseline remains case-ordered and deterministic.",
+        "opq_cross_drr_bursty_frame2_boundary_test is tracked as a dedicated supplemental signoff run because it freezes the last known green bursty DRR envelope below the open frame_count=3 retirement failure.",
+        "opq_cross_bp_predrop_boundary_test is tracked as a dedicated supplemental signoff run because it proves the default-build legal pre-drop boundary under sustained backpressure rather than a promoted fixed bucket-frame case.",
+        "opq_cross_random_ready_overflow_step2_boundary_test is tracked as a dedicated supplemental signoff run because it freezes the current green two-step legal-overflow boundary while the later must-drop path remains probe-only.",
         "opq_error_counter_clear_test is tracked as a dedicated supplemental signoff run because it intentionally clears live CSR counters mid-run.",
         "opq_error_ftable_overflow_test is tracked as a dedicated supplemental signoff run because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration."
       ],
@@ -18032,6 +18799,9 @@
       "limitations": [
         "PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.",
         "opq_cross_mixed_bucket_random_soak_test is tracked as a dedicated supplemental signoff run; this fixed baseline remains case-ordered and deterministic.",
+        "opq_cross_drr_bursty_frame2_boundary_test is tracked as a dedicated supplemental signoff run because it freezes the last known green bursty DRR envelope below the open frame_count=3 retirement failure.",
+        "opq_cross_bp_predrop_boundary_test is tracked as a dedicated supplemental signoff run because it proves the default-build legal pre-drop boundary under sustained backpressure rather than a promoted fixed bucket-frame case.",
+        "opq_cross_random_ready_overflow_step2_boundary_test is tracked as a dedicated supplemental signoff run because it freezes the current green two-step legal-overflow boundary while the later must-drop path remains probe-only.",
         "opq_error_counter_clear_test is tracked as a dedicated supplemental signoff run because it intentionally clears live CSR counters mid-run.",
         "opq_error_ftable_overflow_test is tracked as a dedicated supplemental signoff run because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration.",
         "This run appends two extra tail sequences after the 37 promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases."
@@ -18162,6 +18932,211 @@
         "lane1_orphan_beats": 0,
         "lane1_capture_err": 0,
         "random_txn": 128
+      }
+    },
+    {
+      "run_id": "drr_bursty_frame2_boundary_native_sv",
+      "test_name": "opq_cross_drr_bursty_frame2_boundary_test",
+      "kind": "drr_bursty_frame2_boundary",
+      "build_tag": "native_sv",
+      "bucket": "CROSS",
+      "sequence_name": "OPQ_DRR_BURSTY_FRAME2_BOUNDARY",
+      "case_count": 1,
+      "effort": "practical",
+      "iter_cap": null,
+      "payload_cap": null,
+      "limitations": [
+        "This is a supplemental signoff run that freezes the largest green bursty DRR envelope below the open frame_count=3 active-lane retirement failure.",
+        "It is intentionally tracked outside the promoted fixed bucket-frame baselines because the larger bursty DRR probe family remains open."
+      ],
+      "implemented": true,
+      "passed": true,
+      "code_coverage": {
+        "branch": {
+          "pct": 67.51
+        },
+        "cond": {
+          "pct": 43.82
+        },
+        "expr": {
+          "pct": 60.2
+        },
+        "fsm_state": {
+          "pct": 86.36
+        },
+        "fsm_trans": {
+          "pct": 43.0
+        },
+        "stmt": {
+          "pct": 74.2
+        },
+        "toggle": {
+          "pct": 24.49
+        }
+      },
+      "cross_summary": {
+        "pct": 57.35,
+        "txns": 4,
+        "queued_overlap": 0,
+        "counter_checks_failed": 0,
+        "unexpected_outputs": 0,
+        "curve": ""
+      },
+      "log_summary": {
+        "hit_expected": 298,
+        "hit_actual": 298,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 43.33,
+        "cg_subh": 11.11,
+        "cg_bp": 20.0,
+        "cg_csr": 95.24,
+        "cg_credit": 46.67,
+        "cg_drop": 61.81,
+        "cg_drr": 46.0,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 2,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 2,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      }
+    },
+    {
+      "run_id": "bp_predrop_boundary_native_sv",
+      "test_name": "opq_cross_bp_predrop_boundary_test",
+      "kind": "bp_predrop_boundary",
+      "build_tag": "native_sv",
+      "bucket": "CROSS",
+      "sequence_name": "OPQ_BP_PREDROP_BOUNDARY",
+      "case_count": 1,
+      "effort": "practical",
+      "iter_cap": null,
+      "payload_cap": null,
+      "limitations": [
+        "This is a supplemental signoff run that proves the default-build legal pre-drop boundary under sustained backpressure while keeping frame-table drop counters at zero.",
+        "The testcase intentionally stages a mild no-drop phase followed by a heavier pressure phase, so it is tracked outside the promoted fixed bucket-frame baselines."
+      ],
+      "implemented": true,
+      "passed": true,
+      "code_coverage": {
+        "branch": {
+          "pct": 67.64
+        },
+        "cond": {
+          "pct": 42.13
+        },
+        "expr": {
+          "pct": 59.18
+        },
+        "fsm_state": {
+          "pct": 88.64
+        },
+        "fsm_trans": {
+          "pct": 45.0
+        },
+        "stmt": {
+          "pct": 75.12
+        },
+        "toggle": {
+          "pct": 33.07
+        }
+      },
+      "cross_summary": {
+        "pct": 62.07,
+        "txns": 104,
+        "queued_overlap": 0,
+        "counter_checks_failed": 0,
+        "unexpected_outputs": 0,
+        "curve": ""
+      },
+      "log_summary": {
+        "cg_cfg": 49.4,
+        "cg_frame": 43.33,
+        "cg_subh": 33.33,
+        "cg_bp": 63.33,
+        "cg_csr": 92.26,
+        "cg_credit": 46.67,
+        "cg_drop": 52.08,
+        "cg_drr": 40.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 52,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 52,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      }
+    },
+    {
+      "run_id": "overflow_step2_boundary_native_sv",
+      "test_name": "opq_cross_random_ready_overflow_step2_boundary_test",
+      "kind": "overflow_step2_boundary",
+      "build_tag": "native_sv",
+      "bucket": "CROSS",
+      "sequence_name": "OPQ_OVERFLOW_STEP2_BOUNDARY",
+      "case_count": 1,
+      "effort": "practical",
+      "iter_cap": null,
+      "payload_cap": null,
+      "limitations": [
+        "This is a supplemental signoff run that freezes the current green two-step legal-overflow boundary on the default build with ft_drop counters held at zero.",
+        "It does not close the later must-drop path; the longer random-ready overflow soak remains probe-only until the presenter overwrite accounting bug is fixed."
+      ],
+      "implemented": true,
+      "passed": true,
+      "code_coverage": {
+        "branch": {
+          "pct": 74.27
+        },
+        "cond": {
+          "pct": 50.84
+        },
+        "expr": {
+          "pct": 71.43
+        },
+        "fsm_state": {
+          "pct": 93.18
+        },
+        "fsm_trans": {
+          "pct": 52.0
+        },
+        "stmt": {
+          "pct": 80.25
+        },
+        "toggle": {
+          "pct": 36.91
+        }
+      },
+      "cross_summary": {
+        "pct": 61.9,
+        "txns": 14,
+        "queued_overlap": 0,
+        "counter_checks_failed": 0,
+        "unexpected_outputs": 0,
+        "curve": ""
+      },
+      "log_summary": {
+        "cg_cfg": 49.4,
+        "cg_frame": 30.0,
+        "cg_subh": 22.22,
+        "cg_bp": 83.33,
+        "cg_csr": 92.26,
+        "cg_credit": 46.67,
+        "cg_drop": 52.78,
+        "cg_drr": 42.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 7,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 7,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
       }
     },
     {
@@ -18395,71 +19370,229 @@
       },
       "bucket_gain_by_case": {
         "branch": {
-          "pct": 0.13
+          "pct": 3.01
         },
         "cond": {
-          "pct": 1.1
+          "pct": 2.51
         },
         "expr": {
-          "pct": 0.0
+          "pct": 8.06
         },
         "fsm_state": {
-          "pct": 0.0
+          "pct": 4.55
         },
         "fsm_trans": {
-          "pct": 0.0
+          "pct": 4.0
         },
         "stmt": {
-          "pct": 0.0
+          "pct": 1.38
         },
         "toggle": {
-          "pct": 0.0
+          "pct": 11.35
         }
       },
       "bucket_merged_total_after_case": {
         "branch": {
-          "pct": 72.64
+          "pct": 70.91
         },
         "cond": {
-          "pct": 49.78
+          "pct": 44.36
         },
         "expr": {
-          "pct": 66.67
+          "pct": 67.24
         },
         "fsm_state": {
-          "pct": 85.71
+          "pct": 90.91
         },
         "fsm_trans": {
-          "pct": 43.62
+          "pct": 47.0
         },
         "stmt": {
-          "pct": 81.54
+          "pct": 75.74
         },
         "toggle": {
-          "pct": 45.76
+          "pct": 44.93
         }
       },
       "bucket_gain_per_txn": {
         "branch": {
-          "pct": 0.001
+          "pct": 0.0235
         },
         "cond": {
-          "pct": 0.0086
+          "pct": 0.0196
         },
         "expr": {
-          "pct": 0.0
+          "pct": 0.063
         },
         "fsm_state": {
-          "pct": 0.0
+          "pct": 0.0355
         },
         "fsm_trans": {
-          "pct": 0.0
+          "pct": 0.0312
         },
         "stmt": {
-          "pct": 0.0
+          "pct": 0.0108
         },
         "toggle": {
-          "pct": 0.0
+          "pct": 0.0887
+        }
+      }
+    },
+    {
+      "case_id": "COMBO_OPQ_509_cross_random_ready_overflow_step2_boundary_test",
+      "full_case_id": "COMBO_OPQ_509_cross_random_ready_overflow_step2_boundary_test",
+      "method": "R",
+      "observed_txn": 2,
+      "scenario": "Two-step default-build random-ready overflow boundary in shape-check mode.",
+      "primary_checks": "The first two overflow windows stay legal with ft_drop counters at zero, wr = rd + drop closed at each checkpoint, and no incomplete accepted packets.",
+      "contract_anchor": "DV_CROSS legal default-build overflow boundary evidence.",
+      "implementation_mode": "native_sv",
+      "build_tag": "after",
+      "isolated_effort": "high",
+      "build_knobs": {
+        "OPQ_N_LANE": 2,
+        "OPQ_N_SHD": 256,
+        "OPQ_TICKET_FIFO_DEPTH": 512,
+        "OPQ_PAGE_RAM_DEPTH": 65536,
+        "MODE": "MERGING"
+      },
+      "bucket": "CROSS",
+      "legacy_test_name": "opq_cross_random_ready_overflow_step2_boundary_test",
+      "test_name": "opq_cross_random_ready_overflow_step2_boundary_test",
+      "report_case_id": "COMBO_OPQ_509_cross_random_ready_overflow_step2_boundary_test",
+      "implemented": true,
+      "passed": true,
+      "log_summary": {
+        "cg_cfg": 49.4,
+        "cg_frame": 30.0,
+        "cg_subh": 22.22,
+        "cg_bp": 83.33,
+        "cg_csr": 92.26,
+        "cg_credit": 46.67,
+        "cg_drop": 52.78,
+        "cg_drr": 42.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 7,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 7,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      },
+      "standalone_coverage": {
+        "branch": {
+          "pct": 74.27
+        },
+        "cond": {
+          "pct": 50.84
+        },
+        "expr": {
+          "pct": 71.43
+        },
+        "fsm_state": {
+          "pct": 93.18
+        },
+        "fsm_trans": {
+          "pct": 52.0
+        },
+        "stmt": {
+          "pct": 80.25
+        },
+        "toggle": {
+          "pct": 36.91
+        }
+      },
+      "isolated_cov_per_txn": {
+        "branch": {
+          "pct": 37.135
+        },
+        "cond": {
+          "pct": 25.42
+        },
+        "expr": {
+          "pct": 35.715
+        },
+        "fsm_state": {
+          "pct": 46.59
+        },
+        "fsm_trans": {
+          "pct": 26.0
+        },
+        "stmt": {
+          "pct": 40.125
+        },
+        "toggle": {
+          "pct": 18.455
+        }
+      },
+      "bucket_gain_by_case": {
+        "branch": {
+          "pct": 6.42
+        },
+        "cond": {
+          "pct": 7.35
+        },
+        "expr": {
+          "pct": 4.31
+        },
+        "fsm_state": {
+          "pct": 2.27
+        },
+        "fsm_trans": {
+          "pct": 5.0
+        },
+        "stmt": {
+          "pct": 6.16
+        },
+        "toggle": {
+          "pct": 5.18
+        }
+      },
+      "bucket_merged_total_after_case": {
+        "branch": {
+          "pct": 78.3
+        },
+        "cond": {
+          "pct": 54.33
+        },
+        "expr": {
+          "pct": 72.41
+        },
+        "fsm_state": {
+          "pct": 93.18
+        },
+        "fsm_trans": {
+          "pct": 52.0
+        },
+        "stmt": {
+          "pct": 82.43
+        },
+        "toggle": {
+          "pct": 50.51
+        }
+      },
+      "bucket_gain_per_txn": {
+        "branch": {
+          "pct": 3.21
+        },
+        "cond": {
+          "pct": 3.675
+        },
+        "expr": {
+          "pct": 2.155
+        },
+        "fsm_state": {
+          "pct": 1.135
+        },
+        "fsm_trans": {
+          "pct": 2.5
+        },
+        "stmt": {
+          "pct": 3.08
+        },
+        "toggle": {
+          "pct": 2.59
         }
       }
     }

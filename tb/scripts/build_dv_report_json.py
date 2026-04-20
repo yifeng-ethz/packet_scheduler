@@ -78,20 +78,24 @@ INSTANCE_HOLE_SPECS = [
         "instance_paths": [
             "/tb_top/gen_dut_2lane/dut/u_native/presenter_i",
         ],
-        "classification": "needs-new-test",
+        "classification": "real gap",
         "reason": (
-            "The reduced-depth overwrite screen now closes cleanly on the repaired "
-            "presenter path, but the promoted suite still lacks a directed hybrid "
-            "that couples legal backpressure windows with default-build overwrite "
-            "pressure and proves when frame-table drops must, and must not, appear."
+            "The new default-build pre-drop boundary screen now closes the "
+            "\"must not drop\" half of the presenter/backpressure space, but the "
+            "suite still lacks a complementary signed-off default-build hybrid "
+            "that advances frame-table drop counters without falling back to the "
+            "reduced-depth elaboration point."
         ),
         "evidence_anchor": (
             "ordered_priority_queue_monolithic_basic_presenter.sv:128-145, 165-188; "
-            "DV_FORMAL.md B27/B28; CORNER_OPQ_409_error_ftable_overflow_test"
+            "DV_FORMAL.md B27/B28; CORNER_OPQ_409_error_ftable_overflow_test; "
+            "opq_cross_bp_predrop_boundary_test"
         ),
         "next_action": (
-            "Add the default-build backpressure-plus-overwrite directed hybrid and "
-            "use it to raise presenter transition and toggle coverage."
+            "Keep the reduced-depth overwrite point as the current must-drop proof, "
+            "use opq_cross_bp_predrop_boundary_test as the default-build legal "
+            "pre-drop proof, and only promote a default-build must-drop hybrid once "
+            "it can advance ft_drop_* cleanly with no malformed accepted egress."
         ),
     },
     {
@@ -527,6 +531,22 @@ BUCKET_CASES = OrderedDict(
                     method="R",
                     observed_txn=128,
                 ),
+                case_entry(
+                    "opq_cross_drr_bursty_frame2_boundary_test",
+                    "Deterministic bursty DRR boundary at the last green frame_count=2 envelope below the active retirement failure.",
+                    "Named green-side DRR boundary where the hot-lane/cold-lane asymmetry still closes with complete hit conservation and no ghost hits.",
+                    "DV_CROSS bursty DRR green-side boundary evidence.",
+                    effort="high",
+                ),
+                case_entry(
+                    "opq_cross_random_ready_overflow_step2_boundary_test",
+                    "Two-step default-build random-ready overflow boundary in shape-check mode.",
+                    "The first two overflow windows stay legal with ft_drop counters at zero, wr = rd + drop closed at each checkpoint, and no incomplete accepted packets.",
+                    "DV_CROSS legal default-build overflow boundary evidence.",
+                    effort="high",
+                    method="R",
+                    observed_txn=2,
+                ),
             ],
         ),
     ]
@@ -662,6 +682,9 @@ SIGNOFF_RUN_SPECS = [
         "limitations": [
             "PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.",
             "opq_cross_mixed_bucket_random_soak_test is tracked as a dedicated supplemental signoff run; this fixed baseline remains case-ordered and deterministic.",
+            "opq_cross_drr_bursty_frame2_boundary_test is tracked as a dedicated supplemental signoff run because it freezes the last known green bursty DRR envelope below the open frame_count=3 retirement failure.",
+            "opq_cross_bp_predrop_boundary_test is tracked as a dedicated supplemental signoff run because it proves the default-build legal pre-drop boundary under sustained backpressure rather than a promoted fixed bucket-frame case.",
+            "opq_cross_random_ready_overflow_step2_boundary_test is tracked as a dedicated supplemental signoff run because it freezes the current green two-step legal-overflow boundary while the later must-drop path remains probe-only.",
             "opq_error_counter_clear_test is tracked as a dedicated supplemental signoff run because it intentionally clears live CSR counters mid-run.",
             "opq_error_ftable_overflow_test is tracked as a dedicated supplemental signoff run because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration.",
         ],
@@ -680,6 +703,9 @@ SIGNOFF_RUN_SPECS = [
         "limitations": [
             "PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.",
             "opq_cross_mixed_bucket_random_soak_test is tracked as a dedicated supplemental signoff run; this fixed baseline remains case-ordered and deterministic.",
+            "opq_cross_drr_bursty_frame2_boundary_test is tracked as a dedicated supplemental signoff run because it freezes the last known green bursty DRR envelope below the open frame_count=3 retirement failure.",
+            "opq_cross_bp_predrop_boundary_test is tracked as a dedicated supplemental signoff run because it proves the default-build legal pre-drop boundary under sustained backpressure rather than a promoted fixed bucket-frame case.",
+            "opq_cross_random_ready_overflow_step2_boundary_test is tracked as a dedicated supplemental signoff run because it freezes the current green two-step legal-overflow boundary while the later must-drop path remains probe-only.",
             "opq_error_counter_clear_test is tracked as a dedicated supplemental signoff run because it intentionally clears live CSR counters mid-run.",
             "opq_error_ftable_overflow_test is tracked as a dedicated supplemental signoff run because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration.",
             f"This run appends two extra tail sequences after the {SIGNOFF_CASE_COUNT} promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases.",
@@ -699,6 +725,54 @@ SIGNOFF_RUN_SPECS = [
         "limitations": [
             "This is a supplemental signoff run, not the fixed bucket-frame baseline; execution order is intentionally seed-driven rather than case-id ordered.",
             "The run reuses only already-promoted safe bucket slices so it can stress chained no-restart behavior without reopening known probe-only bursty DRR loss.",
+        ],
+    },
+    {
+        "run_id": "drr_bursty_frame2_boundary_native_sv",
+        "test_name": "opq_cross_drr_bursty_frame2_boundary_test",
+        "kind": "drr_bursty_frame2_boundary",
+        "build_tag": "native_sv",
+        "bucket": "CROSS",
+        "sequence_name": "OPQ_DRR_BURSTY_FRAME2_BOUNDARY",
+        "case_count": 1,
+        "effort": "practical",
+        "iter_cap": None,
+        "payload_cap": None,
+        "limitations": [
+            "This is a supplemental signoff run that freezes the largest green bursty DRR envelope below the open frame_count=3 active-lane retirement failure.",
+            "It is intentionally tracked outside the promoted fixed bucket-frame baselines because the larger bursty DRR probe family remains open.",
+        ],
+    },
+    {
+        "run_id": "bp_predrop_boundary_native_sv",
+        "test_name": "opq_cross_bp_predrop_boundary_test",
+        "kind": "bp_predrop_boundary",
+        "build_tag": "native_sv",
+        "bucket": "CROSS",
+        "sequence_name": "OPQ_BP_PREDROP_BOUNDARY",
+        "case_count": 1,
+        "effort": "practical",
+        "iter_cap": None,
+        "payload_cap": None,
+        "limitations": [
+            "This is a supplemental signoff run that proves the default-build legal pre-drop boundary under sustained backpressure while keeping frame-table drop counters at zero.",
+            "The testcase intentionally stages a mild no-drop phase followed by a heavier pressure phase, so it is tracked outside the promoted fixed bucket-frame baselines.",
+        ],
+    },
+    {
+        "run_id": "overflow_step2_boundary_native_sv",
+        "test_name": "opq_cross_random_ready_overflow_step2_boundary_test",
+        "kind": "overflow_step2_boundary",
+        "build_tag": "native_sv",
+        "bucket": "CROSS",
+        "sequence_name": "OPQ_OVERFLOW_STEP2_BOUNDARY",
+        "case_count": 1,
+        "effort": "practical",
+        "iter_cap": None,
+        "payload_cap": None,
+        "limitations": [
+            "This is a supplemental signoff run that freezes the current green two-step legal-overflow boundary on the default build with ft_drop counters held at zero.",
+            "It does not close the later must-drop path; the longer random-ready overflow soak remains probe-only until the presenter overwrite accounting bug is fixed.",
         ],
     },
     {
@@ -1219,6 +1293,20 @@ def build() -> dict:
             "legacy_test_name": "opq_cross_mixed_bucket_random_soak_test",
         }
     ]
+    drr_bursty_frame2_boundary_order = [
+        {
+            "bucket": "CROSS",
+            "report_case_id": report_case_id_by_legacy["opq_cross_drr_bursty_frame2_boundary_test"],
+            "legacy_test_name": "opq_cross_drr_bursty_frame2_boundary_test",
+        }
+    ]
+    overflow_step2_boundary_order = [
+        {
+            "bucket": "CROSS",
+            "report_case_id": report_case_id_by_legacy["opq_cross_random_ready_overflow_step2_boundary_test"],
+            "legacy_test_name": "opq_cross_random_ready_overflow_step2_boundary_test",
+        }
+    ]
     error_counter_clear_order = [
         {
             "bucket": "ERROR",
@@ -1287,9 +1375,9 @@ def build() -> dict:
             "mode_scope": "MERGING mode only is claimed in the active native-SV report",
             "n_shd_scope": "native-SV signoff claim covers OPQ_N_SHD = 128 / 256 / 512 only",
             "four_lane_status": "4-lane native-SV remains out of signoff scope until dedicated 4-lane DV evidence is promoted; the standalone Arria 10 synthesis result is now recorded separately in signoff",
-            "bursty_drr_probe_status": "the focused bursty DRR reproducer is green, but the refreshed larger constrained-random rerun on 2026-04-20 still fails with lane0 unexplained=368 and hit-integrity summary expected=852 actual=622 missing=368 ghost=138; the screen remains probe-only",
+            "bursty_drr_probe_status": "the named green-side companion opq_cross_drr_bursty_frame2_boundary_test now passes with expected=298 actual=298 missing=0 ghost=0, but the reduced deterministic opq_cross_drr_bursty_frame3_repro_test still fails with expected=484 actual=254 missing=230 ghost=0 and the full 8-frame screen still fails with lane0 unexplained=368; the larger failure family remains probe-only",
             "mixed_bucket_seconds_probe_status": "the exact 183..190 reproducer is green, and the full stretched mixed-bucket seconds soak now also passes end to end on the repaired allocator state; the screen remains probe-only because of runtime, not because of a live failure",
-            "continuous_frame_scope": "fixed bucket-frame baselines cover the default-build promoted matrix only; dedicated supplemental signoff runs now track mixed-bucket random soak, counter-clear semantics, and the reduced-depth overflow build point, while PARAM elaboration points still remain separate",
+            "continuous_frame_scope": "fixed bucket-frame baselines cover the default-build promoted matrix only; dedicated supplemental signoff runs now track mixed-bucket random soak, the bursty DRR frame_count=2 green boundary, the default-build legal pre-drop boundary, the default-build two-step legal overflow boundary, counter-clear semantics, and the reduced-depth overflow build point, while PARAM elaboration points still remain separate",
         },
         "execution_modes": {
             "isolated": {
@@ -1317,6 +1405,23 @@ def build() -> dict:
                 "bucket_order": ["CROSS"],
                 "ordered_steps": mixed_bucket_random_soak_order,
                 "limitations": signoff_spec_by_run_id["mixed_bucket_random_soak_native_sv"]["limitations"],
+            },
+            "drr_bursty_frame2_boundary": {
+                "run_id": "drr_bursty_frame2_boundary_native_sv",
+                "bucket_order": ["CROSS"],
+                "ordered_steps": drr_bursty_frame2_boundary_order,
+                "limitations": signoff_spec_by_run_id["drr_bursty_frame2_boundary_native_sv"]["limitations"],
+            },
+            "bp_predrop_boundary": {
+                "run_id": "bp_predrop_boundary_native_sv",
+                "bucket_order": ["CROSS"],
+                "limitations": signoff_spec_by_run_id["bp_predrop_boundary_native_sv"]["limitations"],
+            },
+            "overflow_step2_boundary": {
+                "run_id": "overflow_step2_boundary_native_sv",
+                "bucket_order": ["CROSS"],
+                "ordered_steps": overflow_step2_boundary_order,
+                "limitations": signoff_spec_by_run_id["overflow_step2_boundary_native_sv"]["limitations"],
             },
             "error_counter_clear": {
                 "run_id": "error_counter_clear_native_sv",
