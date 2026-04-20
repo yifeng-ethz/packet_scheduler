@@ -36,14 +36,14 @@
 | Test | Purpose | Current status |
 |------|---------|----------------|
 | `opq_cross_drr_bursty_random_test` | Constrained-random hot-lane / cold-lane DRR stress with periodic egress stalls | Open repro: still exposes the monolithic presenter stall-boundary bug and incomplete late-drop observability for promoted hit-integrity closure |
-| `opq_cross_mixed_bucket_seconds_soak_test` | Earlier extended mixed-bucket random soak with longer chained no-restart traffic and stretched simulated time | Open repro: old masked-drop accounting underrun is fixed, but the full stretched rerun still trips `opq_hit3_contract`, first just before `mixed_sparse_191` and again in later PROF-heavy windows including `mixed_soak_261`, `mixed_whole_skew_275`, `mixed_whole_skew_418`, and before `mixed_whole_skew_435`; kept probe-only |
+| `opq_cross_mixed_bucket_seconds_soak_test` | Earlier extended mixed-bucket random soak with longer chained no-restart traffic and stretched simulated time | Passing extended probe: the full stretched rerun now crosses the old `mixed_sparse_191`, `mixed_soak_261`, `mixed_whole_skew_275`, `mixed_whole_skew_418`, and `mixed_whole_skew_435` windows cleanly and exits with `UVM_ERROR : 0`; kept probe-only because it is a long runtime stress screen rather than a promoted matrix case |
 
 ---
 
 ## Extended Soak Evidence
 
 - `opq_cross_mixed_bucket_long_simtime_soak_test` passes with `+TB_CLK_PERIOD_NS=1000000 +OPQ_MIXED_SOAK_STEPS=64`, finishing at `2194139500 us` of sim time, which is about `36.6 minutes`, with `expected=5798 actual=5798 missing=0 ghost=0`.
-- `opq_cross_mixed_bucket_seconds_soak_test` is the earlier extended screen: with `+TB_CLK_PERIOD_NS=250`, the old chained masked-drop accounting underrun no longer reproduces, but the full stretched rerun still trips `opq_hit3_contract`. The earliest current hit is at `11.642702 ms`, immediately before `mixed_sparse_191`, and later repeats are seen around `mixed_soak_261`, `mixed_whole_skew_275`, `mixed_whole_skew_418`, and before `mixed_whole_skew_435`, so it remains probe-only instead of promoted evidence.
+- `opq_cross_mixed_bucket_seconds_soak_test` is the earlier extended screen: with `+TB_CLK_PERIOD_NS=250`, the repaired RTL now reaches the end of the full stretched rerun cleanly, including repeated chained `subheader_error_recovery` steps deep into the run, and still closes with `UVM_ERROR : 0`, `UVM_FATAL : 0`, and `Errors: 0`. It remains probe-only instead of promoted evidence because it is retained as a long-runtime stress screen outside the default promoted matrix.
 
 ---
 

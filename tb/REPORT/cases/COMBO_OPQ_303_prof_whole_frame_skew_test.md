@@ -32,7 +32,7 @@
 | ℹ️ | log.cg_subh | `59.72` |
 | ℹ️ | log.cg_bp | `0.0` |
 | ℹ️ | log.cg_csr | `92.26` |
-| ℹ️ | log.cg_credit | `70.0` |
+| ℹ️ | log.cg_credit | `60.0` |
 | ℹ️ | log.cg_drop | `48.61` |
 | ℹ️ | log.cg_drr | `40.33` |
 | ℹ️ | log.cg_ingress | `100.0` |

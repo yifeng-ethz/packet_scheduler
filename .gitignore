@@ -23,3 +23,16 @@ tb/**/ordered_priority_queue.vhd
 
 # TERP-generated wrappers (regenerated each run)
 rtl/ordered_priority_queue/split/top/ordered_priority_queue_top.vhd
+
+# Quartus standalone signoff generated artefacts
+syn/quartus/**/db/
+syn/quartus/**/incremental_db/
+syn/quartus/**/DNI/
+syn/quartus/**/qdb/
+syn/quartus/**/serv_req_info.txt
+syn/quartus/**/output_files/*.done
+syn/quartus/**/output_files/*.jdi
+syn/quartus/**/output_files/*.pin
+syn/quartus/**/output_files/*.sld
+syn/quartus/**/output_files/*.sof
+syn/quartus/**/output_files/*.smsg

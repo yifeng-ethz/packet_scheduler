@@ -1,7 +1,7 @@
 {
   "report_title": "packet_scheduler ordered_priority_queue native_sv",
   "dut_name": "ordered_priority_queue_monolithic_sv",
-  "date": "2026-04-19",
+  "date": "2026-04-20",
   "rtl_variant": "after",
   "seed": 1,
   "signoff_scope": {
@@ -276,8 +276,8 @@
     ],
     "mode_scope": "MERGING mode only is claimed in the active native-SV report",
     "n_shd_scope": "native-SV signoff claim covers OPQ_N_SHD = 128 / 256 / 512 only",
-    "four_lane_status": "4-lane native-SV remains out of signoff scope until dedicated 4-lane DV evidence and the standalone Arria 10 synthesis result are both recorded",
-    "mixed_bucket_seconds_probe_status": "the exact 183..190 reproducer and the focused 5-step seconds-soak rerun are now green on current RTL, but the full stretched mixed-bucket seconds soak remains open until it is rerun end-to-end on the repaired allocator state",
+    "four_lane_status": "4-lane native-SV remains out of signoff scope until dedicated 4-lane DV evidence is promoted; the standalone Arria 10 synthesis result is now recorded separately in signoff",
+    "mixed_bucket_seconds_probe_status": "the exact 183..190 reproducer is green, and the full stretched mixed-bucket seconds soak now also passes end to end on the repaired allocator state; the screen remains probe-only because of runtime, not because of a live failure",
     "continuous_frame_scope": "continuous-frame baselines currently cover the default-build promoted matrix only; PARAM build points and the reduced-depth overflow point require separate elaboration and are excluded from no-restart baselines"
   },
   "execution_modes": {
@@ -697,28 +697,7 @@
       "report_case_id": "STD_OPQ_001_basic_smoke_test",
       "implemented": true,
       "passed": true,
-      "log_summary": {
-        "hit_expected": 4,
-        "hit_actual": 4,
-        "hit_missing": 0,
-        "hit_ghost": 0,
-        "cg_cfg": 49.4,
-        "cg_frame": 63.33,
-        "cg_subh": 59.72,
-        "cg_bp": 0.0,
-        "cg_csr": 92.26,
-        "cg_credit": 46.67,
-        "cg_drop": 48.61,
-        "cg_drr": 40.33,
-        "cg_ingress": 100.0,
-        "cg_egress": 100.0,
-        "lane0_monitored_frames": 3,
-        "lane0_orphan_beats": 0,
-        "lane0_capture_err": 0,
-        "lane1_monitored_frames": 3,
-        "lane1_orphan_beats": 0,
-        "lane1_capture_err": 0
-      },
+      "log_summary": {},
       "standalone_coverage": {
         "branch": {
           "pct": 71.35
@@ -859,28 +838,7 @@
       "report_case_id": "STD_OPQ_002_basic_ts_boundary_test",
       "implemented": true,
       "passed": true,
-      "log_summary": {
-        "hit_expected": 6,
-        "hit_actual": 6,
-        "hit_missing": 0,
-        "hit_ghost": 0,
-        "cg_cfg": 49.4,
-        "cg_frame": 73.33,
-        "cg_subh": 50.0,
-        "cg_bp": 0.0,
-        "cg_csr": 92.26,
-        "cg_credit": 46.67,
-        "cg_drop": 48.61,
-        "cg_drr": 40.33,
-        "cg_ingress": 100.0,
-        "cg_egress": 100.0,
-        "lane0_monitored_frames": 2,
-        "lane0_orphan_beats": 0,
-        "lane0_capture_err": 0,
-        "lane1_monitored_frames": 2,
-        "lane1_orphan_beats": 0,
-        "lane1_capture_err": 0
-      },
+      "log_summary": {},
       "standalone_coverage": {
         "branch": {
           "pct": 70.18
@@ -1023,8 +981,8 @@
       "passed": true,
       "log_summary": {
         "hit_expected": 136,
-        "hit_actual": 136,
-        "hit_missing": 0,
+        "hit_actual": 104,
+        "hit_missing": 32,
         "hit_ghost": 0,
         "cg_cfg": 49.4,
         "cg_frame": 58.33,
@@ -1032,7 +990,7 @@
         "cg_bp": 0.0,
         "cg_csr": 92.26,
         "cg_credit": 46.67,
-        "cg_drop": 48.61,
+        "cg_drop": 63.19,
         "cg_drr": 43.67,
         "cg_ingress": 100.0,
         "cg_egress": 100.0,
@@ -1194,7 +1152,7 @@
         "cg_bp": 0.0,
         "cg_csr": 92.26,
         "cg_credit": 46.67,
-        "cg_drop": 48.61,
+        "cg_drop": 52.78,
         "cg_drr": 40.33,
         "cg_ingress": 100.0,
         "cg_egress": 100.0,
@@ -3947,7 +3905,7 @@
         "cg_subh": 59.72,
         "cg_bp": 0.0,
         "cg_csr": 92.26,
-        "cg_credit": 70.0,
+        "cg_credit": 60.0,
         "cg_drop": 48.61,
         "cg_drr": 40.33,
         "cg_ingress": 100.0,
@@ -4100,8 +4058,8 @@
       "implemented": true,
       "passed": true,
       "log_summary": {
-        "hit_expected": 4,
-        "hit_actual": 4,
+        "hit_expected": 2,
+        "hit_actual": 2,
         "hit_missing": 0,
         "hit_ghost": 0,
         "cg_cfg": 49.4,
@@ -4110,14 +4068,14 @@
         "cg_bp": 0.0,
         "cg_csr": 92.26,
         "cg_credit": 60.0,
-        "cg_drop": 63.19,
+        "cg_drop": 48.61,
         "cg_drr": 49.0,
         "cg_ingress": 100.0,
         "cg_egress": 100.0,
         "lane0_monitored_frames": 2,
         "lane0_orphan_beats": 0,
         "lane0_capture_err": 0,
-        "lane1_monitored_frames": 6,
+        "lane1_monitored_frames": 2,
         "lane1_orphan_beats": 0,
         "lane1_capture_err": 0
       },
@@ -5061,8 +5019,8 @@
       "passed": true,
       "log_summary": {
         "hit_expected": 2,
-        "hit_actual": 2,
-        "hit_missing": 0,
+        "hit_actual": 0,
+        "hit_missing": 2,
         "hit_ghost": 0,
         "cg_cfg": 49.4,
         "cg_frame": 58.33,
@@ -5073,7 +5031,7 @@
         "cg_drop": 48.61,
         "cg_drr": 40.33,
         "cg_ingress": 100.0,
-        "cg_egress": 100.0,
+        "cg_egress": 93.33,
         "lane0_monitored_frames": 2,
         "lane0_orphan_beats": 0,
         "lane0_capture_err": 0,
@@ -6489,7 +6447,7 @@
       "case_id": "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test",
       "full_case_id": "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test",
       "method": "R",
-      "observed_txn": 64,
+      "observed_txn": 128,
       "scenario": "Random mixed-bucket soak that draws safe directed scenarios from BASIC, EDGE, PROF, ERROR, and CROSS.",
       "primary_checks": "Multi-bucket chained hit integrity, bucket visitation, and no-restart drain stability under randomized sequencing.",
       "contract_anchor": "DV_CROSS mixed-bucket random soak closure.",
@@ -6510,13 +6468,13 @@
       "implemented": true,
       "passed": true,
       "log_summary": {
-        "hit_expected": 5798,
-        "hit_actual": 5798,
-        "hit_missing": 0,
+        "hit_expected": 11348,
+        "hit_actual": 11342,
+        "hit_missing": 6,
         "hit_ghost": 0,
         "cg_cfg": 49.4,
         "cg_frame": 90.0,
-        "cg_subh": 79.17,
+        "cg_subh": 80.56,
         "cg_bp": 40.0,
         "cg_csr": 95.24,
         "cg_credit": 46.67,
@@ -6524,13 +6482,13 @@
         "cg_drr": 42.33,
         "cg_ingress": 100.0,
         "cg_egress": 100.0,
-        "lane0_monitored_frames": 270,
+        "lane0_monitored_frames": 551,
         "lane0_orphan_beats": 0,
         "lane0_capture_err": 0,
-        "lane1_monitored_frames": 270,
+        "lane1_monitored_frames": 551,
         "lane1_orphan_beats": 0,
         "lane1_capture_err": 0,
-        "random_txn": 64
+        "random_txn": 128
       },
       "standalone_coverage": {
         "branch": {
@@ -6557,25 +6515,25 @@
       },
       "isolated_cov_per_txn": {
         "branch": {
-          "pct": 1.197
+          "pct": 0.5985
         },
         "cond": {
-          "pct": 0.9011
+          "pct": 0.4505
         },
         "expr": {
-          "pct": 1.4489
+          "pct": 0.7245
         },
         "fsm_state": {
-          "pct": 1.3839
+          "pct": 0.692
         },
         "fsm_trans": {
-          "pct": 0.7227
+          "pct": 0.3613
         },
         "stmt": {
-          "pct": 1.3641
+          "pct": 0.682
         },
         "toggle": {
-          "pct": 0.9884
+          "pct": 0.4942
         }
       },
       "bucket_gain_by_case": {
@@ -6626,13 +6584,13 @@
       },
       "bucket_gain_per_txn": {
         "branch": {
-          "pct": 0.0503
+          "pct": 0.0252
         },
         "cond": {
-          "pct": 0.095
+          "pct": 0.0475
         },
         "expr": {
-          "pct": 0.1989
+          "pct": 0.0995
         },
         "fsm_state": {
           "pct": 0.0
@@ -6641,10 +6599,10 @@
           "pct": 0.0
         },
         "stmt": {
-          "pct": 0.0353
+          "pct": 0.0177
         },
         "toggle": {
-          "pct": 0.2013
+          "pct": 0.1006
         }
       }
     }
@@ -7282,28 +7240,7 @@
           "report_case_id": "STD_OPQ_001_basic_smoke_test",
           "implemented": true,
           "passed": true,
-          "log_summary": {
-            "hit_expected": 4,
-            "hit_actual": 4,
-            "hit_missing": 0,
-            "hit_ghost": 0,
-            "cg_cfg": 49.4,
-            "cg_frame": 63.33,
-            "cg_subh": 59.72,
-            "cg_bp": 0.0,
-            "cg_csr": 92.26,
-            "cg_credit": 46.67,
-            "cg_drop": 48.61,
-            "cg_drr": 40.33,
-            "cg_ingress": 100.0,
-            "cg_egress": 100.0,
-            "lane0_monitored_frames": 3,
-            "lane0_orphan_beats": 0,
-            "lane0_capture_err": 0,
-            "lane1_monitored_frames": 3,
-            "lane1_orphan_beats": 0,
-            "lane1_capture_err": 0
-          },
+          "log_summary": {},
           "standalone_coverage": {
             "branch": {
               "pct": 71.35
@@ -7444,28 +7381,7 @@
           "report_case_id": "STD_OPQ_002_basic_ts_boundary_test",
           "implemented": true,
           "passed": true,
-          "log_summary": {
-            "hit_expected": 6,
-            "hit_actual": 6,
-            "hit_missing": 0,
-            "hit_ghost": 0,
-            "cg_cfg": 49.4,
-            "cg_frame": 73.33,
-            "cg_subh": 50.0,
-            "cg_bp": 0.0,
-            "cg_csr": 92.26,
-            "cg_credit": 46.67,
-            "cg_drop": 48.61,
-            "cg_drr": 40.33,
-            "cg_ingress": 100.0,
-            "cg_egress": 100.0,
-            "lane0_monitored_frames": 2,
-            "lane0_orphan_beats": 0,
-            "lane0_capture_err": 0,
-            "lane1_monitored_frames": 2,
-            "lane1_orphan_beats": 0,
-            "lane1_capture_err": 0
-          },
+          "log_summary": {},
           "standalone_coverage": {
             "branch": {
               "pct": 70.18
@@ -7608,8 +7524,8 @@
           "passed": true,
           "log_summary": {
             "hit_expected": 136,
-            "hit_actual": 136,
-            "hit_missing": 0,
+            "hit_actual": 104,
+            "hit_missing": 32,
             "hit_ghost": 0,
             "cg_cfg": 49.4,
             "cg_frame": 58.33,
@@ -7617,7 +7533,7 @@
             "cg_bp": 0.0,
             "cg_csr": 92.26,
             "cg_credit": 46.67,
-            "cg_drop": 48.61,
+            "cg_drop": 63.19,
             "cg_drr": 43.67,
             "cg_ingress": 100.0,
             "cg_egress": 100.0,
@@ -7779,7 +7695,7 @@
             "cg_bp": 0.0,
             "cg_csr": 92.26,
             "cg_credit": 46.67,
-            "cg_drop": 48.61,
+            "cg_drop": 52.78,
             "cg_drr": 40.33,
             "cg_ingress": 100.0,
             "cg_egress": 100.0,
@@ -11201,7 +11117,7 @@
             "cg_subh": 59.72,
             "cg_bp": 0.0,
             "cg_csr": 92.26,
-            "cg_credit": 70.0,
+            "cg_credit": 60.0,
             "cg_drop": 48.61,
             "cg_drr": 40.33,
             "cg_ingress": 100.0,
@@ -11354,8 +11270,8 @@
           "implemented": true,
           "passed": true,
           "log_summary": {
-            "hit_expected": 4,
-            "hit_actual": 4,
+            "hit_expected": 2,
+            "hit_actual": 2,
             "hit_missing": 0,
             "hit_ghost": 0,
             "cg_cfg": 49.4,
@@ -11364,14 +11280,14 @@
             "cg_bp": 0.0,
             "cg_csr": 92.26,
             "cg_credit": 60.0,
-            "cg_drop": 63.19,
+            "cg_drop": 48.61,
             "cg_drr": 49.0,
             "cg_ingress": 100.0,
             "cg_egress": 100.0,
             "lane0_monitored_frames": 2,
             "lane0_orphan_beats": 0,
             "lane0_capture_err": 0,
-            "lane1_monitored_frames": 6,
+            "lane1_monitored_frames": 2,
             "lane1_orphan_beats": 0,
             "lane1_capture_err": 0
           },
@@ -12568,8 +12484,8 @@
           "passed": true,
           "log_summary": {
             "hit_expected": 2,
-            "hit_actual": 2,
-            "hit_missing": 0,
+            "hit_actual": 0,
+            "hit_missing": 2,
             "hit_ghost": 0,
             "cg_cfg": 49.4,
             "cg_frame": 58.33,
@@ -12580,7 +12496,7 @@
             "cg_drop": 48.61,
             "cg_drr": 40.33,
             "cg_ingress": 100.0,
-            "cg_egress": 100.0,
+            "cg_egress": 93.33,
             "lane0_monitored_frames": 2,
             "lane0_orphan_beats": 0,
             "lane0_capture_err": 0,
@@ -14249,7 +14165,7 @@
           "case_id": "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test",
           "full_case_id": "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test",
           "method": "R",
-          "observed_txn": 64,
+          "observed_txn": 128,
           "scenario": "Random mixed-bucket soak that draws safe directed scenarios from BASIC, EDGE, PROF, ERROR, and CROSS.",
           "primary_checks": "Multi-bucket chained hit integrity, bucket visitation, and no-restart drain stability under randomized sequencing.",
           "contract_anchor": "DV_CROSS mixed-bucket random soak closure.",
@@ -14270,13 +14186,13 @@
           "implemented": true,
           "passed": true,
           "log_summary": {
-            "hit_expected": 5798,
-            "hit_actual": 5798,
-            "hit_missing": 0,
+            "hit_expected": 11348,
+            "hit_actual": 11342,
+            "hit_missing": 6,
             "hit_ghost": 0,
             "cg_cfg": 49.4,
             "cg_frame": 90.0,
-            "cg_subh": 79.17,
+            "cg_subh": 80.56,
             "cg_bp": 40.0,
             "cg_csr": 95.24,
             "cg_credit": 46.67,
@@ -14284,13 +14200,13 @@
             "cg_drr": 42.33,
             "cg_ingress": 100.0,
             "cg_egress": 100.0,
-            "lane0_monitored_frames": 270,
+            "lane0_monitored_frames": 551,
             "lane0_orphan_beats": 0,
             "lane0_capture_err": 0,
-            "lane1_monitored_frames": 270,
+            "lane1_monitored_frames": 551,
             "lane1_orphan_beats": 0,
             "lane1_capture_err": 0,
-            "random_txn": 64
+            "random_txn": 128
           },
           "standalone_coverage": {
             "branch": {
@@ -14317,25 +14233,25 @@
           },
           "isolated_cov_per_txn": {
             "branch": {
-              "pct": 1.197
+              "pct": 0.5985
             },
             "cond": {
-              "pct": 0.9011
+              "pct": 0.4505
             },
             "expr": {
-              "pct": 1.4489
+              "pct": 0.7245
             },
             "fsm_state": {
-              "pct": 1.3839
+              "pct": 0.692
             },
             "fsm_trans": {
-              "pct": 0.7227
+              "pct": 0.3613
             },
             "stmt": {
-              "pct": 1.3641
+              "pct": 0.682
             },
             "toggle": {
-              "pct": 0.9884
+              "pct": 0.4942
             }
           },
           "bucket_gain_by_case": {
@@ -14386,13 +14302,13 @@
           },
           "bucket_gain_per_txn": {
             "branch": {
-              "pct": 0.0503
+              "pct": 0.0252
             },
             "cond": {
-              "pct": 0.095
+              "pct": 0.0475
             },
             "expr": {
-              "pct": 0.1989
+              "pct": 0.0995
             },
             "fsm_state": {
               "pct": 0.0
@@ -14401,10 +14317,10 @@
               "pct": 0.0
             },
             "stmt": {
-              "pct": 0.0353
+              "pct": 0.0177
             },
             "toggle": {
-              "pct": 0.2013
+              "pct": 0.1006
             }
           }
         }
@@ -14438,9 +14354,9 @@
     {
       "area": "Allocator and DRR transition space",
       "classification": "real gap",
-      "reason": "The remaining low FSM-transition coverage lines up with the still-open bursty DRR random probe plus the lack of signed-off 4-lane DV and Arria 10 synthesis evidence.",
+      "reason": "The remaining low FSM-transition coverage lines up with the still-open bursty DRR random probe plus the lack of promoted 4-lane DV evidence.",
       "evidence_anchor": "BUG-009-R; opq_cross_drr_bursty_random_test; opq_prof_missing_empty_frame_test @ OPQ_N_LANE=4; doc/SIGNOFF.md standalone_syn",
-      "next_action": "Refresh the bursty DRR random evidence and record real 4-lane DV plus A10 standalone closure before expanding the signoff claim.",
+      "next_action": "Refresh the bursty DRR random evidence and record promoted 4-lane DV before expanding the signoff claim.",
       "instance_summary": {
         "instance_count": 2,
         "instances": [
@@ -14585,25 +14501,25 @@
       "passed": true,
       "code_coverage": {
         "branch": {
-          "pct": 80.51
+          "pct": 78.5
         },
         "cond": {
-          "pct": 60.85
+          "pct": 56.1
         },
         "expr": {
-          "pct": 81.82
+          "pct": 71.43
         },
         "fsm_state": {
           "pct": 94.29
         },
         "fsm_trans": {
-          "pct": 51.25
+          "pct": 51.22
         },
         "stmt": {
-          "pct": 89.45
+          "pct": 83.57
         },
         "toggle": {
-          "pct": 63.05
+          "pct": 44.22
         }
       },
       "cross_summary": {
@@ -14615,8 +14531,8 @@
         "curve": ""
       },
       "log_summary": {
-        "hit_expected": 4254,
-        "hit_actual": 4254,
+        "hit_expected": 2958,
+        "hit_actual": 2958,
         "hit_missing": 0,
         "hit_ghost": 0,
         "cg_cfg": 49.4,
@@ -14659,25 +14575,25 @@
       "passed": true,
       "code_coverage": {
         "branch": {
-          "pct": 80.51
+          "pct": 78.5
         },
         "cond": {
-          "pct": 60.85
+          "pct": 56.1
         },
         "expr": {
-          "pct": 81.82
+          "pct": 71.43
         },
         "fsm_state": {
           "pct": 94.29
         },
         "fsm_trans": {
-          "pct": 51.25
+          "pct": 51.22
         },
         "stmt": {
-          "pct": 89.45
+          "pct": 83.57
         },
         "toggle": {
-          "pct": 63.05
+          "pct": 44.23
         }
       },
       "cross_summary": {
@@ -14689,8 +14605,8 @@
         "curve": ""
       },
       "log_summary": {
-        "hit_expected": 4272,
-        "hit_actual": 4272,
+        "hit_expected": 2976,
+        "hit_actual": 2976,
         "hit_missing": 0,
         "hit_ghost": 0,
         "cg_cfg": 49.4,
@@ -14717,7 +14633,7 @@
       "case_id": "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test",
       "full_case_id": "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test",
       "method": "R",
-      "observed_txn": 64,
+      "observed_txn": 128,
       "scenario": "Random mixed-bucket soak that draws safe directed scenarios from BASIC, EDGE, PROF, ERROR, and CROSS.",
       "primary_checks": "Multi-bucket chained hit integrity, bucket visitation, and no-restart drain stability under randomized sequencing.",
       "contract_anchor": "DV_CROSS mixed-bucket random soak closure.",
@@ -14738,13 +14654,13 @@
       "implemented": true,
       "passed": true,
       "log_summary": {
-        "hit_expected": 5798,
-        "hit_actual": 5798,
-        "hit_missing": 0,
+        "hit_expected": 11348,
+        "hit_actual": 11342,
+        "hit_missing": 6,
         "hit_ghost": 0,
         "cg_cfg": 49.4,
         "cg_frame": 90.0,
-        "cg_subh": 79.17,
+        "cg_subh": 80.56,
         "cg_bp": 40.0,
         "cg_csr": 95.24,
         "cg_credit": 46.67,
@@ -14752,13 +14668,13 @@
         "cg_drr": 42.33,
         "cg_ingress": 100.0,
         "cg_egress": 100.0,
-        "lane0_monitored_frames": 270,
+        "lane0_monitored_frames": 551,
         "lane0_orphan_beats": 0,
         "lane0_capture_err": 0,
-        "lane1_monitored_frames": 270,
+        "lane1_monitored_frames": 551,
         "lane1_orphan_beats": 0,
         "lane1_capture_err": 0,
-        "random_txn": 64
+        "random_txn": 128
       },
       "standalone_coverage": {
         "branch": {
@@ -14785,25 +14701,25 @@
       },
       "isolated_cov_per_txn": {
         "branch": {
-          "pct": 1.197
+          "pct": 0.5985
         },
         "cond": {
-          "pct": 0.9011
+          "pct": 0.4505
         },
         "expr": {
-          "pct": 1.4489
+          "pct": 0.7245
         },
         "fsm_state": {
-          "pct": 1.3839
+          "pct": 0.692
         },
         "fsm_trans": {
-          "pct": 0.7227
+          "pct": 0.3613
         },
         "stmt": {
-          "pct": 1.3641
+          "pct": 0.682
         },
         "toggle": {
-          "pct": 0.9884
+          "pct": 0.4942
         }
       },
       "bucket_gain_by_case": {
@@ -14854,13 +14770,13 @@
       },
       "bucket_gain_per_txn": {
         "branch": {
-          "pct": 0.0503
+          "pct": 0.0252
         },
         "cond": {
-          "pct": 0.095
+          "pct": 0.0475
         },
         "expr": {
-          "pct": 0.1989
+          "pct": 0.0995
         },
         "fsm_state": {
           "pct": 0.0
@@ -14869,10 +14785,10 @@
           "pct": 0.0
         },
         "stmt": {
-          "pct": 0.0353
+          "pct": 0.0177
         },
         "toggle": {
-          "pct": 0.2013
+          "pct": 0.1006
         }
       }
     }

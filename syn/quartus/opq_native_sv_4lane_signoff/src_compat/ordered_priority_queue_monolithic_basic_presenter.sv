@@ -1,0 +1,1269 @@
+//------------------------------------------------------------------------------
+// ordered_priority_queue_monolithic_basic_presenter
+// Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
+// Version : 26.3.24
+// Date    : 20260420
+// Change  : Keep overwrite bookkeeping off the head-read and new-frame arrival cycles by deferring overlap-start into the registered pending request path while still blocking presenter launch immediately
+//------------------------------------------------------------------------------
+
+module ordered_priority_queue_monolithic_basic_presenter #(
+  parameter int unsigned N_LANE = 2,
+  parameter int unsigned PAGE_RAM_DEPTH = 65536,
+  parameter int unsigned PAGE_RAM_RD_WIDTH = 36,
+  parameter int unsigned PAGE_RAM_DATA_WIDTH = 40,
+  parameter int unsigned PAGE_RAM_ADDR_WIDTH = $clog2(PAGE_RAM_DEPTH),
+  parameter int unsigned N_SHD = 256,
+  parameter int unsigned N_HIT = 255,
+  parameter int unsigned HDR_SIZE = 5,
+  parameter int unsigned SHD_SIZE = 1,
+  parameter int unsigned HIT_SIZE = 1,
+  parameter int unsigned TRL_SIZE = 1,
+  parameter int unsigned MAX_SHR_CNT_BITS = $clog2(N_SHD * N_LANE) + 1,
+  parameter int unsigned MAX_HIT_CNT_BITS = (($clog2(N_SHD * N_HIT) + 1) < 16) ? ($clog2(N_SHD * N_HIT) + 1) : 16,
+  parameter int unsigned META_ADDR_WIDTH = 9,
+  parameter int unsigned EGRESS_DELAY = 3
+) (
+  input  logic                                            new_frame_valid_i,
+  input  logic [PAGE_RAM_ADDR_WIDTH-1:0]                  new_frame_raw_addr_i,
+  input  logic [MAX_SHR_CNT_BITS-1:0]                     frame_shr_cnt_this_i,
+  input  logic [MAX_HIT_CNT_BITS-1:0]                     frame_hit_cnt_this_i,
+  input  logic                                            packet_complete_i,
+  input  logic [MAX_SHR_CNT_BITS-1:0]                     packet_complete_shr_cnt_i,
+  input  logic [MAX_HIT_CNT_BITS-1:0]                     packet_complete_hit_cnt_i,
+  input  logic                                            payload_commit_idle_i,
+  output logic [PAGE_RAM_ADDR_WIDTH-1:0]                  page_ram_rd_addr_o,
+  input  logic [PAGE_RAM_DATA_WIDTH-1:0]                  page_ram_rd_data_i,
+  output logic                                            ft_drop_valid_o,
+  output logic [31:0]                                     ft_drop_hdr_cnt_o,
+  output logic [31:0]                                     ft_drop_shd_cnt_o,
+  output logic [31:0]                                     ft_drop_hit_cnt_o,
+  output logic [PAGE_RAM_RD_WIDTH-1:0]                    aso_egress_data,
+  output logic                                            aso_egress_valid,
+  input  logic                                            aso_egress_ready,
+  output logic                                            aso_egress_startofpacket,
+  output logic                                            aso_egress_endofpacket,
+  output logic [2:0]                                      aso_egress_error,
+  input  logic                                            d_clk,
+  input  logic                                            d_reset
+);
+`ifndef OPQ_OSS_FORMAL
+  ordered_priority_queue_monolithic_basic_presenter_native #(
+    .N_LANE(N_LANE),
+    .PAGE_RAM_DEPTH(PAGE_RAM_DEPTH),
+    .PAGE_RAM_RD_WIDTH(PAGE_RAM_RD_WIDTH),
+    .PAGE_RAM_DATA_WIDTH(PAGE_RAM_DATA_WIDTH),
+    .PAGE_RAM_ADDR_WIDTH(PAGE_RAM_ADDR_WIDTH),
+    .N_SHD(N_SHD),
+    .N_HIT(N_HIT),
+    .HDR_SIZE(HDR_SIZE),
+    .SHD_SIZE(SHD_SIZE),
+    .HIT_SIZE(HIT_SIZE),
+    .TRL_SIZE(TRL_SIZE),
+    .MAX_SHR_CNT_BITS(MAX_SHR_CNT_BITS),
+    .MAX_HIT_CNT_BITS(MAX_HIT_CNT_BITS),
+    .META_ADDR_WIDTH(META_ADDR_WIDTH),
+    .EGRESS_DELAY(EGRESS_DELAY)
+  ) native_i (
+    .new_frame_valid_i(new_frame_valid_i),
+    .new_frame_raw_addr_i(new_frame_raw_addr_i),
+    .frame_shr_cnt_this_i(frame_shr_cnt_this_i),
+    .frame_hit_cnt_this_i(frame_hit_cnt_this_i),
+    .packet_complete_i(packet_complete_i),
+    .packet_complete_shr_cnt_i(packet_complete_shr_cnt_i),
+    .packet_complete_hit_cnt_i(packet_complete_hit_cnt_i),
+    .payload_commit_idle_i(payload_commit_idle_i),
+    .page_ram_rd_addr_o(page_ram_rd_addr_o),
+    .page_ram_rd_data_i(page_ram_rd_data_i),
+    .ft_drop_valid_o(ft_drop_valid_o),
+    .ft_drop_hdr_cnt_o(ft_drop_hdr_cnt_o),
+    .ft_drop_shd_cnt_o(ft_drop_shd_cnt_o),
+    .ft_drop_hit_cnt_o(ft_drop_hit_cnt_o),
+    .aso_egress_data(aso_egress_data),
+    .aso_egress_valid(aso_egress_valid),
+    .aso_egress_ready(aso_egress_ready),
+    .aso_egress_startofpacket(aso_egress_startofpacket),
+    .aso_egress_endofpacket(aso_egress_endofpacket),
+    .aso_egress_error(aso_egress_error),
+    .d_clk(d_clk),
+    .d_reset(d_reset)
+  );
+`else
+  localparam logic [7:0] K285 = 8'hBC;
+  localparam logic [7:0] K284 = 8'h9C;
+  localparam int unsigned META_DEPTH = 1 << META_ADDR_WIDTH;
+  localparam int unsigned FRAME_LEN_WIDTH = PAGE_RAM_ADDR_WIDTH + 1;
+  localparam int unsigned OVERLAP_MATH_WIDTH = PAGE_RAM_ADDR_WIDTH + 2;
+  localparam int unsigned WORD_ACC_WIDTH = PAGE_RAM_ADDR_WIDTH + META_ADDR_WIDTH + 1;
+  localparam int unsigned SHD_ACC_WIDTH = MAX_SHR_CNT_BITS + META_ADDR_WIDTH + 1;
+  localparam int unsigned HIT_ACC_WIDTH = MAX_HIT_CNT_BITS + META_ADDR_WIDTH + 1;
+
+  typedef logic [PAGE_RAM_ADDR_WIDTH-1:0] page_ram_addr_t;
+  typedef logic [META_ADDR_WIDTH-1:0] meta_ptr_t;
+  typedef logic [WORD_ACC_WIDTH-1:0] meta_word_acc_t;
+  typedef logic [SHD_ACC_WIDTH-1:0] meta_shd_acc_t;
+  typedef logic [HIT_ACC_WIDTH-1:0] meta_hit_acc_t;
+  localparam page_ram_addr_t PAGE_RAM_ADDR_ONE_CONST = {{(PAGE_RAM_ADDR_WIDTH-1){1'b0}}, 1'b1};
+  localparam meta_ptr_t META_PTR_ONE_CONST = {{(META_ADDR_WIDTH-1){1'b0}}, 1'b1};
+  localparam logic [OVERLAP_MATH_WIDTH-1:0] PAGE_RAM_DEPTH_EXT_CONST = PAGE_RAM_DEPTH;
+
+  typedef enum logic [2:0] {
+    FTABLE_PRESENTER_IDLE,
+    FTABLE_PRESENTER_WAIT_FOR_COMPLETE,
+    FTABLE_PRESENTER_PRESENTING,
+    FTABLE_PRESENTER_RESET
+  } presenter_state_t;
+
+  presenter_state_t presenter_state;
+  page_ram_addr_t meta_addr [META_DEPTH];
+  page_ram_addr_t meta_len  [META_DEPTH];
+  logic [MAX_SHR_CNT_BITS-1:0] meta_shd_cnt [META_DEPTH];
+  logic [MAX_HIT_CNT_BITS-1:0] meta_hit_cnt [META_DEPTH];
+  meta_word_acc_t meta_word_start [META_DEPTH];
+  meta_shd_acc_t meta_shd_end [META_DEPTH];
+  meta_hit_acc_t meta_hit_end [META_DEPTH];
+  meta_ptr_t meta_wptr;
+  meta_ptr_t meta_rptr;
+  meta_ptr_t meta_pkt_wcnt;
+  meta_ptr_t meta_pkt_rcnt;
+  page_ram_addr_t page_ram_rptr;
+  logic [EGRESS_DELAY:0] output_data_valid;
+  logic [PAGE_RAM_DATA_WIDTH-1:0] output_data_pipe [EGRESS_DELAY-1:0];
+  logic [PAGE_RAM_DATA_WIDTH-1:0] output_data;
+  page_ram_addr_t pkt_rd_word_cnt;
+  page_ram_addr_t packet_length;
+  page_ram_addr_t launch_word_cnt;
+  logic is_new_pkt_head;
+  logic is_new_pkt_complete;
+  logic output_is_trailer;
+  logic launch_is_trailer;
+  logic advance_output_pipe;
+  logic startup_prefetch_ok;
+  logic retire_pending;
+  logic pkt_accept_started;
+  logic suppress_next_packet_complete;
+  logic [PAGE_RAM_DATA_WIDTH-1:0] launch_data;
+  logic [PAGE_RAM_DATA_WIDTH-1:0] pipe_input_data;
+  logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_rd_data_skid;
+  logic page_ram_skid_valid;
+  logic [FRAME_LEN_WIDTH-1:0] new_frame_length_full;
+  page_ram_addr_t new_frame_length;
+  logic new_frame_oversize;
+  logic overwrite_head_accepted_or_accepting;
+  logic overwrite_drop_valid_next;
+  logic overwrite_drop_flush_head;
+  meta_ptr_t overwrite_drop_rptr_next;
+  meta_ptr_t overwrite_drop_pkt_rcnt_next;
+  logic [31:0] overwrite_drop_hdr_cnt_next;
+  logic [31:0] overwrite_drop_shd_cnt_next;
+  logic [31:0] overwrite_drop_hit_cnt_next;
+  meta_word_acc_t meta_word_total_next_slot;
+  meta_shd_acc_t meta_shd_total_next_slot;
+  meta_hit_acc_t meta_hit_total_next_slot;
+
+  function automatic logic [FRAME_LEN_WIDTH-1:0] frame_length_from_counts(
+    input logic [MAX_SHR_CNT_BITS-1:0] shd_cnt,
+    input logic [MAX_HIT_CNT_BITS-1:0] hit_cnt
+  );
+    logic [FRAME_LEN_WIDTH-1:0] shd_ext;
+    logic [FRAME_LEN_WIDTH-1:0] hit_ext;
+    begin
+      shd_ext = shd_cnt;
+      hit_ext = hit_cnt;
+      frame_length_from_counts = (shd_ext * SHD_SIZE) + (hit_ext * HIT_SIZE) + HDR_SIZE + TRL_SIZE;
+    end
+  endfunction
+
+  function automatic logic [31:0] extend32_shd(
+    input logic [MAX_SHR_CNT_BITS-1:0] shd_cnt
+  );
+    extend32_shd = shd_cnt;
+  endfunction
+
+  function automatic logic [31:0] extend32_hit(
+    input logic [MAX_HIT_CNT_BITS-1:0] hit_cnt
+  );
+    extend32_hit = hit_cnt;
+  endfunction
+
+  function automatic logic [31:0] extend32_shd_acc(
+    input meta_shd_acc_t shd_cnt
+  );
+    extend32_shd_acc = shd_cnt;
+  endfunction
+
+  function automatic logic [31:0] extend32_hit_acc(
+    input meta_hit_acc_t hit_cnt
+  );
+    extend32_hit_acc = hit_cnt;
+  endfunction
+
+  function automatic logic [OVERLAP_MATH_WIDTH-1:0] circular_distance(
+    input page_ram_addr_t from_addr,
+    input page_ram_addr_t to_addr
+  );
+    logic [OVERLAP_MATH_WIDTH-1:0] from_ext;
+    logic [OVERLAP_MATH_WIDTH-1:0] to_ext;
+    begin
+      from_ext = from_addr;
+      to_ext = to_addr;
+      if (to_ext >= from_ext) begin
+        circular_distance = to_ext - from_ext;
+      end else begin
+        circular_distance = (PAGE_RAM_DEPTH_EXT_CONST - from_ext) + to_ext;
+      end
+    end
+  endfunction
+
+  function automatic bit circular_range_overlaps(
+    input page_ram_addr_t lhs_addr,
+    input page_ram_addr_t lhs_len,
+    input page_ram_addr_t rhs_addr,
+    input page_ram_addr_t rhs_len
+  );
+    logic [OVERLAP_MATH_WIDTH-1:0] lhs_len_ext;
+    logic [OVERLAP_MATH_WIDTH-1:0] rhs_len_ext;
+    begin
+      circular_range_overlaps = 1'b0;
+      if ((lhs_len == '0) || (rhs_len == '0)) begin
+        circular_range_overlaps = 1'b0;
+      end else begin
+        lhs_len_ext = lhs_len;
+        rhs_len_ext = rhs_len;
+        circular_range_overlaps =
+          (circular_distance(lhs_addr, rhs_addr) < lhs_len_ext) ||
+          (circular_distance(rhs_addr, lhs_addr) < rhs_len_ext);
+      end
+    end
+  endfunction
+
+  always_comb begin
+    is_new_pkt_head = (meta_wptr != meta_rptr);
+    is_new_pkt_complete = (meta_pkt_wcnt != meta_pkt_rcnt);
+    packet_length = meta_len[meta_rptr];
+    new_frame_length_full = frame_length_from_counts(frame_shr_cnt_this_i, frame_hit_cnt_this_i);
+    new_frame_length = new_frame_length_full[PAGE_RAM_ADDR_WIDTH-1:0];
+    new_frame_oversize = (new_frame_length_full >= PAGE_RAM_DEPTH);
+    output_data = output_data_pipe[EGRESS_DELAY-1];
+    output_is_trailer = 1'b0;
+    if ((output_data[35:32] == 4'b0001) && (output_data[7:0] == K284)) begin
+      output_is_trailer = 1'b1;
+    end else if (packet_length == pkt_rd_word_cnt) begin
+      output_is_trailer = 1'b1;
+    end
+
+    startup_prefetch_ok = pkt_accept_started || aso_egress_ready;
+    advance_output_pipe =
+      aso_egress_ready ||
+      (!output_data_valid[EGRESS_DELAY] && startup_prefetch_ok);
+    launch_word_cnt = pkt_rd_word_cnt;
+    if (output_data_valid[EGRESS_DELAY] && aso_egress_ready) begin
+      launch_word_cnt = pkt_rd_word_cnt + PAGE_RAM_ADDR_ONE_CONST;
+    end
+
+    pipe_input_data = page_ram_rd_data_i;
+    if (page_ram_skid_valid) begin
+      pipe_input_data = page_ram_rd_data_skid;
+    end
+
+    launch_data = output_data;
+    if (advance_output_pipe) begin
+      if (EGRESS_DELAY > 1) begin
+        launch_data = output_data_pipe[EGRESS_DELAY-2];
+      end else begin
+        launch_data = pipe_input_data;
+      end
+    end
+
+    launch_is_trailer = 1'b0;
+    if ((launch_data[35:32] == 4'b0001) && (launch_data[7:0] == K284)) begin
+      launch_is_trailer = 1'b1;
+    end else if (packet_length == launch_word_cnt) begin
+      launch_is_trailer = 1'b1;
+    end
+
+    page_ram_rd_addr_o = page_ram_rptr;
+
+    aso_egress_valid = 1'b0;
+    if (presenter_state == FTABLE_PRESENTER_PRESENTING) begin
+      aso_egress_valid = output_data_valid[EGRESS_DELAY];
+    end
+    aso_egress_data = output_data[PAGE_RAM_RD_WIDTH-1:0];
+    aso_egress_startofpacket = aso_egress_valid && (output_data[35:32] == 4'b0001) && (output_data[7:0] == K285);
+    aso_egress_endofpacket = aso_egress_valid && (output_data[35:32] == 4'b0001) && (output_data[7:0] == K284);
+    aso_egress_error = '0;
+  end
+
+`ifdef OPQ_OSS_FORMAL
+  always_comb begin : proc_overwrite_drop_plan
+    // Once a word is visible at the egress interface, the current head is
+    // live even if ready is low. Overwrite-drop must not flush that head
+    // until the visible beat is accepted, or the Avalon-ST hold contract
+    // and packet framing can break on the first stalled beat.
+    overwrite_head_accepted_or_accepting =
+      (presenter_state == FTABLE_PRESENTER_PRESENTING) &&
+      (pkt_accept_started || output_data_valid[EGRESS_DELAY]);
+    overwrite_drop_valid_next = 1'b0;
+    overwrite_drop_flush_head = 1'b0;
+    overwrite_drop_rptr_next = meta_rptr;
+    overwrite_drop_pkt_rcnt_next = meta_pkt_rcnt;
+    overwrite_drop_hdr_cnt_next = '0;
+    overwrite_drop_shd_cnt_next = '0;
+    overwrite_drop_hit_cnt_next = '0;
+
+    // Keep the OSS proof subset feed-forward. The unread-overwrite scan remains
+    // on the native-SV signoff path; this subset still proves the live egress
+    // hold contract plus oversize-frame drop accounting.
+    if (new_frame_valid_i && new_frame_oversize) begin
+      overwrite_drop_valid_next = 1'b1;
+      overwrite_drop_hdr_cnt_next = 32'd1;
+      overwrite_drop_shd_cnt_next = extend32_shd(frame_shr_cnt_this_i);
+      overwrite_drop_hit_cnt_next = extend32_hit(frame_hit_cnt_this_i);
+    end
+  end
+`else
+  always_comb begin : proc_overwrite_drop_plan
+    meta_ptr_t mid_ptr;
+    meta_ptr_t last_drop_ptr;
+    int unsigned unread_pkt_count;
+    int unsigned left_idx;
+    int unsigned right_idx;
+    int unsigned mid_idx;
+    int unsigned search_idx;
+    int unsigned drop_pkt_count;
+    meta_word_acc_t head_word_base;
+    meta_word_acc_t overlap_word_limit;
+    meta_word_acc_t gap_to_head_words;
+    meta_shd_acc_t head_shd_end_base;
+    meta_hit_acc_t head_hit_end_base;
+
+    // Once a word is visible at the egress interface, the current head is
+    // live even if ready is low. Overwrite-drop must not flush that head
+    // until the visible beat is accepted, or the Avalon-ST hold contract
+    // and packet framing can break on the first stalled beat.
+    overwrite_head_accepted_or_accepting =
+      (presenter_state == FTABLE_PRESENTER_PRESENTING) &&
+      (pkt_accept_started || output_data_valid[EGRESS_DELAY]);
+    overwrite_drop_valid_next = 1'b0;
+    overwrite_drop_flush_head = 1'b0;
+    overwrite_drop_rptr_next = meta_rptr;
+    overwrite_drop_pkt_rcnt_next = meta_pkt_rcnt;
+    overwrite_drop_hdr_cnt_next = '0;
+    overwrite_drop_shd_cnt_next = '0;
+    overwrite_drop_hit_cnt_next = '0;
+    mid_ptr = meta_rptr;
+    last_drop_ptr = meta_rptr;
+    unread_pkt_count = 0;
+    left_idx = 0;
+    right_idx = 0;
+    mid_idx = 0;
+    search_idx = 0;
+    drop_pkt_count = 0;
+    head_word_base = '0;
+    overlap_word_limit = '0;
+    gap_to_head_words = '0;
+    head_shd_end_base = '0;
+    head_hit_end_base = '0;
+
+    if (new_frame_valid_i) begin
+      if (new_frame_oversize) begin
+        overwrite_drop_hdr_cnt_next = 32'd1;
+        overwrite_drop_shd_cnt_next = extend32_shd(frame_shr_cnt_this_i);
+        overwrite_drop_hit_cnt_next = extend32_hit(frame_hit_cnt_this_i);
+      end else if (meta_pkt_rcnt != meta_pkt_wcnt) begin
+        gap_to_head_words = circular_distance(new_frame_raw_addr_i, meta_addr[meta_rptr]);
+        if ((meta_word_acc_t'(new_frame_length) > gap_to_head_words) &&
+            !overwrite_head_accepted_or_accepting) begin
+          unread_pkt_count = meta_pkt_wcnt - meta_pkt_rcnt;
+          head_word_base = meta_word_start[meta_rptr];
+          overlap_word_limit = head_word_base + meta_word_acc_t'(new_frame_length) - gap_to_head_words;
+          left_idx = 0;
+          right_idx = unread_pkt_count;
+
+          for (search_idx = 0; search_idx < META_ADDR_WIDTH; search_idx = search_idx + 1) begin
+            mid_idx = left_idx + ((right_idx - left_idx) >> 1);
+            mid_ptr = meta_rptr + meta_ptr_t'(mid_idx);
+            if ((mid_idx < unread_pkt_count) && (meta_word_start[mid_ptr] < overlap_word_limit)) begin
+              left_idx = mid_idx + 1;
+            end else begin
+              right_idx = mid_idx;
+            end
+          end
+
+          drop_pkt_count = left_idx;
+          if (drop_pkt_count != 0) begin
+            overwrite_drop_rptr_next = meta_rptr + meta_ptr_t'(drop_pkt_count);
+            overwrite_drop_pkt_rcnt_next = meta_pkt_rcnt + meta_ptr_t'(drop_pkt_count);
+            overwrite_drop_hdr_cnt_next = drop_pkt_count;
+            last_drop_ptr = meta_rptr + meta_ptr_t'(drop_pkt_count - 1);
+            head_shd_end_base = meta_shd_end[meta_rptr] - meta_shd_acc_t'(meta_shd_cnt[meta_rptr]);
+            head_hit_end_base = meta_hit_end[meta_rptr] - meta_hit_acc_t'(meta_hit_cnt[meta_rptr]);
+            overwrite_drop_shd_cnt_next = extend32_shd_acc(meta_shd_end[last_drop_ptr] - head_shd_end_base);
+            overwrite_drop_hit_cnt_next = extend32_hit_acc(meta_hit_end[last_drop_ptr] - head_hit_end_base);
+          end
+        end
+      end
+    end
+
+    overwrite_drop_valid_next =
+      (overwrite_drop_hdr_cnt_next != 0) ||
+      (overwrite_drop_shd_cnt_next != 0) ||
+      (overwrite_drop_hit_cnt_next != 0);
+    overwrite_drop_flush_head = overwrite_drop_valid_next && !new_frame_oversize;
+  end
+`endif
+
+  always_ff @(posedge d_clk) begin
+    integer pipe_valid_idx;
+    integer pipe_data_idx;
+    integer reset_pipe_idx;
+
+    ft_drop_valid_o <= 1'b0;
+    ft_drop_hdr_cnt_o <= '0;
+    ft_drop_shd_cnt_o <= '0;
+    ft_drop_hit_cnt_o <= '0;
+
+    if (new_frame_valid_i) begin
+      if (new_frame_oversize) begin
+        suppress_next_packet_complete <= 1'b1;
+      end else begin
+        meta_addr[meta_wptr] <= new_frame_raw_addr_i;
+        meta_len[meta_wptr] <= new_frame_length;
+        meta_shd_cnt[meta_wptr] <= frame_shr_cnt_this_i;
+        meta_hit_cnt[meta_wptr] <= frame_hit_cnt_this_i;
+        meta_wptr <= meta_wptr + META_PTR_ONE_CONST;
+
+        if (overwrite_drop_flush_head) begin
+          meta_rptr <= overwrite_drop_rptr_next;
+          meta_pkt_rcnt <= overwrite_drop_pkt_rcnt_next;
+        end
+      end
+
+      if (overwrite_drop_valid_next) begin
+        ft_drop_valid_o <= 1'b1;
+        ft_drop_hdr_cnt_o <= overwrite_drop_hdr_cnt_next;
+        ft_drop_shd_cnt_o <= overwrite_drop_shd_cnt_next;
+        ft_drop_hit_cnt_o <= overwrite_drop_hit_cnt_next;
+      end
+    end
+
+    if (packet_complete_i) begin
+      if (suppress_next_packet_complete) begin
+        suppress_next_packet_complete <= 1'b0;
+      end else begin
+        meta_word_start[meta_pkt_wcnt] <= meta_word_total_next_slot;
+        meta_len[meta_pkt_wcnt] <= frame_length_from_counts(packet_complete_shr_cnt_i, packet_complete_hit_cnt_i);
+        meta_shd_cnt[meta_pkt_wcnt] <= packet_complete_shr_cnt_i;
+        meta_hit_cnt[meta_pkt_wcnt] <= packet_complete_hit_cnt_i;
+        meta_shd_end[meta_pkt_wcnt] <= meta_shd_total_next_slot + meta_shd_acc_t'(packet_complete_shr_cnt_i);
+        meta_hit_end[meta_pkt_wcnt] <= meta_hit_total_next_slot + meta_hit_acc_t'(packet_complete_hit_cnt_i);
+        meta_word_total_next_slot <= meta_word_total_next_slot +
+          meta_word_acc_t'(frame_length_from_counts(packet_complete_shr_cnt_i, packet_complete_hit_cnt_i));
+        meta_shd_total_next_slot <= meta_shd_total_next_slot + meta_shd_acc_t'(packet_complete_shr_cnt_i);
+        meta_hit_total_next_slot <= meta_hit_total_next_slot + meta_hit_acc_t'(packet_complete_hit_cnt_i);
+        meta_pkt_wcnt <= meta_pkt_wcnt + META_PTR_ONE_CONST;
+      end
+    end
+
+    if (overwrite_drop_flush_head) begin
+      presenter_state <= FTABLE_PRESENTER_IDLE;
+      output_data_valid <= '0;
+      pkt_rd_word_cnt <= '0;
+      retire_pending <= 1'b0;
+      pkt_accept_started <= 1'b0;
+      page_ram_skid_valid <= 1'b0;
+      for (pipe_data_idx = 0; pipe_data_idx < EGRESS_DELAY; pipe_data_idx = pipe_data_idx + 1) begin
+        output_data_pipe[pipe_data_idx] <= '0;
+      end
+    end else begin
+      unique case (presenter_state)
+        FTABLE_PRESENTER_IDLE: begin
+          if (is_new_pkt_head) begin
+            presenter_state <= FTABLE_PRESENTER_WAIT_FOR_COMPLETE;
+            pkt_accept_started <= 1'b0;
+            page_ram_skid_valid <= 1'b0;
+          end
+        end
+
+        FTABLE_PRESENTER_WAIT_FOR_COMPLETE: begin
+          if (is_new_pkt_complete && payload_commit_idle_i) begin
+            presenter_state <= FTABLE_PRESENTER_PRESENTING;
+            page_ram_rptr <= meta_addr[meta_rptr];
+            pkt_rd_word_cnt <= '0;
+            output_data_valid <= '0;
+            retire_pending <= 1'b0;
+            pkt_accept_started <= 1'b0;
+            page_ram_skid_valid <= 1'b0;
+            for (pipe_data_idx = 0; pipe_data_idx < EGRESS_DELAY; pipe_data_idx = pipe_data_idx + 1) begin
+              output_data_pipe[pipe_data_idx] <= '0;
+            end
+          end
+        end
+
+        FTABLE_PRESENTER_PRESENTING: begin
+          if (retire_pending) begin
+            if (output_data_valid[EGRESS_DELAY] && aso_egress_ready) begin
+              presenter_state <= FTABLE_PRESENTER_IDLE;
+              output_data_valid <= '0;
+              meta_pkt_rcnt <= meta_pkt_rcnt + META_PTR_ONE_CONST;
+              meta_rptr <= meta_rptr + META_PTR_ONE_CONST;
+              retire_pending <= 1'b0;
+              pkt_accept_started <= 1'b0;
+              page_ram_skid_valid <= 1'b0;
+              for (pipe_data_idx = 0; pipe_data_idx < EGRESS_DELAY; pipe_data_idx = pipe_data_idx + 1) begin
+                output_data_pipe[pipe_data_idx] <= '0;
+              end
+            end
+          end else begin
+            if (output_data_valid[EGRESS_DELAY] && !aso_egress_ready) begin
+              if (!page_ram_skid_valid) begin
+                page_ram_rd_data_skid <= page_ram_rd_data_i;
+                page_ram_skid_valid <= 1'b1;
+              end
+            end
+            if (output_data_valid[EGRESS_DELAY] && aso_egress_ready) begin
+              pkt_rd_word_cnt <= pkt_rd_word_cnt + PAGE_RAM_ADDR_ONE_CONST;
+              pkt_accept_started <= 1'b1;
+            end
+            if (advance_output_pipe) begin
+              output_data_valid[0] <= 1'b1;
+              for (pipe_valid_idx = 0; pipe_valid_idx < EGRESS_DELAY; pipe_valid_idx = pipe_valid_idx + 1) begin
+                output_data_valid[pipe_valid_idx+1] <= output_data_valid[pipe_valid_idx];
+              end
+              output_data_pipe[0] <= pipe_input_data;
+              for (pipe_data_idx = 0; pipe_data_idx < EGRESS_DELAY-1; pipe_data_idx = pipe_data_idx + 1) begin
+                output_data_pipe[pipe_data_idx+1] <= output_data_pipe[pipe_data_idx];
+              end
+              page_ram_rptr <= page_ram_rptr + PAGE_RAM_ADDR_ONE_CONST;
+              if (page_ram_skid_valid) begin
+                page_ram_skid_valid <= 1'b0;
+              end
+            end
+
+            if (advance_output_pipe && launch_is_trailer) begin
+              output_data_valid <= '0;
+              output_data_valid[EGRESS_DELAY] <= 1'b1;
+              retire_pending <= 1'b1;
+            end
+          end
+        end
+
+        FTABLE_PRESENTER_RESET: begin
+          presenter_state <= FTABLE_PRESENTER_IDLE;
+          pkt_accept_started <= 1'b0;
+        end
+
+        default: begin
+        end
+      endcase
+    end
+
+    if (d_reset) begin
+      presenter_state <= FTABLE_PRESENTER_RESET;
+      meta_wptr <= '0;
+      meta_rptr <= '0;
+      meta_pkt_wcnt <= '0;
+      meta_pkt_rcnt <= '0;
+      page_ram_rptr <= '0;
+      output_data_valid <= '0;
+      for (reset_pipe_idx = 0; reset_pipe_idx < EGRESS_DELAY; reset_pipe_idx = reset_pipe_idx + 1) begin
+        output_data_pipe[reset_pipe_idx] <= '0;
+      end
+      pkt_rd_word_cnt <= '0;
+      retire_pending <= 1'b0;
+      pkt_accept_started <= 1'b0;
+      page_ram_rd_data_skid <= '0;
+      page_ram_skid_valid <= 1'b0;
+      suppress_next_packet_complete <= 1'b0;
+      ft_drop_valid_o <= 1'b0;
+      ft_drop_hdr_cnt_o <= '0;
+      ft_drop_shd_cnt_o <= '0;
+      ft_drop_hit_cnt_o <= '0;
+      meta_word_total_next_slot <= '0;
+      meta_shd_total_next_slot <= '0;
+      meta_hit_total_next_slot <= '0;
+    end
+  end
+
+// synthesis translate_off
+`ifndef SYNTHESIS
+  always_ff @(posedge d_clk) begin : proc_presenter_trace
+    longint unsigned trace_after_ps_v;
+    bit trace_after_ps_valid_v;
+    bit trace_enable_v;
+
+    trace_after_ps_v = 0;
+`ifdef SYNTHESIS
+    trace_after_ps_valid_v = 1'b0;
+`else
+    trace_after_ps_valid_v = $value$plusargs("OPQ_TRACE_AFTER_PS=%d", trace_after_ps_v);
+`endif
+    trace_enable_v = $test$plusargs("OPQ_NATIVE_TRACE_PRESENTER") &&
+      (!trace_after_ps_valid_v || ($time >= trace_after_ps_v));
+
+    if (trace_enable_v && (presenter_state == FTABLE_PRESENTER_WAIT_FOR_COMPLETE) && is_new_pkt_complete) begin
+      $display(
+        "[opq_presenter] t=%0t start meta_rptr=%0d addr=0x%0h len=%0d shd=%0d hit=%0d meta_pkt_rcnt=%0d meta_pkt_wcnt=%0d",
+        $time,
+        meta_rptr,
+        meta_addr[meta_rptr],
+        meta_len[meta_rptr],
+        meta_shd_cnt[meta_rptr],
+        meta_hit_cnt[meta_rptr],
+        meta_pkt_rcnt,
+        meta_pkt_wcnt
+      );
+    end
+
+    if (trace_enable_v &&
+        (presenter_state == FTABLE_PRESENTER_PRESENTING) &&
+        output_data_valid[EGRESS_DELAY] &&
+        aso_egress_ready) begin
+      $display(
+        "[opq_presenter] t=%0t accept word_idx=%0d page_rptr=0x%0h meta_rptr=%0d data=0x%010h sop=%0b eop=%0b retire=%0b",
+        $time,
+        pkt_rd_word_cnt,
+        page_ram_rptr,
+        meta_rptr,
+        output_data,
+        ((output_data[35:32] == 4'b0001) && (output_data[7:0] == K285)),
+        ((output_data[35:32] == 4'b0001) && (output_data[7:0] == K284)),
+        retire_pending
+      );
+    end
+
+    if (trace_enable_v && overwrite_drop_valid_next) begin
+      $display(
+        "[opq_presenter] t=%0t overwrite_drop hdr=%0d shd=%0d hit=%0d flush_head=%0b meta_rptr=%0d meta_pkt_rcnt=%0d",
+        $time,
+        overwrite_drop_hdr_cnt_next,
+        overwrite_drop_shd_cnt_next,
+        overwrite_drop_hit_cnt_next,
+        overwrite_drop_flush_head,
+        meta_rptr,
+        meta_pkt_rcnt
+      );
+    end
+  end
+`endif
+// synthesis translate_on
+
+`ifndef OPQ_OSS_FORMAL
+  property p_reset_enters_presenter_reset;
+    @(posedge d_clk) d_reset |=> (presenter_state == FTABLE_PRESENTER_RESET);
+  endproperty
+  ap_reset_enters_presenter_reset: assert property (p_reset_enters_presenter_reset);
+
+  property p_complete_without_head_never_advances;
+    @(posedge d_clk) disable iff (d_reset)
+      (!is_new_pkt_head && packet_complete_i) |=> (meta_rptr == $past(meta_rptr));
+  endproperty
+  ap_complete_without_head_never_advances: assert property (p_complete_without_head_never_advances);
+`endif
+
+`ifdef OPQ_ENABLE_NATIVE_FORMAL_EGRESS
+  opq_native_basic_presenter_formal_sva #(
+    .PAGE_RAM_DEPTH(PAGE_RAM_DEPTH),
+    .PAGE_RAM_RD_WIDTH(PAGE_RAM_RD_WIDTH),
+    .PAGE_RAM_DATA_WIDTH(PAGE_RAM_DATA_WIDTH),
+    .PAGE_RAM_ADDR_WIDTH(PAGE_RAM_ADDR_WIDTH),
+    .META_ADDR_WIDTH(META_ADDR_WIDTH),
+    .EGRESS_DELAY(EGRESS_DELAY)
+  ) native_formal_sva_i (
+    .d_clk(d_clk),
+    .d_reset(d_reset),
+    .packet_complete_i(packet_complete_i),
+    .new_frame_valid_i(new_frame_valid_i),
+    .page_ram_rd_addr_o(page_ram_rd_addr_o),
+    .page_ram_rd_data_i(page_ram_rd_data_i),
+    .aso_egress_data(aso_egress_data),
+    .aso_egress_valid(aso_egress_valid),
+    .aso_egress_ready(aso_egress_ready),
+    .aso_egress_startofpacket(aso_egress_startofpacket),
+    .aso_egress_endofpacket(aso_egress_endofpacket),
+    .aso_egress_error(aso_egress_error),
+    .presenter_state(presenter_state),
+    .meta_wptr(meta_wptr),
+    .meta_rptr(meta_rptr),
+    .meta_pkt_wcnt(meta_pkt_wcnt),
+    .meta_pkt_rcnt(meta_pkt_rcnt),
+    .page_ram_rptr(page_ram_rptr),
+    .output_data_valid(output_data_valid),
+    .output_data(output_data),
+    .pkt_rd_word_cnt(pkt_rd_word_cnt),
+    .retire_pending(retire_pending)
+  );
+`endif
+
+`endif
+endmodule
+
+module ordered_priority_queue_monolithic_basic_presenter_native #(
+  parameter int unsigned N_LANE = 2,
+  parameter int unsigned PAGE_RAM_DEPTH = 65536,
+  parameter int unsigned PAGE_RAM_RD_WIDTH = 36,
+  parameter int unsigned PAGE_RAM_DATA_WIDTH = 40,
+  parameter int unsigned PAGE_RAM_ADDR_WIDTH = $clog2(PAGE_RAM_DEPTH),
+  parameter int unsigned N_SHD = 256,
+  parameter int unsigned N_HIT = 255,
+  parameter int unsigned HDR_SIZE = 5,
+  parameter int unsigned SHD_SIZE = 1,
+  parameter int unsigned HIT_SIZE = 1,
+  parameter int unsigned TRL_SIZE = 1,
+  parameter int unsigned MAX_SHR_CNT_BITS = $clog2(N_SHD * N_LANE) + 1,
+  parameter int unsigned MAX_HIT_CNT_BITS = (($clog2(N_SHD * N_HIT) + 1) < 16) ? ($clog2(N_SHD * N_HIT) + 1) : 16,
+  parameter int unsigned META_ADDR_WIDTH = 9,
+  parameter int unsigned EGRESS_DELAY = 3
+) (
+  input  logic                                            new_frame_valid_i,
+  input  logic [PAGE_RAM_ADDR_WIDTH-1:0]                  new_frame_raw_addr_i,
+  input  logic [MAX_SHR_CNT_BITS-1:0]                     frame_shr_cnt_this_i,
+  input  logic [MAX_HIT_CNT_BITS-1:0]                     frame_hit_cnt_this_i,
+  input  logic                                            packet_complete_i,
+  input  logic [MAX_SHR_CNT_BITS-1:0]                     packet_complete_shr_cnt_i,
+  input  logic [MAX_HIT_CNT_BITS-1:0]                     packet_complete_hit_cnt_i,
+  input  logic                                            payload_commit_idle_i,
+  output logic [PAGE_RAM_ADDR_WIDTH-1:0]                  page_ram_rd_addr_o,
+  input  logic [PAGE_RAM_DATA_WIDTH-1:0]                  page_ram_rd_data_i,
+  output logic                                            ft_drop_valid_o,
+  output logic [31:0]                                     ft_drop_hdr_cnt_o,
+  output logic [31:0]                                     ft_drop_shd_cnt_o,
+  output logic [31:0]                                     ft_drop_hit_cnt_o,
+  output logic [PAGE_RAM_RD_WIDTH-1:0]                    aso_egress_data,
+  output logic                                            aso_egress_valid,
+  input  logic                                            aso_egress_ready,
+  output logic                                            aso_egress_startofpacket,
+  output logic                                            aso_egress_endofpacket,
+  output logic [2:0]                                      aso_egress_error,
+  input  logic                                            d_clk,
+  input  logic                                            d_reset
+);
+  localparam logic [7:0] K285 = 8'hBC;
+  localparam logic [7:0] K284 = 8'h9C;
+  localparam int unsigned META_DATA_WIDTH =
+    PAGE_RAM_ADDR_WIDTH + PAGE_RAM_ADDR_WIDTH + MAX_SHR_CNT_BITS + MAX_HIT_CNT_BITS;
+  localparam int unsigned FRAME_LEN_WIDTH = PAGE_RAM_ADDR_WIDTH + 1;
+  localparam int unsigned OVERLAP_MATH_WIDTH = PAGE_RAM_ADDR_WIDTH + 2;
+
+  typedef logic [PAGE_RAM_ADDR_WIDTH-1:0] page_ram_addr_t;
+  typedef logic [META_ADDR_WIDTH-1:0] meta_ptr_t;
+  typedef logic [META_DATA_WIDTH-1:0] meta_data_t;
+
+  typedef enum logic [2:0] {
+    FTABLE_PRESENTER_IDLE,
+    FTABLE_PRESENTER_WAIT_FOR_COMPLETE,
+    FTABLE_PRESENTER_PRESENTING,
+    FTABLE_PRESENTER_RESET
+  } presenter_state_t;
+
+  typedef enum logic [1:0] {
+    META_READ_IDLE,
+    META_READ_HEAD,
+    META_READ_SCAN
+  } meta_read_owner_t;
+
+  localparam page_ram_addr_t PAGE_RAM_ADDR_ONE_CONST = {{(PAGE_RAM_ADDR_WIDTH-1){1'b0}}, 1'b1};
+  localparam meta_ptr_t META_PTR_ONE_CONST = {{(META_ADDR_WIDTH-1){1'b0}}, 1'b1};
+  localparam logic [OVERLAP_MATH_WIDTH-1:0] PAGE_RAM_DEPTH_EXT_CONST = PAGE_RAM_DEPTH;
+
+  presenter_state_t presenter_state;
+  meta_ptr_t meta_wptr;
+  meta_ptr_t meta_rptr;
+  meta_ptr_t meta_rd_addr;
+  meta_read_owner_t meta_read_owner;
+  logic meta_read_pending;
+  meta_data_t meta_rd_data;
+  logic head_meta_valid;
+  page_ram_addr_t head_addr_q;
+  page_ram_addr_t head_len_q;
+  logic [MAX_SHR_CNT_BITS-1:0] head_shd_cnt_q;
+  logic [MAX_HIT_CNT_BITS-1:0] head_hit_cnt_q;
+  logic pending_overlap_check_valid;
+  page_ram_addr_t pending_overlap_addr_q;
+  page_ram_addr_t pending_overlap_len_q;
+  meta_ptr_t pending_overlap_stop_ptr_q;
+  logic pending_overlap_launch_valid;
+  meta_ptr_t pending_overlap_launch_stop_ptr_q;
+  logic [FRAME_LEN_WIDTH-1:0] pending_overlap_launch_remaining_words_q;
+  logic overwrite_scan_active;
+  logic overwrite_scan_process_head;
+  meta_ptr_t overwrite_scan_next_ptr;
+  meta_ptr_t overwrite_scan_stop_ptr;
+  logic [FRAME_LEN_WIDTH-1:0] overwrite_scan_remaining_words;
+  logic [31:0] overwrite_scan_hdr_cnt;
+  logic [31:0] overwrite_scan_shd_cnt;
+  logic [31:0] overwrite_scan_hit_cnt;
+  page_ram_addr_t page_ram_rptr;
+  logic [EGRESS_DELAY:0] output_data_valid;
+  logic [PAGE_RAM_DATA_WIDTH-1:0] output_data_pipe [EGRESS_DELAY-1:0];
+  logic [PAGE_RAM_DATA_WIDTH-1:0] output_data;
+  page_ram_addr_t pkt_rd_word_cnt;
+  page_ram_addr_t packet_length;
+  page_ram_addr_t launch_word_cnt;
+  logic is_new_pkt_head;
+  logic is_new_pkt_complete;
+  logic output_is_trailer;
+  logic launch_is_trailer;
+  logic advance_output_pipe;
+  logic startup_prefetch_ok;
+  logic retire_pending;
+  logic pkt_accept_started;
+  logic [PAGE_RAM_DATA_WIDTH-1:0] launch_data;
+  logic [PAGE_RAM_DATA_WIDTH-1:0] pipe_input_data;
+  logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_rd_data_skid;
+  logic page_ram_skid_valid;
+  logic [FRAME_LEN_WIDTH-1:0] new_frame_length_full;
+  page_ram_addr_t new_frame_length;
+  logic new_frame_oversize;
+  logic overwrite_head_accepted_or_accepting;
+
+  function automatic meta_data_t pack_meta(
+    input page_ram_addr_t addr,
+    input page_ram_addr_t len,
+    input logic [MAX_SHR_CNT_BITS-1:0] shd_cnt,
+    input logic [MAX_HIT_CNT_BITS-1:0] hit_cnt
+  );
+    pack_meta = {hit_cnt, shd_cnt, len, addr};
+  endfunction
+
+  function automatic page_ram_addr_t meta_addr_from_data(
+    input meta_data_t meta_data
+  );
+    meta_addr_from_data = meta_data[PAGE_RAM_ADDR_WIDTH-1:0];
+  endfunction
+
+  function automatic page_ram_addr_t meta_len_from_data(
+    input meta_data_t meta_data
+  );
+    meta_len_from_data = meta_data[2*PAGE_RAM_ADDR_WIDTH-1:PAGE_RAM_ADDR_WIDTH];
+  endfunction
+
+  function automatic logic [MAX_SHR_CNT_BITS-1:0] meta_shd_from_data(
+    input meta_data_t meta_data
+  );
+    meta_shd_from_data =
+      meta_data[2*PAGE_RAM_ADDR_WIDTH+MAX_SHR_CNT_BITS-1:2*PAGE_RAM_ADDR_WIDTH];
+  endfunction
+
+  function automatic logic [MAX_HIT_CNT_BITS-1:0] meta_hit_from_data(
+    input meta_data_t meta_data
+  );
+    meta_hit_from_data =
+      meta_data[META_DATA_WIDTH-1:2*PAGE_RAM_ADDR_WIDTH+MAX_SHR_CNT_BITS];
+  endfunction
+
+  function automatic logic [FRAME_LEN_WIDTH-1:0] frame_length_from_counts(
+    input logic [MAX_SHR_CNT_BITS-1:0] shd_cnt,
+    input logic [MAX_HIT_CNT_BITS-1:0] hit_cnt
+  );
+    logic [FRAME_LEN_WIDTH-1:0] shd_ext;
+    logic [FRAME_LEN_WIDTH-1:0] hit_ext;
+    begin
+      shd_ext = shd_cnt;
+      hit_ext = hit_cnt;
+      frame_length_from_counts = (shd_ext * SHD_SIZE) + (hit_ext * HIT_SIZE) + HDR_SIZE + TRL_SIZE;
+    end
+  endfunction
+
+  function automatic logic [31:0] extend32_shd(
+    input logic [MAX_SHR_CNT_BITS-1:0] shd_cnt
+  );
+    extend32_shd = shd_cnt;
+  endfunction
+
+  function automatic logic [31:0] extend32_hit(
+    input logic [MAX_HIT_CNT_BITS-1:0] hit_cnt
+  );
+    extend32_hit = hit_cnt;
+  endfunction
+
+  function automatic logic [OVERLAP_MATH_WIDTH-1:0] circular_distance(
+    input page_ram_addr_t from_addr,
+    input page_ram_addr_t to_addr
+  );
+    logic [OVERLAP_MATH_WIDTH-1:0] from_ext;
+    logic [OVERLAP_MATH_WIDTH-1:0] to_ext;
+    begin
+      from_ext = from_addr;
+      to_ext = to_addr;
+      if (to_ext >= from_ext) begin
+        circular_distance = to_ext - from_ext;
+      end else begin
+        circular_distance = (PAGE_RAM_DEPTH_EXT_CONST - from_ext) + to_ext;
+      end
+    end
+  endfunction
+
+  tile_fifo #(
+    .DATA_WIDTH(META_DATA_WIDTH),
+    .ADDR_WIDTH(META_ADDR_WIDTH)
+  ) meta_ram_i (
+    .data(pack_meta(new_frame_raw_addr_i, new_frame_length, frame_shr_cnt_this_i, frame_hit_cnt_this_i)),
+    .read_addr(meta_rd_addr),
+    .write_addr(meta_wptr),
+    .we(new_frame_valid_i && !new_frame_oversize),
+    .clk(d_clk),
+    .q(meta_rd_data)
+  );
+
+  always_comb begin
+    is_new_pkt_head = (meta_wptr != meta_rptr);
+    is_new_pkt_complete = is_new_pkt_head;
+    packet_length = head_len_q;
+    new_frame_length_full = frame_length_from_counts(frame_shr_cnt_this_i, frame_hit_cnt_this_i);
+    new_frame_length = new_frame_length_full[PAGE_RAM_ADDR_WIDTH-1:0];
+    new_frame_oversize = (new_frame_length_full >= PAGE_RAM_DEPTH);
+    output_data = output_data_pipe[EGRESS_DELAY-1];
+    output_is_trailer = 1'b0;
+    if ((output_data[35:32] == 4'b0001) && (output_data[7:0] == K284)) begin
+      output_is_trailer = 1'b1;
+    end else if (packet_length == pkt_rd_word_cnt) begin
+      output_is_trailer = 1'b1;
+    end
+
+    startup_prefetch_ok = pkt_accept_started || aso_egress_ready;
+    advance_output_pipe =
+      aso_egress_ready ||
+      (!output_data_valid[EGRESS_DELAY] && startup_prefetch_ok);
+    launch_word_cnt = pkt_rd_word_cnt;
+    if (output_data_valid[EGRESS_DELAY] && aso_egress_ready) begin
+      launch_word_cnt = pkt_rd_word_cnt + PAGE_RAM_ADDR_ONE_CONST;
+    end
+
+    pipe_input_data = page_ram_rd_data_i;
+    if (page_ram_skid_valid) begin
+      pipe_input_data = page_ram_rd_data_skid;
+    end
+
+    launch_data = output_data;
+    if (advance_output_pipe) begin
+      if (EGRESS_DELAY > 1) begin
+        launch_data = output_data_pipe[EGRESS_DELAY-2];
+      end else begin
+        launch_data = pipe_input_data;
+      end
+    end
+
+    launch_is_trailer = 1'b0;
+    if ((launch_data[35:32] == 4'b0001) && (launch_data[7:0] == K284)) begin
+      launch_is_trailer = 1'b1;
+    end else if (packet_length == launch_word_cnt) begin
+      launch_is_trailer = 1'b1;
+    end
+
+    page_ram_rd_addr_o = page_ram_rptr;
+
+    aso_egress_valid = 1'b0;
+    if (presenter_state == FTABLE_PRESENTER_PRESENTING) begin
+      aso_egress_valid = output_data_valid[EGRESS_DELAY];
+    end
+    aso_egress_data = output_data[PAGE_RAM_RD_WIDTH-1:0];
+    aso_egress_startofpacket =
+      aso_egress_valid && (output_data[35:32] == 4'b0001) && (output_data[7:0] == K285);
+    aso_egress_endofpacket =
+      aso_egress_valid && (output_data[35:32] == 4'b0001) && (output_data[7:0] == K284);
+    aso_egress_error = '0;
+
+    overwrite_head_accepted_or_accepting =
+      (presenter_state == FTABLE_PRESENTER_PRESENTING) &&
+      (pkt_accept_started || output_data_valid[EGRESS_DELAY]);
+  end
+
+  always_ff @(posedge d_clk) begin
+    integer pipe_valid_idx;
+    integer pipe_data_idx;
+    integer reset_pipe_idx;
+    bit block_meta_head_fetch_v;
+    bit block_present_start_v;
+    logic [OVERLAP_MATH_WIDTH-1:0] gap_to_head_words_v;
+    logic [OVERLAP_MATH_WIDTH-1:0] candidate_len_ext_v;
+    logic [FRAME_LEN_WIDTH-1:0] remaining_words_v;
+    meta_ptr_t next_scan_ptr_v;
+    page_ram_addr_t scan_len_v;
+    logic [MAX_SHR_CNT_BITS-1:0] scan_shd_v;
+    logic [MAX_HIT_CNT_BITS-1:0] scan_hit_v;
+
+    ft_drop_valid_o <= 1'b0;
+    ft_drop_hdr_cnt_o <= '0;
+    ft_drop_shd_cnt_o <= '0;
+    ft_drop_hit_cnt_o <= '0;
+    block_meta_head_fetch_v = overwrite_scan_active || overwrite_scan_process_head;
+    block_present_start_v =
+      overwrite_scan_active ||
+      overwrite_scan_process_head ||
+      pending_overlap_launch_valid ||
+      pending_overlap_check_valid;
+
+    if (d_reset) begin
+      presenter_state <= FTABLE_PRESENTER_RESET;
+      meta_wptr <= '0;
+      meta_rptr <= '0;
+      meta_rd_addr <= '0;
+      meta_read_owner <= META_READ_IDLE;
+      meta_read_pending <= 1'b0;
+      head_meta_valid <= 1'b0;
+      head_addr_q <= '0;
+      head_len_q <= '0;
+      head_shd_cnt_q <= '0;
+      head_hit_cnt_q <= '0;
+      pending_overlap_check_valid <= 1'b0;
+      pending_overlap_addr_q <= '0;
+      pending_overlap_len_q <= '0;
+      pending_overlap_stop_ptr_q <= '0;
+      pending_overlap_launch_valid <= 1'b0;
+      pending_overlap_launch_stop_ptr_q <= '0;
+      pending_overlap_launch_remaining_words_q <= '0;
+      overwrite_scan_active <= 1'b0;
+      overwrite_scan_process_head <= 1'b0;
+      overwrite_scan_next_ptr <= '0;
+      overwrite_scan_stop_ptr <= '0;
+      overwrite_scan_remaining_words <= '0;
+      overwrite_scan_hdr_cnt <= '0;
+      overwrite_scan_shd_cnt <= '0;
+      overwrite_scan_hit_cnt <= '0;
+      page_ram_rptr <= '0;
+      output_data_valid <= '0;
+      for (reset_pipe_idx = 0; reset_pipe_idx < EGRESS_DELAY; reset_pipe_idx = reset_pipe_idx + 1) begin
+        output_data_pipe[reset_pipe_idx] <= '0;
+      end
+      pkt_rd_word_cnt <= '0;
+      retire_pending <= 1'b0;
+      pkt_accept_started <= 1'b0;
+      page_ram_rd_data_skid <= '0;
+      page_ram_skid_valid <= 1'b0;
+    end else begin
+      if (meta_read_pending) begin
+        meta_read_pending <= 1'b0;
+        meta_read_owner <= META_READ_IDLE;
+
+        unique case (meta_read_owner)
+          META_READ_HEAD: begin
+            head_meta_valid <= 1'b1;
+            head_addr_q <= meta_addr_from_data(meta_rd_data);
+            head_len_q <= meta_len_from_data(meta_rd_data);
+            head_shd_cnt_q <= meta_shd_from_data(meta_rd_data);
+            head_hit_cnt_q <= meta_hit_from_data(meta_rd_data);
+          end
+
+          META_READ_SCAN: begin
+            scan_len_v = meta_len_from_data(meta_rd_data);
+            scan_shd_v = meta_shd_from_data(meta_rd_data);
+            scan_hit_v = meta_hit_from_data(meta_rd_data);
+            next_scan_ptr_v = overwrite_scan_next_ptr + META_PTR_ONE_CONST;
+
+            if ((overwrite_scan_remaining_words <= scan_len_v) ||
+                (next_scan_ptr_v == overwrite_scan_stop_ptr)) begin
+              ft_drop_valid_o <= 1'b1;
+              ft_drop_hdr_cnt_o <= overwrite_scan_hdr_cnt + 32'd1;
+              ft_drop_shd_cnt_o <= overwrite_scan_shd_cnt + extend32_shd(scan_shd_v);
+              ft_drop_hit_cnt_o <= overwrite_scan_hit_cnt + extend32_hit(scan_hit_v);
+              meta_rptr <= next_scan_ptr_v;
+              head_meta_valid <= 1'b0;
+              overwrite_scan_active <= 1'b0;
+              overwrite_scan_process_head <= 1'b0;
+              presenter_state <= FTABLE_PRESENTER_IDLE;
+              output_data_valid <= '0;
+              pkt_rd_word_cnt <= '0;
+              retire_pending <= 1'b0;
+              pkt_accept_started <= 1'b0;
+              page_ram_skid_valid <= 1'b0;
+              for (pipe_data_idx = 0; pipe_data_idx < EGRESS_DELAY; pipe_data_idx = pipe_data_idx + 1) begin
+                output_data_pipe[pipe_data_idx] <= '0;
+              end
+            end else begin
+              overwrite_scan_hdr_cnt <= overwrite_scan_hdr_cnt + 32'd1;
+              overwrite_scan_shd_cnt <= overwrite_scan_shd_cnt + extend32_shd(scan_shd_v);
+              overwrite_scan_hit_cnt <= overwrite_scan_hit_cnt + extend32_hit(scan_hit_v);
+              overwrite_scan_remaining_words <= overwrite_scan_remaining_words - scan_len_v;
+              overwrite_scan_next_ptr <= next_scan_ptr_v;
+              meta_rd_addr <= next_scan_ptr_v;
+              meta_read_pending <= 1'b1;
+              meta_read_owner <= META_READ_SCAN;
+            end
+          end
+
+          default: begin
+          end
+        endcase
+      end
+
+      if (new_frame_valid_i) begin
+        if (new_frame_oversize) begin
+          ft_drop_valid_o <= 1'b1;
+          ft_drop_hdr_cnt_o <= 32'd1;
+          ft_drop_shd_cnt_o <= extend32_shd(frame_shr_cnt_this_i);
+          ft_drop_hit_cnt_o <= extend32_hit(frame_hit_cnt_this_i);
+        end else begin
+          if ((meta_wptr == meta_rptr) && !head_meta_valid) begin
+            head_meta_valid <= 1'b1;
+            head_addr_q <= new_frame_raw_addr_i;
+            head_len_q <= new_frame_length;
+            head_shd_cnt_q <= frame_shr_cnt_this_i;
+            head_hit_cnt_q <= frame_hit_cnt_this_i;
+          end
+
+          if ((meta_wptr != meta_rptr) && !overwrite_head_accepted_or_accepting) begin
+            pending_overlap_check_valid <= 1'b1;
+            pending_overlap_addr_q <= new_frame_raw_addr_i;
+            pending_overlap_len_q <= new_frame_length;
+            pending_overlap_stop_ptr_q <= meta_wptr;
+            block_present_start_v = 1'b1;
+          end
+
+          meta_wptr <= meta_wptr + META_PTR_ONE_CONST;
+        end
+      end
+
+      if (overwrite_scan_process_head) begin
+        next_scan_ptr_v = meta_rptr + META_PTR_ONE_CONST;
+        if ((overwrite_scan_remaining_words <= head_len_q) ||
+            (next_scan_ptr_v == overwrite_scan_stop_ptr)) begin
+          ft_drop_valid_o <= 1'b1;
+          ft_drop_hdr_cnt_o <= overwrite_scan_hdr_cnt + 32'd1;
+          ft_drop_shd_cnt_o <= overwrite_scan_shd_cnt + extend32_shd(head_shd_cnt_q);
+          ft_drop_hit_cnt_o <= overwrite_scan_hit_cnt + extend32_hit(head_hit_cnt_q);
+          meta_rptr <= next_scan_ptr_v;
+          head_meta_valid <= 1'b0;
+          overwrite_scan_active <= 1'b0;
+          overwrite_scan_process_head <= 1'b0;
+          presenter_state <= FTABLE_PRESENTER_IDLE;
+          output_data_valid <= '0;
+          pkt_rd_word_cnt <= '0;
+          retire_pending <= 1'b0;
+          pkt_accept_started <= 1'b0;
+          page_ram_skid_valid <= 1'b0;
+          for (pipe_data_idx = 0; pipe_data_idx < EGRESS_DELAY; pipe_data_idx = pipe_data_idx + 1) begin
+            output_data_pipe[pipe_data_idx] <= '0;
+          end
+        end else begin
+          overwrite_scan_hdr_cnt <= overwrite_scan_hdr_cnt + 32'd1;
+          overwrite_scan_shd_cnt <= overwrite_scan_shd_cnt + extend32_shd(head_shd_cnt_q);
+          overwrite_scan_hit_cnt <= overwrite_scan_hit_cnt + extend32_hit(head_hit_cnt_q);
+          overwrite_scan_remaining_words <= overwrite_scan_remaining_words - head_len_q;
+          overwrite_scan_next_ptr <= next_scan_ptr_v;
+          overwrite_scan_process_head <= 1'b0;
+          meta_rd_addr <= next_scan_ptr_v;
+          meta_read_pending <= 1'b1;
+          meta_read_owner <= META_READ_SCAN;
+        end
+      end
+
+      if (pending_overlap_launch_valid) begin
+        pending_overlap_launch_valid <= 1'b0;
+        overwrite_scan_active <= 1'b1;
+        overwrite_scan_process_head <= 1'b1;
+        overwrite_scan_stop_ptr <= pending_overlap_launch_stop_ptr_q;
+        overwrite_scan_next_ptr <= meta_rptr;
+        overwrite_scan_remaining_words <= pending_overlap_launch_remaining_words_q;
+        overwrite_scan_hdr_cnt <= '0;
+        overwrite_scan_shd_cnt <= '0;
+        overwrite_scan_hit_cnt <= '0;
+        block_present_start_v = 1'b1;
+      end
+
+      if (!overwrite_scan_active &&
+          !pending_overlap_launch_valid &&
+          pending_overlap_check_valid &&
+          head_meta_valid &&
+          !overwrite_head_accepted_or_accepting) begin
+        candidate_len_ext_v = pending_overlap_len_q;
+        gap_to_head_words_v = circular_distance(pending_overlap_addr_q, head_addr_q);
+        pending_overlap_check_valid <= 1'b0;
+        if (candidate_len_ext_v > gap_to_head_words_v) begin
+          remaining_words_v =
+            pending_overlap_len_q - page_ram_addr_t'(gap_to_head_words_v[PAGE_RAM_ADDR_WIDTH-1:0]);
+          pending_overlap_launch_valid <= 1'b1;
+          pending_overlap_launch_stop_ptr_q <= pending_overlap_stop_ptr_q;
+          pending_overlap_launch_remaining_words_q <= remaining_words_v;
+          block_present_start_v = 1'b1;
+        end
+      end
+
+      unique case (presenter_state)
+        FTABLE_PRESENTER_IDLE: begin
+          if (is_new_pkt_head && !block_present_start_v) begin
+            presenter_state <= FTABLE_PRESENTER_WAIT_FOR_COMPLETE;
+            pkt_accept_started <= 1'b0;
+            page_ram_skid_valid <= 1'b0;
+          end
+        end
+
+        FTABLE_PRESENTER_WAIT_FOR_COMPLETE: begin
+          if (!is_new_pkt_head) begin
+            presenter_state <= FTABLE_PRESENTER_IDLE;
+          end else if (!head_meta_valid && !meta_read_pending && !block_meta_head_fetch_v) begin
+            meta_rd_addr <= meta_rptr;
+            meta_read_pending <= 1'b1;
+            meta_read_owner <= META_READ_HEAD;
+          end else if (head_meta_valid && payload_commit_idle_i && !block_present_start_v) begin
+            presenter_state <= FTABLE_PRESENTER_PRESENTING;
+            page_ram_rptr <= head_addr_q;
+            pkt_rd_word_cnt <= '0;
+            output_data_valid <= '0;
+            retire_pending <= 1'b0;
+            pkt_accept_started <= 1'b0;
+            page_ram_skid_valid <= 1'b0;
+            for (pipe_data_idx = 0; pipe_data_idx < EGRESS_DELAY; pipe_data_idx = pipe_data_idx + 1) begin
+              output_data_pipe[pipe_data_idx] <= '0;
+            end
+          end
+        end
+
+        FTABLE_PRESENTER_PRESENTING: begin
+          if (retire_pending) begin
+            if (output_data_valid[EGRESS_DELAY] && aso_egress_ready) begin
+              presenter_state <= FTABLE_PRESENTER_IDLE;
+              output_data_valid <= '0;
+              meta_rptr <= meta_rptr + META_PTR_ONE_CONST;
+              head_meta_valid <= 1'b0;
+              retire_pending <= 1'b0;
+              pkt_accept_started <= 1'b0;
+              page_ram_skid_valid <= 1'b0;
+              for (pipe_data_idx = 0; pipe_data_idx < EGRESS_DELAY; pipe_data_idx = pipe_data_idx + 1) begin
+                output_data_pipe[pipe_data_idx] <= '0;
+              end
+            end
+          end else begin
+            if (output_data_valid[EGRESS_DELAY] && !aso_egress_ready) begin
+              if (!page_ram_skid_valid) begin
+                page_ram_rd_data_skid <= page_ram_rd_data_i;
+                page_ram_skid_valid <= 1'b1;
+              end
+            end
+            if (output_data_valid[EGRESS_DELAY] && aso_egress_ready) begin
+              pkt_rd_word_cnt <= pkt_rd_word_cnt + PAGE_RAM_ADDR_ONE_CONST;
+              pkt_accept_started <= 1'b1;
+            end
+            if (advance_output_pipe) begin
+              output_data_valid[0] <= 1'b1;
+              for (pipe_valid_idx = 0; pipe_valid_idx < EGRESS_DELAY; pipe_valid_idx = pipe_valid_idx + 1) begin
+                output_data_valid[pipe_valid_idx+1] <= output_data_valid[pipe_valid_idx];
+              end
+              output_data_pipe[0] <= pipe_input_data;
+              for (pipe_data_idx = 0; pipe_data_idx < EGRESS_DELAY-1; pipe_data_idx = pipe_data_idx + 1) begin
+                output_data_pipe[pipe_data_idx+1] <= output_data_pipe[pipe_data_idx];
+              end
+              page_ram_rptr <= page_ram_rptr + PAGE_RAM_ADDR_ONE_CONST;
+              if (page_ram_skid_valid) begin
+                page_ram_skid_valid <= 1'b0;
+              end
+            end
+
+            if (advance_output_pipe && launch_is_trailer) begin
+              output_data_valid <= '0;
+              output_data_valid[EGRESS_DELAY] <= 1'b1;
+              retire_pending <= 1'b1;
+            end
+          end
+        end
+
+        FTABLE_PRESENTER_RESET: begin
+          presenter_state <= FTABLE_PRESENTER_IDLE;
+          pkt_accept_started <= 1'b0;
+        end
+
+        default: begin
+        end
+      endcase
+    end
+  end
+endmodule

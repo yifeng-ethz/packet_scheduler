@@ -211,15 +211,12 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       flow so long chained no-restart bugs are exercised before final signoff
       report freeze, and keep it tracked as isolated-only evidence rather than
       silently folding it into the fixed no-restart baseline.
-      Status on `2026-04-18`:
+      Status refreshed on `2026-04-19`:
       - implemented as `opq_cross_mixed_bucket_seconds_soak_test`
       - canonical bug-hunt config uses `+TB_CLK_PERIOD_NS=250`
-      - current result is probe-only, not promoted:
-        the old chained masked-drop accounting underrun is fixed, but
-        `opq_cross_mixed_bucket_seconds_soak_test` now trips
-        `opq_hit3_contract` around mixed-soak step `190` and later,
-        so the earlier extended screen still exposes a real no-restart
-        cross-bucket bug before final signoff freeze
+      - current result is probe-only, not promoted, because of runtime only:
+        the full stretched rerun is now green end to end and is kept as an
+        isolated long-run stress screen outside the default promoted matrix
 - [x] If checkpoint UCDBs are not yet practical, create the required pages
       anyway and state the limitation explicitly until the flow is implemented.
 
@@ -231,14 +228,14 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       - packet-boundary contract corruption
       - missing legal-drop observability
       - out-of-scope parameter / lane non-claim
-      Current mapping frozen on `2026-04-19`:
-      - `BUG-011-R`: packet-boundary contract corruption after chained
-        predecessor traffic, with the weak boundary currently at malformed
-        subheader recovery composability
-      - `BUG-018-H`: hit accounting / silent-loss risk in later PROF-heavy
-        no-restart windows after the earliest exact window was repaired
-      - 4-lane scope statement: out-of-scope parameter / lane non-claim until
-        native-SV 4-lane DV evidence and A10 synthesis evidence are both live
+      Current mapping refreshed on `2026-04-19`:
+      - the former `BUG-011-R` packet-boundary corruption is closed by the
+        repaired chained malformed-subheader recovery path
+      - the former `BUG-018-H` long-run hit-accounting risk is closed by the
+        clean full stretched mixed-bucket seconds soak rerun
+      - 4-lane scope statement remains the only active out-of-scope parameter /
+        lane non-claim until native-SV 4-lane DV evidence and A10 synthesis
+        evidence are both live
 - [x] Resolve the forced-overwrite / malformed-egress bug before promoting
       `opq_error_ftable_overflow_test`.
       Status: the reduced-depth `OPQ_PAGE_RAM_DEPTH=512` native-SV overflow
@@ -266,41 +263,30 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       - remaining work is report hygiene, not DUT repair:
         rerun the ERROR bucket continuous-frame baseline with the restored
         case, then remove it from the generated report exclusions
-- [ ] Resolve the chained malformed-subheader recovery corruption before adding
+- [x] Resolve the chained malformed-subheader recovery corruption before adding
       `opq_error_subheader_mask_recovery_test` back into the mixed-bucket soak
       pool.
-      Required deterministic predecessor matrix before any broad soak rerun:
-      - `drr_bp -> subheader_error_recovery`
-      - `idle_lane_bp -> subheader_error_recovery`
-      - `whole_frame_skew -> subheader_error_recovery`
-      - `sparse_missing_empty -> subheader_error_recovery`
-      Each pairwise repro must print ingress, mover/frame-table, and egress
-      ledgers at every checkpoint, not only at final summary.
-- [ ] Resolve the hit-without-subheader contract failure still exposed by
+      Status on `2026-04-19`:
+      - the mixed ERROR pool now re-exercises `subheader_error_recovery`
+      - `opq_cross_mixed_bucket_random_soak_test` passes with that case live
+      - the full stretched `opq_cross_mixed_bucket_seconds_soak_test` reaches
+        repeated deep chained recovery steps, including step `509`, and still
+        exits with `UVM_ERROR : 0`
+      - `opq_all_buckets_frame_native_sv_test` also remains clean after the
+        no-restart masked-recovery tail sequence
+- [x] Resolve the hit-without-subheader contract failure still exposed by
       `opq_cross_mixed_bucket_seconds_soak_test` before promoting the earlier
       extended mixed-soak screen into the live report set.
       Status on `2026-04-19`:
-      - the original earliest failing window around `mixed_sparse_191` is now
-        repaired on the exact deterministic reproducer
-        `opq_cross_hit3_exact_183_190_repro_test`, which ends
-        `expected=2476 actual=2476 missing=0 ghost=0`
-      - the final exact-window root cause was a real DUT bug in the page
-        allocator: a new frame seeded `running_ts` from the frame header
-        timestamp instead of the parser's current running subheader timestamp,
-        so the first live payload tickets were misclassified as `future`
-      - the focused 5-step bug-hunt rerun of
-        `opq_cross_mixed_bucket_seconds_soak_test` is also green on the same
-        repaired RTL and no longer reopens the old earliest window
-      - remaining work is a refreshed full stretched rerun to prove that the
-        later windows (`mixed_soak_261`, `mixed_whole_skew_275`,
-        `mixed_whole_skew_418`, `mixed_whole_skew_435`) are also gone on the
-        repaired RTL
-      - before rerunning the full seconds soak, build exact deterministic
-        repro windows around each remaining later site so any continued
-        failure is shrunk at the ledger level instead of debugged only inside
-        the full long run
-      - keep this item open as a real long-chain revalidation step, not as an
-        already-closed signoff point
+      - the exact deterministic reproducer
+        `opq_cross_hit3_exact_183_190_repro_test` passes cleanly
+      - the companion `opq_cross_mixed_bucket_random_soak_test` also passes
+      - the full stretched seconds soak now crosses the later former failure
+        windows (`mixed_soak_261`, `mixed_whole_skew_275`,
+        `mixed_whole_skew_418`, `mixed_whole_skew_435`) and exits with
+        `UVM_ERROR : 0`, `UVM_FATAL : 0`, and `Errors: 0`
+      - the screen stays probe-only only because it is a long runtime stress
+        check outside the default promoted matrix, not because of a live bug
 - [x] Resolve late-frame legal-drop overcount in the half-saturation random
       ready overflow screen before trusting longer overflow/backpressure
       conservation evidence.

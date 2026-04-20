@@ -10,7 +10,9 @@ Standalone synthesis-side collateral for `packet_scheduler`.
 
 ## Status
 
-The cleaned tree now places the existing OPQ example collateral under
-`quartus/opq_monolithic_4lane_merge/`. A fresh standalone signoff compile has
-not yet been rerun from this layout, so `SYN_REPORT.md` remains an honest
-pending report rather than a green claim.
+The cleaned tree now keeps the older example collateral under
+`quartus/opq_monolithic_4lane_merge/` and the standalone native-SV signoff
+harnesses under `quartus/opq_native_sv_{2,4}lane_signoff/`.
+
+The active Arria-10 lane-4 standalone refresh has completed and the resulting
+timing/resource evidence is recorded in `SYN_REPORT.md`.

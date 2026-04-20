@@ -24,8 +24,8 @@
 | ℹ️ | build_knobs.OPQ_PAGE_RAM_DEPTH | `65536` |
 | ℹ️ | build_knobs.MODE | `MERGING` |
 | ℹ️ | log.hit_expected | `136` |
-| ℹ️ | log.hit_actual | `136` |
-| ℹ️ | log.hit_missing | `0` |
+| ℹ️ | log.hit_actual | `104` |
+| ℹ️ | log.hit_missing | `32` |
 | ℹ️ | log.hit_ghost | `0` |
 | ℹ️ | log.cg_cfg | `49.4` |
 | ℹ️ | log.cg_frame | `58.33` |
@@ -33,7 +33,7 @@
 | ℹ️ | log.cg_bp | `0.0` |
 | ℹ️ | log.cg_csr | `92.26` |
 | ℹ️ | log.cg_credit | `46.67` |
-| ℹ️ | log.cg_drop | `48.61` |
+| ℹ️ | log.cg_drop | `63.19` |
 | ℹ️ | log.cg_drr | `43.67` |
 | ℹ️ | log.cg_ingress | `100.0` |
 | ℹ️ | log.cg_egress | `100.0` |

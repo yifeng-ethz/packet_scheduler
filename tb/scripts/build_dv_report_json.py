@@ -1150,8 +1150,8 @@ def build() -> dict:
             "excluded_probe_cases": EXCLUDED_CASES,
             "mode_scope": "MERGING mode only is claimed in the active native-SV report",
             "n_shd_scope": "native-SV signoff claim covers OPQ_N_SHD = 128 / 256 / 512 only",
-            "four_lane_status": "4-lane native-SV remains out of signoff scope until dedicated 4-lane DV evidence and the standalone Arria 10 synthesis result are both recorded",
-            "mixed_bucket_seconds_probe_status": "the exact 183..190 reproducer and the focused 5-step seconds-soak rerun are now green on current RTL, but the full stretched mixed-bucket seconds soak remains open until it is rerun end-to-end on the repaired allocator state",
+            "four_lane_status": "4-lane native-SV remains out of signoff scope until dedicated 4-lane DV evidence is promoted; the standalone Arria 10 synthesis result is now recorded separately in signoff",
+            "mixed_bucket_seconds_probe_status": "the exact 183..190 reproducer is green, and the full stretched mixed-bucket seconds soak now also passes end to end on the repaired allocator state; the screen remains probe-only because of runtime, not because of a live failure",
             "continuous_frame_scope": "continuous-frame baselines currently cover the default-build promoted matrix only; PARAM build points and the reduced-depth overflow point require separate elaboration and are excluded from no-restart baselines",
         },
         "execution_modes": {
