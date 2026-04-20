@@ -11,6 +11,8 @@ IP.
   package contract plus full-space closure counts sourced from the matrix
   generator.
 - `CHANGELOG.md`: packaged revision history.
+- `architecture_note.md`: active architectural contract note for legal
+  overflow, frame-table ownership, and HoL behavior.
 - `VERIFICATION_SIGNOFF.md`: preserved long-form narrative note from the
   earlier verification flow. The active dashboard is `SIGNOFF.md`.
 - `rtl_notes/`: archived RTL change notes and targeted upgrade commentary.

@@ -22,6 +22,11 @@ The core contract remains the same:
 - handle egress backpressure without duplication or reordering
 - account for packet drops and overwrite drops in the visible CSR counters
 
+`packet_scheduler/doc/architecture_note.md` freezes one important refinement of
+that contract for the active closure phase: overflow is legal only when it is
+explicit, counted, and does not leave incomplete packet format or holes in the
+frame-table ownership model.
+
 The legacy plan is still useful, but it needs corrections for the current IP
 revision and current harness.
 

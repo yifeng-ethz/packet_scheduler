@@ -681,8 +681,12 @@ Encounter sim-time legend:
   - this is the current reduced-depth overflow blocker that keeps
     `opq_error_ftable_overflow_test` outside the signoff-clean supplemental
     matrix on `2026-04-20`
-  - the failure is reproducible on the fresh reduced-depth native-SV rerun
-    without any harness weakening
+  - clean rerun on the baseline presenter path still fails:
+    `BUILD_DIR=/tmp/opq_bug24_build RUN_DIR=/tmp/opq_bug24_run LOG_DIR=/tmp/opq_bug24_run/logs COV_DIR=/tmp/opq_bug24_run/coverage bash packet_scheduler/tb/scripts/run_uvm.sh opq_error_ftable_overflow_test`
+  - that rerun ends with `UVM_ERROR : 0`, but still fires early
+    `opq_hit3_contract` trailer / `pkg_cnt` / timestamp assertion errors and
+    leaves both lane drop monitors at zero observed drop events, so the bug is
+    still a real accepted-egress corruption and missing-drop-identity failure
 - Commit:
   - pending
 
@@ -718,8 +722,16 @@ Encounter sim-time legend:
   - the focused `opq_cross_drr_bursty_repro_test` remains green, so this is a
     larger-envelope retirement bug rather than a regression of the earlier
     focused running-timestamp fix in `BUG-009-R`
-  - the bug remains probe-only until the allocator latches active-lane
-    completion independently of later ticket issuance
+  - clean rerun on `2026-04-20` with an isolated build still reproduces the
+    same failure signature:
+    `BUILD_DIR=/tmp/opq_bug25_build RUN_DIR=/tmp/opq_bug25_run LOG_DIR=/tmp/opq_bug25_run/logs COV_DIR=/tmp/opq_bug25_run/coverage bash packet_scheduler/tb/scripts/run_uvm.sh opq_cross_drr_bursty_random_test`
+  - that rerun again ends with
+    `expected=896 actual=920 missing=368 ghost=392`, lane0
+    `accepted=828 dropped=3220 delivered=460 unexplained=368`, and an early
+    `opq_hit3_contract` monotonicity failure at `15346 ns`
+  - an attempted sticky-EOP allocator experiment was reverted after it failed
+    to move the large-random signature, so the missing per-lane tail memory is
+    still a working hypothesis, not a proved full fix
 - Commit:
   - pending
 
@@ -753,7 +765,13 @@ Encounter sim-time legend:
 - Runtime / coverage context:
   - this is the current default-build overflow bug anchor beside the
     reduced-depth `BUG-024-R` path
-  - the existing per-step overflow ledgers are now proving a real DUT hole
-    rather than a missing harness observable
+  - clean default-build rerun on `2026-04-20` still fails at the first two
+    overflow checkpoints with:
+    - `overflow_step_0`: `wr_shd=5 rd_shd=7 drop_shd=0`,
+      `wr_hit=540 rd_hit=545 drop_hit=0`, lane1 `unexplained=174`
+    - `overflow_step_1`: `wr_shd=13 rd_shd=15 drop_shd=0`,
+      `wr_hit=1129 rd_hit=1155 drop_hit=0`, lane0 `unexplained=153`
+  - the existing per-step overflow ledgers are therefore proving a real DUT
+    hole rather than a missing harness observable
 - Commit:
   - pending

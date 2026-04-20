@@ -87,6 +87,11 @@ Current harness limits:
   - no missing hits
   - no ghost hits
   - hit lands in the correct subheader / time slot
+- The scoreboard and ledger checks are interpreted using
+  `packet_scheduler/doc/architecture_note.md`:
+  - overflow is legal only when it is counted and classified
+  - declared frame-table ownership must not contain holes
+  - accepted egress must never degrade into incomplete packet format
 
 ### CSR contract
 
