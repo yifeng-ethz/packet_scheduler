@@ -3,7 +3,7 @@
 **Companion to:** `DV_PLAN.md`, `DV_HARNESS.md`  
 **Author:** Yifeng Wang (yifenwan@phys.ethz.ch)  
 **Date:** 2026-04-20
-**Status:** Active current-tree bucket for promoted mixed-axis cases and explicit non-promoted stress screens.
+**Status:** Active current-tree bucket for promoted mixed-axis cases, including the supplemental mixed-bucket random-soak signoff screen and explicit non-promoted stress screens.
 
 ---
 
@@ -28,7 +28,7 @@
 | `opq_cross_drr_zero_allowance_test` | Zero-allowance lane defers until reload and then resumes service cleanly | Passing |
 | `opq_cross_drr_short_allowance_test` | Short-quantum reload behavior with repeated directed service handoff | Passing |
 | `opq_cross_idle_lane_backpressure_test` | Idle-lane cadence crossed with periodic egress stalls on the active lane | Passing |
-| `opq_cross_mixed_bucket_random_soak_test` | Random mixed-bucket soak that chains safe BASIC/EDGE/PROF/ERROR/CROSS cases without restart | Passing |
+| `opq_cross_mixed_bucket_random_soak_test` | Random mixed-bucket soak that chains safe BASIC/EDGE/PROF/ERROR/CROSS cases without restart | Passing; tracked as a dedicated supplemental native-SV signoff run outside the fixed case-ordered bucket-frame baselines |
 
 ---
 

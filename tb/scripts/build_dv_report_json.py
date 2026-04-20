@@ -80,13 +80,15 @@ INSTANCE_HOLE_SPECS = [
         ],
         "classification": "needs-new-test",
         "reason": (
-            "The reduced-depth overwrite repro is now green in isolation, but the "
-            "promoted suite still lacks a directed hybrid that couples flush pressure "
-            "with legal backpressure windows over a default-build runtime."
+            "The reduced-depth overwrite screen is now wired into the supplemental "
+            "signoff flow, but the fresh 2026-04-20 rerun reopened accepted-egress "
+            "contract errors and the promoted suite still lacks a directed hybrid "
+            "that couples flush pressure with legal backpressure windows over a "
+            "default-build runtime."
         ),
         "evidence_anchor": (
             "ordered_priority_queue_monolithic_basic_presenter.sv:128-145, 165-188; "
-            "DV_FORMAL.md B27/B28; CORNER_OPQ_407_error_ftable_overflow_test"
+            "DV_FORMAL.md B27/B28; CORNER_OPQ_409_error_ftable_overflow_test"
         ),
         "next_action": (
             "Add the directed backpressure-plus-flush hybrid testcase and use it to "
@@ -107,7 +109,7 @@ INSTANCE_HOLE_SPECS = [
         ),
         "evidence_anchor": (
             "ordered_priority_queue_dut_sv.sv:227-245, 268-337, 494-505; "
-            "DV_REPORT non-claims for OPQ_N_LANE=2 and reduced-depth isolated points"
+            "DV_REPORT non-claims for OPQ_N_LANE=2 and the reduced-depth supplemental overflow point"
         ),
         "next_action": (
             "Keep the wrapper holes documented as non-claims unless a dedicated CSR "
@@ -660,9 +662,9 @@ SIGNOFF_RUN_SPECS = [
         "payload_cap": None,
         "limitations": [
             "PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.",
-            "opq_error_ftable_overflow_test is isolated-only evidence because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration.",
-            "opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow.",
-            "opq_cross_mixed_bucket_random_soak_test is isolated-only evidence; it intentionally randomizes across buckets rather than serving as the fixed promoted no-restart baseline.",
+            "opq_cross_mixed_bucket_random_soak_test is tracked as a dedicated supplemental signoff run; this fixed baseline remains case-ordered and deterministic.",
+            "opq_error_counter_clear_test is tracked as a dedicated supplemental signoff run because it intentionally clears live CSR counters mid-run.",
+            "opq_error_ftable_overflow_test is tracked as a dedicated supplemental signoff run because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration.",
         ],
     },
     {
@@ -678,10 +680,58 @@ SIGNOFF_RUN_SPECS = [
         "payload_cap": None,
         "limitations": [
             "PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.",
-            "opq_error_ftable_overflow_test is isolated-only evidence because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration.",
-            "opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow.",
-            "opq_cross_mixed_bucket_random_soak_test is isolated-only evidence; it intentionally randomizes across buckets rather than serving as the fixed promoted no-restart baseline.",
+            "opq_cross_mixed_bucket_random_soak_test is tracked as a dedicated supplemental signoff run; this fixed baseline remains case-ordered and deterministic.",
+            "opq_error_counter_clear_test is tracked as a dedicated supplemental signoff run because it intentionally clears live CSR counters mid-run.",
+            "opq_error_ftable_overflow_test is tracked as a dedicated supplemental signoff run because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration.",
             f"This run appends two extra tail sequences after the {SIGNOFF_CASE_COUNT} promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases.",
+        ],
+    },
+    {
+        "run_id": "mixed_bucket_random_soak_native_sv",
+        "test_name": "opq_cross_mixed_bucket_random_soak_test",
+        "kind": "mixed_bucket_random_soak",
+        "build_tag": "native_sv",
+        "bucket": "CROSS",
+        "sequence_name": "OPQ_MIXED_BUCKET_RANDOM_SOAK",
+        "case_count": 1,
+        "effort": "practical",
+        "iter_cap": None,
+        "payload_cap": None,
+        "limitations": [
+            "This is a supplemental signoff run, not the fixed bucket-frame baseline; execution order is intentionally seed-driven rather than case-id ordered.",
+            "The run reuses only already-promoted safe bucket slices so it can stress chained no-restart behavior without reopening known probe-only bursty DRR loss.",
+        ],
+    },
+    {
+        "run_id": "error_counter_clear_native_sv",
+        "test_name": "opq_error_counter_clear_test",
+        "kind": "error_counter_clear",
+        "build_tag": "native_sv",
+        "bucket": "ERROR",
+        "sequence_name": "OPQ_ERROR_COUNTER_CLEAR",
+        "case_count": 1,
+        "effort": "practical",
+        "iter_cap": None,
+        "payload_cap": None,
+        "limitations": [
+            "This is a supplemental signoff run that validates CSR zeroization semantics after masked-drop traffic.",
+            "The testcase intentionally clears live counters before end-of-run reporting, so it is tracked outside the fixed bucket-frame baselines.",
+        ],
+    },
+    {
+        "run_id": "error_ftable_overflow_depth512_native_sv",
+        "test_name": "opq_error_ftable_overflow_test",
+        "kind": "error_ftable_overflow_depth512",
+        "build_tag": "native_sv_depth512",
+        "bucket": "ERROR",
+        "sequence_name": "OPQ_ERROR_FTABLE_OVERFLOW_DEPTH512",
+        "case_count": 1,
+        "effort": "practical",
+        "iter_cap": None,
+        "payload_cap": None,
+        "limitations": [
+            "This is a supplemental signoff run that intentionally uses OPQ_PAGE_RAM_DEPTH=512 to force the overwrite / frame-table-drop path.",
+            "Because it requires a separate elaboration point, it cannot be folded into the fixed default-build no-restart baselines.",
         ],
     },
 ]
@@ -864,9 +914,9 @@ def merge_ucdb(output: Path, inputs: list[Path]) -> Path:
     return output
 
 
-def extract_log_summary(log_path: Path) -> tuple[bool, bool, dict]:
+def extract_log_summary(log_path: Path) -> tuple[bool, bool, bool, dict]:
     if not log_path.is_file():
-        return False, False, {}
+        return False, False, False, {}
 
     text = log_path.read_text(encoding="utf-8", errors="replace")
     engine_ok = "[run_uvm] DUT_IMPL=native_sv" in text
@@ -917,7 +967,7 @@ def extract_log_summary(log_path: Path) -> tuple[bool, bool, dict]:
     if mixed_soak_steps:
         summary["random_txn"] = max(mixed_soak_steps) + 1
 
-    return True, engine_ok, summary if pass_ok else summary
+    return True, engine_ok, pass_ok, summary
 
 
 def stage_report_artifacts(case_artifacts: list[dict]) -> None:
@@ -947,7 +997,7 @@ def build_signoff_runs() -> list[dict]:
     for spec in SIGNOFF_RUN_SPECS:
         log_path = SIM_LOG_DIR / f"{spec['test_name']}.log"
         ucdb_path = resolve_ucdb_path(spec["test_name"])
-        log_exists, engine_ok, log_summary = extract_log_summary(log_path)
+        log_exists, engine_ok, pass_ok, log_summary = extract_log_summary(log_path)
         has_ucdb = ucdb_path is not None
         functional_cov = {"pct": 0.0, "evidenced": 0, "planned": 0}
         code_cov = {}
@@ -959,7 +1009,7 @@ def build_signoff_runs() -> list[dict]:
         hit_missing = int(log_summary.get("hit_missing", 0))
         hit_ghost = int(log_summary.get("hit_ghost", 0))
         txns = int(log_summary.get("lane0_monitored_frames", 0)) + int(log_summary.get("lane1_monitored_frames", 0))
-        failures = 0 if (log_exists and engine_ok and has_ucdb and hit_missing == 0 and hit_ghost == 0) else 1
+        failures = 0 if (log_exists and engine_ok and pass_ok and has_ucdb and hit_missing == 0 and hit_ghost == 0) else 1
 
         run_entry = dict(spec)
         run_entry["implemented"] = log_exists and has_ucdb
@@ -1031,7 +1081,7 @@ def build() -> dict:
             all_case_ids.append(report_case_id)
             log_path = SIM_LOG_DIR / f"{legacy_test_name}.log"
             ucdb_path = resolve_ucdb_path(legacy_test_name)
-            log_exists, engine_ok, log_summary = extract_log_summary(log_path)
+            log_exists, engine_ok, pass_ok, log_summary = extract_log_summary(log_path)
             has_ucdb = ucdb_path is not None
             implemented = log_exists and has_ucdb
             if not implemented:
@@ -1049,7 +1099,7 @@ def build() -> dict:
 
             standalone_cov = code_cov_for_ucdb(ucdb_path)
             case["implemented"] = True
-            case["passed"] = engine_ok
+            case["passed"] = pass_ok
             case["log_summary"] = log_summary
             case["standalone_coverage"] = flatten_pct(standalone_cov)
             if case.get("method") == "R":
@@ -1059,7 +1109,7 @@ def build() -> dict:
                 case["observed_txn"] = int(case.get("observed_txn", 1) or 1)
                 case["isolated_cov_per_txn"] = flatten_pct(standalone_cov)
 
-            if engine_ok:
+            if pass_ok:
                 evidenced_cases += 1
                 bucket_ucdbs.append(ucdb_path)
                 merged_after = code_cov_for_ucdb(
@@ -1154,6 +1204,7 @@ def build() -> dict:
     coverage_hole_disposition = build_coverage_hole_disposition(merged_total_ucdb)
 
     signoff_runs = build_signoff_runs()
+    signoff_spec_by_run_id = {spec["run_id"]: spec for spec in SIGNOFF_RUN_SPECS}
     bucket_frame_order = [
         {
             "bucket": bucket_name,
@@ -1161,6 +1212,27 @@ def build() -> dict:
             "legacy_test_name": legacy_name,
         }
         for bucket_name, legacy_name in BUCKET_FRAME_LEGACY_ORDER
+    ]
+    mixed_bucket_random_soak_order = [
+        {
+            "bucket": "CROSS",
+            "report_case_id": report_case_id_by_legacy["opq_cross_mixed_bucket_random_soak_test"],
+            "legacy_test_name": "opq_cross_mixed_bucket_random_soak_test",
+        }
+    ]
+    error_counter_clear_order = [
+        {
+            "bucket": "ERROR",
+            "report_case_id": report_case_id_by_legacy["opq_error_counter_clear_test"],
+            "legacy_test_name": "opq_error_counter_clear_test",
+        }
+    ]
+    error_ftable_overflow_order = [
+        {
+            "bucket": "ERROR",
+            "report_case_id": report_case_id_by_legacy["opq_error_ftable_overflow_test"],
+            "legacy_test_name": "opq_error_ftable_overflow_test",
+        }
     ]
 
     return {
@@ -1218,7 +1290,7 @@ def build() -> dict:
             "four_lane_status": "4-lane native-SV remains out of signoff scope until dedicated 4-lane DV evidence is promoted; the standalone Arria 10 synthesis result is now recorded separately in signoff",
             "bursty_drr_probe_status": "the focused bursty DRR reproducer is green, but the refreshed larger constrained-random rerun on 2026-04-20 still fails with lane0 unexplained=368 and hit-integrity summary expected=852 actual=622 missing=368 ghost=138; the screen remains probe-only",
             "mixed_bucket_seconds_probe_status": "the exact 183..190 reproducer is green, and the full stretched mixed-bucket seconds soak now also passes end to end on the repaired allocator state; the screen remains probe-only because of runtime, not because of a live failure",
-            "continuous_frame_scope": "continuous-frame baselines currently cover the default-build promoted matrix only; PARAM build points and the reduced-depth overflow point require separate elaboration and are excluded from no-restart baselines",
+            "continuous_frame_scope": "fixed bucket-frame baselines cover the default-build promoted matrix only; dedicated supplemental signoff runs now track mixed-bucket random soak, counter-clear semantics, and the reduced-depth overflow build point, while PARAM elaboration points still remain separate",
         },
         "execution_modes": {
             "isolated": {
@@ -1232,14 +1304,32 @@ def build() -> dict:
                 "run_id": "bucket_frame_native_sv",
                 "bucket_order": BUCKET_FRAME_BUCKET_ORDER,
                 "ordered_steps": bucket_frame_order,
-                "limitations": SIGNOFF_RUN_SPECS[0]["limitations"],
+                "limitations": signoff_spec_by_run_id["bucket_frame_native_sv"]["limitations"],
             },
             "all_buckets_frame": {
                 "run_id": "all_buckets_frame_native_sv",
                 "bucket_order": BUCKET_FRAME_BUCKET_ORDER,
                 "ordered_steps": bucket_frame_order,
                 "extra_tail_steps": ALL_BUCKETS_FRAME_EXTRA_TAIL,
-                "limitations": SIGNOFF_RUN_SPECS[1]["limitations"],
+                "limitations": signoff_spec_by_run_id["all_buckets_frame_native_sv"]["limitations"],
+            },
+            "mixed_bucket_random_soak": {
+                "run_id": "mixed_bucket_random_soak_native_sv",
+                "bucket_order": ["CROSS"],
+                "ordered_steps": mixed_bucket_random_soak_order,
+                "limitations": signoff_spec_by_run_id["mixed_bucket_random_soak_native_sv"]["limitations"],
+            },
+            "error_counter_clear": {
+                "run_id": "error_counter_clear_native_sv",
+                "bucket_order": ["ERROR"],
+                "ordered_steps": error_counter_clear_order,
+                "limitations": signoff_spec_by_run_id["error_counter_clear_native_sv"]["limitations"],
+            },
+            "error_ftable_overflow_depth512": {
+                "run_id": "error_ftable_overflow_depth512_native_sv",
+                "bucket_order": ["ERROR"],
+                "ordered_steps": error_ftable_overflow_order,
+                "limitations": signoff_spec_by_run_id["error_ftable_overflow_depth512_native_sv"]["limitations"],
             },
         },
         "cases": all_cases,

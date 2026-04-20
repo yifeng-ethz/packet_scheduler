@@ -61,7 +61,7 @@ Execution order frozen on 2026-04-18 for the next closure phase:
 - [x] Write the explicit non-claims in `DV_REPORT.json` / `DV_COV.md` so the
       dashboard does not imply closure on unsupported sweeps.
       Status: both generated top-level pages now surface signoff scope,
-      exclusions, and current continuous-frame non-claims directly from JSON.
+      exclusions, and current signoff-run non-claims directly from JSON.
 - [ ] Record the post-signoff parameter-expansion phase explicitly:
       - future synthesis target family is `online_sc/a10_board`
       - future lane sweep must cover `OPQ_N_LANE={2,4,8,16}`
@@ -192,6 +192,21 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       `REPORT/cross/`.
 - [x] Link the continuous-frame baselines from both `DV_COV.md` and
       `DV_REPORT.md`.
+- [x] Promote the remaining passing supplemental screens into first-class
+      signoff runs instead of leaving them as isolated evidence only.
+      Status on `2026-04-20`:
+      - `run_frame_signoff.sh` now refreshes the fixed bucket-frame baselines
+        plus three supplemental signoff runs:
+        `opq_cross_mixed_bucket_random_soak_test`,
+        `opq_error_counter_clear_test`, and
+        `opq_error_ftable_overflow_test`
+      - the generated dashboard now gives each of those screens its own
+        `REPORT/cross/*.md` page and keeps the fixed baselines explicit about
+        their limited default-build scope
+      - the fresh reduced-depth overflow rerun reopened
+        `opq_hit3_contract` frame-trailer/pkg_cnt/timestamp errors, so only
+        the mixed-soak and counter-clear supplemental screens are currently
+        green
 
 ## 7. Add Random-Test Transaction-Growth Evidence
 
@@ -209,8 +224,8 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       is generated and linked from `REPORT/txn_growth/README.md`.
 - [x] Add an earlier extended mixed-bucket random soak run to the live closure
       flow so long chained no-restart bugs are exercised before final signoff
-      report freeze, and keep it tracked as isolated-only evidence rather than
-      silently folding it into the fixed no-restart baseline.
+      report freeze, and keep it tracked as a supplemental signoff run rather
+      than silently folding it into the fixed no-restart baseline.
       Status refreshed on `2026-04-19`:
       - implemented as `opq_cross_mixed_bucket_seconds_soak_test`
       - canonical bug-hunt config uses `+TB_CLK_PERIOD_NS=250`
@@ -236,14 +251,17 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       - 4-lane scope statement remains the only active out-of-scope parameter /
         lane non-claim until native-SV 4-lane DV evidence is live; standalone
         A10 synthesis evidence is already closed
-- [x] Resolve the forced-overwrite / malformed-egress bug before promoting
+- [ ] Resolve the forced-overwrite / malformed-egress bug before promoting
       `opq_error_ftable_overflow_test`.
-      Status: the reduced-depth `OPQ_PAGE_RAM_DEPTH=512` native-SV overflow
-      repro now passes cleanly with non-zero `FT_DROP_*` accounting and no
-      malformed accepted egress. The testcase is promoted as isolated-only
-      ERROR evidence because it requires a separate reduced-depth elaboration
-      point and is therefore still excluded from the fixed no-restart
-      baselines.
+      Status refreshed on `2026-04-20`:
+      - the dedicated reduced-depth supplemental signoff plumbing is now in
+        place, but the fresh rerun is not clean
+      - `opq_error_ftable_overflow_test` now reopens
+        `opq_hit3_contract` frame-trailer/pkg_cnt/timestamp errors on accepted
+        egress
+      - keep the testcase outside the fixed no-restart baselines and do not
+        treat the reduced-depth point as closed until that accepted-egress
+        contract failure is debugged again
 - [ ] Refresh the larger bursty DRR random closure path before promoting
       `opq_cross_drr_bursty_random_test`.
       Status on `2026-04-20`:
@@ -278,8 +296,9 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       - clean native-SV reruns now close the expanded isolated buckets plus
         `opq_bucket_frame_native_sv_test` and
         `opq_all_buckets_frame_native_sv_test`
-      - regenerated report totals now record `promoted_signoff_cases=46` and
-        `evidenced_promoted_cases=46`
+      - after the fresh reduced-depth overflow rerun and the report pass/fail
+        fix, regenerated totals now record `promoted_signoff_cases=46` and
+        `evidenced_promoted_cases=45`
 - [x] Resolve the chained malformed-header recovery corruption before
       promoting `opq_error_header_mask_recovery_test` and
       `opq_error_header_word_mask_recovery_test`.

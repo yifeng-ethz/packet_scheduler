@@ -271,7 +271,9 @@
     },
     "unsupported": {}
   },
-  "failed_cases": [],
+  "failed_cases": [
+    "CORNER_OPQ_409_error_ftable_overflow_test"
+  ],
   "catalog_inventory": {
     "BASIC": {
       "count": 146,
@@ -320,7 +322,7 @@
     "four_lane_status": "4-lane native-SV remains out of signoff scope until dedicated 4-lane DV evidence is promoted; the standalone Arria 10 synthesis result is now recorded separately in signoff",
     "bursty_drr_probe_status": "the focused bursty DRR reproducer is green, but the refreshed larger constrained-random rerun on 2026-04-20 still fails with lane0 unexplained=368 and hit-integrity summary expected=852 actual=622 missing=368 ghost=138; the screen remains probe-only",
     "mixed_bucket_seconds_probe_status": "the exact 183..190 reproducer is green, and the full stretched mixed-bucket seconds soak now also passes end to end on the repaired allocator state; the screen remains probe-only because of runtime, not because of a live failure",
-    "continuous_frame_scope": "continuous-frame baselines currently cover the default-build promoted matrix only; PARAM build points and the reduced-depth overflow point require separate elaboration and are excluded from no-restart baselines"
+    "continuous_frame_scope": "fixed bucket-frame baselines cover the default-build promoted matrix only; dedicated supplemental signoff runs now track mixed-bucket random soak, counter-clear semantics, and the reduced-depth overflow build point, while PARAM elaboration points still remain separate"
   },
   "execution_modes": {
     "isolated": {
@@ -591,9 +593,9 @@
       ],
       "limitations": [
         "PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.",
-        "opq_error_ftable_overflow_test is isolated-only evidence because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration.",
-        "opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow.",
-        "opq_cross_mixed_bucket_random_soak_test is isolated-only evidence; it intentionally randomizes across buckets rather than serving as the fixed promoted no-restart baseline."
+        "opq_cross_mixed_bucket_random_soak_test is tracked as a dedicated supplemental signoff run; this fixed baseline remains case-ordered and deterministic.",
+        "opq_error_counter_clear_test is tracked as a dedicated supplemental signoff run because it intentionally clears live CSR counters mid-run.",
+        "opq_error_ftable_overflow_test is tracked as a dedicated supplemental signoff run because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration."
       ]
     },
     "all_buckets_frame": {
@@ -806,10 +808,61 @@
       ],
       "limitations": [
         "PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.",
-        "opq_error_ftable_overflow_test is isolated-only evidence because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration.",
-        "opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow.",
-        "opq_cross_mixed_bucket_random_soak_test is isolated-only evidence; it intentionally randomizes across buckets rather than serving as the fixed promoted no-restart baseline.",
+        "opq_cross_mixed_bucket_random_soak_test is tracked as a dedicated supplemental signoff run; this fixed baseline remains case-ordered and deterministic.",
+        "opq_error_counter_clear_test is tracked as a dedicated supplemental signoff run because it intentionally clears live CSR counters mid-run.",
+        "opq_error_ftable_overflow_test is tracked as a dedicated supplemental signoff run because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration.",
         "This run appends two extra tail sequences after the 37 promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases."
+      ]
+    },
+    "mixed_bucket_random_soak": {
+      "run_id": "mixed_bucket_random_soak_native_sv",
+      "bucket_order": [
+        "CROSS"
+      ],
+      "ordered_steps": [
+        {
+          "bucket": "CROSS",
+          "report_case_id": "COMBO_OPQ_507_cross_mixed_bucket_random_soak_test",
+          "legacy_test_name": "opq_cross_mixed_bucket_random_soak_test"
+        }
+      ],
+      "limitations": [
+        "This is a supplemental signoff run, not the fixed bucket-frame baseline; execution order is intentionally seed-driven rather than case-id ordered.",
+        "The run reuses only already-promoted safe bucket slices so it can stress chained no-restart behavior without reopening known probe-only bursty DRR loss."
+      ]
+    },
+    "error_counter_clear": {
+      "run_id": "error_counter_clear_native_sv",
+      "bucket_order": [
+        "ERROR"
+      ],
+      "ordered_steps": [
+        {
+          "bucket": "ERROR",
+          "report_case_id": "CORNER_OPQ_408_error_counter_clear_test",
+          "legacy_test_name": "opq_error_counter_clear_test"
+        }
+      ],
+      "limitations": [
+        "This is a supplemental signoff run that validates CSR zeroization semantics after masked-drop traffic.",
+        "The testcase intentionally clears live counters before end-of-run reporting, so it is tracked outside the fixed bucket-frame baselines."
+      ]
+    },
+    "error_ftable_overflow_depth512": {
+      "run_id": "error_ftable_overflow_depth512_native_sv",
+      "bucket_order": [
+        "ERROR"
+      ],
+      "ordered_steps": [
+        {
+          "bucket": "ERROR",
+          "report_case_id": "CORNER_OPQ_409_error_ftable_overflow_test",
+          "legacy_test_name": "opq_error_ftable_overflow_test"
+        }
+      ],
+      "limitations": [
+        "This is a supplemental signoff run that intentionally uses OPQ_PAGE_RAM_DEPTH=512 to force the overwrite / frame-table-drop path.",
+        "Because it requires a separate elaboration point, it cannot be folded into the fixed default-build no-restart baselines."
       ]
     }
   },
@@ -6977,7 +7030,7 @@
       "test_name": "opq_error_ftable_overflow_test",
       "report_case_id": "CORNER_OPQ_409_error_ftable_overflow_test",
       "implemented": true,
-      "passed": true,
+      "passed": false,
       "log_summary": {
         "cg_cfg": 49.4,
         "cg_frame": 63.33,
@@ -7044,71 +7097,71 @@
       },
       "bucket_gain_by_case": {
         "branch": {
-          "pct": 1.91
+          "pct": 0.0
         },
         "cond": {
-          "pct": 3.4
+          "pct": 0.0
         },
         "expr": {
-          "pct": 4.17
+          "pct": 0.0
         },
         "fsm_state": {
-          "pct": 2.27
+          "pct": 0.0
         },
         "fsm_trans": {
-          "pct": 2.0
+          "pct": 0.0
         },
         "stmt": {
-          "pct": 3.57
+          "pct": 0.0
         },
         "toggle": {
-          "pct": 7.14
+          "pct": 0.0
         }
       },
       "bucket_merged_total_after_case": {
         "branch": {
-          "pct": 76.57
+          "pct": 74.66
         },
         "cond": {
-          "pct": 46.74
+          "pct": 43.34
         },
         "expr": {
-          "pct": 69.79
+          "pct": 65.62
         },
         "fsm_state": {
-          "pct": 95.45
+          "pct": 93.18
         },
         "fsm_trans": {
-          "pct": 58.0
+          "pct": 56.0
         },
         "stmt": {
-          "pct": 82.87
+          "pct": 79.3
         },
         "toggle": {
-          "pct": 34.1
+          "pct": 26.96
         }
       },
       "bucket_gain_per_txn": {
         "branch": {
-          "pct": 1.91
+          "pct": 0.0
         },
         "cond": {
-          "pct": 3.4
+          "pct": 0.0
         },
         "expr": {
-          "pct": 4.17
+          "pct": 0.0
         },
         "fsm_state": {
-          "pct": 2.27
+          "pct": 0.0
         },
         "fsm_trans": {
-          "pct": 2.0
+          "pct": 0.0
         },
         "stmt": {
-          "pct": 3.57
+          "pct": 0.0
         },
         "toggle": {
-          "pct": 7.14
+          "pct": 0.0
         }
       }
     },
@@ -8133,59 +8186,59 @@
       },
       "standalone_coverage": {
         "branch": {
-          "pct": 76.61
+          "pct": 79.02
         },
         "cond": {
-          "pct": 57.67
+          "pct": 54.67
         },
         "expr": {
-          "pct": 92.73
+          "pct": 77.08
         },
         "fsm_state": {
-          "pct": 88.57
+          "pct": 90.91
         },
         "fsm_trans": {
-          "pct": 46.25
+          "pct": 48.0
         },
         "stmt": {
-          "pct": 87.3
+          "pct": 82.4
         },
         "toggle": {
-          "pct": 63.26
+          "pct": 45.23
         }
       },
       "isolated_cov_per_txn": {
         "branch": {
-          "pct": 0.5985
+          "pct": 0.6173
         },
         "cond": {
-          "pct": 0.4505
+          "pct": 0.4271
         },
         "expr": {
-          "pct": 0.7245
+          "pct": 0.6022
         },
         "fsm_state": {
-          "pct": 0.692
+          "pct": 0.7102
         },
         "fsm_trans": {
-          "pct": 0.3613
+          "pct": 0.375
         },
         "stmt": {
-          "pct": 0.682
+          "pct": 0.6438
         },
         "toggle": {
-          "pct": 0.4942
+          "pct": 0.3534
         }
       },
       "bucket_gain_by_case": {
         "branch": {
-          "pct": 3.22
+          "pct": 0.13
         },
         "cond": {
-          "pct": 6.08
+          "pct": 1.1
         },
         "expr": {
-          "pct": 12.73
+          "pct": 0.0
         },
         "fsm_state": {
           "pct": 0.0
@@ -8194,44 +8247,44 @@
           "pct": 0.0
         },
         "stmt": {
-          "pct": 2.26
+          "pct": 0.0
         },
         "toggle": {
-          "pct": 12.88
+          "pct": 0.0
         }
       },
       "bucket_merged_total_after_case": {
         "branch": {
-          "pct": 75.73
+          "pct": 72.64
         },
         "cond": {
-          "pct": 54.76
+          "pct": 49.78
         },
         "expr": {
-          "pct": 81.82
+          "pct": 66.67
         },
         "fsm_state": {
-          "pct": 88.57
+          "pct": 85.71
         },
         "fsm_trans": {
-          "pct": 46.25
+          "pct": 43.62
         },
         "stmt": {
-          "pct": 86.65
+          "pct": 81.54
         },
         "toggle": {
-          "pct": 64.1
+          "pct": 45.76
         }
       },
       "bucket_gain_per_txn": {
         "branch": {
-          "pct": 0.0252
+          "pct": 0.001
         },
         "cond": {
-          "pct": 0.0475
+          "pct": 0.0086
         },
         "expr": {
-          "pct": 0.0995
+          "pct": 0.0
         },
         "fsm_state": {
           "pct": 0.0
@@ -8240,10 +8293,10 @@
           "pct": 0.0
         },
         "stmt": {
-          "pct": 0.0177
+          "pct": 0.0
         },
         "toggle": {
-          "pct": 0.1006
+          "pct": 0.0
         }
       }
     }
@@ -8539,16 +8592,39 @@
       "catalog_source": "legacy/tb/DV_ERROR.md",
       "catalog_summary": "Archived directed ERROR catalog preserved in tb/legacy/tb/DV_ERROR.md.",
       "promoted_cases": 9,
-      "evidenced_cases": 9,
+      "evidenced_cases": 8,
       "merged_bucket_total": {
         "branch": {
-          "pct": 76.57
+          "pct": 74.66
         },
         "cond": {
-          "pct": 46.74
+          "pct": 43.34
         },
         "expr": {
-          "pct": 69.79
+          "pct": 65.62
+        },
+        "fsm_state": {
+          "pct": 93.18
+        },
+        "fsm_trans": {
+          "pct": 56.0
+        },
+        "stmt": {
+          "pct": 79.3
+        },
+        "toggle": {
+          "pct": 26.96
+        }
+      },
+      "merged_all_buckets_total_after_bucket": {
+        "branch": {
+          "pct": 78.33
+        },
+        "cond": {
+          "pct": 50.0
+        },
+        "expr": {
+          "pct": 65.38
         },
         "fsm_state": {
           "pct": 95.45
@@ -8557,38 +8633,15 @@
           "pct": 58.0
         },
         "stmt": {
-          "pct": 82.87
+          "pct": 81.91
         },
         "toggle": {
-          "pct": 34.1
-        }
-      },
-      "merged_all_buckets_total_after_bucket": {
-        "branch": {
-          "pct": 79.97
-        },
-        "cond": {
-          "pct": 53.06
-        },
-        "expr": {
-          "pct": 69.23
-        },
-        "fsm_state": {
-          "pct": 97.73
-        },
-        "fsm_trans": {
-          "pct": 60.0
-        },
-        "stmt": {
-          "pct": 85.25
-        },
-        "toggle": {
-          "pct": 39.71
+          "pct": 38.55
         }
       },
       "functional_coverage": {
-        "pct": 71.74,
-        "evidenced": 9,
+        "pct": 63.25,
+        "evidenced": 8,
         "planned": 9
       },
       "ordered_case_ids": [
@@ -8614,52 +8667,52 @@
       "evidenced_cases": 7,
       "merged_bucket_total": {
         "branch": {
-          "pct": 75.73
+          "pct": 72.64
         },
         "cond": {
-          "pct": 54.76
+          "pct": 49.78
         },
         "expr": {
-          "pct": 81.82
+          "pct": 66.67
         },
         "fsm_state": {
-          "pct": 88.57
+          "pct": 85.71
         },
         "fsm_trans": {
-          "pct": 46.25
+          "pct": 43.62
         },
         "stmt": {
-          "pct": 86.65
+          "pct": 81.54
         },
         "toggle": {
-          "pct": 64.1
+          "pct": 45.76
         }
       },
       "merged_all_buckets_total_after_bucket": {
         "branch": {
-          "pct": 79.52
+          "pct": 80.83
         },
         "cond": {
-          "pct": 52.6
+          "pct": 55.34
         },
         "expr": {
           "pct": 69.64
         },
         "fsm_state": {
-          "pct": 97.73
+          "pct": 95.45
         },
         "fsm_trans": {
-          "pct": 60.0
+          "pct": 58.0
         },
         "stmt": {
-          "pct": 85.25
+          "pct": 83.73
         },
         "toggle": {
-          "pct": 44.31
+          "pct": 46.48
         }
       },
       "functional_coverage": {
-        "pct": 77.51,
+        "pct": 77.81,
         "evidenced": 7,
         "planned": 7
       },
@@ -14614,33 +14667,33 @@
       "catalog_source": "legacy/tb/DV_ERROR.md",
       "catalog_summary": "Archived directed ERROR catalog preserved in tb/legacy/tb/DV_ERROR.md.",
       "promoted_cases": 9,
-      "evidenced_cases": 9,
+      "evidenced_cases": 8,
       "merged_bucket_total": {
         "branch": {
-          "pct": 76.57
+          "pct": 74.66
         },
         "cond": {
-          "pct": 46.74
+          "pct": 43.34
         },
         "expr": {
-          "pct": 69.79
+          "pct": 65.62
         },
         "fsm_state": {
-          "pct": 95.45
+          "pct": 93.18
         },
         "fsm_trans": {
-          "pct": 58.0
+          "pct": 56.0
         },
         "stmt": {
-          "pct": 82.87
+          "pct": 79.3
         },
         "toggle": {
-          "pct": 34.1
+          "pct": 26.96
         }
       },
       "functional_coverage": {
-        "pct": 71.74,
-        "evidenced": 9,
+        "pct": 63.25,
+        "evidenced": 8,
         "planned": 9
       },
       "merge_trace": [
@@ -14873,35 +14926,6 @@
             },
             "toggle": {
               "pct": 26.96
-            }
-          }
-        },
-        {
-          "step": 9,
-          "case_id": "CORNER_OPQ_409_error_ftable_overflow_test",
-          "full_case_id": "CORNER_OPQ_409_error_ftable_overflow_test",
-          "legacy_test_name": "opq_error_ftable_overflow_test",
-          "merged_total_after_case": {
-            "branch": {
-              "pct": 76.57
-            },
-            "cond": {
-              "pct": 46.74
-            },
-            "expr": {
-              "pct": 69.79
-            },
-            "fsm_state": {
-              "pct": 95.45
-            },
-            "fsm_trans": {
-              "pct": 58.0
-            },
-            "stmt": {
-              "pct": 82.87
-            },
-            "toggle": {
-              "pct": 34.1
             }
           }
         }
@@ -16221,7 +16245,7 @@
           "test_name": "opq_error_ftable_overflow_test",
           "report_case_id": "CORNER_OPQ_409_error_ftable_overflow_test",
           "implemented": true,
-          "passed": true,
+          "passed": false,
           "log_summary": {
             "cg_cfg": 49.4,
             "cg_frame": 63.33,
@@ -16288,71 +16312,71 @@
           },
           "bucket_gain_by_case": {
             "branch": {
-              "pct": 1.91
+              "pct": 0.0
             },
             "cond": {
-              "pct": 3.4
+              "pct": 0.0
             },
             "expr": {
-              "pct": 4.17
+              "pct": 0.0
             },
             "fsm_state": {
-              "pct": 2.27
+              "pct": 0.0
             },
             "fsm_trans": {
-              "pct": 2.0
+              "pct": 0.0
             },
             "stmt": {
-              "pct": 3.57
+              "pct": 0.0
             },
             "toggle": {
-              "pct": 7.14
+              "pct": 0.0
             }
           },
           "bucket_merged_total_after_case": {
             "branch": {
-              "pct": 76.57
+              "pct": 74.66
             },
             "cond": {
-              "pct": 46.74
+              "pct": 43.34
             },
             "expr": {
-              "pct": 69.79
+              "pct": 65.62
             },
             "fsm_state": {
-              "pct": 95.45
+              "pct": 93.18
             },
             "fsm_trans": {
-              "pct": 58.0
+              "pct": 56.0
             },
             "stmt": {
-              "pct": 82.87
+              "pct": 79.3
             },
             "toggle": {
-              "pct": 34.1
+              "pct": 26.96
             }
           },
           "bucket_gain_per_txn": {
             "branch": {
-              "pct": 1.91
+              "pct": 0.0
             },
             "cond": {
-              "pct": 3.4
+              "pct": 0.0
             },
             "expr": {
-              "pct": 4.17
+              "pct": 0.0
             },
             "fsm_state": {
-              "pct": 2.27
+              "pct": 0.0
             },
             "fsm_trans": {
-              "pct": 2.0
+              "pct": 0.0
             },
             "stmt": {
-              "pct": 3.57
+              "pct": 0.0
             },
             "toggle": {
-              "pct": 7.14
+              "pct": 0.0
             }
           }
         }
@@ -16368,29 +16392,29 @@
       "evidenced_cases": 7,
       "merged_bucket_total": {
         "branch": {
-          "pct": 75.73
+          "pct": 72.64
         },
         "cond": {
-          "pct": 54.76
+          "pct": 49.78
         },
         "expr": {
-          "pct": 81.82
+          "pct": 66.67
         },
         "fsm_state": {
-          "pct": 88.57
+          "pct": 85.71
         },
         "fsm_trans": {
-          "pct": 46.25
+          "pct": 43.62
         },
         "stmt": {
-          "pct": 86.65
+          "pct": 81.54
         },
         "toggle": {
-          "pct": 64.1
+          "pct": 45.76
         }
       },
       "functional_coverage": {
-        "pct": 77.51,
+        "pct": 77.81,
         "evidenced": 7,
         "planned": 7
       },
@@ -16576,25 +16600,25 @@
           "legacy_test_name": "opq_cross_mixed_bucket_random_soak_test",
           "merged_total_after_case": {
             "branch": {
-              "pct": 75.73
+              "pct": 72.64
             },
             "cond": {
-              "pct": 54.76
+              "pct": 49.78
             },
             "expr": {
-              "pct": 81.82
+              "pct": 66.67
             },
             "fsm_state": {
-              "pct": 88.57
+              "pct": 85.71
             },
             "fsm_trans": {
-              "pct": 46.25
+              "pct": 43.62
             },
             "stmt": {
-              "pct": 86.65
+              "pct": 81.54
             },
             "toggle": {
-              "pct": 64.1
+              "pct": 45.76
             }
           }
         }
@@ -17630,59 +17654,59 @@
           },
           "standalone_coverage": {
             "branch": {
-              "pct": 76.61
+              "pct": 79.02
             },
             "cond": {
-              "pct": 57.67
+              "pct": 54.67
             },
             "expr": {
-              "pct": 92.73
+              "pct": 77.08
             },
             "fsm_state": {
-              "pct": 88.57
+              "pct": 90.91
             },
             "fsm_trans": {
-              "pct": 46.25
+              "pct": 48.0
             },
             "stmt": {
-              "pct": 87.3
+              "pct": 82.4
             },
             "toggle": {
-              "pct": 63.26
+              "pct": 45.23
             }
           },
           "isolated_cov_per_txn": {
             "branch": {
-              "pct": 0.5985
+              "pct": 0.6173
             },
             "cond": {
-              "pct": 0.4505
+              "pct": 0.4271
             },
             "expr": {
-              "pct": 0.7245
+              "pct": 0.6022
             },
             "fsm_state": {
-              "pct": 0.692
+              "pct": 0.7102
             },
             "fsm_trans": {
-              "pct": 0.3613
+              "pct": 0.375
             },
             "stmt": {
-              "pct": 0.682
+              "pct": 0.6438
             },
             "toggle": {
-              "pct": 0.4942
+              "pct": 0.3534
             }
           },
           "bucket_gain_by_case": {
             "branch": {
-              "pct": 3.22
+              "pct": 0.13
             },
             "cond": {
-              "pct": 6.08
+              "pct": 1.1
             },
             "expr": {
-              "pct": 12.73
+              "pct": 0.0
             },
             "fsm_state": {
               "pct": 0.0
@@ -17691,44 +17715,44 @@
               "pct": 0.0
             },
             "stmt": {
-              "pct": 2.26
+              "pct": 0.0
             },
             "toggle": {
-              "pct": 12.88
+              "pct": 0.0
             }
           },
           "bucket_merged_total_after_case": {
             "branch": {
-              "pct": 75.73
+              "pct": 72.64
             },
             "cond": {
-              "pct": 54.76
+              "pct": 49.78
             },
             "expr": {
-              "pct": 81.82
+              "pct": 66.67
             },
             "fsm_state": {
-              "pct": 88.57
+              "pct": 85.71
             },
             "fsm_trans": {
-              "pct": 46.25
+              "pct": 43.62
             },
             "stmt": {
-              "pct": 86.65
+              "pct": 81.54
             },
             "toggle": {
-              "pct": 64.1
+              "pct": 45.76
             }
           },
           "bucket_gain_per_txn": {
             "branch": {
-              "pct": 0.0252
+              "pct": 0.001
             },
             "cond": {
-              "pct": 0.0475
+              "pct": 0.0086
             },
             "expr": {
-              "pct": 0.0995
+              "pct": 0.0
             },
             "fsm_state": {
               "pct": 0.0
@@ -17737,10 +17761,10 @@
               "pct": 0.0
             },
             "stmt": {
-              "pct": 0.0177
+              "pct": 0.0
             },
             "toggle": {
-              "pct": 0.1006
+              "pct": 0.0
             }
           }
         }
@@ -17761,13 +17785,13 @@
           "/tb_top/gen_dut_2lane/dut/u_native/g_ingress_parser[1]/ingress_parser_i"
         ],
         "metrics": {
-          "branch": 74.46,
+          "branch": 75.53,
           "cond": 32.5,
-          "expr": 57.14,
+          "expr": 100.0,
           "fsm_state": 100.0,
           "fsm_trans": 66.66,
-          "stmt": 76.4,
-          "toggle": 48.93
+          "stmt": 76.96,
+          "toggle": 51.76
         }
       }
     },
@@ -17784,21 +17808,21 @@
           "/tb_top/gen_dut_2lane/dut/u_native/block_path_i"
         ],
         "metrics": {
-          "branch": 80.2,
-          "cond": 56.0,
+          "branch": 86.38,
+          "cond": 60.0,
           "expr": 88.88,
           "fsm_state": 100.0,
           "fsm_trans": 56.66,
-          "stmt": 88.82,
-          "toggle": 37.63
+          "stmt": 92.03,
+          "toggle": 42.21
         }
       }
     },
     {
       "area": "Presenter flush/backpressure hybrids",
       "classification": "needs-new-test",
-      "reason": "The reduced-depth overwrite repro is now green in isolation, but the promoted suite still lacks a directed hybrid that couples flush pressure with legal backpressure windows over a default-build runtime.",
-      "evidence_anchor": "ordered_priority_queue_monolithic_basic_presenter.sv:128-145, 165-188; DV_FORMAL.md B27/B28; CORNER_OPQ_407_error_ftable_overflow_test",
+      "reason": "The reduced-depth overwrite screen is now wired into the supplemental signoff flow, but the fresh 2026-04-20 rerun reopened accepted-egress contract errors and the promoted suite still lacks a directed hybrid that couples flush pressure with legal backpressure windows over a default-build runtime.",
+      "evidence_anchor": "ordered_priority_queue_monolithic_basic_presenter.sv:128-145, 165-188; DV_FORMAL.md B27/B28; CORNER_OPQ_409_error_ftable_overflow_test",
       "next_action": "Add the directed backpressure-plus-flush hybrid testcase and use it to raise presenter transition and toggle coverage.",
       "instance_summary": {
         "instance_count": 1,
@@ -17806,7 +17830,7 @@
           "/tb_top/gen_dut_2lane/dut/u_native/presenter_i"
         ],
         "metrics": {
-          "toggle": 66.01
+          "toggle": 57.48
         }
       }
     },
@@ -17814,7 +17838,7 @@
       "area": "Native wrapper fixed-scope decode paths",
       "classification": "justified exclusion",
       "reason": "A large part of the wrapper hole count comes from fixed-scope native-SV configuration, dormant CSR decode/default branches, and status/meta observability that are outside the active 2-lane signoff claim.",
-      "evidence_anchor": "ordered_priority_queue_dut_sv.sv:227-245, 268-337, 494-505; DV_REPORT non-claims for OPQ_N_LANE=2 and reduced-depth isolated points",
+      "evidence_anchor": "ordered_priority_queue_dut_sv.sv:227-245, 268-337, 494-505; DV_REPORT non-claims for OPQ_N_LANE=2 and the reduced-depth supplemental overflow point",
       "next_action": "Keep the wrapper holes documented as non-claims unless a dedicated CSR decode sweep becomes a signoff requirement.",
       "instance_summary": {
         "instance_count": 2,
@@ -17823,11 +17847,11 @@
           "/tb_top/gen_dut_2lane/dut"
         ],
         "metrics": {
-          "branch": 75.29,
-          "cond": 50.0,
-          "expr": 58.69,
-          "stmt": 84.44,
-          "toggle": 26.73
+          "branch": 77.68,
+          "cond": 60.52,
+          "expr": 54.34,
+          "stmt": 86.66,
+          "toggle": 29.61
         }
       }
     },
@@ -17850,9 +17874,9 @@
         ],
         "metrics": {
           "branch": 100.0,
-          "cond": 50.0,
+          "cond": 100.0,
           "stmt": 100.0,
-          "toggle": 46.93
+          "toggle": 50.34
         }
       }
     }
@@ -17862,34 +17886,34 @@
     "catalog_planned_cases": 993,
     "catalog_pending_cases": 947,
     "promoted_cases": 46,
-    "evidenced_cases": 46,
+    "evidenced_cases": 45,
     "excluded_cases": 1,
     "merged_total_code_coverage": {
       "branch": {
-        "pct": 79.52
+        "pct": 80.83
       },
       "cond": {
-        "pct": 52.6
+        "pct": 55.34
       },
       "expr": {
         "pct": 69.64
       },
       "fsm_state": {
-        "pct": 97.73
+        "pct": 95.45
       },
       "fsm_trans": {
-        "pct": 60.0
+        "pct": 58.0
       },
       "stmt": {
-        "pct": 85.25
+        "pct": 83.73
       },
       "toggle": {
-        "pct": 44.31
+        "pct": 46.48
       }
     },
     "functional_coverage": {
-      "pct": 91.2,
-      "evidenced": 46,
+      "pct": 90.04,
+      "evidenced": 45,
       "planned": 46
     }
   },
@@ -17907,9 +17931,9 @@
       "payload_cap": null,
       "limitations": [
         "PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.",
-        "opq_error_ftable_overflow_test is isolated-only evidence because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration.",
-        "opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow.",
-        "opq_cross_mixed_bucket_random_soak_test is isolated-only evidence; it intentionally randomizes across buckets rather than serving as the fixed promoted no-restart baseline."
+        "opq_cross_mixed_bucket_random_soak_test is tracked as a dedicated supplemental signoff run; this fixed baseline remains case-ordered and deterministic.",
+        "opq_error_counter_clear_test is tracked as a dedicated supplemental signoff run because it intentionally clears live CSR counters mid-run.",
+        "opq_error_ftable_overflow_test is tracked as a dedicated supplemental signoff run because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration."
       ],
       "implemented": true,
       "passed": true,
@@ -17980,9 +18004,9 @@
       "payload_cap": null,
       "limitations": [
         "PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.",
-        "opq_error_ftable_overflow_test is isolated-only evidence because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration.",
-        "opq_error_counter_clear_test is excluded from the current no-restart baseline because runtime counter-clear state handoff is not yet modeled in the composed scoreboard flow.",
-        "opq_cross_mixed_bucket_random_soak_test is isolated-only evidence; it intentionally randomizes across buckets rather than serving as the fixed promoted no-restart baseline.",
+        "opq_cross_mixed_bucket_random_soak_test is tracked as a dedicated supplemental signoff run; this fixed baseline remains case-ordered and deterministic.",
+        "opq_error_counter_clear_test is tracked as a dedicated supplemental signoff run because it intentionally clears live CSR counters mid-run.",
+        "opq_error_ftable_overflow_test is tracked as a dedicated supplemental signoff run because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration.",
         "This run appends two extra tail sequences after the 37 promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases."
       ],
       "implemented": true,
@@ -18040,6 +18064,212 @@
         "lane1_orphan_beats": 0,
         "lane1_capture_err": 1
       }
+    },
+    {
+      "run_id": "mixed_bucket_random_soak_native_sv",
+      "test_name": "opq_cross_mixed_bucket_random_soak_test",
+      "kind": "mixed_bucket_random_soak",
+      "build_tag": "native_sv",
+      "bucket": "CROSS",
+      "sequence_name": "OPQ_MIXED_BUCKET_RANDOM_SOAK",
+      "case_count": 1,
+      "effort": "practical",
+      "iter_cap": null,
+      "payload_cap": null,
+      "limitations": [
+        "This is a supplemental signoff run, not the fixed bucket-frame baseline; execution order is intentionally seed-driven rather than case-id ordered.",
+        "The run reuses only already-promoted safe bucket slices so it can stress chained no-restart behavior without reopening known probe-only bursty DRR loss."
+      ],
+      "implemented": true,
+      "passed": true,
+      "code_coverage": {
+        "branch": {
+          "pct": 79.02
+        },
+        "cond": {
+          "pct": 54.67
+        },
+        "expr": {
+          "pct": 77.08
+        },
+        "fsm_state": {
+          "pct": 90.91
+        },
+        "fsm_trans": {
+          "pct": 48.0
+        },
+        "stmt": {
+          "pct": 82.4
+        },
+        "toggle": {
+          "pct": 45.23
+        }
+      },
+      "cross_summary": {
+        "pct": 70.96,
+        "txns": 1160,
+        "queued_overlap": 0,
+        "counter_checks_failed": 0,
+        "unexpected_outputs": 0,
+        "curve": ""
+      },
+      "log_summary": {
+        "hit_expected": 14327,
+        "hit_actual": 14327,
+        "hit_missing": 0,
+        "hit_ghost": 0,
+        "cg_cfg": 49.4,
+        "cg_frame": 90.0,
+        "cg_subh": 80.56,
+        "cg_bp": 45.0,
+        "cg_csr": 95.24,
+        "cg_credit": 46.67,
+        "cg_drop": 62.5,
+        "cg_drr": 40.33,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 580,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 580,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0,
+        "random_txn": 128
+      }
+    },
+    {
+      "run_id": "error_counter_clear_native_sv",
+      "test_name": "opq_error_counter_clear_test",
+      "kind": "error_counter_clear",
+      "build_tag": "native_sv",
+      "bucket": "ERROR",
+      "sequence_name": "OPQ_ERROR_COUNTER_CLEAR",
+      "case_count": 1,
+      "effort": "practical",
+      "iter_cap": null,
+      "payload_cap": null,
+      "limitations": [
+        "This is a supplemental signoff run that validates CSR zeroization semantics after masked-drop traffic.",
+        "The testcase intentionally clears live counters before end-of-run reporting, so it is tracked outside the fixed bucket-frame baselines."
+      ],
+      "implemented": true,
+      "passed": true,
+      "code_coverage": {
+        "branch": {
+          "pct": 33.11
+        },
+        "cond": {
+          "pct": 8.5
+        },
+        "expr": {
+          "pct": 18.75
+        },
+        "fsm_state": {
+          "pct": 29.55
+        },
+        "fsm_trans": {
+          "pct": 5.0
+        },
+        "stmt": {
+          "pct": 47.84
+        },
+        "toggle": {
+          "pct": 4.15
+        }
+      },
+      "cross_summary": {
+        "pct": 38.3,
+        "txns": 2,
+        "queued_overlap": 0,
+        "counter_checks_failed": 0,
+        "unexpected_outputs": 0,
+        "curve": ""
+      },
+      "log_summary": {
+        "cg_cfg": 49.4,
+        "cg_frame": 41.67,
+        "cg_subh": 15.28,
+        "cg_bp": 0.0,
+        "cg_csr": 81.43,
+        "cg_credit": 46.67,
+        "cg_drop": 48.61,
+        "cg_drr": 0.0,
+        "cg_ingress": 100.0,
+        "cg_egress": 0.0,
+        "lane0_monitored_frames": 1,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 1,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      }
+    },
+    {
+      "run_id": "error_ftable_overflow_depth512_native_sv",
+      "test_name": "opq_error_ftable_overflow_test",
+      "kind": "error_ftable_overflow_depth512",
+      "build_tag": "native_sv_depth512",
+      "bucket": "ERROR",
+      "sequence_name": "OPQ_ERROR_FTABLE_OVERFLOW_DEPTH512",
+      "case_count": 1,
+      "effort": "practical",
+      "iter_cap": null,
+      "payload_cap": null,
+      "limitations": [
+        "This is a supplemental signoff run that intentionally uses OPQ_PAGE_RAM_DEPTH=512 to force the overwrite / frame-table-drop path.",
+        "Because it requires a separate elaboration point, it cannot be folded into the fixed default-build no-restart baselines."
+      ],
+      "implemented": true,
+      "passed": false,
+      "code_coverage": {
+        "branch": {
+          "pct": 64.85
+        },
+        "cond": {
+          "pct": 35.98
+        },
+        "expr": {
+          "pct": 58.33
+        },
+        "fsm_state": {
+          "pct": 86.36
+        },
+        "fsm_trans": {
+          "pct": 43.0
+        },
+        "stmt": {
+          "pct": 77.08
+        },
+        "toggle": {
+          "pct": 30.11
+        }
+      },
+      "cross_summary": {
+        "pct": 60.27,
+        "txns": 64,
+        "queued_overlap": 0,
+        "counter_checks_failed": 1,
+        "unexpected_outputs": 0,
+        "curve": ""
+      },
+      "log_summary": {
+        "cg_cfg": 49.4,
+        "cg_frame": 63.33,
+        "cg_subh": 61.11,
+        "cg_bp": 25.0,
+        "cg_csr": 81.43,
+        "cg_credit": 60.0,
+        "cg_drop": 62.5,
+        "cg_drr": 0.0,
+        "cg_ingress": 100.0,
+        "cg_egress": 100.0,
+        "lane0_monitored_frames": 32,
+        "lane0_orphan_beats": 0,
+        "lane0_capture_err": 0,
+        "lane1_monitored_frames": 32,
+        "lane1_orphan_beats": 0,
+        "lane1_capture_err": 0
+      }
     }
   ],
   "random_cases": [
@@ -18092,59 +18322,59 @@
       },
       "standalone_coverage": {
         "branch": {
-          "pct": 76.61
+          "pct": 79.02
         },
         "cond": {
-          "pct": 57.67
+          "pct": 54.67
         },
         "expr": {
-          "pct": 92.73
+          "pct": 77.08
         },
         "fsm_state": {
-          "pct": 88.57
+          "pct": 90.91
         },
         "fsm_trans": {
-          "pct": 46.25
+          "pct": 48.0
         },
         "stmt": {
-          "pct": 87.3
+          "pct": 82.4
         },
         "toggle": {
-          "pct": 63.26
+          "pct": 45.23
         }
       },
       "isolated_cov_per_txn": {
         "branch": {
-          "pct": 0.5985
+          "pct": 0.6173
         },
         "cond": {
-          "pct": 0.4505
+          "pct": 0.4271
         },
         "expr": {
-          "pct": 0.7245
+          "pct": 0.6022
         },
         "fsm_state": {
-          "pct": 0.692
+          "pct": 0.7102
         },
         "fsm_trans": {
-          "pct": 0.3613
+          "pct": 0.375
         },
         "stmt": {
-          "pct": 0.682
+          "pct": 0.6438
         },
         "toggle": {
-          "pct": 0.4942
+          "pct": 0.3534
         }
       },
       "bucket_gain_by_case": {
         "branch": {
-          "pct": 3.22
+          "pct": 0.13
         },
         "cond": {
-          "pct": 6.08
+          "pct": 1.1
         },
         "expr": {
-          "pct": 12.73
+          "pct": 0.0
         },
         "fsm_state": {
           "pct": 0.0
@@ -18153,44 +18383,44 @@
           "pct": 0.0
         },
         "stmt": {
-          "pct": 2.26
+          "pct": 0.0
         },
         "toggle": {
-          "pct": 12.88
+          "pct": 0.0
         }
       },
       "bucket_merged_total_after_case": {
         "branch": {
-          "pct": 75.73
+          "pct": 72.64
         },
         "cond": {
-          "pct": 54.76
+          "pct": 49.78
         },
         "expr": {
-          "pct": 81.82
+          "pct": 66.67
         },
         "fsm_state": {
-          "pct": 88.57
+          "pct": 85.71
         },
         "fsm_trans": {
-          "pct": 46.25
+          "pct": 43.62
         },
         "stmt": {
-          "pct": 86.65
+          "pct": 81.54
         },
         "toggle": {
-          "pct": 64.1
+          "pct": 45.76
         }
       },
       "bucket_gain_per_txn": {
         "branch": {
-          "pct": 0.0252
+          "pct": 0.001
         },
         "cond": {
-          "pct": 0.0475
+          "pct": 0.0086
         },
         "expr": {
-          "pct": 0.0995
+          "pct": 0.0
         },
         "fsm_state": {
           "pct": 0.0
@@ -18199,10 +18429,10 @@
           "pct": 0.0
         },
         "stmt": {
-          "pct": 0.0177
+          "pct": 0.0
         },
         "toggle": {
-          "pct": 0.1006
+          "pct": 0.0
         }
       }
     }

@@ -1041,9 +1041,10 @@ installation:
   path, and the current default fallback stress suite passes:
   `opq_edge_toggle_backpressure_test` and
   `opq_edge_stuck_low_backpressure_test`. The reduced-depth
-  `opq_error_ftable_overflow_test` flush-atomicity companion also now
-  passes as promoted isolated evidence, but it is not part of the
-  default fallback suite because it requires a separate
+  `opq_error_ftable_overflow_test` flush-atomicity companion is still
+  kept as a dedicated reduced-depth supplemental screen, but the fresh
+  `2026-04-20` rerun reopened accepted-egress contract errors, so it is
+  not part of the default fallback suite and it still requires a separate
   `OPQ_PAGE_RAM_DEPTH=512` elaboration point.
 - Targeted egress probe status:
   `FORMAL_STRESS_TESTS=opq_formal_like_egress_flush_backpressure_stress_test
@@ -1055,19 +1056,18 @@ installation:
   `valid && !ready`, so the targeted probe and the live OSS egress proof
   are both green on this host.
 
-Current ingress probe classification:
+Current ingress fallback classification:
 
-- `opq_error_header_mask_recovery_test` is **probe-only** in the
-  fallback flow because it intentionally launches a new preamble before
-  the masked bad frame closes, which violates the top-level
-  `opq_avst_ingress_sva` no-nested-SOP contract by construction, even
-  though the isolated native-SV simulation testcase is now green after
-  the header timestamp-base repair.
-- `opq_error_header_word_mask_recovery_test` likewise remains
-  **probe-only** in the fallback flow: the isolated native-SV testcase is
-  now green, but the malformed-header fallback stimulus still sits
-  outside the fixed promoted matrix and is not part of the default
-  stress suite.
+- `opq_error_header_mask_recovery_test` is promoted in the live
+  native-SV signoff matrix, but it remains **fallback-only probe
+  classified** here because the reduced fallback stimulus intentionally
+  launches a new preamble before the masked bad frame closes, which
+  violates the top-level `opq_avst_ingress_sva` no-nested-SOP contract
+  by construction.
+- `opq_error_header_word_mask_recovery_test` likewise is promoted in the
+  live native-SV signoff matrix, but it remains **fallback-only probe
+  classified** here because the malformed-header fallback stimulus still
+  sits outside the reduced default stress suite.
 - `opq_error_subheader_mask_recovery_test` is **not** probe-only, but
   it does require the non-shrunken `N_SHD=256` ingress abstraction in
   the current simulation fallback. The more aggressive
@@ -1156,9 +1156,9 @@ Current OSS alternative status:
 | §3.2 credit conservation | `opq_edge_backpressure_test`, `opq_edge_toggle_backpressure_test` |
 | §4.2 page-RAM exclusion | any `opq_cross_drr_*` + `opq_error_*` |
 | §5.1 DRR legality | `opq_cross_drr_allowance_test`, `opq_cross_drr_bursty_random_test` |
-| §6.1–6.2 flush atomicity | `opq_error_ftable_overflow_test` (promoted isolated reduced-depth point) |
+| §6.1–6.2 flush atomicity | `opq_error_ftable_overflow_test` reduced-depth supplemental screen (reopened on the fresh `2026-04-20` rerun) |
 | §7.3.3–7.3.5 backpressure + flush | `opq_edge_backpressure_test` × `opq_error_ftable_overflow_test` hybrid (TODO to add as a directed case) |
-| §8.1–8.2 end-to-end integrity | `opq_cross_*` continuous-frame baselines |
+| §8.1–8.2 end-to-end integrity | fixed `opq_cross_*` signoff baselines plus the supplemental `opq_cross_mixed_bucket_random_soak_test` screen |
 
 The split is intentional: constrained-random tests trigger the same
 contracts that later become proof targets. When a formal proof fails,

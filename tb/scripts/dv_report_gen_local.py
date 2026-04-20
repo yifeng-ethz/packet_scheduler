@@ -480,7 +480,7 @@ def render_report_readme(data: dict[str, Any]) -> str:
         )
     out += [
         "",
-        "## Cross / continuous-frame runs",
+        "## Signoff runs",
         "",
         "| status | run_id | kind | seq | txns | cross_pct |",
         "|:---:|---|---|---|---:|---:|",
@@ -609,7 +609,7 @@ def render_dashboard(data: dict[str, Any]) -> str:
         f"- evidenced_promoted_cases: `{totals.get('evidenced_cases','?')}`",
         f"- promoted functional coverage: `{func.get('pct','?')}% ({func.get('evidenced','?')}/{func.get('planned','?')})`",
         "",
-        "## Cross / Continuous-Frame Signoff",
+        "## Signoff Runs",
         "",
         "| status | run_id | kind | build | seq | txns | cross_pct |",
         "|:---:|---|---|---|---|---:|---:|",
@@ -635,7 +635,7 @@ def render_dashboard(data: dict[str, Any]) -> str:
         "- [`REPORT/README.md`](REPORT/README.md) — reviewer entry point",
         "- [`REPORT/buckets/`](REPORT/buckets/) — ordered-merge trace per bucket",
         "- [`REPORT/cases/`](REPORT/cases/) — one page per stable report case ID",
-        "- [`REPORT/cross/`](REPORT/cross/) — one page per continuous-frame run",
+        "- [`REPORT/cross/`](REPORT/cross/) — one page per signoff run",
         "- [`DV_COV.md`](DV_COV.md) — coverage totals, ordering, and baseline scope",
         "- [`DV_REPORT.json`](DV_REPORT.json) — machine-readable source of truth",
         "",
@@ -714,7 +714,7 @@ def render_covmd(data: dict[str, Any]) -> str:
 
     out += [
         "",
-        "## Continuous-frame baselines by build",
+        "## Signoff runs by build",
         "",
         "| status | run_id | kind | build | case_count | stmt | branch | toggle | functional_cross_pct | txns |",
         "|:---:|---|---|---|---:|---|---|---|---:|---:|",
@@ -739,7 +739,7 @@ def render_covmd(data: dict[str, Any]) -> str:
 
     out += [
         "",
-        "## Continuous-frame execution order",
+        "## Fixed baseline execution order",
         "",
     ]
     for mode_name in ("bucket_frame", "all_buckets_frame"):

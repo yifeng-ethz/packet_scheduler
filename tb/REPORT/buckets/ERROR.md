@@ -1,6 +1,6 @@
 # ⚠️ ERROR bucket
 
-**Catalog planned:** `166` &nbsp; **Promoted:** `9` &nbsp; **Evidenced:** `9` &nbsp; **Catalog backlog:** `157` &nbsp; **Status:** ⚠️
+**Catalog planned:** `166` &nbsp; **Promoted:** `9` &nbsp; **Evidenced:** `8` &nbsp; **Catalog backlog:** `157` &nbsp; **Status:** ⚠️
 
 ## Catalog Inventory
 
@@ -15,13 +15,13 @@
 
 | status | metric | merged_pct | target |
 |:---:|---|---|---|
-| ⚠️ | stmt | 82.87 | 95.0 |
-| ⚠️ | branch | 76.57 | 90.0 |
-| ℹ️ | cond | 46.74 | - |
-| ℹ️ | expr | 69.79 | - |
-| ✅ | fsm_state | 95.45 | 95.0 |
-| ⚠️ | fsm_trans | 58.00 | 90.0 |
-| ⚠️ | toggle | 34.10 | 80.0 |
+| ⚠️ | stmt | 79.30 | 95.0 |
+| ⚠️ | branch | 74.66 | 90.0 |
+| ℹ️ | cond | 43.34 | - |
+| ℹ️ | expr | 65.62 | - |
+| ⚠️ | fsm_state | 93.18 | 95.0 |
+| ⚠️ | fsm_trans | 56.00 | 90.0 |
+| ⚠️ | toggle | 26.96 | 80.0 |
 
 ## Ordered merge trace
 
@@ -35,7 +35,6 @@
 | ✅ | 6 | `CORNER_OPQ_406_error_header_mask_recovery_test` | `opq_error_header_mask_recovery_test` | stmt=79.01, branch=73.98, cond=43.34, expr=65.62, fsm_state=93.18, fsm_trans=50.00, toggle=26.91 | [case](../cases/CORNER_OPQ_406_error_header_mask_recovery_test.md) |
 | ✅ | 7 | `CORNER_OPQ_407_error_header_word_mask_recovery_test` | `opq_error_header_word_mask_recovery_test` | stmt=79.24, branch=74.52, cond=43.34, expr=65.62, fsm_state=93.18, fsm_trans=56.00, toggle=26.95 | [case](../cases/CORNER_OPQ_407_error_header_word_mask_recovery_test.md) |
 | ✅ | 8 | `CORNER_OPQ_408_error_counter_clear_test` | `opq_error_counter_clear_test` | stmt=79.30, branch=74.66, cond=43.34, expr=65.62, fsm_state=93.18, fsm_trans=56.00, toggle=26.96 | [case](../cases/CORNER_OPQ_408_error_counter_clear_test.md) |
-| ✅ | 9 | `CORNER_OPQ_409_error_ftable_overflow_test` | `opq_error_ftable_overflow_test` | stmt=82.87, branch=76.57, cond=46.74, expr=69.79, fsm_state=95.45, fsm_trans=58.00, toggle=34.10 | [case](../cases/CORNER_OPQ_409_error_ftable_overflow_test.md) |
 
 ---
 _Back to [dashboard](../../DV_REPORT.md)_

@@ -1,6 +1,6 @@
-# ✅ CORNER_OPQ_409_error_ftable_overflow_test
+# ❌ CORNER_OPQ_409_error_ftable_overflow_test
 
-**Bucket:** `ERROR` &nbsp; **Method:** `D` &nbsp; **Build:** `after` &nbsp; **Effort:** `practical` &nbsp; **Result:** `pass`
+**Bucket:** `ERROR` &nbsp; **Method:** `D` &nbsp; **Build:** `after` &nbsp; **Effort:** `practical` &nbsp; **Result:** `fail`
 
 ## Intent
 
@@ -12,7 +12,7 @@
 
 | status | field | value |
 |:---:|---|---|
-| ✅ | report_case_id | `CORNER_OPQ_409_error_ftable_overflow_test` |
+| ❌ | report_case_id | `CORNER_OPQ_409_error_ftable_overflow_test` |
 | ℹ️ | legacy_test_name | `opq_error_ftable_overflow_test` |
 | ℹ️ | observed_txn | `1` |
 | ℹ️ | implementation_mode | `native_sv` |
@@ -44,13 +44,13 @@
 
 | metric | standalone | isolated_per_txn | bucket_gain | bucket_merged_after | bucket_gain_per_txn |
 |---|---|---|---|---|---|
-| stmt | 77.08 | 77.08 | 3.57 | 82.87 | 3.57 |
-| branch | 64.85 | 64.85 | 1.91 | 76.57 | 1.91 |
-| cond | 35.98 | 35.98 | 3.40 | 46.74 | 3.40 |
-| expr | 58.33 | 58.33 | 4.17 | 69.79 | 4.17 |
-| fsm_state | 86.36 | 86.36 | 2.27 | 95.45 | 2.27 |
-| fsm_trans | 43.00 | 43.00 | 2.00 | 58.00 | 2.00 |
-| toggle | 30.11 | 30.11 | 7.14 | 34.10 | 7.14 |
+| stmt | 77.08 | 77.08 | 0.00 | 79.30 | 0.00 |
+| branch | 64.85 | 64.85 | 0.00 | 74.66 | 0.00 |
+| cond | 35.98 | 35.98 | 0.00 | 43.34 | 0.00 |
+| expr | 58.33 | 58.33 | 0.00 | 65.62 | 0.00 |
+| fsm_state | 86.36 | 86.36 | 0.00 | 93.18 | 0.00 |
+| fsm_trans | 43.00 | 43.00 | 0.00 | 56.00 | 0.00 |
+| toggle | 30.11 | 30.11 | 0.00 | 26.96 | 0.00 |
 
 ---
 _Back to [bucket](../buckets/ERROR.md) &middot; [dashboard](../../DV_REPORT.md)_

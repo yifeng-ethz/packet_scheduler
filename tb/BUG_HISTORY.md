@@ -191,8 +191,8 @@ Encounter sim-time legend:
 - Fix status:
   - fixed
 - Runtime / coverage context:
-  - `opq_error_ftable_overflow_test` now passes as promoted isolated native-SV evidence at `OPQ_PAGE_RAM_DEPTH=512`, with non-zero `FT_DROP_*` counters and no malformed accepted egress
-  - the testcase remains isolated-only in signoff because that reduced-depth overflow point requires separate elaboration and is not part of the fixed default-build no-restart baseline
+  - the earlier fix closed the original silent-drop / malformed-egress symptom and enabled the testcase to move into the reduced-depth supplemental signoff plumbing
+  - the fresh `2026-04-20` reduced-depth rerun reopens accepted-egress `opq_hit3_contract` frame-trailer/pkg_cnt/timestamp errors, so the point is not currently signoff-clean even though it remains the canonical reduced-depth bug anchor
 - Commit:
   - `41948b1` `Fix OPQ native-SV overwrite drop accounting`
 
