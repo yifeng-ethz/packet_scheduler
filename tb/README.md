@@ -37,12 +37,17 @@ Signoff evidence in this tree is required to come from `DUT_IMPL=native_sv`.
 - The surfaced current DV plan is `packet_scheduler/tb/DV_PLAN.md`; the archived broad catalog remains in `packet_scheduler/tb/legacy/tb/`.
 - `DV_PARAM.md` is the active compile / elaboration-time sweep, `DV_PROBE.md` groups non-promoted bug reproducers, and `DV_FORMAL.md` tracks proof targets and formal-readiness.
 - The master signoff dashboard is `packet_scheduler/doc/SIGNOFF.md`.
+- The grouped parameter / bounded-evidence matrix is
+  `packet_scheduler/doc/CONFIG_SIGNOFF.md`.
 - `packet_scheduler/doc/VERIFICATION_SIGNOFF.md` is preserved as the older long-form narrative note.
 - Native-SV signoff scope is currently the 2-lane harness plus the
   `N_SHD=128/256/512` sweep; 4-lane native-SV remains a non-claim until
   dedicated 4-lane DV evidence is promoted. The old sparse-frame cadence bug
   family is green in focused reruns and no longer drives that non-claim by
   itself.
+- The additional `N_SHD=64` 2-lane basic trio and the bounded 4-lane smoke
+  rerun from `2026-04-20` are documented in `CONFIG_SIGNOFF.md`; they are not
+  yet promoted into the generated DV dashboard.
 - The probe runner carries the currently useful non-promoted screens,
   including the bursty DRR large-random stress and the long-runtime mixed-bucket
   seconds soak. The reduced-depth overwrite case is now tracked under

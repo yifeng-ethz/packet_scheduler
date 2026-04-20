@@ -27,6 +27,7 @@ explicitly.
 ## Active Entry Points
 
 - `doc/SIGNOFF.md`
+- `doc/CONFIG_SIGNOFF.md`
 - `tb/DV_REPORT.md`
 - `syn/SYN_REPORT.md`
 - `tb_int/DV_REPORT.md`

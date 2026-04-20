@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_sv
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.19
-// Date    : 20260418
-// Change  : Surface ingress credit-mask drop pulses for native-SV debug and DV accounting
+// Version : 26.3.28-syn
+// Date    : 20260419
+// Change  : Quartus synthesis compatibility copy aligned to the live packet-complete, late-drop, and allocator-activity plumbing
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_sv #(
@@ -33,7 +33,7 @@ module ordered_priority_queue_monolithic_sv #(
   parameter int unsigned MAX_PKT_LENGTH_BITS = (MAX_PKT_LENGTH <= 1) ? 1 : $clog2(MAX_PKT_LENGTH),
   parameter int unsigned TICKET_FIFO_DATA_WIDTH_A = 48 + $clog2(LANE_FIFO_DEPTH) + MAX_PKT_LENGTH_BITS + 2,
   parameter int unsigned TICKET_FIFO_DATA_WIDTH_B =
-    FRAME_SERIAL_SIZE + FRAME_SUBH_CNT_SIZE + FRAME_HIT_CNT_SIZE + 2,
+    FRAME_SERIAL_SIZE + FRAME_SUBH_CNT_SIZE + FRAME_HIT_CNT_SIZE + 6 + 16 + 48 + 2,
   parameter int unsigned TICKET_FIFO_DATA_WIDTH =
     (TICKET_FIFO_DATA_WIDTH_A > TICKET_FIFO_DATA_WIDTH_B) ? TICKET_FIFO_DATA_WIDTH_A : TICKET_FIFO_DATA_WIDTH_B,
   parameter int unsigned TICKET_FIFO_ADDR_WIDTH = $clog2(TICKET_FIFO_DEPTH),
@@ -55,6 +55,17 @@ module ordered_priority_queue_monolithic_sv #(
   output logic                                                           aso_egress_startofpacket,
   output logic                                                           aso_egress_endofpacket,
   output logic [2:0]                                                     aso_egress_error,
+  output logic [31:0]                                                    synth_observe_global0_o,
+  output logic [31:0]                                                    synth_observe_global1_o,
+  output logic [31:0]                                                    synth_observe_global2_o,
+  output logic [31:0]                                                    synth_observe_global3_o,
+  output logic [31:0]                                                    synth_observe_global4_o,
+  output logic [31:0]                                                    synth_observe_global5_o,
+  output logic [31:0]                                                    synth_observe_global6_o,
+  output logic [31:0]                                                    synth_observe_global7_o,
+  output logic [31:0]                                                    synth_observe_global8_o,
+  output logic [31:0]                                                    synth_observe_global9_o,
+  output logic [N_LANE-1:0][31:0]                                        synth_observe_lane_o,
   input  logic [N_LANE-1:0][9:0]                                         cfg_drr_allowance_i,
   input  logic [N_LANE-1:0]                                              cfg_drr_allowance_reload_i,
   input  logic                                                           d_clk,
@@ -80,17 +91,24 @@ module ordered_priority_queue_monolithic_sv #(
   logic [N_LANE-1:0][LANE_FIFO_ADDR_WIDTH-1:0] ingress_lane_wptr;
   logic [N_LANE-1:0] ingress_lane_we;
   logic [N_LANE-1:0][47:0] ingress_running_ts_dbg;
+  logic [N_LANE-1:0][47:0] ingress_frame_ts_base_dbg;
   logic [N_LANE-1:0][5:0] ingress_dt_type_dbg;
   logic [N_LANE-1:0][15:0] ingress_feb_id_dbg;
+  logic [N_LANE-1:0] ingress_parser_busy_dbg;
   logic [N_LANE-1:0] ingress_credit_drop_valid_dbg;
   logic [N_LANE-1:0] ingress_credit_drop_lane_dbg;
   logic [N_LANE-1:0] ingress_credit_drop_ticket_dbg;
+  logic [N_LANE-1:0][47:0] ingress_credit_drop_ts_dbg;
   logic [N_LANE-1:0][15:0] ingress_credit_drop_shd_cnt_dbg;
   logic [N_LANE-1:0][15:0] ingress_credit_drop_hit_cnt_dbg;
   logic [N_LANE-1:0] ingress_alert_eop_dbg;
   logic [N_LANE-1:0] ingress_eop_flush_ack_dbg;
   logic [N_LANE-1:0][LANE_FIFO_ADDR_WIDTH-1:0] lane_credit_update;
   logic [N_LANE-1:0] lane_credit_update_valid;
+  logic [N_LANE-1:0][LANE_FIFO_ADDR_WIDTH-1:0] block_path_lane_credit_update;
+  logic [N_LANE-1:0] block_path_lane_credit_update_valid;
+  logic [N_LANE-1:0][LANE_FIFO_ADDR_WIDTH-1:0] late_drop_lane_credit_update;
+  logic [N_LANE-1:0] late_drop_lane_credit_update_valid;
   logic [N_LANE-1:0][TICKET_FIFO_ADDR_WIDTH-1:0] ticket_credit_update;
   logic [N_LANE-1:0] ticket_credit_update_valid;
   logic [N_LANE-1:0][TICKET_FIFO_DATA_WIDTH-1:0] ticket_fifos_rd_data;
@@ -103,14 +121,21 @@ module ordered_priority_queue_monolithic_sv #(
   logic [N_LANE-1:0][HANDLE_FIFO_ADDR_WIDTH-1:0] handle_waddr_dbg;
   logic [N_LANE-1:0][HANDLE_FIFO_ADDR_WIDTH-1:0] handle_wptr_dbg;
   logic [N_LANE-1:0] handle_we_dbg;
+  logic [N_LANE-1:0] late_frame_drop_valid_dbg;
+  logic [N_LANE-1:0][15:0] late_frame_drop_hdr_cnt_dbg;
+  logic [N_LANE-1:0][15:0] late_frame_drop_shd_cnt_dbg;
+  logic [N_LANE-1:0][15:0] late_frame_drop_hit_cnt_dbg;
+  logic [N_LANE-1:0][47:0] late_frame_drop_ts_dbg;
   logic [N_LANE-1:0] tk_future_dbg;
   logic fetch_ticket_active_dbg;
+  logic alloc_page_active_dbg;
   logic write_head_active_dbg;
   logic write_tail_active_dbg;
   logic write_page_active_dbg;
   logic [2:0] write_meta_flow_dbg;
   logic [2:0] write_meta_flow_d1_dbg;
   logic [PAGE_RAM_ADDR_WIDTH-1:0] frame_start_addr_dbg;
+  logic [PAGE_RAM_ADDR_WIDTH-1:0] packet_complete_frame_start_addr_dbg;
   logic [$clog2(N_SHD * N_LANE):0] frame_shr_cnt_this_dbg;
   logic [15:0] frame_hit_cnt_this_dbg;
   logic page_we_dbg;
@@ -121,13 +146,37 @@ module ordered_priority_queue_monolithic_sv #(
   logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_wr_data_dbg;
   logic [PAGE_RAM_ADDR_WIDTH-1:0] page_ram_rd_addr_dbg;
   logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_rd_data_dbg;
+  logic payload_commit_idle_dbg;
   logic packet_complete_pulse_dbg;
   logic [1:0] packet_complete_presenter_delay_dbg;
   logic packet_complete_presenter_dbg;
+  logic [PAGE_RAM_ADDR_WIDTH-1:0] packet_complete_addr_presenter_delay_dbg [1:0];
+  logic [PAGE_RAM_ADDR_WIDTH-1:0] packet_complete_addr_presenter_dbg;
+  logic [$clog2(N_SHD * N_LANE):0] packet_complete_shr_cnt_presenter_delay_dbg [1:0];
+  logic [15:0] packet_complete_hit_cnt_presenter_delay_dbg [1:0];
+  logic [$clog2(N_SHD * N_LANE):0] packet_complete_shr_cnt_presenter_new_frame_dbg;
+  logic [15:0] packet_complete_hit_cnt_presenter_new_frame_dbg;
+  logic [$clog2(N_SHD * N_LANE):0] packet_complete_shr_cnt_presenter_dbg;
+  logic [15:0] packet_complete_hit_cnt_presenter_dbg;
   logic ft_drop_valid_dbg;
   logic [31:0] ft_drop_hdr_cnt_dbg;
   logic [31:0] ft_drop_shd_cnt_dbg;
   logic [31:0] ft_drop_hit_cnt_dbg;
+
+  always_comb begin : proc_lane_credit_update_mux
+    for (int i = 0; i < N_LANE; i++) begin
+      lane_credit_update[i] = '0;
+      lane_credit_update_valid[i] = 1'b0;
+      if (block_path_lane_credit_update_valid[i]) begin
+        lane_credit_update[i] = lane_credit_update[i] + block_path_lane_credit_update[i];
+        lane_credit_update_valid[i] = 1'b1;
+      end
+      if (late_drop_lane_credit_update_valid[i]) begin
+        lane_credit_update[i] = lane_credit_update[i] + late_drop_lane_credit_update[i];
+        lane_credit_update_valid[i] = 1'b1;
+      end
+    end
+  end
 
   genvar m;
   generate
@@ -201,11 +250,14 @@ module ordered_priority_queue_monolithic_sv #(
       .lane_wptr(ingress_lane_wptr[g]),
       .lane_we(ingress_lane_we[g]),
       .running_ts_dbg(ingress_running_ts_dbg[g]),
+      .frame_ts_base_dbg(ingress_frame_ts_base_dbg[g]),
       .dt_type_dbg(ingress_dt_type_dbg[g]),
       .feb_id_dbg(ingress_feb_id_dbg[g]),
+      .parser_busy_o(ingress_parser_busy_dbg[g]),
       .credit_drop_valid_o(ingress_credit_drop_valid_dbg[g]),
       .credit_drop_lane_o(ingress_credit_drop_lane_dbg[g]),
       .credit_drop_ticket_o(ingress_credit_drop_ticket_dbg[g]),
+      .credit_drop_ts_o(ingress_credit_drop_ts_dbg[g]),
       .credit_drop_shd_cnt_o(ingress_credit_drop_shd_cnt_dbg[g]),
       .credit_drop_hit_cnt_o(ingress_credit_drop_hit_cnt_dbg[g]),
       .alert_eop_state_o(ingress_alert_eop_dbg[g]),
@@ -236,9 +288,11 @@ module ordered_priority_queue_monolithic_sv #(
     .ingress_ticket_wptr(ingress_ticket_wptr),
     .ticket_fifos_rd_data_i(ticket_fifos_rd_data),
     .ingress_alert_eop_i(ingress_alert_eop_dbg),
-    .dt_type0(ingress_dt_type_dbg[0]),
-    .feb_id0(ingress_feb_id_dbg[0]),
-    .ingress_running_ts0(ingress_running_ts_dbg[0]),
+    .ingress_dt_type_i(ingress_dt_type_dbg),
+    .ingress_feb_id_i(ingress_feb_id_dbg),
+    .ingress_frame_ts_i(ingress_frame_ts_base_dbg),
+    .ingress_running_ts_i(ingress_running_ts_dbg),
+    .ingress_parser_busy_i(ingress_parser_busy_dbg),
     .ticket_credit_update_o(ticket_credit_update),
     .ticket_credit_update_valid_o(ticket_credit_update_valid),
     .handle_wdata_o(handle_wdata_dbg),
@@ -246,12 +300,20 @@ module ordered_priority_queue_monolithic_sv #(
     .handle_we_o(handle_we_dbg),
     .handle_wptr_o(handle_wptr_dbg),
     .eop_flush_ack_o(ingress_eop_flush_ack_dbg),
+    .late_frame_drop_valid_o(late_frame_drop_valid_dbg),
+    .late_frame_drop_hdr_cnt_o(late_frame_drop_hdr_cnt_dbg),
+    .late_frame_drop_shd_cnt_o(late_frame_drop_shd_cnt_dbg),
+    .late_frame_drop_hit_cnt_o(late_frame_drop_hit_cnt_dbg),
+    .late_frame_drop_ts_o(late_frame_drop_ts_dbg),
+    .late_frame_lane_credit_update_o(late_drop_lane_credit_update),
+    .late_frame_lane_credit_update_valid_o(late_drop_lane_credit_update_valid),
     .page_we_o(page_we_dbg),
     .page_waddr_o(page_waddr_dbg),
     .page_wdata_o(page_wdata_dbg),
     .ticket_fifos_rd_addr_o(ticket_fifos_rd_addr),
     .tk_future_o(tk_future_dbg),
     .fetch_ticket_active_o(fetch_ticket_active_dbg),
+    .alloc_page_active_o(alloc_page_active_dbg),
     .write_head_active_o(write_head_active_dbg),
     .write_tail_active_o(write_tail_active_dbg),
     .write_page_active_o(write_page_active_dbg),
@@ -260,6 +322,7 @@ module ordered_priority_queue_monolithic_sv #(
     .frame_start_addr_o(frame_start_addr_dbg),
     .frame_shr_cnt_this_o(frame_shr_cnt_this_dbg),
     .frame_hit_cnt_this_o(frame_hit_cnt_this_dbg),
+    .packet_complete_frame_start_addr_o(packet_complete_frame_start_addr_dbg),
     .packet_complete_pulse_o(packet_complete_pulse_dbg),
     .d_clk(d_clk),
     .d_reset(d_reset)
@@ -280,6 +343,7 @@ module ordered_priority_queue_monolithic_sv #(
     .handle_fifos_rd_data_i(handle_fifos_rd_data),
     .lane_fifos_rd_data_i(lane_fifos_rd_data),
     .fetch_ticket_active_i(fetch_ticket_active_dbg),
+    .page_allocator_alloc_page_i(alloc_page_active_dbg),
     .tk_future_i(tk_future_dbg),
     .page_allocator_write_head_i(write_head_active_dbg),
     .page_allocator_write_tail_i(write_tail_active_dbg),
@@ -291,8 +355,9 @@ module ordered_priority_queue_monolithic_sv #(
     .drr_allowance_reload_i(cfg_drr_allowance_reload_i),
     .handle_fifos_rd_addr_o(handle_fifos_rd_addr),
     .lane_fifos_rd_addr_o(lane_fifos_rd_addr),
-    .lane_credit_update_o(lane_credit_update),
-    .lane_credit_update_valid_o(lane_credit_update_valid),
+    .lane_credit_update_o(block_path_lane_credit_update),
+    .lane_credit_update_valid_o(block_path_lane_credit_update_valid),
+    .payload_commit_idle_o(payload_commit_idle_dbg),
     .page_ram_we_o(page_ram_we_dbg),
     .page_ram_wr_addr_o(page_ram_wr_addr_dbg),
     .page_ram_wr_data_o(page_ram_wr_data_dbg),
@@ -315,13 +380,26 @@ module ordered_priority_queue_monolithic_sv #(
   always_ff @(posedge d_clk) begin : proc_presenter_packet_complete_delay
     if (d_reset) begin
       packet_complete_presenter_delay_dbg <= '0;
+      packet_complete_addr_presenter_delay_dbg[1] <= '0;
+      packet_complete_shr_cnt_presenter_delay_dbg[1] <= '0;
+      packet_complete_hit_cnt_presenter_delay_dbg[1] <= '0;
     end else begin
       packet_complete_presenter_delay_dbg[0] <= packet_complete_pulse_dbg;
       packet_complete_presenter_delay_dbg[1] <= packet_complete_presenter_delay_dbg[0];
+      if (packet_complete_presenter_delay_dbg[0]) begin
+        packet_complete_addr_presenter_delay_dbg[1] <= packet_complete_frame_start_addr_dbg;
+        packet_complete_shr_cnt_presenter_delay_dbg[1] <= frame_shr_cnt_this_dbg;
+        packet_complete_hit_cnt_presenter_delay_dbg[1] <= frame_hit_cnt_this_dbg;
+      end
     end
   end
 
   assign packet_complete_presenter_dbg = packet_complete_presenter_delay_dbg[1];
+  assign packet_complete_addr_presenter_dbg = packet_complete_addr_presenter_delay_dbg[1];
+  assign packet_complete_shr_cnt_presenter_new_frame_dbg = packet_complete_shr_cnt_presenter_delay_dbg[1];
+  assign packet_complete_hit_cnt_presenter_new_frame_dbg = packet_complete_hit_cnt_presenter_delay_dbg[1];
+  assign packet_complete_shr_cnt_presenter_dbg = packet_complete_shr_cnt_presenter_delay_dbg[1];
+  assign packet_complete_hit_cnt_presenter_dbg = packet_complete_hit_cnt_presenter_delay_dbg[1];
 
   ordered_priority_queue_monolithic_basic_presenter #(
     .N_LANE(N_LANE),
@@ -332,11 +410,14 @@ module ordered_priority_queue_monolithic_sv #(
     .N_SHD(N_SHD),
     .N_HIT(N_HIT)
   ) presenter_i (
-    .new_frame_valid_i(write_head_active_dbg && (write_meta_flow_dbg == 3'd0)),
-    .new_frame_raw_addr_i(frame_start_addr_dbg),
-    .frame_shr_cnt_this_i(frame_shr_cnt_this_dbg),
-    .frame_hit_cnt_this_i(frame_hit_cnt_this_dbg),
+    .new_frame_valid_i(packet_complete_presenter_dbg),
+    .new_frame_raw_addr_i(packet_complete_addr_presenter_dbg),
+    .frame_shr_cnt_this_i(packet_complete_shr_cnt_presenter_new_frame_dbg),
+    .frame_hit_cnt_this_i(packet_complete_hit_cnt_presenter_new_frame_dbg),
     .packet_complete_i(packet_complete_presenter_dbg),
+    .packet_complete_shr_cnt_i(packet_complete_shr_cnt_presenter_dbg),
+    .packet_complete_hit_cnt_i(packet_complete_hit_cnt_presenter_dbg),
+    .payload_commit_idle_i(payload_commit_idle_dbg),
     .page_ram_rd_addr_o(page_ram_rd_addr_dbg),
     .page_ram_rd_data_i(page_ram_rd_data_dbg),
     .ft_drop_valid_o(ft_drop_valid_dbg),
@@ -359,5 +440,36 @@ module ordered_priority_queue_monolithic_sv #(
     assert ($clog2(N_SHD * N_HIT) + 1 <= 16)
       else $warning("N hits counter will likely overflow the 16-bit frame hit counter");
   end
+
+  // Keep the signoff activity signature tied to top-level I/O so Quartus can
+  // prune the large internal debug cone from the standalone build.
+  assign synth_observe_global0_o = {aso_egress_valid, aso_egress_ready,
+    aso_egress_startofpacket, aso_egress_endofpacket, aso_egress_error,
+    aso_egress_data[24:0]};
+  assign synth_observe_global1_o = {24'd0, ^asi_ingress_valid, ^asi_ingress_startofpacket,
+    ^asi_ingress_endofpacket, ^asi_ingress_error, ^asi_ingress_channel,
+    ^cfg_drr_allowance_reload_i, ^cfg_drr_allowance_i, d_reset};
+  assign synth_observe_global2_o = 32'd0;
+  assign synth_observe_global3_o = 32'd0;
+  assign synth_observe_global4_o = 32'd0;
+  assign synth_observe_global5_o = 32'd0;
+  assign synth_observe_global6_o = 32'd0;
+  assign synth_observe_global7_o = 32'd0;
+  assign synth_observe_global8_o = 32'd0;
+  assign synth_observe_global9_o = 32'd0;
+
+  genvar synth_lane;
+  generate
+    for (synth_lane = 0; synth_lane < N_LANE; synth_lane = synth_lane + 1) begin : g_synth_observe
+      assign synth_observe_lane_o[synth_lane] = {26'd0,
+        asi_ingress_valid[synth_lane],
+        asi_ingress_startofpacket[synth_lane],
+        asi_ingress_endofpacket[synth_lane],
+        ^asi_ingress_error[synth_lane],
+        ^asi_ingress_channel[synth_lane],
+        ^asi_ingress_data[synth_lane]
+      };
+    end
+  endgenerate
 
 endmodule

@@ -36,6 +36,21 @@ module opq_native_sv_2lane_signoff_top (
   logic [31:0]                                                    heartbeat;
   logic [31:0]                                                    egress_accept_count;
   logic [31:0]                                                    egress_checksum;
+  localparam int unsigned SIGNATURE_WORDS = 10 + N_LANE;
+  (* preserve, noprune *) logic [31:0]                            activity_tap_q [0:SIGNATURE_WORDS-1];
+  logic [31:0]                                                    observed_word [0:SIGNATURE_WORDS-1];
+  logic [15:0]                                                    activity_fold;
+  logic [31:0]                                                    synth_observe_global0;
+  logic [31:0]                                                    synth_observe_global1;
+  logic [31:0]                                                    synth_observe_global2;
+  logic [31:0]                                                    synth_observe_global3;
+  logic [31:0]                                                    synth_observe_global4;
+  logic [31:0]                                                    synth_observe_global5;
+  logic [31:0]                                                    synth_observe_global6;
+  logic [31:0]                                                    synth_observe_global7;
+  logic [31:0]                                                    synth_observe_global8;
+  logic [31:0]                                                    synth_observe_global9;
+  logic [N_LANE-1:0][31:0]                                        synth_observe_lane;
 
   function automatic logic [35:0] make_preamble_word(
     input logic [5:0] dt_type,
@@ -102,6 +117,34 @@ module opq_native_sv_2lane_signoff_top (
 
   assign cfg_drr_allowance_reload = {N_LANE{cfg_reload_pulse}};
 
+  always_comb begin : proc_observed_word
+    for (int w = 0; w < SIGNATURE_WORDS; w++) begin
+      observed_word[w] = '0;
+    end
+
+    observed_word[0] = synth_observe_global0;
+    observed_word[1] = synth_observe_global1;
+    observed_word[2] = synth_observe_global2;
+    observed_word[3] = synth_observe_global3;
+    observed_word[4] = synth_observe_global4;
+    observed_word[5] = synth_observe_global5;
+    observed_word[6] = synth_observe_global6;
+    observed_word[7] = synth_observe_global7;
+    observed_word[8] = synth_observe_global8;
+    observed_word[9] = synth_observe_global9;
+
+    for (int lane_idx = 0; lane_idx < N_LANE; lane_idx++) begin
+      observed_word[10 + lane_idx] = synth_observe_lane[lane_idx];
+    end
+  end
+
+  always_comb begin : proc_activity_fold
+    activity_fold = '0;
+    for (int w = 0; w < SIGNATURE_WORDS; w++) begin
+      activity_fold ^= activity_tap_q[w][15:0] ^ activity_tap_q[w][31:16];
+    end
+  end
+
   always_ff @(posedge clk or negedge reset_n) begin : proc_runtime
     if (!reset_n) begin
       heartbeat <= '0;
@@ -109,6 +152,9 @@ module opq_native_sv_2lane_signoff_top (
       aso_egress_ready <= 1'b0;
       egress_accept_count <= '0;
       egress_checksum <= '0;
+      for (int w = 0; w < SIGNATURE_WORDS; w++) begin
+        activity_tap_q[w] <= 32'hACE0_0000 ^ w;
+      end
     end else begin
       heartbeat <= heartbeat + 32'd1;
       cfg_reload_pulse <= 1'b0;
@@ -117,6 +163,9 @@ module opq_native_sv_2lane_signoff_top (
         egress_accept_count <= egress_accept_count + 32'd1;
         egress_checksum <= egress_checksum ^ {aso_egress_error, aso_egress_startofpacket,
           aso_egress_endofpacket, aso_egress_data[26:0]};
+      end
+      for (int w = 0; w < SIGNATURE_WORDS; w++) begin
+        activity_tap_q[w] <= observed_word[w];
       end
     end
   end
@@ -233,11 +282,22 @@ module opq_native_sv_2lane_signoff_top (
     .aso_egress_startofpacket(aso_egress_startofpacket),
     .aso_egress_endofpacket(aso_egress_endofpacket),
     .aso_egress_error(aso_egress_error),
+    .synth_observe_global0_o(synth_observe_global0),
+    .synth_observe_global1_o(synth_observe_global1),
+    .synth_observe_global2_o(synth_observe_global2),
+    .synth_observe_global3_o(synth_observe_global3),
+    .synth_observe_global4_o(synth_observe_global4),
+    .synth_observe_global5_o(synth_observe_global5),
+    .synth_observe_global6_o(synth_observe_global6),
+    .synth_observe_global7_o(synth_observe_global7),
+    .synth_observe_global8_o(synth_observe_global8),
+    .synth_observe_global9_o(synth_observe_global9),
+    .synth_observe_lane_o(synth_observe_lane),
     .cfg_drr_allowance_i(cfg_drr_allowance),
     .cfg_drr_allowance_reload_i(cfg_drr_allowance_reload),
     .d_clk(clk),
     .d_reset(d_reset)
   );
 
-  assign activity_o = egress_checksum[15:0] ^ egress_accept_count[15:0];
+  assign activity_o = activity_fold;
 endmodule

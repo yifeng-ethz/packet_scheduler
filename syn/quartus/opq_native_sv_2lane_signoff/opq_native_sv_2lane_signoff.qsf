@@ -13,6 +13,8 @@ set_global_assignment -name VERILOG_MACRO "OPQ_TICKET_FIFO_DEPTH=512"
 set_global_assignment -name VERILOG_MACRO "OPQ_PAGE_RAM_DEPTH=65536"
 
 set_global_assignment -name NUM_PARALLEL_PROCESSORS 16
+set_global_assignment -name PARALLEL_SYNTHESIS OFF
+set_global_assignment -name AUTO_PARALLEL_SYNTHESIS OFF
 set_global_assignment -name SEED 1
 set_global_assignment -name SAFE_STATE_MACHINE ON
 set_global_assignment -name AUTO_SHIFT_REGISTER_RECOGNITION OFF
@@ -24,11 +26,13 @@ set_global_assignment -name ROUTER_TIMING_OPTIMIZATION_LEVEL MAXIMUM
 set_global_assignment -name PLACEMENT_EFFORT_MULTIPLIER 4.0
 set_global_assignment -name FITTER_EFFORT "STANDARD FIT"
 
+set_instance_assignment -name MUX_RESTRUCTURE OFF -to "*"
+
 set_global_assignment -name VERILOG_FILE ../../../rtl/sv_ver/vendor/alt_ram/frame_table.v
-set_global_assignment -name VERILOG_FILE ../../../rtl/sv_ver/vendor/alt_ram/handle_fifo.v
-set_global_assignment -name VERILOG_FILE ../../../rtl/sv_ver/vendor/alt_ram/lane_fifo.v
+set_global_assignment -name VERILOG_FILE src_compat/handle_fifo.v
+set_global_assignment -name VERILOG_FILE src_compat/lane_fifo.v
 set_global_assignment -name VERILOG_FILE src_compat/page_ram.v
-set_global_assignment -name VERILOG_FILE ../../../rtl/sv_ver/vendor/alt_ram/ticket_fifo.v
+set_global_assignment -name VERILOG_FILE src_compat/ticket_fifo.v
 set_global_assignment -name VERILOG_FILE ../../../rtl/sv_ver/vendor/alt_ram/tile_fifo.v
 
 set_global_assignment -name SYSTEMVERILOG_FILE ../../../rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv
@@ -36,7 +40,7 @@ set_global_assignment -name SYSTEMVERILOG_FILE ../../../rtl/sv_ver/ordered_prior
 set_global_assignment -name SYSTEMVERILOG_FILE src_compat/ordered_priority_queue_monolithic_block_path.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../../../rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_tracker.sv
 set_global_assignment -name SYSTEMVERILOG_FILE src_compat/ordered_priority_queue_monolithic_frame_table_presenter.sv
-set_global_assignment -name SYSTEMVERILOG_FILE ../../../rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src_compat/ordered_priority_queue_monolithic_basic_presenter.sv
 set_global_assignment -name SYSTEMVERILOG_FILE src_compat/ordered_priority_queue_monolithic.sv
 set_global_assignment -name SYSTEMVERILOG_FILE opq_native_sv_2lane_signoff_top.sv
 

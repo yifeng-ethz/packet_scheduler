@@ -1,6 +1,13 @@
 # Changelog
 Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 
+## 26.3.28.0420
+
+- **Packaging / `_hw.tcl` Contract**: constrained the monolithic OPQ package to the honest live release envelope. `ordered_priority_queue_hw.tcl` now exposes `N_LANE={2,4,8,16}`, `MODE=MERGING`, `TRACK_HEADER=true`, `INGRESS_DATA_WIDTH=32`, `INGRESS_DATAK_WIDTH=4`, `N_SHD={64,128,256,512}`, and auto-derived `CHANNEL_WIDTH`, `LANE_FIFO_WIDTH`, `TICKET_FIFO_DEPTH`, `HANDLE_FIFO_DEPTH`, and `PAGE_RAM_RD_WIDTH`. Wider `64/128`-bit hit words and wider DMA-packed egress beats remain documented staged axes, not legal packaged points.
+- **Packaging / GUI Documentation**: refreshed the monolithic OPQ `_hw.tcl` HTML descriptions so the packet contract now explicitly shows header / payload / trailer format, the current 36-bit symbol layout, the auto-sized parameter rules, and the delivered release profile for `26.3.28.0420`.
+- **Synthesis / 2-Lane Standalone Closure**: repaired the stale `opq_native_sv_2lane_signoff` collateral by aligning its local `src_compat/` files to the live 4-lane synthesis-compat set and correcting the stale SDC clock target from `d_clk` to the real harness port `clk`. The refreshed 2-lane standalone Arria-10 build now closes the `275 MHz` signoff target with `+0.172 ns` setup slack and `129` M20Ks.
+- **Documentation / Config Matrix**: added `doc/CONFIG_SIGNOFF.md` and linked it from the root README, signoff dashboard, script README, TB README, and synthesis README so grouped parameter legality, measured points, staged non-claims, and bounded DV extensions are visible from the main entry points.
+
 ## 26.3.26.0419
 
 - **RTL / Native-SV Mixed-Soak Exact Window**: fixed the monolithic page allocator so a new frame seeds `running_ts` from the parser's current running subheader timestamp instead of the frame header timestamp. The allocator no longer misclassifies the first live payload tickets as `future` and no longer closes an empty frame tail before fetching same-frame payload.

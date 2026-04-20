@@ -12,4 +12,6 @@ Platform Designer packaging and root-level IP scripts for `packet_scheduler`.
 
 Add `packet_scheduler/script` to the Platform Designer IP search path. The
 scripts now reference the canonical `rtl/legacy/`, `rtl/vhdl_ver/`, and
-`rtl/sv_ver/` trees directly.
+`rtl/sv_ver/` trees directly. The active packaged legality contract for
+`ordered_priority_queue_hw.tcl` is summarized in
+[`../doc/CONFIG_SIGNOFF.md`](../doc/CONFIG_SIGNOFF.md).
