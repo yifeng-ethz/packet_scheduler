@@ -135,6 +135,21 @@ Planned extension points:
 - packet-complete gating invariants between frame-table visibility, delayed
   DRR block writes, and accepted-count correction after late drop
 
+### Debug Hooks
+
+For pre-fix bug hunts on the native-SV path, the harness now has two useful
+runtime aids:
+
+- `report_core_principle_checkpoint(...)` in
+  `packet_scheduler/tb/uvm/opq_base_test.sv`
+  - classifies a failing checkpoint by boundary family:
+    frame-table ownership, hit conservation, accepted-delivery closure, or
+    drained-state closure
+- `+OPQ_NATIVE_TRACE_OWNERSHIP`
+  - emits a structured native frame-ownership trace from
+    `ordered_priority_queue_monolithic.sv` for frame claim, allocator
+    completion, presenter enqueue, and frame-table drop events
+
 The current hit-contract checker intentionally remains data-framed rather than
 sideband-framed:
 

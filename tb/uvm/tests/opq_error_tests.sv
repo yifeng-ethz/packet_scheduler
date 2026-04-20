@@ -263,6 +263,9 @@ class opq_error_ftable_overflow_test extends opq_base_test;
     if ((ft_drop_hdr_word == 0) && (ft_drop_shd_word == 0) && (ft_drop_hit_word == 0)) begin
       `uvm_error(get_type_name(), "Expected non-zero frame-table drop counters during forced egress stall overflow run")
     end
+    report_frame_table_accounting_checkpoint("forced_overflow_final", 1'b1);
+    report_lane_hit_accounting_checkpoint("forced_overflow_final", 1'b1);
+    report_core_principle_checkpoint("forced_overflow_final", 1'b1, 1'b1);
   endtask
 endclass
 

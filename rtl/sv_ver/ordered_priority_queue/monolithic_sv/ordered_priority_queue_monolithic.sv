@@ -434,6 +434,64 @@ module ordered_priority_queue_monolithic_sv #(
         (presenter_i.native_i.overwrite_scan_active || presenter_i.native_i.overwrite_scan_process_head)
       );
     end
+    if ($test$plusargs("OPQ_NATIVE_TRACE_OWNERSHIP") &&
+        (!trace_after_ps_valid_v || ($time >= trace_after_ps_v))) begin
+      if (write_head_active_dbg && (write_meta_flow_dbg == 3'd0)) begin
+        $display(
+          "[opq_native_owner] t=%0t evt=claim frame_serial_this=0x%0h next_frame_serial=0x%0h frame_start=0x%0h shd_this=%0d hit_this=%0d lane_active=0x%0h ingress_eop=0x%0h ingress_busy=0x%0h",
+          $time,
+          page_allocator_i.page_allocator.frame_serial_this,
+          page_allocator_i.page_allocator.frame_serial,
+          frame_start_addr_dbg,
+          frame_shr_cnt_this_dbg,
+          frame_hit_cnt_this_dbg,
+          page_allocator_i.page_allocator.frame_lane_active,
+          ingress_alert_eop_dbg,
+          ingress_parser_busy_dbg
+        );
+      end
+      if (packet_complete_pulse_dbg) begin
+        $display(
+          "[opq_native_owner] t=%0t evt=alloc_complete frame_serial_this=0x%0h frame_start=0x%0h page_len=0x%0h shd_accum=%0d hit_accum=%0d shd_this=%0d hit_this=%0d",
+          $time,
+          page_allocator_i.page_allocator.frame_serial_this,
+          frame_start_addr_dbg,
+          page_allocator_i.page_allocator.page_length,
+          page_allocator_i.page_allocator.frame_shr_cnt,
+          page_allocator_i.page_allocator.frame_hit_cnt,
+          frame_shr_cnt_this_dbg,
+          frame_hit_cnt_this_dbg
+        );
+      end
+      if (packet_complete_presenter_dbg) begin
+        $display(
+          "[opq_native_owner] t=%0t evt=presenter_enqueue frame_start=0x%0h shd=%0d hit=%0d meta_wptr=0x%0h meta_rptr=0x%0h",
+          $time,
+          packet_complete_addr_presenter_dbg,
+          packet_complete_shr_cnt_presenter_dbg,
+          packet_complete_hit_cnt_presenter_dbg,
+          presenter_i.native_i.meta_wptr,
+          presenter_i.native_i.meta_rptr
+        );
+      end
+      if (ft_drop_valid_dbg) begin
+        $display(
+          "[opq_native_owner] t=%0t evt=ft_drop hdr=%0d shd=%0d hit=%0d presenter_state=%0d meta_wptr=0x%0h meta_rptr=0x%0h head_valid=%0b head_addr=0x%0h head_len=0x%0h pkt_accept_started=%0b retire_pending=%0b",
+          $time,
+          ft_drop_hdr_cnt_dbg,
+          ft_drop_shd_cnt_dbg,
+          ft_drop_hit_cnt_dbg,
+          presenter_i.native_i.presenter_state,
+          presenter_i.native_i.meta_wptr,
+          presenter_i.native_i.meta_rptr,
+          presenter_i.native_i.head_meta_valid,
+          presenter_i.native_i.head_addr_q,
+          presenter_i.native_i.head_len_q,
+          presenter_i.native_i.pkt_accept_started,
+          presenter_i.native_i.retire_pending
+        );
+      end
+    end
   end
 `endif
 // synthesis translate_on

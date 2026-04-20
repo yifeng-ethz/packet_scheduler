@@ -467,6 +467,104 @@ class opq_base_test extends uvm_test;
     end
   endtask
 
+  task automatic report_core_principle_checkpoint(
+    string label,
+    bit require_drained = 1'b0,
+    bit require_ft_match = 1'b1
+  );
+    bit hit_conservation_ok;
+    bit accepted_delivery_ok;
+    bit drained_ok;
+    bit ft_ownership_ok;
+    string first_break;
+
+    hit_conservation_ok = 1'b1;
+    accepted_delivery_ok = 1'b1;
+    drained_ok = 1'b1;
+    ft_ownership_ok = 1'b1;
+
+    for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+      bit [8:0] lane_base;
+      bit [31:0] drop_shd_word;
+      bit [31:0] drop_hit_word;
+      int unsigned expected_hits;
+      int unsigned accepted_hits;
+      int unsigned dropped_hits;
+      int unsigned delivered_hits;
+      int unsigned unexplained_hits;
+
+      lane_base = OPQ_CSR_LANE_REGION_BASE + lane * OPQ_CSR_LANE_REGION_STRIDE;
+      csr_read32(lane_base + 9'h007, drop_shd_word);
+      csr_read32(lane_base + 9'h008, drop_hit_word);
+
+      expected_hits = env.scoreboard.get_expected_lane_hit_cnt(lane);
+      accepted_hits = env.scoreboard.get_accepted_lane_hit_cnt(lane);
+      dropped_hits = drop_hit_word;
+      delivered_hits = env.scoreboard.get_actual_lane_hit_cnt(lane);
+      unexplained_hits = env.scoreboard.get_unexplained_lane_hit_cnt(lane);
+
+      if (expected_hits != (dropped_hits + delivered_hits + unexplained_hits)) begin
+        hit_conservation_ok = 1'b0;
+      end
+      if (accepted_hits != (delivered_hits + unexplained_hits)) begin
+        accepted_delivery_ok = 1'b0;
+      end
+      if (require_drained && (unexplained_hits != 0)) begin
+        drained_ok = 1'b0;
+      end
+    end
+
+    if (require_ft_match) begin
+      bit [31:0] ft_wr_hdr_word;
+      bit [31:0] ft_wr_shd_word;
+      bit [31:0] ft_wr_hit_word;
+      bit [31:0] ft_rd_hdr_word;
+      bit [31:0] ft_rd_shd_word;
+      bit [31:0] ft_rd_hit_word;
+      bit [31:0] ft_drop_hdr_word;
+      bit [31:0] ft_drop_shd_word;
+      bit [31:0] ft_drop_hit_word;
+
+      csr_read32(OPQ_CSR_WORD_FT_WR_HDR, ft_wr_hdr_word);
+      csr_read32(OPQ_CSR_WORD_FT_WR_SHD, ft_wr_shd_word);
+      csr_read32(OPQ_CSR_WORD_FT_WR_HIT, ft_wr_hit_word);
+      csr_read32(OPQ_CSR_WORD_FT_RD_HDR, ft_rd_hdr_word);
+      csr_read32(OPQ_CSR_WORD_FT_RD_SHD, ft_rd_shd_word);
+      csr_read32(OPQ_CSR_WORD_FT_RD_HIT, ft_rd_hit_word);
+      csr_read32(OPQ_CSR_WORD_FT_DROP_HDR, ft_drop_hdr_word);
+      csr_read32(OPQ_CSR_WORD_FT_DROP_SHD, ft_drop_shd_word);
+      csr_read32(OPQ_CSR_WORD_FT_DROP_HIT, ft_drop_hit_word);
+
+      if ((ft_wr_hdr_word !== (ft_rd_hdr_word + ft_drop_hdr_word)) ||
+          (ft_wr_shd_word !== (ft_rd_shd_word + ft_drop_shd_word)) ||
+          (ft_wr_hit_word !== (ft_rd_hit_word + ft_drop_hit_word))) begin
+        ft_ownership_ok = 1'b0;
+      end
+    end
+
+    if (!ft_ownership_ok) begin
+      first_break = "frame_table_ownership";
+    end else if (!hit_conservation_ok) begin
+      first_break = "hit_conservation";
+    end else if (!accepted_delivery_ok) begin
+      first_break = "accepted_delivery";
+    end else if (!drained_ok) begin
+      first_break = "drain_not_closed";
+    end else begin
+      first_break = "clean";
+    end
+
+    `uvm_info(get_type_name(), $sformatf(
+      "%s core_principles first_break=%s ft_ownership=%s hit_conservation=%s accepted_delivery=%s drained=%s",
+      label,
+      first_break,
+      ft_ownership_ok ? "ok" : "bad",
+      hit_conservation_ok ? "ok" : "bad",
+      accepted_delivery_ok ? "ok" : "bad",
+      drained_ok ? "ok" : "bad"
+    ), UVM_LOW)
+  endtask
+
   task automatic read_lane_drr_snapshot(
     int lane_id,
     output int unsigned allowance_word,
@@ -676,6 +774,7 @@ class opq_base_test extends uvm_test;
     dump_dut_status_snapshot({tag, "_timeout"});
     poll_lane_credits(4, 500ns);
     report_lane_hit_accounting_checkpoint({tag, "_timeout"}, 1'b0);
+    report_core_principle_checkpoint({tag, "_timeout"}, 1'b0, 1'b1);
   endtask
 
   task automatic wait_for_ingress_idle(

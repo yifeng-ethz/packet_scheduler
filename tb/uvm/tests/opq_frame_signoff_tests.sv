@@ -1673,6 +1673,7 @@ class opq_cross_random_ready_overflow_seconds_soak_test extends opq_frame_signof
     update_ftable_drop_progress(step_idx);
     report_frame_table_accounting_checkpoint($sformatf("%s_step_%0d", soak_label(), step_idx), 1'b1);
     report_lane_hit_accounting_checkpoint($sformatf("%s_step_%0d", soak_label(), step_idx), 1'b1);
+    report_core_principle_checkpoint($sformatf("%s_step_%0d", soak_label(), step_idx), 1'b1, 1'b1);
     #(inter_case_gap_time());
   endtask
 
@@ -1797,6 +1798,7 @@ class opq_cross_random_ready_overflow_seconds_soak_test extends opq_frame_signof
     end
     report_frame_table_accounting_checkpoint({soak_label(), "_final"}, 1'b1);
     report_lane_hit_accounting_checkpoint({soak_label(), "_final"}, 1'b1);
+    report_core_principle_checkpoint({soak_label(), "_final"}, 1'b1, 1'b1);
   endtask
 endclass
 
