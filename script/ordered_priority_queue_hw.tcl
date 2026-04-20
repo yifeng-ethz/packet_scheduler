@@ -8,7 +8,7 @@ package require -exact altera_terp 1.0
 
 set_module_property NAME                             ordered_priority_queue
 set_module_property DISPLAY_NAME                     "Ordered Priority Queue"
-set_module_property VERSION                          26.3.28.0420
+set_module_property VERSION                          26.3.29.0420
 set_module_property DESCRIPTION                      "Ordered Priority Queue Mu3e IP Core"
 set_module_property GROUP                            "Mu3e Data Plane/Modules"
 set_module_property AUTHOR                           "Yifeng Wang (yifenwan@phys.ethz.ch)"
@@ -101,6 +101,192 @@ proc sync_auto_parameters {} {
     set_parameter_value PAGE_RAM_RD_WIDTH [derive_page_ram_rd_width $data_w $datak_w]
 }
 
+proc opq_define_preset {name desc params} {
+    variable OPQ_PRESETS
+    variable OPQ_PRESET_DESC
+    variable OPQ_PRESET_ORDER
+
+    dict set OPQ_PRESETS $name $params
+    dict set OPQ_PRESET_DESC $name $desc
+    lappend OPQ_PRESET_ORDER $name
+}
+
+variable OPQ_PRESETS [dict create]
+variable OPQ_PRESET_DESC [dict create]
+variable OPQ_PRESET_ORDER [list]
+
+opq_define_preset "2LANE_BASE" \
+    "2-lane representative preset. N_SHD fixed to 128, base 36-bit symbol contract, balanced initial lane FIFO depth." \
+    {
+        N_LANE              2
+        MODE                MERGING
+        TRACK_HEADER        true
+        INGRESS_DATA_WIDTH  32
+        INGRESS_DATAK_WIDTH 4
+        LANE_FIFO_DEPTH     1024
+        PAGE_RAM_DEPTH      65536
+        N_SHD               128
+        N_HIT               255
+    }
+
+opq_define_preset "2LANE_DEEP" \
+    "2-lane deeper-FIFO representative preset. Same 36-bit symbol contract, N_SHD fixed to 128, larger lane skew tolerance." \
+    {
+        N_LANE              2
+        MODE                MERGING
+        TRACK_HEADER        true
+        INGRESS_DATA_WIDTH  32
+        INGRESS_DATAK_WIDTH 4
+        LANE_FIFO_DEPTH     2048
+        PAGE_RAM_DEPTH      65536
+        N_SHD               128
+        N_HIT               255
+    }
+
+opq_define_preset "4LANE_BASE" \
+    "4-lane representative preset. N_SHD fixed to 128, base 36-bit symbol contract, balanced initial lane FIFO depth." \
+    {
+        N_LANE              4
+        MODE                MERGING
+        TRACK_HEADER        true
+        INGRESS_DATA_WIDTH  32
+        INGRESS_DATAK_WIDTH 4
+        LANE_FIFO_DEPTH     2048
+        PAGE_RAM_DEPTH      65536
+        N_SHD               128
+        N_HIT               255
+    }
+
+opq_define_preset "4LANE_DEEP" \
+    "4-lane deeper-FIFO representative preset. Same 36-bit symbol contract, N_SHD fixed to 128, larger lane skew tolerance." \
+    {
+        N_LANE              4
+        MODE                MERGING
+        TRACK_HEADER        true
+        INGRESS_DATA_WIDTH  32
+        INGRESS_DATAK_WIDTH 4
+        LANE_FIFO_DEPTH     4096
+        PAGE_RAM_DEPTH      65536
+        N_SHD               128
+        N_HIT               255
+    }
+
+opq_define_preset "8LANE_BASE" \
+    "8-lane representative preset. N_SHD fixed to 128, base 36-bit symbol contract, balanced initial lane FIFO depth." \
+    {
+        N_LANE              8
+        MODE                MERGING
+        TRACK_HEADER        true
+        INGRESS_DATA_WIDTH  32
+        INGRESS_DATAK_WIDTH 4
+        LANE_FIFO_DEPTH     4096
+        PAGE_RAM_DEPTH      65536
+        N_SHD               128
+        N_HIT               255
+    }
+
+opq_define_preset "8LANE_DEEP" \
+    "8-lane deeper-FIFO representative preset. Same 36-bit symbol contract, N_SHD fixed to 128, larger lane skew tolerance." \
+    {
+        N_LANE              8
+        MODE                MERGING
+        TRACK_HEADER        true
+        INGRESS_DATA_WIDTH  32
+        INGRESS_DATAK_WIDTH 4
+        LANE_FIFO_DEPTH     8192
+        PAGE_RAM_DEPTH      65536
+        N_SHD               128
+        N_HIT               255
+    }
+
+opq_define_preset "16LANE_BASE" \
+    "16-lane representative preset. N_SHD fixed to 128, base 36-bit symbol contract, balanced initial lane FIFO depth." \
+    {
+        N_LANE              16
+        MODE                MERGING
+        TRACK_HEADER        true
+        INGRESS_DATA_WIDTH  32
+        INGRESS_DATAK_WIDTH 4
+        LANE_FIFO_DEPTH     8192
+        PAGE_RAM_DEPTH      65536
+        N_SHD               128
+        N_HIT               255
+    }
+
+opq_define_preset "16LANE_DEEP" \
+    "16-lane deeper-FIFO representative preset. Same 36-bit symbol contract, N_SHD fixed to 128, larger lane skew tolerance." \
+    {
+        N_LANE              16
+        MODE                MERGING
+        TRACK_HEADER        true
+        INGRESS_DATA_WIDTH  32
+        INGRESS_DATAK_WIDTH 4
+        LANE_FIFO_DEPTH     16384
+        PAGE_RAM_DEPTH      65536
+        N_SHD               128
+        N_HIT               255
+    }
+
+proc opq_get_preset_names {} {
+    variable OPQ_PRESET_ORDER
+    return $OPQ_PRESET_ORDER
+}
+
+proc opq_apply_preset {preset_name} {
+    variable OPQ_PRESETS
+
+    if {$preset_name eq "CUSTOM"} {
+        sync_auto_parameters
+        return
+    }
+
+    if {![dict exists $OPQ_PRESETS $preset_name]} {
+        send_message error "Unknown OPQ preset: $preset_name"
+        return
+    }
+
+    set params [dict get $OPQ_PRESETS $preset_name]
+    dict for {pname pval} $params {
+        if {[catch {set_parameter_value $pname $pval} err]} {
+            send_message warning "Preset $preset_name: failed to set $pname=$pval: $err"
+        }
+    }
+    sync_auto_parameters
+}
+
+proc opq_apply_preset_if_needed {} {
+    set preset [get_parameter_value PRESET]
+    if {$preset eq ""} {
+        set preset "CUSTOM"
+    }
+    opq_apply_preset $preset
+}
+
+proc opq_preset_summary_html {selected_preset} {
+    variable OPQ_PRESETS
+    variable OPQ_PRESET_DESC
+    variable OPQ_PRESET_ORDER
+
+    set html "<html><b>Representative preset selector</b><br/>"
+    append html "Concrete presets intentionally pin <b>N_SHD=128</b> and the safe current <b>32 data + 4 datak</b> / <b>36-bit egress</b> contract. "
+    append html "Wider ingress / egress preset families are intentionally deferred because the current monolithic RTL still contains fixed 36/40-bit assumptions in the ingress parser and basic presenter path.<br/><br/>"
+    append html "<table border=\"1\" cellpadding=\"3\" width=\"100%\">"
+    append html "<tr><th>Preset</th><th>N_LANE</th><th>LANE_FIFO_DEPTH</th><th>Ingress</th><th>Egress</th><th>Description</th></tr>"
+    foreach name $OPQ_PRESET_ORDER {
+        set params [dict get $OPQ_PRESETS $name]
+        set n_lane [dict get $params N_LANE]
+        set lane_fifo_depth [dict get $params LANE_FIFO_DEPTH]
+        set desc [dict get $OPQ_PRESET_DESC $name]
+        set preset_label $name
+        if {$name eq $selected_preset} {
+            set preset_label "<b>$name</b>"
+        }
+        append html "<tr><td>$preset_label</td><td>$n_lane</td><td>$lane_fifo_depth</td><td>32+4</td><td>36</td><td><small>$desc</small></td></tr>"
+    }
+    append html "</table><br/><b>CUSTOM</b> leaves the individual parameters editable; the named presets are representative starting points rather than a signoff claim on the full matrix space.</html>"
+    return $html
+}
+
 # ────────────────────────────────────────────────────────────────────────────
 # Identity constants — packaged 2026-04-20
 # ────────────────────────────────────────────────────────────────────────────
@@ -108,7 +294,7 @@ proc sync_auto_parameters {} {
 set IP_UID_DEFAULT_CONST        1330663757
 set VERSION_MAJOR_DEFAULT_CONST 26
 set VERSION_MINOR_DEFAULT_CONST 3
-set VERSION_PATCH_DEFAULT_CONST 28
+set VERSION_PATCH_DEFAULT_CONST 29
 set BUILD_DEFAULT_CONST         420
 set VERSION_DATE_DEFAULT_CONST  20260420
 # 32-bit packaged provenance stamp for this release family
@@ -203,8 +389,10 @@ set OPQ_LANE_REGION_HTML {<html><table border="1" cellpadding="3" width="100%">
 # Derived-value / GUI-text helper
 # ────────────────────────────────────────────────────────────────────────────
 proc compute_derived_values {} {
+    opq_apply_preset_if_needed
     sync_auto_parameters
 
+    set preset          [get_parameter_value PRESET]
     set n_lane          [get_parameter_value N_LANE]
     set mode            [get_parameter_value MODE]
     set track_header    [get_parameter_value TRACK_HEADER]
@@ -253,7 +441,10 @@ proc compute_derived_values {} {
         set_display_item_property throughput_html TEXT "<html><b>Expected throughput</b><br/>Aggregation mode: <b>${mode}</b><br/>Current packaged egress beat: <b>${page_ram_rd_w}</b> bits/cycle = <b>${symbols_per_beat}</b> ingress symbol per egress beat<br/>Per-lane ingress budget: <b>${ingress_beat_w}</b> bits/cycle at the shared data-path clock<br/>Lossless equal-load share guideline: the single egress symbol stream gives each lane roughly <b>1/${n_lane}</b> of the sustained symbol budget before packet-overhead effects.<br/>Block-mover scheduling: shared page-RAM write port is serviced by an <b>ordered block-level DRR arbiter</b> with software-tunable per-lane refill allowance.<br/>Backpressure: ingress lanes are <i>non-backlog</i> (drop-on-full inside the lane/ticket FIFOs); egress honours <code>ready</code>.<br/>Wide DMA pack ratios (4\u00d7 / 8\u00d7 / 16\u00d7 base beat with <code>empty</code>) are staged future work and are intentionally not exposed as legal points in this packaged release.</html>"
     }
     catch {
-        set_display_item_property profile_html TEXT "<html><b>Catalog revision</b><br/>This release is packaged as <b>${::OPQ_VERSION_STRING}</b> (git <b>${::OPQ_GIT_HEX_STRING}</b>).<br/><br/><b>Packaged legal points</b><br/>N_LANE=<b>{2,4,8,16}</b>, MODE=<b>MERGING</b>, TRACK_HEADER=<b>true</b>, ingress=<b>32 data + 4 datak</b>, N_SHD=<b>{64,128,256,512}</b>. CHANNEL_WIDTH, LANE_FIFO_WIDTH, TICKET_FIFO_DEPTH, HANDLE_FIFO_DEPTH, and PAGE_RAM_RD_WIDTH are auto-derived for the selected point.<br/><br/><b>Staged but not packaged in this release</b><br/>64-bit / 128-bit hit words, wider DMA egress packing, and corresponding <code>empty</code> signalling remain future work until the parser, presenter, and live DV harness are widened together.<br/><br/><b>Current instance</b><br/>MODE=<b>${mode}</b>, N_LANE=<b>${n_lane}</b>, N_SHD=<b>${n_shd}</b>, N_HIT=<b>${n_hit}</b>, CHANNEL_WIDTH=<b>${channel_w}</b>, PAGE_RAM_RD_WIDTH=<b>${page_ram_rd_w}</b>.<br/><br/><b>Runtime visibility</b><br/>The monolithic OPQ exposes a runtime <b>CSR Avalon-MM slave</b>. Software can read the common Mu3e <b>UID + META</b> header, inspect per-lane write/read/drop counters, inspect frame-table ownership counters, clear counter state, program a per-lane packet-boundary mask, and tune the per-lane <b>DRR allowance</b> used by the shared page-RAM arbiter.</html>"
+        set_display_item_property profile_html TEXT "<html><b>Catalog revision</b><br/>This release is packaged as <b>${::OPQ_VERSION_STRING}</b> (git <b>${::OPQ_GIT_HEX_STRING}</b>).<br/><br/><b>Packaged legal points</b><br/>N_LANE=<b>{2,4,8,16}</b>, MODE=<b>MERGING</b>, TRACK_HEADER=<b>true</b>, ingress=<b>32 data + 4 datak</b>, N_SHD=<b>{64,128,256,512}</b>. CHANNEL_WIDTH, LANE_FIFO_WIDTH, TICKET_FIFO_DEPTH, HANDLE_FIFO_DEPTH, and PAGE_RAM_RD_WIDTH are auto-derived for the selected point.<br/><br/><b>Representative preset family</b><br/>The preset menu adds nine GUI options (<b>CUSTOM</b> plus eight named presets). All concrete named presets pin <b>N_SHD=128</b> and scale <b>N_LANE</b> plus <b>LANE_FIFO_DEPTH</b> as a starting point for later quantitative analysis.<br/><br/><b>Deferred preset axes</b><br/>64-bit / 128-bit hit words and wider DMA egress packing remain future work because the current monolithic RTL still contains fixed 36/40-bit assumptions in the ingress parser and presenter path.<br/><br/><b>Current instance</b><br/>PRESET=<b>${preset}</b>, MODE=<b>${mode}</b>, N_LANE=<b>${n_lane}</b>, N_SHD=<b>${n_shd}</b>, N_HIT=<b>${n_hit}</b>, CHANNEL_WIDTH=<b>${channel_w}</b>, PAGE_RAM_RD_WIDTH=<b>${page_ram_rd_w}</b>.<br/><br/><b>Runtime visibility</b><br/>The monolithic OPQ exposes a runtime <b>CSR Avalon-MM slave</b>. Software can read the common Mu3e <b>UID + META</b> header, inspect per-lane write/read/drop counters, inspect frame-table ownership counters, clear counter state, program a per-lane packet-boundary mask, and tune the per-lane <b>DRR allowance</b> used by the shared page-RAM arbiter.</html>"
+    }
+    catch {
+        set_display_item_property preset_html TEXT [opq_preset_summary_html $preset]
     }
 }
 
@@ -455,6 +646,12 @@ proc my_generate {output_name} {
 # ────────────────────────────────────────────────────────────────────────────
 # HDL parameters (mirror the entity generics of the monolithic core)
 # ────────────────────────────────────────────────────────────────────────────
+add_parameter PRESET STRING "2LANE_BASE"
+set_parameter_property PRESET DISPLAY_NAME "Representative Preset"
+set_parameter_property PRESET ALLOWED_RANGES [linsert [opq_get_preset_names] 0 CUSTOM]
+set_parameter_property PRESET HDL_PARAMETER false
+set_parameter_property PRESET DESCRIPTION "Representative preset selector for the `_hw.tcl` GUI. The named presets pin N_SHD=128 and scale N_LANE plus LANE_FIFO_DEPTH. CUSTOM leaves the individual parameters editable."
+
 add_parameter N_LANE NATURAL 2
 set_parameter_property N_LANE DISPLAY_NAME "Number of Ingress Lanes"
 set_parameter_property N_LANE ALLOWED_RANGES {2 4 8 16}
@@ -533,7 +730,7 @@ set_parameter_property PAGE_RAM_RD_WIDTH ALLOWED_RANGES {36}
 set_parameter_property PAGE_RAM_RD_WIDTH HDL_PARAMETER true
 set_parameter_property PAGE_RAM_RD_WIDTH DESCRIPTION "Auto-derived to the base ingress symbol width (32d + 4k = 36 bits) in the current packaged release. Future DMA-compatible 4x / 8x / 16x packed widths and the corresponding <code>empty</code> sideband are staged future work."
 
-add_parameter N_SHD NATURAL 256
+add_parameter N_SHD NATURAL 128
 set_parameter_property N_SHD DISPLAY_NAME "Subheaders per Header Packet"
 set_parameter_property N_SHD ALLOWED_RANGES {64 128 256 512}
 set_parameter_property N_SHD HDL_PARAMETER true
@@ -675,6 +872,7 @@ add_display_item "" $TAB_REGMAP        GROUP tab
 
 # ---- Configuration ---------------------------------------------------------
 add_display_item $TAB_CONFIGURATION "Overview"       GROUP
+add_display_item $TAB_CONFIGURATION "Presets"        GROUP
 add_display_item $TAB_CONFIGURATION "Aggregation"    GROUP
 add_display_item $TAB_CONFIGURATION "Ingress Format" GROUP
 add_display_item $TAB_CONFIGURATION "Sizing"         GROUP
@@ -683,6 +881,9 @@ add_display_item $TAB_CONFIGURATION "Throughput"     GROUP
 add_display_item $TAB_CONFIGURATION "Debug"          GROUP
 
 add_html_text "Overview" overview_html {<html><b>Function</b><br/>Aggregates <i>N_LANE</i> ingress Avalon-ST flows (one per FEB) into a single timestamp-ordered egress flow. The monolithic core owns the full datapath: per-lane <b>ingress parser</b> \u2192 <b>lane FIFO</b> + <b>ticket FIFO</b> \u2192 <b>page allocator</b> \u2192 <b>block mover</b> \u2192 <b>ordered block-level DRR arbiter</b> \u2192 <b>page RAM</b> (3-segment dynamic) \u2192 egress.<br/><br/><b>Current packaged scope</b><br/>This release packages the verified 36-bit symbol contract: <b>32-bit data + 4-bit datak</b>, <b>MERGING</b> mode only, <b>TRACK_HEADER=true</b>, and <b>N_SHD={64,128,256,512}</b>. Wider hit words and wide DMA pack ratios remain staged future work and are not advertised as legal points here.<br/><br/><b>Clocking</b><br/>Single synchronous data-path domain (<code>d_clk</code> / <code>d_reset</code>) shared by all lanes and the egress path.<br/><br/><b>Flow control</b><br/>Ingress lanes are non-backlog (drop-on-full inside the lane/ticket FIFOs). The egress source honours Avalon-ST <code>ready</code>.</html>}
+
+add_display_item "Presets" PRESET parameter
+add_html_text "Presets" preset_html "<html><b>Representative preset selector</b><br/>Loading preset matrix...</html>"
 
 add_display_item "Aggregation" N_LANE       parameter
 add_display_item "Aggregation" MODE         parameter

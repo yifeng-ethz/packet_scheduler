@@ -1,7 +1,7 @@
 # ⚠️ Signoff — packet_scheduler ordered_priority_queue
 
 **DUT:** `ordered_priority_queue` &nbsp; **Date:** `2026-04-20` &nbsp;
-**Release under check:** `26.3.28.0420` &nbsp; **Git base:** `local working tree`
+**Release under check:** `26.3.29.0420` &nbsp; **Git base:** `local working tree`
 
 This page is the master signoff dashboard. Detailed standalone synthesis
 evidence lives in [`../syn/SYN_REPORT.md`](../syn/SYN_REPORT.md); detailed DV
@@ -67,7 +67,8 @@ configuration legality and evidence matrix lives in
 - [`../tb_int/DV_REPORT.md`](../tb_int/DV_REPORT.md) — integrated long-run dashboard
 - [`../tb_int/BUG_HISTORY.md`](../tb_int/BUG_HISTORY.md) — integrated bug ledger
 - [`../syn/SYN_REPORT.md`](../syn/SYN_REPORT.md) — standalone synthesis dashboard
-- [`CONFIG_SIGNOFF.md`](CONFIG_SIGNOFF.md) — grouped parameter legality and evidence matrix
+- [`CONFIG_SIGNOFF.md`](CONFIG_SIGNOFF.md) — representative preset matrix and generator-backed full-space closure counts
+- [`../tb/scripts/gen_config_signoff_matrix.py`](../tb/scripts/gen_config_signoff_matrix.py) — exhaustive configuration-space tracer
 - [`../script/ordered_priority_queue_hw.tcl`](../script/ordered_priority_queue_hw.tcl) — monolithic OPQ packaging entry point
 
 ## Notes

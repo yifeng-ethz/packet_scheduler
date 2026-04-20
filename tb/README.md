@@ -39,6 +39,8 @@ Signoff evidence in this tree is required to come from `DUT_IMPL=native_sv`.
 - The master signoff dashboard is `packet_scheduler/doc/SIGNOFF.md`.
 - The grouped parameter / bounded-evidence matrix is
   `packet_scheduler/doc/CONFIG_SIGNOFF.md`.
+- The exhaustive parameter-space tracer behind that matrix is
+  `packet_scheduler/tb/scripts/gen_config_signoff_matrix.py`.
 - `packet_scheduler/doc/VERIFICATION_SIGNOFF.md` is preserved as the older long-form narrative note.
 - Native-SV signoff scope is currently the 2-lane harness plus the
   `N_SHD=128/256/512` sweep; 4-lane native-SV remains a non-claim until

@@ -1,6 +1,12 @@
 # Changelog
 Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 
+## 26.3.29.0420
+
+- **Packaging / Representative Presets**: added a GUI-visible `PRESET` selector to `ordered_priority_queue_hw.tcl` with nine visible options (`CUSTOM` plus eight named presets). All concrete named presets intentionally pin `N_SHD=128`, keep the safe `32 data + 4 datak` / `36-bit` egress contract, and scale `N_LANE` plus `LANE_FIFO_DEPTH` as representative starting points for later quantitative closure work.
+- **Packaging / Width-Axis Guardrail**: kept the wider-ingress and wider-egress preset families out of the live `_hw.tcl` selector because the current monolithic RTL still contains fixed `36`/`40`-bit assumptions in the ingress parser and basic presenter path. Those axes remain tracked as staged future work instead of being exposed as misleading package presets.
+- **Documentation / Matrix Ownership**: reduced `doc/CONFIG_SIGNOFF.md` back to a representative preset matrix that matches the `_hw.tcl` selector and moved the authoritative `768`-tuple Cartesian-product closure tracking into `tb/scripts/gen_config_signoff_matrix.py`, which can emit summary, CSV, JSON, or Markdown views of the full space.
+
 ## 26.3.28.0420
 
 - **Packaging / `_hw.tcl` Contract**: constrained the monolithic OPQ package to the honest live release envelope. `ordered_priority_queue_hw.tcl` now exposes `N_LANE={2,4,8,16}`, `MODE=MERGING`, `TRACK_HEADER=true`, `INGRESS_DATA_WIDTH=32`, `INGRESS_DATAK_WIDTH=4`, `N_SHD={64,128,256,512}`, and auto-derived `CHANNEL_WIDTH`, `LANE_FIFO_WIDTH`, `TICKET_FIFO_DEPTH`, `HANDLE_FIFO_DEPTH`, and `PAGE_RAM_RD_WIDTH`. Wider `64/128`-bit hit words and wider DMA-packed egress beats remain documented staged axes, not legal packaged points.

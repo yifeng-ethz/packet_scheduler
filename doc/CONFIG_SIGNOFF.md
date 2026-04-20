@@ -1,14 +1,17 @@
 # ⚠️ Config Signoff — packet_scheduler ordered_priority_queue
 
 **DUT:** `ordered_priority_queue` &nbsp; **Date:** `2026-04-20` &nbsp;
-**Release:** `26.3.28.0420`
+**Release:** `26.3.29.0420`
 
 This page is the configuration-legality and evidence matrix for
 [`../script/ordered_priority_queue_hw.tcl`](../script/ordered_priority_queue_hw.tcl).
 The `_hw.tcl` now constrains only the honest packaged contract. Wider ingress
 hit words and wider packed DMA egress beats are recorded here as staged axes,
 but they are not exposed as legal packaged points until RTL, synthesis, and DV
-close together.
+close together. The GUI now also exposes a representative preset selector:
+nine selectable entries total, namely eight named presets plus `CUSTOM`, with
+all concrete named presets pinned to
+`N_SHD=128` and the safe current `32+4` ingress / `36`-bit egress contract.
 
 ## Legend
 
@@ -43,6 +46,7 @@ Formalized packet shape:
 
 | group | parameter | current `_hw.tcl` policy | editable | notes |
 |---|---|---|---|---|
+| Presets | `PRESET` | `{CUSTOM,2LANE_BASE,2LANE_DEEP,4LANE_BASE,4LANE_DEEP,8LANE_BASE,8LANE_DEEP,16LANE_BASE,16LANE_DEEP}` | yes | Representative `_hw.tcl` GUI preset selector with nine selectable entries total. All concrete named presets pin `N_SHD=128`, keep the safe `32+4` ingress / `36`-bit egress contract, and scale `N_LANE` plus `LANE_FIFO_DEPTH`. |
 | Aggregation | `N_LANE` | `{2,4,8,16}` | yes | Packaged legal lane points. Current measured DV/SYN evidence is not symmetric across all four points. |
 | Aggregation | `MODE` | `{MERGING}` | no | Fixed in packaged release. |
 | Aggregation | `TRACK_HEADER` | `{true}` | no | Fixed in packaged release. |
@@ -68,7 +72,7 @@ Formalized packet shape:
 | Identity | `IP_UID` | fixed packaged default | no | HDL-backed Mu3e UID. |
 | Identity | `VERSION_MAJOR` | fixed packaged default | no | `26`. |
 | Identity | `VERSION_MINOR` | fixed packaged default | no | `3`. |
-| Identity | `VERSION_PATCH` | fixed packaged default | no | `28`. |
+| Identity | `VERSION_PATCH` | fixed packaged default | no | `29`. |
 | Identity | `BUILD` | fixed packaged default | no | `0420`. |
 | Identity | `VERSION_DATE` | fixed packaged default | no | `20260420`. |
 | Identity | `VERSION_GIT` | fixed packaged default | no | `0xACA41A1D`. |
@@ -76,64 +80,88 @@ Formalized packet shape:
 
 ## Configuration Matrix
 
-Commercial-style feature matrix: each feature column picks exactly one point
-from each parameter group. `●` marks the selected point for that group. The
-bottom rows then summarize the realized auto-derived values and the current
-signoff state.
+This page now keeps only representative preset combinations. The authoritative
+full Cartesian-product tracker for the matrix space lives in
+[`../tb/scripts/gen_config_signoff_matrix.py`](../tb/scripts/gen_config_signoff_matrix.py).
 
-This is a canonical feature-space matrix rather than the full Cartesian
-product. Each column represents one advertised feature point against the
-baseline packaged contract, which keeps the table readable while still showing
-all active legal or requested staged axes.
+Current independent space size:
 
-For equal-load Poisson traffic with `λ = E[hits/subheader]`, the current
-single-symbol egress gives an approximate lossless per-lane hit-word ceiling of
+- `N_LANE`: `4` points
+- `INGRESS_DATA_WIDTH` / `INGRESS_DATAK_WIDTH`: `3` points
+- egress packing factor: `4` points
+- `N_SHD`: `4` points
+- `N_HIT`: `4` points
+- full space: `4 x 3 x 4 x 4 x 4 = 768` tuples
+
+Useful generator commands:
+
+- `python ../tb/scripts/gen_config_signoff_matrix.py --format summary`
+- `python ../tb/scripts/gen_config_signoff_matrix.py --format csv --output /tmp/opq_config_space.csv`
+- `python ../tb/scripts/gen_config_signoff_matrix.py --format md --only-packaged`
+
+For the live packaged `36`-bit symbol contract, the equal-load Poisson
+lossless per-lane hit-word ceiling remains
 
 `(1 / N_LANE) * λ / (λ + 1 + 6/N_SHD)` hit words / cycle / lane
 
-The raw symbol-share ceiling before packet overhead is simply
-`36 / N_LANE` bits / cycle / lane.
+The full-space generator still tracks the staged wider-ingress and packed-DMA
+axes for planning. The `_hw.tcl` preset selector intentionally does not expose
+those width-varying presets yet because the current monolithic RTL still has
+fixed `36`/`40`-bit assumptions in the ingress parser and basic presenter path.
 
-| group | point / summary | `F00` | `F01` | `F02` | `F03` | `F04` | `F05` | `F06` | `F07` | `F08` | `F09` | `F10` | `F11` | `F12` | `F13` | `F14` |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Profile | intent | 2L `N_SHD=64` | 2L `N_SHD=128` | 2L `N_SHD=256` | 2L `N_SHD=512` | 4L `N_SHD=256` | 8L `N_SHD=256` | 16L `N_SHD=256` | 2L `64b` ingress | 2L `128b` ingress | 2L `4x` DMA pack | 2L `8x` DMA pack | 2L `16x` DMA pack | 2L `N_HIT=511` | 2L `N_HIT=1023` | 2L `N_HIT=2047` |
-| Lane count | `N_LANE=2` | `●` | `●` | `●` | `●` |  |  |  | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` |
-| Lane count | `N_LANE=4` |  |  |  |  | `●` |  |  |  |  |  |  |  |  |  |  |
-| Lane count | `N_LANE=8` |  |  |  |  |  | `●` |  |  |  |  |  |  |  |  |  |
-| Lane count | `N_LANE=16` |  |  |  |  |  |  | `●` |  |  |  |  |  |  |  |  |
-| Ingress symbol | `36b = 32 data + 4 datak` | `●` | `●` | `●` | `●` | `●` | `●` | `●` |  |  | `●` | `●` | `●` | `●` | `●` | `●` |
-| Ingress symbol | `72b = 64 data + 8 datak` |  |  |  |  |  |  |  | `●` |  |  |  |  |  |  |  |
-| Ingress symbol | `144b = 128 data + 16 datak` |  |  |  |  |  |  |  |  | `●` |  |  |  |  |  |  |
-| Egress packing | `1x base = 36b` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` |  |  |  | `●` | `●` | `●` |
-| Egress packing | `4x base = 144b + empty[1:0]` |  |  |  |  |  |  |  |  |  | `●` |  |  |  |  |  |
-| Egress packing | `8x base = 288b + empty[2:0]` |  |  |  |  |  |  |  |  |  |  | `●` |  |  |  |  |
-| Egress packing | `16x base = 576b + empty[3:0]` |  |  |  |  |  |  |  |  |  |  |  | `●` |  |  |  |
-| Subheader count | `N_SHD=64` | `●` |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| Subheader count | `N_SHD=128` |  | `●` |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| Subheader count | `N_SHD=256` |  |  | `●` |  | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` |
-| Subheader count | `N_SHD=512` |  |  |  | `●` |  |  |  |  |  |  |  |  |  |  |  |
-| Hits per subheader | `N_HIT=255` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` |  |  |  |
-| Hits per subheader | `N_HIT=511` |  |  |  |  |  |  |  |  |  |  |  |  | `●` |  |  |
-| Hits per subheader | `N_HIT=1023` |  |  |  |  |  |  |  |  |  |  |  |  |  | `●` |  |
-| Hits per subheader | `N_HIT=2047` |  |  |  |  |  |  |  |  |  |  |  |  |  |  | `●` |
-| Fixed contract | `MODE=MERGING` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` |
-| Fixed contract | `TRACK_HEADER=true` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` |
-| Fixed contract | `HDR_SIZE=5`, `SHD_SIZE=1`, `HIT_SIZE=1`, `TRL_SIZE=1` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` |
-| Fixed contract | `FRAME_SERIAL_SIZE=16`, `FRAME_SUBH_CNT_SIZE=16`, `FRAME_HIT_CNT_SIZE=16` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` |
-| Auto-derived | `CHANNEL_WIDTH` | `2` | `2` | `2` | `2` | `2` | `3` | `4` | `2` | `2` | `2` | `2` | `2` | `2` | `2` | `2` |
-| Auto-derived | `LANE_FIFO_WIDTH` | `40` | `40` | `40` | `40` | `40` | `40` | `40` | `76` | `148` | `40` | `40` | `40` | `40` | `40` | `40` |
-| Auto-derived | `TICKET_FIFO_DEPTH` | `256` | `256` | `512` | `1024` | `512` | `512` | `512` | `512` | `512` | `512` | `512` | `512` | `512` | `512` | `512` |
-| Auto-derived | `HANDLE_FIFO_DEPTH` | `64` | `64` | `64` | `64` | `64` | `64` | `64` | `64` | `64` | `64` | `64` | `64` | `64` | `64` | `64` |
-| Auto-derived | `PAGE_RAM_RD_WIDTH` | `36` | `36` | `36` | `36` | `36` | `36` | `36` | `72` | `144` | `144` | `288` | `576` | `36` | `36` | `36` |
-| Signoff | packaged legality | `✅` | `✅` | `✅` | `✅` | `✅` | `✅` | `✅` | `❌` | `❌` | `❌` | `❌` | `❌` | `✅` | `✅` | `✅` |
-| Signoff | DV status | `⚠️` | `✅` | `✅` | `✅` | `⚠️` | `❓` | `❓` | `❌` | `❌` | `❌` | `❌` | `❌` | `❓` | `❓` | `❓` |
-| Signoff | SYN status | `❓` | `❓` | `✅` | `❓` | `✅` | `❓` | `❓` | `❌` | `❌` | `❌` | `❌` | `❌` | `❓` | `❓` | `❓` |
-| Signoff | slow WNS / hold | `-` | `-` | `+0.172 / +0.044 ns` | `-` | `+0.008 / +0.043 ns` | `-` | `-` | `-` | `-` | `-` | `-` | `-` | `-` | `-` | `-` |
-| Signoff | ALMs | `-` | `-` | `3,235` | `-` | `5,297` | `-` | `-` | `-` | `-` | `-` | `-` | `-` | `-` | `-` | `-` |
-| Signoff | M20Ks | `-` | `-` | `129` | `-` | `141` | `-` | `-` | `-` | `-` | `-` | `-` | `-` | `-` | `-` | `-` |
-| Signoff | raw share / lane | `18` | `18` | `18` | `18` | `9` | `4.5` | `2.25` | `18` | `18` | `18` | `18` | `18` | `18` | `18` | `18` |
-| Signoff | lossless throughput / lane | `0.5λ / (λ + 1 + 6/64)` | `0.5λ / (λ + 1 + 6/128)` | `0.5λ / (λ + 1 + 6/256)` | `0.5λ / (λ + 1 + 6/512)` | `0.25λ / (λ + 1 + 6/256)` | `0.125λ / (λ + 1 + 6/256)` | `0.0625λ / (λ + 1 + 6/256)` | open | open | open | open | open | open | open | open |
-| Signoff | summary | bounded-only 2-lane trio pass | promoted 2-lane DV claim | closed 2-lane DV + SYN point | promoted 2-lane DV claim | bounded 4-lane DV + closed SYN point | legal lane point, open | legal lane point, open | requested wider ingress, blocked by current RTL | requested wider ingress, blocked by current RTL | requested packed DMA, blocked by current RTL | requested packed DMA, blocked by current RTL | requested packed DMA, blocked by current RTL | legal `N_HIT` point, open | legal `N_HIT` point, open | legal `N_HIT` point, open |
+### Full-Space Closure Accounting
+
+These counts are the current release snapshot from the generator script.
+
+| metric | count | note |
+|---|---:|---|
+| Total tuples | `768` | Full independent cross-product. |
+| Packaged legal tuples | `64` | `32+4` ingress, `1x` egress packing, `N_LANE={2,4,8,16}`, `N_SHD={64,128,256,512}`, `N_HIT={255,511,1023,2047}`. |
+| Staged future tuples | `704` | Wider ingress and/or packed DMA points not yet exposed in `_hw.tcl`. |
+| DV closed tuples | `3` | `2-lane` packaged points at `N_SHD={128,256,512}`, `N_HIT=255`. |
+| DV bounded tuples | `2` | `2-lane/N_SHD=64` and `4-lane/N_SHD=256`, both at `N_HIT=255`. |
+| DV open legal tuples | `59` | Remaining packaged tuples not yet closed in DV. |
+| DV blocked staged tuples | `704` | Wider ingress / packed DMA tuples remain blocked by current RTL and harness. |
+| SYN closed tuples | `2` | `2-lane/N_SHD=256/N_HIT=255` and `4-lane/N_SHD=256/N_HIT=255`. |
+| SYN open legal tuples | `62` | Remaining packaged tuples have no standalone Quartus closure yet. |
+| SYN blocked staged tuples | `704` | Wider ingress / packed DMA tuples remain blocked. |
+
+### Representative Preset Matrix
+
+Each preset column below corresponds to one of the concrete named `_hw.tcl`
+GUI presets. `CUSTOM` is not shown because it is manual rather than a fixed
+tuple. All concrete presets intentionally keep the safe current width contract:
+`32 data + 4 datak` ingress and `36`-bit `1x` egress. Closure of the wider
+future width axes remains tracked only by the generator script.
+
+| group | point / summary | `2LANE_BASE` | `2LANE_DEEP` | `4LANE_BASE` | `4LANE_DEEP` | `8LANE_BASE` | `8LANE_DEEP` | `16LANE_BASE` | `16LANE_DEEP` |
+|---|---|---|---|---|---|---|---|---|---|
+| Profile | intent | 2L representative base preset | 2L representative deep preset | 4L representative base preset | 4L representative deep preset | 8L representative base preset | 8L representative deep preset | 16L representative base preset | 16L representative deep preset |
+| Lane count | `N_LANE=2` | `●` | `●` |  |  |  |  |  |  |
+| Lane count | `N_LANE=4` |  |  | `●` | `●` |  |  |  |  |
+| Lane count | `N_LANE=8` |  |  |  |  | `●` | `●` |  |  |
+| Lane count | `N_LANE=16` |  |  |  |  |  |  | `●` | `●` |
+| Ingress symbol | `36b = 32 data + 4 datak` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` |
+| Egress packing | `1x base = 36b` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` |
+| Subheader count | `N_SHD=128` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` |
+| Hits per subheader | `N_HIT=255` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` |
+| Fixed contract | `MODE=MERGING`, `TRACK_HEADER=true` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` |
+| Fixed contract | `HDR_SIZE=5`, `SHD_SIZE=1`, `HIT_SIZE=1`, `TRL_SIZE=1` | `●` | `●` | `●` | `●` | `●` | `●` | `●` | `●` |
+| Auto-derived | `CHANNEL_WIDTH` | `2` | `2` | `2` | `2` | `3` | `3` | `4` | `4` |
+| Auto-derived | `LANE_FIFO_DEPTH` | `1024` | `2048` | `2048` | `4096` | `4096` | `8192` | `8192` | `16384` |
+| Auto-derived | `LANE_FIFO_WIDTH` | `40` | `40` | `40` | `40` | `40` | `40` | `40` | `40` |
+| Auto-derived | `TICKET_FIFO_DEPTH` | `256` | `256` | `256` | `256` | `256` | `256` | `256` | `256` |
+| Auto-derived | `HANDLE_FIFO_DEPTH` | `64` | `64` | `64` | `64` | `64` | `64` | `64` | `64` |
+| Auto-derived | `PAGE_RAM_RD_WIDTH` | `36` | `36` | `36` | `36` | `36` | `36` | `36` | `36` |
+| Signoff | package | `✅` | `✅` | `✅` | `✅` | `✅` | `✅` | `✅` | `✅` |
+| Signoff | DV | `✅` | `❓` | `❓` | `❓` | `❓` | `❓` | `❓` | `❓` |
+| Signoff | SYN | `❓` | `❓` | `❓` | `❓` | `❓` | `❓` | `❓` | `❓` |
+| Signoff | slow WNS / hold | `-` | `-` | `-` | `-` | `-` | `-` | `-` | `-` |
+| Signoff | ALMs | `-` | `-` | `-` | `-` | `-` | `-` | `-` | `-` |
+| Signoff | M20Ks | `-` | `-` | `-` | `-` | `-` | `-` | `-` | `-` |
+| Signoff | raw share / lane | `18 bits/cycle` | `18 bits/cycle` | `9 bits/cycle` | `9 bits/cycle` | `4.5 bits/cycle` | `4.5 bits/cycle` | `2.25 bits/cycle` | `2.25 bits/cycle` |
+| Signoff | lossless throughput / lane | `0.5λ / (λ + 1 + 6/128)` | `0.5λ / (λ + 1 + 6/128)` | `0.25λ / (λ + 1 + 6/128)` | `0.25λ / (λ + 1 + 6/128)` | `0.125λ / (λ + 1 + 6/128)` | `0.125λ / (λ + 1 + 6/128)` | `0.0625λ / (λ + 1 + 6/128)` | `0.0625λ / (λ + 1 + 6/128)` |
+| Signoff | summary | GUI representative preset; `N_SHD=128` promoted DV point | GUI representative preset; deeper FIFO, closure open | GUI representative preset; closure open | GUI representative preset; deeper FIFO, closure open | GUI representative preset; closure open | GUI representative preset; deeper FIFO, closure open | GUI representative preset; closure open | GUI representative preset; deeper FIFO, closure open |
 
 ## Evidence Notes
 
@@ -168,7 +196,7 @@ The raw symbol-share ceiling before packet overhead is simply
 - Requested future axes are preserved here as staged, visible non-claims:
   `INGRESS_DATA_WIDTH={64,128}`, matching `datak`, and DMA-packed
   `PAGE_RAM_RD_WIDTH={4x,8x,16x}` base widths with `empty`.
-- The honest packaged release for `26.3.28.0420` is therefore:
+- The honest packaged release for `26.3.29.0420` is therefore:
   `N_LANE={2,4,8,16}`, `MODE=MERGING`, `TRACK_HEADER=true`,
   `INGRESS_DATA_WIDTH=32`, `INGRESS_DATAK_WIDTH=4`,
   `N_SHD={64,128,256,512}`, `N_HIT={255,511,1023,2047}`,
