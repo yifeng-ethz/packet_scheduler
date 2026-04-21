@@ -64,11 +64,12 @@ Signoff evidence in this tree is required to come from `DUT_IMPL=native_sv`.
   refreshed on the maintained native-SV flow. `scripts/run_all.sh` and
   `scripts/run_cov_closure.sh` complete cleanly, and the generated
   [`DV_REPORT.md`](DV_REPORT.md) / [`DV_COV.md`](DV_COV.md) bundle has been
-  rebuilt from current evidence. The remaining live supplemental signoff-run
-  failure is `opq_cross_bp_predrop_boundary_test`; the former
-  `opq_all_buckets_frame_native_sv_test` load-flake was cleared by isolated
-  rerun, and the reduced-depth `opq_error_ftable_overflow_test` evidence is
-  now refreshed on the supported 2026 toolchain with coverage enabled.
+  rebuilt from current evidence. The former
+  `opq_cross_bp_predrop_boundary_test` supplemental failure is now closed on
+  the maintained tree; the legal pre-drop boundary and the legal two-step
+  overflow boundary are both green again on the supported 2026 toolchain,
+  while the default-build must-drop hybrid remains an explicit separate
+  non-claim rather than the active blocker for this README note.
 - The live `opq_basic_smoke_test` now passes on the active monolithic harness with scoreboard hit-integrity
   checks enabled: same hits in, same hits out, and the first merged subheader lands in the correct time slot.
 - The remaining signoff work is closure, not basic bring-up: lint disposition, coverage closure, more buckets from

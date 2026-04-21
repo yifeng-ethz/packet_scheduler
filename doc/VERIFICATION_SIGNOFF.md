@@ -14,8 +14,10 @@ Validation refresh on `2026-04-21`:
 - `tb/scripts/run_all.sh` and `tb/scripts/run_cov_closure.sh` rerun cleanly on
   that runtime
 - the generated native-SV dashboard has been refreshed from current evidence;
-  the only remaining red supplemental signoff run is
-  `opq_cross_bp_predrop_boundary_test`
+  the former red supplemental legal pre-drop boundary
+  `opq_cross_bp_predrop_boundary_test` is now green, and the remaining
+  default-build caveat is the separate must-drop witness non-claim rather than
+  an active red supplemental run
 
 ## Scope
 

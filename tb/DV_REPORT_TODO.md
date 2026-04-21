@@ -18,8 +18,9 @@ Current toolchain migration note on 2026-04-21:
 - The refreshed `tb/scripts/run_frame_signoff.sh` evidence is now coherent on
   the supported runtime: `bucket_frame`, `all_buckets_frame`, mixed-bucket
   random soak, bursty DRR frame2 boundary, overflow step2 boundary,
-  counter-clear, and reduced-depth overflow all rerun clean; the remaining
-  red supplemental signoff run is `opq_cross_bp_predrop_boundary_test`.
+  counter-clear, reduced-depth overflow, and the legal pre-drop boundary all
+  rerun coherently; there is no longer a red supplemental signoff run in this
+  maintained default-build set.
 - The generated dashboard has been refreshed from those reruns. Do not treat
   older stale `sim_runs/logs/*.log` artifacts or pre-2026 FSE logs as current
   evidence.
