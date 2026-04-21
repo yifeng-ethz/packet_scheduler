@@ -17,7 +17,7 @@
 | ℹ️ | observed_txn | `1` |
 | ℹ️ | implementation_mode | `native_sv` |
 | ℹ️ | log | [`uvm/logs/COMBO_OPQ_307_prof_deep_whole_frame_skew_test_after_s1.log`](../../uvm/logs/COMBO_OPQ_307_prof_deep_whole_frame_skew_test_after_s1.log) |
-| ℹ️ | ucdb | [`uvm/cov_after/COMBO_OPQ_307_prof_deep_whole_frame_skew_test_s1.ucdb`](../../uvm/cov_after/COMBO_OPQ_307_prof_deep_whole_frame_skew_test_s1.ucdb) |
+| ℹ️ | ucdb | `missing: uvm/cov_after/COMBO_OPQ_307_prof_deep_whole_frame_skew_test_s1.ucdb` |
 | ℹ️ | build_knobs.OPQ_N_LANE | `2` |
 | ℹ️ | build_knobs.OPQ_N_SHD | `256` |
 | ℹ️ | build_knobs.OPQ_TICKET_FIFO_DEPTH | `512` |

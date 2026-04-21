@@ -672,6 +672,18 @@ module ordered_priority_queue_monolithic_page_allocator #(
           active_frame_pending_nonfuture_ticket = 1'b1;
         end
       end
+      if ((page_allocator.frame_lane_active != '0) &&
+          !page_allocator.frame_lane_active[i] &&
+          page_allocator_is_pending_ticket[i] &&
+          !page_allocator_is_tk_sop[i] &&
+          (page_allocator_if_read_ticket_ticket[i].frame_serial ==
+            page_allocator.frame_serial_this)) begin
+        // A skewed whole-frame lane can surface its first body ticket after
+        // another lane has already opened the frame. Keep that current-frame
+        // ownership alive instead of retiring the frame and late-dropping the
+        // straggling body ticket one cycle later.
+        active_frame_pending_nonfuture_ticket = 1'b1;
+      end
       if (page_allocator_is_pending_ticket[i] && !page_allocator_is_pending_ticket_lane[i]) begin
         all_lanes_fetch_ready = 1'b0;
       end

@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 SKILL_GEN = Path("/home/yifeng/.codex/skills/dv-workflow/scripts/dv_report_gen.py")
+TB_DIR = Path(__file__).resolve().parents[1]
 
 
 def load_base():
@@ -83,6 +84,13 @@ def fmt_scope_value(value: Any) -> str:
     if isinstance(value, dict):
         return ", ".join(f"`{k}={v}`" for k, v in value.items())
     return f"`{value}`"
+
+
+def format_artifact_ref(tb_rel_path: str) -> str:
+    tb_path = TB_DIR / tb_rel_path
+    if tb_path.exists():
+        return f"[`{tb_rel_path}`](../../{tb_rel_path})"
+    return f"`missing: {tb_rel_path}`"
 
 
 def render_scope_table(data: dict[str, Any]) -> list[str]:
@@ -221,8 +229,8 @@ def render_case(case: dict[str, Any], tb_rel_log: str, tb_rel_ucdb: str) -> str:
         f"| {base.INFO_EMOJI} | legacy_test_name | `{legacy_case_name(case)}` |",
         f"| {base.INFO_EMOJI} | observed_txn | `{obs}` |",
         f"| {base.INFO_EMOJI} | implementation_mode | `{impl_mode}` |",
-        f"| {base.INFO_EMOJI} | log | [`{tb_rel_log}`](../../{tb_rel_log}) |",
-        f"| {base.INFO_EMOJI} | ucdb | [`{tb_rel_ucdb}`](../../{tb_rel_ucdb}) |",
+        f"| {base.INFO_EMOJI} | log | {format_artifact_ref(tb_rel_log)} |",
+        f"| {base.INFO_EMOJI} | ucdb | {format_artifact_ref(tb_rel_ucdb)} |",
     ]
     for key, value in build_knobs.items():
         out.append(f"| {base.INFO_EMOJI} | build_knobs.{key} | `{value}` |")

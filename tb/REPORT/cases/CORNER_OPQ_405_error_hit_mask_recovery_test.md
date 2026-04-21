@@ -17,7 +17,7 @@
 | ℹ️ | observed_txn | `1` |
 | ℹ️ | implementation_mode | `native_sv` |
 | ℹ️ | log | [`uvm/logs/CORNER_OPQ_405_error_hit_mask_recovery_test_after_s1.log`](../../uvm/logs/CORNER_OPQ_405_error_hit_mask_recovery_test_after_s1.log) |
-| ℹ️ | ucdb | [`uvm/cov_after/CORNER_OPQ_405_error_hit_mask_recovery_test_s1.ucdb`](../../uvm/cov_after/CORNER_OPQ_405_error_hit_mask_recovery_test_s1.ucdb) |
+| ℹ️ | ucdb | `missing: uvm/cov_after/CORNER_OPQ_405_error_hit_mask_recovery_test_s1.ucdb` |
 | ℹ️ | build_knobs.OPQ_N_LANE | `2` |
 | ℹ️ | build_knobs.OPQ_N_SHD | `256` |
 | ℹ️ | build_knobs.OPQ_TICKET_FIFO_DEPTH | `512` |
