@@ -60,6 +60,7 @@ Historical formal note:
 | [BUG-026-R](#bug-026-r-live-head-overwrite-protection-suppresses-unread-tail-drop-accounting) | R | soft error | `n/a (overflow random-ready)` | fixed | `opq_cross_random_ready_overflow_seconds_soak_test` on `2026-04-20` | `a813795` | Default-build random-ready overflow no longer corrupts accepted egress after the presenter preserves every stalled resident RAM word, and the reduced-depth `12x16` overwrite-local must-drop witness is green again on `2026-04-21`. |
 | [BUG-027-R](#bug-027-r-masked-zero-hit-subheader-recovery-kept-tail-bypass-drop-asserted-through-the-trailer) | R | soft error | `n/a (localized formal-like ingress stress)` | fixed | `formal_ingress.sh` / `opq_formal_like_ingress_recovery_stress_test` on `2026-04-21` | `a813795` | A legal zero-hit subheader after a masked subheader no longer leaves the parser in `MASK_PKT`; trailer bypass now reports only the surviving local drop semantics and the refreshed ingress fallback suite is green on `2026-04-21`. |
 | [BUG-028-H](#bug-028-h-lane-hit-ledger-retired-delivered-beats-against-parser-timestamps-instead-of-canonical-egress-timestamps) | H | non-datapath-refactor | `n/a (4-lane supplemental rerun)` | fixed | `opq_cross_random_ready_overflow_step2_boundary_test` on `2026-04-21` @ `OPQ_N_LANE=4 OPQ_N_SHD=128` | `a813795` | The 4-lane no-restart ledger is clean again after the scoreboard started carrying both canonical delivery timestamps and parser/accounting timestamps per hit. |
+| [BUG-029-R](#bug-029-r-presenter-overlap-bookkeeping-can-strand-queued-metadata-in-idle-after-a-legal-trailer-retire) | R | hard stuck error | `1.227170 / 11.230042 ms` | fixed | `opq_cross_bp_predrop_boundary_test` on `2026-04-21` | `43336f8` | The presenter no longer strands the legal pre-drop supplemental run after slot `0x17`; queued metadata now advances through `WAIT_FOR_COMPLETE` even when overlap bookkeeping is still pending. |
 
 ## 2026-04-17
 
@@ -816,6 +817,86 @@ Historical formal note:
     named deterministic bracket or the refreshed constrained-random seed sweep
 - Commit:
   - a813795
+
+### BUG-029-R: Presenter overlap bookkeeping can strand queued metadata in `IDLE` after a legal trailer retire
+- First seen in:
+  - `packet_scheduler/tb/uvm` `TEST=opq_cross_bp_predrop_boundary_test DUT_IMPL=native_sv`
+    on `2026-04-21`
+  - localized trace anchor:
+    `+OPQ_NATIVE_TRACE_OWNERSHIP +OPQ_NATIVE_TRACE_EGRESS_WORDS`
+- Symptom:
+  - the supplemental legal pre-drop signoff run stopped after exactly
+    `24` delivered frames even though ingress kept accepting legal traffic
+  - the first failing pressure checkpoint ended with
+    `wr_hdr/shd/hit=52/2236/13260`,
+    `rd_hdr/shd/hit=24/1032/6120`, and aggregate
+    `accepted=13260 dropped=66612 delivered=6120 unexplained=7140`
+  - allocator ownership had already drained cleanly, so the first real break
+    was downstream: `presenter_enqueue` kept advancing through frame serial
+    `0x33`, but `present_start` stopped permanently after slot `0x17`
+- Root cause:
+  - in
+    `ordered_priority_queue_monolithic_basic_presenter.sv`,
+    `FTABLE_PRESENTER_IDLE` only moved to `WAIT_FOR_COMPLETE` when
+    `!block_present_start_v`
+  - under sustained legal backpressure, `pending_overlap_check_valid` or the
+    related overlap bookkeeping bits can still be asserted when the previous
+    trailer retires
+  - that leaves queued metadata resident at `meta_wptr != meta_rptr`, but the
+    presenter stays in `IDLE`, never fetches the next head, and therefore
+    never launches the remaining legal frames
+- Fix status:
+  - state:
+    - fixed on the refreshed `2026-04-21` native-SV supplemental reruns
+  - mechanism:
+    - `FTABLE_PRESENTER_IDLE` now always enters
+      `FTABLE_PRESENTER_WAIT_FOR_COMPLETE` whenever queued metadata exists
+    - overlap/drop bookkeeping still gates the later launch itself, but it no
+      longer blocks the head-fetch state transition that drains that same
+      bookkeeping path
+    - localized presenter assertions now pin the repaired contract directly:
+      queued metadata may not remain stranded in `IDLE`, and a cover reaches
+      the exact overlap-pending window that used to deadlock
+  - before_fix_outcome:
+    - `opq_cross_bp_predrop_boundary_test` failed on `2026-04-21` with
+      pressure and final checkpoints both reporting
+      `first_break=frame_table_ownership`, `ft_ownership=bad`, and
+      aggregate `unexplained=7140`
+    - ownership tracing showed `alloc_complete` and `presenter_enqueue`
+      continuing to match while `present_start` stopped after slot `0x17`,
+      which localized the bug to the presenter start gate rather than the
+      allocator
+  - after_fix_outcome:
+    - the refreshed `opq_cross_bp_predrop_boundary_test` rerun on
+      `2026-04-21` now closes cleanly with
+      `wr_hdr/shd/hit=52/2236/13260`,
+      `rd_hdr/shd/hit=52/2236/13260`,
+      aggregate `accepted=13260 delivered=13260 unexplained=0`, and
+      `core_principles first_break=clean ft_ownership= ok hit_conservation= ok accepted_delivery= ok drained= ok`
+    - the neighboring legal-overflow guard
+      `opq_cross_random_ready_overflow_step2_boundary_test` stays green on the
+      same patch with final aggregate
+      `accepted=839 delivered=839 unexplained=0`
+  - potential_hazard:
+    - this looks like a permanent local fix for the legal pre-drop presenter
+      deadlock because the repaired boundary is now constrained by a direct
+      state-machine assertion plus the named supplemental rerun
+    - a separate default-build must-drop gap still exists and remains a
+      documented non-claim: the refreshed
+      `opq_cross_bp_mustdrop_witness_test` still does not advance
+      `ft_drop_*` on the full-depth default build, so this fix must not be
+      interpreted as reopening or silently closing that independent witness
+  - Claude Opus 4.7 xhigh review decision:
+    - pending / not run in this turn
+- Runtime / coverage context:
+  - the repaired run preserves the intended contract split:
+    `opq_cross_bp_predrop_boundary_test` is now the green default-build legal
+    pre-drop proof, while `opq_cross_random_ready_overflow_step2_boundary_test`
+    remains the green early-window legal-overflow proof
+  - the default-build must-drop hybrid is still intentionally tracked as a
+    separate limitation rather than being folded into this bug closure
+- Commit:
+  - 43336f8
 
 ### BUG-028-H: Lane hit ledger retired delivered beats against parser timestamps instead of canonical egress timestamps
 - First seen in:
