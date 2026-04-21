@@ -91,7 +91,7 @@ This page is the coverage summary only. Per-case incremental coverage lives unde
 | ✅ | [`all_buckets_frame_native_sv`](REPORT/cross/all_buckets_frame_native_sv.md) | all_buckets_frame | native_sv | 38 | 79.38 | 78.14 | 42.09 | 77.74 | 438 |
 | ✅ | [`mixed_bucket_random_soak_native_sv`](REPORT/cross/mixed_bucket_random_soak_native_sv.md) | mixed_bucket_random_soak | native_sv | 1 | 78.79 | 76.45 | 44.22 | 71.1 | 1220 |
 | ✅ | [`drr_bursty_frame2_boundary_native_sv`](REPORT/cross/drr_bursty_frame2_boundary_native_sv.md) | drr_bursty_frame2_boundary | native_sv | 1 | 77.72 | 71.62 | 23.37 | 58.32 | 4 |
-| ❌ | [`bp_predrop_boundary_native_sv`](REPORT/cross/bp_predrop_boundary_native_sv.md) | bp_predrop_boundary | native_sv | 1 | 75.29 | 68.24 | 33.01 | 62.07 | 104 |
+| ✅ | [`bp_predrop_boundary_native_sv`](REPORT/cross/bp_predrop_boundary_native_sv.md) | bp_predrop_boundary | native_sv | 1 | 75.29 | 68.24 | 33.01 | 62.07 | 104 |
 | ✅ | [`overflow_step2_boundary_native_sv`](REPORT/cross/overflow_step2_boundary_native_sv.md) | overflow_step2_boundary | native_sv | 1 | 77.24 | 71.01 | 33.12 | 62.4 | 10 |
 | ⚠️ | [`error_counter_clear_native_sv`](REPORT/cross/error_counter_clear_native_sv.md) | error_counter_clear | native_sv | 1 | 45.67 | 32.25 | 3.06 | 38.3 | 2 |
 | ✅ | [`error_ftable_overflow_depth512_native_sv`](REPORT/cross/error_ftable_overflow_depth512_native_sv.md) | error_ftable_overflow_depth512 | native_sv_depth512 | 1 | 73.05 | 64.86 | 26.48 | 58.88 | 64 |

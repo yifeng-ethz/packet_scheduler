@@ -9,7 +9,7 @@ This page is the chief-architect dashboard. All per-case evidence lives under [`
 | status | field | value |
 |:---:|---|---|
 | ❌ | failed_cases | `14` |
-| ❌ | signoff_runs_with_failures | `1` |
+| ✅ | signoff_runs_with_failures | `0` |
 | ⚠️ | catalog_backlog_cases | `944` |
 | ⚠️ | unimplemented_cases | `14` |
 | ✅ | stale_artifacts | `0` |
@@ -70,7 +70,7 @@ This page is the chief-architect dashboard. All per-case evidence lives under [`
 | ✅ | [`all_buckets_frame_native_sv`](REPORT/cross/all_buckets_frame_native_sv.md) | all_buckets_frame | native_sv | OPQ_ALL_BUCKETS_FRAME_NATIVE_SV | 438 | 77.74 |
 | ✅ | [`mixed_bucket_random_soak_native_sv`](REPORT/cross/mixed_bucket_random_soak_native_sv.md) | mixed_bucket_random_soak | native_sv | OPQ_MIXED_BUCKET_RANDOM_SOAK | 1220 | 71.1 |
 | ✅ | [`drr_bursty_frame2_boundary_native_sv`](REPORT/cross/drr_bursty_frame2_boundary_native_sv.md) | drr_bursty_frame2_boundary | native_sv | OPQ_DRR_BURSTY_FRAME2_BOUNDARY | 4 | 58.32 |
-| ❌ | [`bp_predrop_boundary_native_sv`](REPORT/cross/bp_predrop_boundary_native_sv.md) | bp_predrop_boundary | native_sv | OPQ_BP_PREDROP_BOUNDARY | 104 | 62.07 |
+| ✅ | [`bp_predrop_boundary_native_sv`](REPORT/cross/bp_predrop_boundary_native_sv.md) | bp_predrop_boundary | native_sv | OPQ_BP_PREDROP_BOUNDARY | 104 | 62.07 |
 | ✅ | [`overflow_step2_boundary_native_sv`](REPORT/cross/overflow_step2_boundary_native_sv.md) | overflow_step2_boundary | native_sv | OPQ_OVERFLOW_STEP2_BOUNDARY | 10 | 62.4 |
 | ⚠️ | [`error_counter_clear_native_sv`](REPORT/cross/error_counter_clear_native_sv.md) | error_counter_clear | native_sv | OPQ_ERROR_COUNTER_CLEAR | 2 | 38.3 |
 | ✅ | [`error_ftable_overflow_depth512_native_sv`](REPORT/cross/error_ftable_overflow_depth512_native_sv.md) | error_ftable_overflow_depth512 | native_sv_depth512 | OPQ_ERROR_FTABLE_OVERFLOW_DEPTH512 | 64 | 58.88 |

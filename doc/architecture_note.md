@@ -218,6 +218,14 @@ The current open debug picture is now narrower:
   `rd_hdr/shd/hit=6/11/1176`, aggregate
   `accepted=1176 delivered=1176 unexplained=0`, and
   `core_principles first_break=clean`. The named reduced-depth
+  `opq_cross_bp_predrop_boundary_test` supplemental rerun is also green on
+  `2026-04-21` after the presenter stopped gating the `IDLE ->
+  WAIT_FOR_COMPLETE` transition on pending overlap bookkeeping; that run now
+  closes with final `wr_hdr/shd/hit=52/2236/13260`,
+  `rd_hdr/shd/hit=52/2236/13260`, aggregate
+  `accepted=13260 delivered=13260 unexplained=0`, and
+  `core_principles first_break=clean`.
+  The named reduced-depth
   `opq_cross_bp_mustdrop_witness_test` `12x16` profile is also green again on
   `2026-04-21`, and the same witness now reruns green on the refreshed
   `4-lane/128/512` preset with pressure-phase

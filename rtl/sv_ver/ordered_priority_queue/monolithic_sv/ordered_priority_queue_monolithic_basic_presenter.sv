@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_basic_presenter
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.54
+// Version : 26.3.57
 // Date    : 20260421
-// Change  : Prime each new page-RAM head before launch and retire only on consumed trailer acceptance so packet starts cannot ingest stale resident words under backpressure
+// Change  : Keep queued metadata progressing through WAIT even with overlap bookkeeping pending so the presenter cannot strand resident frames after a trailer retirement
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_basic_presenter #(
@@ -1466,7 +1466,12 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
 
       unique case (presenter_state)
         FTABLE_PRESENTER_IDLE: begin
-          if (is_new_pkt_head && !block_present_start_v) begin
+          // Always enter WAIT when metadata is queued. Overlap/drop
+          // bookkeeping may still be busy, but WAIT is the state that fetches
+          // the next head and drains those blockers; keeping the same blocker
+          // on the IDLE->WAIT hop deadlocks the queue once overlap checks are
+          // pending.
+          if (is_new_pkt_head) begin
             presenter_state <= FTABLE_PRESENTER_WAIT_FOR_COMPLETE;
             pkt_accept_started <= 1'b0;
             page_ram_skid_valid <= 1'b0;
@@ -1711,6 +1716,13 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
   ap_first_visible_word_is_sop: assert property (p_first_visible_word_is_sop)
     else $error("OPQ_NATIVE_BASIC_PRESENTER exposed a non-SOP beat before the first packet acceptance");
 
+  property p_idle_with_queued_head_enters_wait;
+    @(posedge d_clk) disable iff (d_reset)
+      (presenter_state == FTABLE_PRESENTER_IDLE) && is_new_pkt_head |=> (presenter_state == FTABLE_PRESENTER_WAIT_FOR_COMPLETE);
+  endproperty
+  ap_idle_with_queued_head_enters_wait: assert property (p_idle_with_queued_head_enters_wait)
+    else $error("OPQ_NATIVE_BASIC_PRESENTER stranded queued metadata in IDLE instead of entering WAIT_FOR_COMPLETE");
+
   cover property (@(posedge d_clk) disable iff (d_reset)
     presenter_state == FTABLE_PRESENTER_PRESENTING
     ##[1:64] retire_pending
@@ -1739,6 +1751,13 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
     (pkt_fetch_word_cnt != packet_length)
     ##1 page_ram_skid_valid
     ##[1:EGRESS_DELAY+4] aso_egress_valid && aso_egress_ready
+  );
+
+  cover property (@(posedge d_clk) disable iff (d_reset)
+    (presenter_state == FTABLE_PRESENTER_IDLE) &&
+    is_new_pkt_head &&
+    (pending_overlap_check_valid || pending_overlap_launch_valid || overwrite_scan_active || overwrite_scan_process_head)
+    ##1 (presenter_state == FTABLE_PRESENTER_WAIT_FOR_COMPLETE)
   );
 `endif
 

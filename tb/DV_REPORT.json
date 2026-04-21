@@ -15791,7 +15791,7 @@
         "The testcase intentionally stages a mild no-drop phase followed by a heavier pressure phase, so it is tracked outside the promoted fixed bucket-frame baselines."
       ],
       "implemented": true,
-      "passed": false,
+      "passed": true,
       "code_coverage": {
         "branch": {
           "pct": 68.24
@@ -15819,7 +15819,7 @@
         "pct": 62.07,
         "txns": 104,
         "queued_overlap": 0,
-        "counter_checks_failed": 1,
+        "counter_checks_failed": 0,
         "unexpected_outputs": 0,
         "curve": ""
       },
