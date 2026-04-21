@@ -28,13 +28,13 @@
 | ℹ️ | log.hit_missing | `0` |
 | ℹ️ | log.hit_ghost | `0` |
 | ℹ️ | log.cg_cfg | `49.4` |
-| ℹ️ | log.cg_frame | `58.33` |
+| ℹ️ | log.cg_frame | `53.33` |
 | ℹ️ | log.cg_subh | `23.61` |
 | ℹ️ | log.cg_bp | `0.0` |
-| ℹ️ | log.cg_csr | `92.26` |
+| ℹ️ | log.cg_csr | `81.43` |
 | ℹ️ | log.cg_credit | `46.67` |
 | ℹ️ | log.cg_drop | `48.61` |
-| ℹ️ | log.cg_drr | `40.33` |
+| ℹ️ | log.cg_drr | `0.0` |
 | ℹ️ | log.cg_ingress | `100.0` |
 | ℹ️ | log.cg_egress | `100.0` |
 | ℹ️ | log.lane0_monitored_frames | `2` |
@@ -48,13 +48,13 @@
 
 | metric | standalone | isolated_per_txn | bucket_gain | bucket_merged_after | bucket_gain_per_txn |
 |---|---|---|---|---|---|
-| stmt | 74.62 | 74.62 | 1.24 | 77.77 | 1.24 |
-| branch | 65.94 | 65.94 | 2.96 | 70.53 | 2.96 |
-| cond | 31.44 | 31.44 | 1.84 | 39.27 | 1.84 |
-| expr | 55.21 | 55.21 | 0.86 | 56.03 | 0.86 |
+| stmt | 72.18 | 72.18 | 1.26 | 75.19 | 1.26 |
+| branch | 64.61 | 64.61 | 2.78 | 69.93 | 2.78 |
+| cond | 30.57 | 30.57 | 1.56 | 39.38 | 1.56 |
+| expr | 48.94 | 48.94 | 2.13 | 56.03 | 2.13 |
 | fsm_state | 88.64 | 88.64 | 4.55 | 88.64 | 4.55 |
 | fsm_trans | 45.00 | 45.00 | 4.00 | 45.00 | 4.00 |
-| toggle | 13.99 | 13.99 | 0.32 | 25.60 | 0.32 |
+| toggle | 12.96 | 12.96 | 1.01 | 23.49 | 1.01 |
 
 ---
 _Back to [bucket](../buckets/ERROR.md) &middot; [dashboard](../../DV_REPORT.md)_

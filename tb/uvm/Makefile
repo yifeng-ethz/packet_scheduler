@@ -7,7 +7,11 @@ REPO_ROOT := $(abspath $(PKT_DIR)/..)
 DEFAULT_BUILD_DIR := $(abspath $(TB_DIR)/build)
 BUILD_DIR ?= $(DEFAULT_BUILD_DIR)
 
-QUESTA_HOME ?= /data1/questaone_sim/questasim
+QUESTA_HOME_ALLOWED := /data1/questaone_sim/questasim
+QUESTA_HOME ?= $(QUESTA_HOME_ALLOWED)
+ifneq ($(QUESTA_HOME),$(QUESTA_HOME_ALLOWED))
+$(error Unsupported QUESTA_HOME=$(QUESTA_HOME). Use $(QUESTA_HOME_ALLOWED) only)
+endif
 ETH_MENTOR_SERVER ?= 8161@lic-mentor.ethz.ch
 QSIM_INI := $(QUESTA_HOME)/modelsim.ini
 LM_LICENSE_FILE := $(ETH_MENTOR_SERVER)
@@ -123,10 +127,10 @@ SV_SRCS := \
 ifeq ($(DUT_IMPL),native_sv)
 UVM_DEFINES += +define+OPQ_USE_NATIVE_SV
 endif
-VLOG_FLAGS := -modelsimini $(MODELSIM_INI) -sv -work $(BUILD_DIR)/work $(UVM_DEFINES) +incdir+$(UVM_SRC) +incdir+$(TB_DIR)
-VCOM_FLAGS := -modelsimini $(MODELSIM_INI) -2008 -work $(BUILD_DIR)/work
-VSIM_FLAGS := -modelsimini $(MODELSIM_INI) -L altera_mf -voptargs=+acc $(if $(UVM_DPI_LIB),-dpicpppath $(DPI_CPP_PATH) -sv_lib $(UVM_DPI_LIB))
-VOPT_FLAGS := -modelsimini $(MODELSIM_INI) -check_synthesis
+VLOG_FLAGS := -ini $(MODELSIM_INI) -sv -work $(BUILD_DIR)/work $(UVM_DEFINES) +incdir+$(UVM_SRC) +incdir+$(TB_DIR)
+VCOM_FLAGS := -ini $(MODELSIM_INI) -2008 -work $(BUILD_DIR)/work
+VSIM_FLAGS := -ini $(MODELSIM_INI) -L altera_mf -voptargs=+acc $(if $(UVM_DPI_LIB),-dpicpppath $(DPI_CPP_PATH) -sv_lib $(UVM_DPI_LIB))
+VOPT_FLAGS := -ini $(MODELSIM_INI) -check_synthesis
 ifeq ($(COV),1)
 VLOG_FLAGS += +cover=$(COV_CODE)
 VCOM_FLAGS += +cover=$(COV_CODE)
@@ -155,8 +159,8 @@ prepare:
 		$(VMAP) -modelsimini $(MODELSIM_INI) work $(BUILD_DIR)/work >/dev/null && \
 		$(VMAP) -modelsimini $(MODELSIM_INI) altera_mf $(BUILD_DIR)/altera_mf >/dev/null
 	cd $(BUILD_DIR) && \
-		$(VCOM) -modelsimini $(MODELSIM_INI) -2008 -work altera_mf $(QUARTUS_SIM_LIB)/altera_mf_components.vhd >/dev/null && \
-		$(VCOM) -modelsimini $(MODELSIM_INI) -2008 -work altera_mf $(QUARTUS_SIM_LIB)/altera_mf.vhd >/dev/null
+		$(VCOM) -ini $(MODELSIM_INI) -2008 -work altera_mf $(QUARTUS_SIM_LIB)/altera_mf_components.vhd >/dev/null && \
+		$(VCOM) -ini $(MODELSIM_INI) -2008 -work altera_mf $(QUARTUS_SIM_LIB)/altera_mf.vhd >/dev/null
 	@if [ -x "$(DPI_CPP_PATH)" ]; then \
 		tmp_file="$(MODELSIM_INI).tmp"; \
 		awk ' \

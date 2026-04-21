@@ -1,6 +1,6 @@
-# ✅ COMBO_OPQ_306_prof_heavy_lane_skew_test
+# ❌ COMBO_OPQ_306_prof_heavy_lane_skew_test
 
-**Bucket:** `PROF` &nbsp; **Method:** `D` &nbsp; **Build:** `after` &nbsp; **Effort:** `practical` &nbsp; **Result:** `pass`
+**Bucket:** `PROF` &nbsp; **Method:** `D` &nbsp; **Build:** `after` &nbsp; **Effort:** `practical` &nbsp; **Result:** `fail`
 
 ## Intent
 
@@ -12,7 +12,7 @@
 
 | status | field | value |
 |:---:|---|---|
-| ✅ | report_case_id | `COMBO_OPQ_306_prof_heavy_lane_skew_test` |
+| ❌ | report_case_id | `COMBO_OPQ_306_prof_heavy_lane_skew_test` |
 | ℹ️ | legacy_test_name | `opq_prof_heavy_lane_skew_test` |
 | ℹ️ | observed_txn | `1` |
 | ℹ️ | implementation_mode | `native_sv` |
@@ -32,7 +32,7 @@
 | ℹ️ | log.cg_subh | `23.61` |
 | ℹ️ | log.cg_bp | `0.0` |
 | ℹ️ | log.cg_csr | `92.26` |
-| ℹ️ | log.cg_credit | `60.0` |
+| ℹ️ | log.cg_credit | `73.33` |
 | ℹ️ | log.cg_drop | `48.61` |
 | ℹ️ | log.cg_drr | `40.33` |
 | ℹ️ | log.cg_ingress | `100.0` |
@@ -48,13 +48,13 @@
 
 | metric | standalone | isolated_per_txn | bucket_gain | bucket_merged_after | bucket_gain_per_txn |
 |---|---|---|---|---|---|
-| stmt | 75.38 | 75.38 | 0.00 | 75.50 | 0.00 |
-| branch | 66.21 | 66.21 | 0.00 | 66.49 | 0.00 |
-| cond | 35.41 | 35.41 | 0.00 | 35.69 | 0.00 |
-| expr | 57.29 | 57.29 | 0.00 | 57.29 | 0.00 |
-| fsm_state | 84.09 | 84.09 | 0.00 | 84.09 | 0.00 |
-| fsm_trans | 42.00 | 42.00 | 0.00 | 42.00 | 0.00 |
-| toggle | 21.97 | 21.97 | 0.09 | 30.29 | 0.09 |
+| stmt | n/a | n/a | n/a | n/a | n/a |
+| branch | n/a | n/a | n/a | n/a | n/a |
+| cond | n/a | n/a | n/a | n/a | n/a |
+| expr | n/a | n/a | n/a | n/a | n/a |
+| fsm_state | n/a | n/a | n/a | n/a | n/a |
+| fsm_trans | n/a | n/a | n/a | n/a | n/a |
+| toggle | n/a | n/a | n/a | n/a | n/a |
 
 ---
 _Back to [bucket](../buckets/PROF.md) &middot; [dashboard](../../DV_REPORT.md)_

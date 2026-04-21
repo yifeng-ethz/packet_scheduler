@@ -1,6 +1,6 @@
-# ✅ COMBO_OPQ_506_cross_idle_lane_backpressure_test
+# ❌ COMBO_OPQ_506_cross_idle_lane_backpressure_test
 
-**Bucket:** `CROSS` &nbsp; **Method:** `D` &nbsp; **Build:** `after` &nbsp; **Effort:** `practical` &nbsp; **Result:** `pass`
+**Bucket:** `CROSS` &nbsp; **Method:** `D` &nbsp; **Build:** `after` &nbsp; **Effort:** `practical` &nbsp; **Result:** `fail`
 
 ## Intent
 
@@ -12,7 +12,7 @@
 
 | status | field | value |
 |:---:|---|---|
-| ✅ | report_case_id | `COMBO_OPQ_506_cross_idle_lane_backpressure_test` |
+| ❌ | report_case_id | `COMBO_OPQ_506_cross_idle_lane_backpressure_test` |
 | ℹ️ | legacy_test_name | `opq_cross_idle_lane_backpressure_test` |
 | ℹ️ | observed_txn | `1` |
 | ℹ️ | implementation_mode | `native_sv` |
@@ -48,13 +48,13 @@
 
 | metric | standalone | isolated_per_txn | bucket_gain | bucket_merged_after | bucket_gain_per_txn |
 |---|---|---|---|---|---|
-| stmt | 71.03 | 71.03 | 0.00 | 74.36 | 0.00 |
-| branch | 62.33 | 62.33 | 0.00 | 67.90 | 0.00 |
-| cond | 33.43 | 33.43 | 0.00 | 41.85 | 0.00 |
-| expr | 54.08 | 54.08 | 0.00 | 59.18 | 0.00 |
-| fsm_state | 84.09 | 84.09 | 0.00 | 86.36 | 0.00 |
-| fsm_trans | 41.00 | 41.00 | 0.00 | 43.00 | 0.00 |
-| toggle | 18.74 | 18.74 | 0.06 | 33.58 | 0.06 |
+| stmt | n/a | n/a | n/a | n/a | n/a |
+| branch | n/a | n/a | n/a | n/a | n/a |
+| cond | n/a | n/a | n/a | n/a | n/a |
+| expr | n/a | n/a | n/a | n/a | n/a |
+| fsm_state | n/a | n/a | n/a | n/a | n/a |
+| fsm_trans | n/a | n/a | n/a | n/a | n/a |
+| toggle | n/a | n/a | n/a | n/a | n/a |
 
 ---
 _Back to [bucket](../buckets/CROSS.md) &middot; [dashboard](../../DV_REPORT.md)_

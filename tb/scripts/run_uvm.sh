@@ -65,6 +65,21 @@ mkdir -p "${LOG_DIR}" "${COV_DIR}"
 pass_count=0
 fail_count=0
 
+has_nonbenign_tool_error() {
+  local log_file="$1"
+  awk '
+    /\*\* Fatal:/ { bad=1; next }
+    /\*\* Error:/ {
+      if ($0 ~ /\(vsim-22\) Unable to get current directory path\./) next
+      bad=1
+      next
+    }
+    /shell-init: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory/ { next }
+    /No such file or directory\. \(errno = ENOENT\)/ { next }
+    END { exit bad ? 0 : 1 }
+  ' "${log_file}"
+}
+
 run_one() {
   local test_name="$1"
   local log_file="${LOG_DIR}/${test_name}.log"
@@ -153,9 +168,8 @@ run_one() {
     if rg -q \
       -e '# UVM_ERROR :[[:space:]]*[1-9][0-9]*' \
       -e '# UVM_FATAL :[[:space:]]*[1-9][0-9]*' \
-      -e '\*\* Error:' \
-      -e '\*\* Fatal:' \
-      "${log_file}"; then
+      "${log_file}" \
+      || has_nonbenign_tool_error "${log_file}"; then
       if [[ "${COV_ENABLE:-0}" == "1" && "${cov_saved}" -eq 0 ]]; then
         echo "[WARN] ${test_name} (coverage database missing on failing run)"
       fi

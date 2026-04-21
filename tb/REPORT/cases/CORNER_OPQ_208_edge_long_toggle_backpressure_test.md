@@ -1,6 +1,6 @@
-# ✅ CORNER_OPQ_208_edge_long_toggle_backpressure_test
+# ❌ CORNER_OPQ_208_edge_long_toggle_backpressure_test
 
-**Bucket:** `EDGE` &nbsp; **Method:** `D` &nbsp; **Build:** `after` &nbsp; **Effort:** `practical` &nbsp; **Result:** `pass`
+**Bucket:** `EDGE` &nbsp; **Method:** `D` &nbsp; **Build:** `after` &nbsp; **Effort:** `practical` &nbsp; **Result:** `fail`
 
 ## Intent
 
@@ -12,7 +12,7 @@
 
 | status | field | value |
 |:---:|---|---|
-| ✅ | report_case_id | `CORNER_OPQ_208_edge_long_toggle_backpressure_test` |
+| ❌ | report_case_id | `CORNER_OPQ_208_edge_long_toggle_backpressure_test` |
 | ℹ️ | legacy_test_name | `opq_edge_long_toggle_backpressure_test` |
 | ℹ️ | observed_txn | `1` |
 | ℹ️ | implementation_mode | `native_sv` |
@@ -32,7 +32,7 @@
 | ℹ️ | log.cg_subh | `38.89` |
 | ℹ️ | log.cg_bp | `20.0` |
 | ℹ️ | log.cg_csr | `92.26` |
-| ℹ️ | log.cg_credit | `60.0` |
+| ℹ️ | log.cg_credit | `46.67` |
 | ℹ️ | log.cg_drop | `48.61` |
 | ℹ️ | log.cg_drr | `40.33` |
 | ℹ️ | log.cg_ingress | `100.0` |
@@ -48,13 +48,13 @@
 
 | metric | standalone | isolated_per_txn | bucket_gain | bucket_merged_after | bucket_gain_per_txn |
 |---|---|---|---|---|---|
-| stmt | 74.09 | 74.09 | 0.00 | 74.21 | 0.00 |
-| branch | 64.44 | 64.44 | 0.00 | 64.99 | 0.00 |
-| cond | 32.29 | 32.29 | 0.00 | 34.56 | 0.00 |
-| expr | 54.17 | 54.17 | 0.00 | 55.21 | 0.00 |
-| fsm_state | 84.09 | 84.09 | 0.00 | 84.09 | 0.00 |
-| fsm_trans | 41.00 | 41.00 | 0.00 | 41.00 | 0.00 |
-| toggle | 25.04 | 25.04 | 0.00 | 27.95 | 0.00 |
+| stmt | n/a | n/a | n/a | n/a | n/a |
+| branch | n/a | n/a | n/a | n/a | n/a |
+| cond | n/a | n/a | n/a | n/a | n/a |
+| expr | n/a | n/a | n/a | n/a | n/a |
+| fsm_state | n/a | n/a | n/a | n/a | n/a |
+| fsm_trans | n/a | n/a | n/a | n/a | n/a |
+| toggle | n/a | n/a | n/a | n/a | n/a |
 
 ---
 _Back to [bucket](../buckets/EDGE.md) &middot; [dashboard](../../DV_REPORT.md)_

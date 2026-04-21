@@ -9,7 +9,7 @@
 | ℹ️ | case_count | `1` |
 | ℹ️ | effort | `practical` |
 | ℹ️ | txns | `64` |
-| ✅ | functional_cross_pct | `60.27` |
+| ✅ | functional_cross_pct | `58.88` |
 | ✅ | counter_checks_failed | `0` |
 | ✅ | unexpected_outputs | `0` |
 | ⚠️ | limitation | This is a supplemental signoff run that intentionally uses OPQ_PAGE_RAM_DEPTH=512 to force the overwrite / frame-table-drop path. |
@@ -29,13 +29,13 @@
 
 | metric | pct |
 |---|---|
-| stmt | 77.08 |
-| branch | 64.85 |
-| cond | 35.98 |
-| expr | 58.33 |
+| stmt | 73.05 |
+| branch | 64.86 |
+| cond | 34.46 |
+| expr | 51.06 |
 | fsm_state | 86.36 |
 | fsm_trans | 43.00 |
-| toggle | 30.11 |
+| toggle | 26.48 |
 
 ## Transaction growth curve
 

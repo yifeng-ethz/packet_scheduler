@@ -1,6 +1,6 @@
-# ✅ CORNER_OPQ_405_error_hit_mask_recovery_test
+# ❌ CORNER_OPQ_405_error_hit_mask_recovery_test
 
-**Bucket:** `ERROR` &nbsp; **Method:** `D` &nbsp; **Build:** `after` &nbsp; **Effort:** `practical` &nbsp; **Result:** `pass`
+**Bucket:** `ERROR` &nbsp; **Method:** `D` &nbsp; **Build:** `after` &nbsp; **Effort:** `practical` &nbsp; **Result:** `fail`
 
 ## Intent
 
@@ -12,7 +12,7 @@
 
 | status | field | value |
 |:---:|---|---|
-| ✅ | report_case_id | `CORNER_OPQ_405_error_hit_mask_recovery_test` |
+| ❌ | report_case_id | `CORNER_OPQ_405_error_hit_mask_recovery_test` |
 | ℹ️ | legacy_test_name | `opq_error_hit_mask_recovery_test` |
 | ℹ️ | observed_txn | `1` |
 | ℹ️ | implementation_mode | `native_sv` |
@@ -48,13 +48,13 @@
 
 | metric | standalone | isolated_per_txn | bucket_gain | bucket_merged_after | bucket_gain_per_txn |
 |---|---|---|---|---|---|
-| stmt | 71.64 | 71.64 | 0.00 | 76.53 | 0.00 |
-| branch | 63.43 | 63.43 | 0.00 | 67.57 | 0.00 |
-| cond | 30.93 | 30.93 | 0.00 | 37.43 | 0.00 |
-| expr | 48.94 | 48.94 | 0.00 | 55.17 | 0.00 |
-| fsm_state | 84.09 | 84.09 | 0.00 | 84.09 | 0.00 |
-| fsm_trans | 41.00 | 41.00 | 0.00 | 41.00 | 0.00 |
-| toggle | 14.69 | 14.69 | 0.00 | 25.28 | 0.00 |
+| stmt | n/a | n/a | n/a | n/a | n/a |
+| branch | n/a | n/a | n/a | n/a | n/a |
+| cond | n/a | n/a | n/a | n/a | n/a |
+| expr | n/a | n/a | n/a | n/a | n/a |
+| fsm_state | n/a | n/a | n/a | n/a | n/a |
+| fsm_trans | n/a | n/a | n/a | n/a | n/a |
+| toggle | n/a | n/a | n/a | n/a | n/a |
 
 ---
 _Back to [bucket](../buckets/ERROR.md) &middot; [dashboard](../../DV_REPORT.md)_

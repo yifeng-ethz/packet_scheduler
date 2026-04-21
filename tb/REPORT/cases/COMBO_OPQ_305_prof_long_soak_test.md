@@ -1,6 +1,6 @@
-# ✅ COMBO_OPQ_305_prof_long_soak_test
+# ❌ COMBO_OPQ_305_prof_long_soak_test
 
-**Bucket:** `PROF` &nbsp; **Method:** `D` &nbsp; **Build:** `after` &nbsp; **Effort:** `practical` &nbsp; **Result:** `pass`
+**Bucket:** `PROF` &nbsp; **Method:** `D` &nbsp; **Build:** `after` &nbsp; **Effort:** `practical` &nbsp; **Result:** `fail`
 
 ## Intent
 
@@ -12,7 +12,7 @@
 
 | status | field | value |
 |:---:|---|---|
-| ✅ | report_case_id | `COMBO_OPQ_305_prof_long_soak_test` |
+| ❌ | report_case_id | `COMBO_OPQ_305_prof_long_soak_test` |
 | ℹ️ | legacy_test_name | `opq_prof_long_soak_test` |
 | ℹ️ | observed_txn | `1` |
 | ℹ️ | implementation_mode | `native_sv` |
@@ -48,13 +48,13 @@
 
 | metric | standalone | isolated_per_txn | bucket_gain | bucket_merged_after | bucket_gain_per_txn |
 |---|---|---|---|---|---|
-| stmt | 74.09 | 74.09 | 0.00 | 75.50 | 0.00 |
-| branch | 64.44 | 64.44 | 0.00 | 66.49 | 0.00 |
-| cond | 32.29 | 32.29 | 0.00 | 35.69 | 0.00 |
-| expr | 54.17 | 54.17 | 0.00 | 57.29 | 0.00 |
-| fsm_state | 84.09 | 84.09 | 0.00 | 84.09 | 0.00 |
-| fsm_trans | 41.00 | 41.00 | 0.00 | 42.00 | 0.00 |
-| toggle | 29.59 | 29.59 | 0.07 | 30.20 | 0.07 |
+| stmt | n/a | n/a | n/a | n/a | n/a |
+| branch | n/a | n/a | n/a | n/a | n/a |
+| cond | n/a | n/a | n/a | n/a | n/a |
+| expr | n/a | n/a | n/a | n/a | n/a |
+| fsm_state | n/a | n/a | n/a | n/a | n/a |
+| fsm_trans | n/a | n/a | n/a | n/a | n/a |
+| toggle | n/a | n/a | n/a | n/a | n/a |
 
 ---
 _Back to [bucket](../buckets/PROF.md) &middot; [dashboard](../../DV_REPORT.md)_

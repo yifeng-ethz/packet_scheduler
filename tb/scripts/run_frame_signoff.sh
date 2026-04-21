@@ -2,9 +2,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+UVM_BUILD_ROOT="$(cd "${SCRIPT_DIR}/../uvm" && pwd)/build_runs"
 
 if [[ "$#" -eq 0 ]]; then
-  COV_ENABLE=1 DUT_IMPL="${DUT_IMPL:-native_sv}" "${SCRIPT_DIR}/run_uvm.sh" \
+  COV_ENABLE=1 DUT_IMPL="${DUT_IMPL:-native_sv}" BUILD_ROOT="${UVM_BUILD_ROOT}" "${SCRIPT_DIR}/run_uvm.sh" \
     opq_bucket_frame_native_sv_test \
     opq_all_buckets_frame_native_sv_test \
     opq_cross_mixed_bucket_random_soak_test \
@@ -13,9 +14,9 @@ if [[ "$#" -eq 0 ]]; then
     opq_cross_random_ready_overflow_step2_boundary_test \
     opq_error_counter_clear_test
 
-  COV_ENABLE=1 DUT_IMPL="${DUT_IMPL:-native_sv}" OPQ_PAGE_RAM_DEPTH=512 "${SCRIPT_DIR}/run_uvm.sh" \
+  COV_ENABLE=1 DUT_IMPL="${DUT_IMPL:-native_sv}" BUILD_ROOT="${UVM_BUILD_ROOT}" OPQ_PAGE_RAM_DEPTH=512 "${SCRIPT_DIR}/run_uvm.sh" \
     opq_error_ftable_overflow_test
   exit 0
 fi
 
-COV_ENABLE=1 DUT_IMPL="${DUT_IMPL:-native_sv}" "${SCRIPT_DIR}/run_uvm.sh" "$@"
+COV_ENABLE=1 DUT_IMPL="${DUT_IMPL:-native_sv}" BUILD_ROOT="${UVM_BUILD_ROOT}" "${SCRIPT_DIR}/run_uvm.sh" "$@"

@@ -5,6 +5,18 @@ Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 > longer narrative note from the pre-cleanup flow and still contains useful
 > rationale, but the active signoff dashboard is now `SIGNOFF.md`.
 
+Validation refresh on `2026-04-21`:
+
+- the only supported simulation runtime on this host remains
+  `/data1/questaone_sim/questasim`
+- the maintained packet_scheduler UVM makefiles now use `-ini` for the
+  supported QuestaOne 2026 compile / elaboration / run path
+- `tb/scripts/run_all.sh` and `tb/scripts/run_cov_closure.sh` rerun cleanly on
+  that runtime
+- the generated native-SV dashboard has been refreshed from current evidence;
+  the only remaining red supplemental signoff run is
+  `opq_cross_bp_predrop_boundary_test`
+
 ## Scope
 
 This note defines the current standalone DV signoff expectations for
@@ -109,7 +121,7 @@ but these signoff gaps remain:
 
 ## Current Bring-Up Status
 
-- The new current-tree UVM harness compiles and runs under the supported
+- The new current-tree UVM harness compiles and runs under the only supported
   QuestaOne 2026 runtime on this host:
   `/data1/questaone_sim/questasim` with `LM_LICENSE_FILE`,
   `MGLS_LICENSE_FILE`, and `SALT_LICENSE_SERVER` all set to

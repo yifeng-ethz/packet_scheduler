@@ -2,7 +2,7 @@
 #------------------------------------------------------------------------------
 # IP Name   : formal_common
 # Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
-# Revision  : 0.2 - add a stable fallback-stress API alongside the future proof backend
+# Revision  : 0.3 - lock simulation to QuestaOne 2026 and retire the old SBY backend
 # Description:
 #   Shared utilities for the `formal_*.sh` wrappers described in DV_FORMAL.
 #   The wrappers intentionally isolate their build trees from the normal UVM
@@ -36,12 +36,21 @@ formal_find_qverify() {
   local candidate
   local -a candidates=()
   local questa_home="${QUESTA_HOME:-/data1/questaone_sim/questasim}"
+  local questa_formal_home="${QUESTA_FORMAL_HOME:-}"
 
   if [[ -n "${QVERIFY_BIN:-}" ]]; then
     candidates+=("${QVERIFY_BIN}")
   fi
   if [[ -n "${ZNFORMAL_BIN:-}" ]]; then
     candidates+=("${ZNFORMAL_BIN}")
+  fi
+  if [[ -n "${questa_formal_home}" ]]; then
+    candidates+=(
+      "${questa_formal_home}/bin/qverify"
+      "${questa_formal_home}/linux_x86_64/qverify"
+      "${questa_formal_home}/bin/znformal"
+      "${questa_formal_home}/linux_x86_64/znformal"
+    )
   fi
   candidates+=(
     qverify
@@ -71,6 +80,7 @@ formal_find_qverify() {
 formal_use_license_env() {
   export QUESTA_HOME="${QUESTA_HOME:-/data1/questaone_sim/questasim}"
   export QSIM_INI="${QSIM_INI:-${QUESTA_HOME}/modelsim.ini}"
+  export QUESTA_FORMAL_HOME="${QUESTA_FORMAL_HOME:-}"
   export LM_LICENSE_FILE="${ETH_MENTOR_SERVER}"
   export MGLS_LICENSE_FILE="${ETH_MENTOR_SERVER}"
   export SALT_LICENSE_SERVER="${ETH_MENTOR_SERVER}"
@@ -371,14 +381,19 @@ formal_run_plane() {
     case "${backend_mode}" in
       qverify)
         if qverify_bin="$(formal_find_qverify 2>/dev/null)"; then
-          formal_status="blocked_no_scripted_qverify_flow"
+          formal_status="blocked_no_plane_qverify_recipe"
           backend="${qverify_bin}"
-          note="${plane_note}; qverify/ZnFormal is installed but a scripted plane-specific proof harness is not yet wired on this host"
+          note="${plane_note}; Questa qverify/ZnFormal is the only supported proof backend, but this plane still has no scripted proof recipe wired to ${qverify_bin}"
         else
-          formal_status="blocked_no_qverify"
+          formal_status="blocked_no_questa_formal"
           backend="compile_elab_only"
-          note="${plane_note}; compile and elaboration passed, but qverify/ZnFormal is not installed under ${QUESTA_HOME:-/data1/questaone_sim/questasim}"
+          note="${plane_note}; compile and elaboration passed, but no runnable qverify/ZnFormal executable was found in QUESTA_FORMAL_HOME, QUESTA_HOME=${QUESTA_HOME:-/data1/questaone_sim/questasim}, or PATH"
         fi
+        ;;
+      sby|yosys|symbiyosys)
+        formal_status="blocked_deprecated_backend"
+        backend="${backend_mode}"
+        note="${plane_note}; deprecated backend ${backend_mode} is disabled in this workspace; use qverify/ZnFormal or explicit FORMAL_BACKEND=stress"
         ;;
       stress)
         formal_run_stress_suite \

@@ -23,8 +23,8 @@
 | ℹ️ | build_knobs.OPQ_TICKET_FIFO_DEPTH | `512` |
 | ℹ️ | build_knobs.OPQ_PAGE_RAM_DEPTH | `65536` |
 | ℹ️ | build_knobs.MODE | `MERGING` |
-| ℹ️ | log.hit_expected | `298` |
-| ℹ️ | log.hit_actual | `298` |
+| ℹ️ | log.hit_expected | `484` |
+| ℹ️ | log.hit_actual | `484` |
 | ℹ️ | log.hit_missing | `0` |
 | ℹ️ | log.hit_ghost | `0` |
 | ℹ️ | log.cg_cfg | `49.4` |
@@ -33,8 +33,8 @@
 | ℹ️ | log.cg_bp | `20.0` |
 | ℹ️ | log.cg_csr | `95.24` |
 | ℹ️ | log.cg_credit | `46.67` |
-| ℹ️ | log.cg_drop | `61.81` |
-| ℹ️ | log.cg_drr | `46.0` |
+| ℹ️ | log.cg_drop | `63.19` |
+| ℹ️ | log.cg_drr | `54.33` |
 | ℹ️ | log.cg_ingress | `100.0` |
 | ℹ️ | log.cg_egress | `100.0` |
 | ℹ️ | log.lane0_monitored_frames | `2` |
@@ -48,13 +48,13 @@
 
 | metric | standalone | isolated_per_txn | bucket_gain | bucket_merged_after | bucket_gain_per_txn |
 |---|---|---|---|---|---|
-| stmt | 74.20 | 74.20 | 0.53 | 76.27 | 0.53 |
-| branch | 67.51 | 67.51 | 0.97 | 71.88 | 0.97 |
-| cond | 43.82 | 43.82 | 2.62 | 46.98 | 2.62 |
-| expr | 60.20 | 60.20 | 0.86 | 68.10 | 0.86 |
-| fsm_state | 86.36 | 86.36 | 0.00 | 90.91 | 0.00 |
-| fsm_trans | 43.00 | 43.00 | 0.00 | 47.00 | 0.00 |
-| toggle | 24.49 | 24.49 | 0.40 | 45.33 | 0.40 |
+| stmt | 77.72 | 77.72 | 3.36 | 82.20 | 3.36 |
+| branch | 71.62 | 71.62 | 3.26 | 80.07 | 3.26 |
+| cond | 45.08 | 45.08 | 2.84 | 56.99 | 2.84 |
+| expr | 56.74 | 56.74 | 2.84 | 73.05 | 2.84 |
+| fsm_state | 88.64 | 88.64 | 2.27 | 93.18 | 2.27 |
+| fsm_trans | 45.00 | 45.00 | 2.00 | 50.00 | 2.00 |
+| toggle | 23.37 | 23.37 | 0.66 | 45.54 | 0.66 |
 
 ---
 _Back to [bucket](../buckets/CROSS.md) &middot; [dashboard](../../DV_REPORT.md)_

@@ -8,8 +8,8 @@
 |:---:|---|---|
 | ℹ️ | case_count | `1` |
 | ℹ️ | effort | `practical` |
-| ℹ️ | txns | `1160` |
-| ✅ | functional_cross_pct | `70.96` |
+| ℹ️ | txns | `1220` |
+| ✅ | functional_cross_pct | `71.1` |
 | ✅ | counter_checks_failed | `0` |
 | ✅ | unexpected_outputs | `0` |
 | ⚠️ | limitation | This is a supplemental signoff run, not the fixed bucket-frame baseline; execution order is intentionally seed-driven rather than case-id ordered. |
@@ -29,13 +29,13 @@
 
 | metric | pct |
 |---|---|
-| stmt | 82.40 |
-| branch | 79.02 |
-| cond | 54.67 |
-| expr | 77.08 |
+| stmt | 78.79 |
+| branch | 76.45 |
+| cond | 52.85 |
+| expr | 68.79 |
 | fsm_state | 90.91 |
 | fsm_trans | 48.00 |
-| toggle | 45.23 |
+| toggle | 44.22 |
 
 ## Transaction growth curve
 

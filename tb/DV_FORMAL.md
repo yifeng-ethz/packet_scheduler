@@ -1027,14 +1027,18 @@ The wrapper API is now stabilized around the supported Questa formal path:
 - `FORMAL_BACKEND=auto|stress|qverify` selects the backend. `auto`
   now chooses `qverify` by default and only falls back to `stress` when
   `FORMAL_STRESS_ENABLE=1` is set explicitly.
+- simulation still runs only under the supported QuestaOne 2026 runtime
+  `QUESTA_HOME=/data1/questaone_sim/questasim`; do not point the wrappers
+  back at the old FE/FSE trees
 - `QVERIFY_BIN=/path/to/qverify` points the same wrappers at the
   installed `qverify` / `znformal` executable without changing testcase
   names, tops, or plane ordering.
+- `QUESTA_FORMAL_HOME=/path/to/questa_formal` is the preferred way to
+  point the wrappers at a separate Questa Formal / ZnFormal install when
+  the proof binaries are not shipped inside the `questasim` tree.
 - `FORMAL_BACKEND=sby` is deprecated in this workspace and intentionally
   reports a blocked/deprecated status instead of driving the old OSS
   Yosys flow.
-  future OSS flow; today the wrappers treat it as metadata and a binary
-  requirement check.
 - `FORMAL_STRESS_TESTS` overrides the default simulation fallback test
   list for one plane without editing the wrapper.
 - `FORMAL_STRESS_INCLUDE_PROBES=1` appends the plane's probe-only
@@ -1085,8 +1089,7 @@ reruns on **2026-04-21** with the current host tool installation:
   native-SV presenter bug, tracked as `BUG-014-R`, where synchronous
   page-RAM return data could advance underneath a held output beat. The
   basic presenter now skids the returned RAM word across
-  `valid && !ready`, so the targeted probe and the live OSS egress proof
-  are both green on this host.
+  `valid && !ready`, so the targeted probe is green on this host.
 
 Current ingress fallback classification:
 
@@ -1116,27 +1119,17 @@ Current ingress fallback classification:
   zero-hit recovery branch was returned to the normal body state.
 
 Current blocker on **2026-04-21**: the ETH license server exposes
-`znformal`, but the current host tool installation still does **not**
-provide a runnable `qverify` / `znformal` executable under
-`/data1/questaone_sim/questasim` or on `PATH`. The wrappers therefore
-close compile/elaboration readiness and can still execute the explicit
-simulation-backed `stress` mode, but they do not yet execute a real
-proof engine on this host.
+`znformal`, but this refresh did **not** find a runnable `qverify` /
+`znformal` executable in `QUESTA_FORMAL_HOME`, in the supported
+simulation tree `QUESTA_HOME=/data1/questaone_sim/questasim`, or on
+`PATH`. The wrappers therefore close compile/elaboration readiness and
+can still execute the explicit simulation-backed `stress` mode, but
+they do not yet execute a real proof engine on this host.
 
 Historical note: the older OSS `sby` / Yosys evidence from
 `2026-04-18` remains recorded in `BUG_HISTORY.md` and prior CSVs as
 historical bring-up evidence only. That path is now deprecated and is
 no longer part of the active formal signoff recipe.
-    and are no longer used as exact proof anchors in the SBY harness;
-    the proven subset is packet-shape plus write/drop pulse legality
-- non-claim for the current OSS egress pass:
-  - the unread-overwrite scan itself is not yet proven in the OSS path;
-    `OPQ_OSS_FORMAL` now isolates a feed-forward oversize-only drop
-    subset so the live backpressure/hold contract can be proven without
-    changing the native-SV signoff behavior
-  - the tiled frame-table / presenter cross-module flush-under-backpressure
-    proof is still open; current OSS closure is plane-local, not a full
-    end-to-end tiled-path proof
 
 ---
 

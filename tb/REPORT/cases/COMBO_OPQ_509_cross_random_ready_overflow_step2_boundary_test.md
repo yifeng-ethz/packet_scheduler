@@ -26,17 +26,17 @@
 | ℹ️ | log.cg_cfg | `49.4` |
 | ℹ️ | log.cg_frame | `30.0` |
 | ℹ️ | log.cg_subh | `22.22` |
-| ℹ️ | log.cg_bp | `83.33` |
+| ℹ️ | log.cg_bp | `88.33` |
 | ℹ️ | log.cg_csr | `92.26` |
 | ℹ️ | log.cg_credit | `46.67` |
-| ℹ️ | log.cg_drop | `59.03` |
-| ℹ️ | log.cg_drr | `40.33` |
+| ℹ️ | log.cg_drop | `52.78` |
+| ℹ️ | log.cg_drr | `42.33` |
 | ℹ️ | log.cg_ingress | `100.0` |
 | ℹ️ | log.cg_egress | `100.0` |
-| ℹ️ | log.lane0_monitored_frames | `7` |
+| ℹ️ | log.lane0_monitored_frames | `5` |
 | ℹ️ | log.lane0_orphan_beats | `0` |
 | ℹ️ | log.lane0_capture_err | `0` |
-| ℹ️ | log.lane1_monitored_frames | `7` |
+| ℹ️ | log.lane1_monitored_frames | `5` |
 | ℹ️ | log.lane1_orphan_beats | `0` |
 | ℹ️ | log.lane1_capture_err | `0` |
 
@@ -44,13 +44,13 @@
 
 | metric | standalone | isolated_per_txn | bucket_gain | bucket_merged_after | bucket_gain_per_txn |
 |---|---|---|---|---|---|
-| stmt | 80.81 | 40.41 | 1.34 | 77.61 | 0.67 |
-| branch | 74.88 | 37.44 | 1.36 | 73.24 | 0.68 |
-| cond | 52.53 | 26.27 | 1.34 | 48.32 | 0.67 |
-| expr | 67.38 | 33.69 | 2.24 | 70.34 | 1.12 |
-| fsm_state | 93.18 | 46.59 | 0.00 | 90.91 | 0.00 |
-| fsm_trans | 52.00 | 26.00 | 0.00 | 47.00 | 0.00 |
-| toggle | 36.82 | 18.41 | 4.54 | 49.87 | 2.27 |
+| stmt | 77.24 | 38.62 | 0.39 | 82.59 | 0.20 |
+| branch | 71.01 | 35.51 | 0.97 | 81.04 | 0.48 |
+| cond | 48.70 | 24.35 | 1.82 | 58.81 | 0.91 |
+| expr | 63.83 | 31.91 | 2.13 | 75.18 | 1.06 |
+| fsm_state | 88.64 | 44.32 | 0.00 | 93.18 | 0.00 |
+| fsm_trans | 45.00 | 22.50 | 0.00 | 50.00 | 0.00 |
+| toggle | 33.12 | 16.56 | 3.55 | 49.09 | 1.77 |
 
 ---
 _Back to [bucket](../buckets/CROSS.md) &middot; [dashboard](../../DV_REPORT.md)_

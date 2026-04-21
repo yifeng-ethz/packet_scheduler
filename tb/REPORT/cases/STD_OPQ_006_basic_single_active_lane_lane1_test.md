@@ -1,6 +1,6 @@
-# ✅ STD_OPQ_006_basic_single_active_lane_lane1_test
+# ❌ STD_OPQ_006_basic_single_active_lane_lane1_test
 
-**Bucket:** `BASIC` &nbsp; **Method:** `D` &nbsp; **Build:** `after` &nbsp; **Effort:** `practical` &nbsp; **Result:** `pass`
+**Bucket:** `BASIC` &nbsp; **Method:** `D` &nbsp; **Build:** `after` &nbsp; **Effort:** `practical` &nbsp; **Result:** `fail`
 
 ## Intent
 
@@ -12,7 +12,7 @@
 
 | status | field | value |
 |:---:|---|---|
-| ✅ | report_case_id | `STD_OPQ_006_basic_single_active_lane_lane1_test` |
+| ❌ | report_case_id | `STD_OPQ_006_basic_single_active_lane_lane1_test` |
 | ℹ️ | legacy_test_name | `opq_basic_single_active_lane_lane1_test` |
 | ℹ️ | observed_txn | `1` |
 | ℹ️ | implementation_mode | `native_sv` |
@@ -48,13 +48,13 @@
 
 | metric | standalone | isolated_per_txn | bucket_gain | bucket_merged_after | bucket_gain_per_txn |
 |---|---|---|---|---|---|
-| stmt | 72.92 | 72.92 | 0.06 | 76.02 | 0.06 |
-| branch | 62.26 | 62.26 | 0.13 | 67.57 | 0.13 |
-| cond | 31.16 | 31.16 | 0.00 | 37.39 | 0.00 |
-| expr | 55.21 | 55.21 | 0.00 | 58.33 | 0.00 |
-| fsm_state | 81.82 | 81.82 | 0.00 | 84.09 | 0.00 |
-| fsm_trans | 39.00 | 39.00 | 0.00 | 42.00 | 0.00 |
-| toggle | 19.49 | 19.49 | 1.66 | 32.85 | 1.66 |
+| stmt | n/a | n/a | n/a | n/a | n/a |
+| branch | n/a | n/a | n/a | n/a | n/a |
+| cond | n/a | n/a | n/a | n/a | n/a |
+| expr | n/a | n/a | n/a | n/a | n/a |
+| fsm_state | n/a | n/a | n/a | n/a | n/a |
+| fsm_trans | n/a | n/a | n/a | n/a | n/a |
+| toggle | n/a | n/a | n/a | n/a | n/a |
 
 ---
 _Back to [bucket](../buckets/BASIC.md) &middot; [dashboard](../../DV_REPORT.md)_

@@ -9,7 +9,7 @@
 | ℹ️ | case_count | `1` |
 | ℹ️ | effort | `practical` |
 | ℹ️ | txns | `4` |
-| ✅ | functional_cross_pct | `57.35` |
+| ✅ | functional_cross_pct | `58.32` |
 | ✅ | counter_checks_failed | `0` |
 | ✅ | unexpected_outputs | `0` |
 | ⚠️ | limitation | This is a supplemental signoff run that freezes a deterministic bursty DRR frame_count=2 boundary alongside the separately tracked green frame_count=3 repro. |
@@ -29,13 +29,13 @@
 
 | metric | pct |
 |---|---|
-| stmt | 74.20 |
-| branch | 67.51 |
-| cond | 43.82 |
-| expr | 60.20 |
-| fsm_state | 86.36 |
-| fsm_trans | 43.00 |
-| toggle | 24.49 |
+| stmt | 77.72 |
+| branch | 71.62 |
+| cond | 45.08 |
+| expr | 56.74 |
+| fsm_state | 88.64 |
+| fsm_trans | 45.00 |
+| toggle | 23.37 |
 
 ## Transaction growth curve
 

@@ -8,6 +8,22 @@ This checklist is the worklist required to produce a full `dv-workflow`
 report for the native-SV OPQ path. The final `DV_REPORT.md` must be generated
 from `DV_REPORT.json`; it is not the place to hand-maintain todo items.
 
+Current toolchain migration note on 2026-04-21:
+
+- The maintained packet_scheduler UVM makefiles now target the supported
+  QuestaOne 2026 runtime with `-ini` instead of the deprecated
+  `-modelsimini` flag for `vlog` / `vcom` / `vsim` / `vopt`.
+- The supported QuestaOne reruns of `tb/scripts/run_all.sh` and
+  `tb/scripts/run_cov_closure.sh` are clean on this host.
+- The refreshed `tb/scripts/run_frame_signoff.sh` evidence is now coherent on
+  the supported runtime: `bucket_frame`, `all_buckets_frame`, mixed-bucket
+  random soak, bursty DRR frame2 boundary, overflow step2 boundary,
+  counter-clear, and reduced-depth overflow all rerun clean; the remaining
+  red supplemental signoff run is `opq_cross_bp_predrop_boundary_test`.
+- The generated dashboard has been refreshed from those reruns. Do not treat
+  older stale `sim_runs/logs/*.log` artifacts or pre-2026 FSE logs as current
+  evidence.
+
 Assumption frozen on 2026-04-17: the current harness must be upgraded into a
 full native-SV signoff harness. The VHDL path may remain as a debug/reference
 comparison path, but it must not contribute to final signoff evidence.
@@ -471,14 +487,18 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       - `formal_mover.sh`: compile/elab pass
       - `formal_egress.sh`: compile/elab pass, including the standalone
         `opq_formal_ftable_tb` elaboration top
-      - blocker: `znformal` licenses are available, but this host does not
-        have a runnable `qverify` / `znformal` binary installed
+      - blocker: `znformal` licenses are available, but this host refresh
+        still did not find a runnable `qverify` / `znformal` binary in
+        `QUESTA_FORMAL_HOME`, `QUESTA_HOME=/data1/questaone_sim/questasim`,
+        or `PATH`
 - [x] Stabilize a no-backend fallback API that keeps the future proof entry
       points intact.
       Status on `2026-04-18`:
       - wrappers now support `FORMAL_BACKEND=auto|stress|qverify`
       - wrappers now support `QVERIFY_BIN=/path/to/qverify` as the
         backend handoff point once the proof binary is installed
+      - wrappers now support `QUESTA_FORMAL_HOME=/path/to/questa_formal`
+        for a separate Questa Formal / ZnFormal installation
       - wrappers now support `FORMAL_STRESS_TESTS` for targeted fallback runs
       - default fallback status:
         - ingress: pass on `opq_basic_smoke_test` +
@@ -497,7 +517,7 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       - ingress probe-only exclusions: none in the current promoted matrix
 - [x] Record the old OSS formal bring-up as historical evidence only.
       Status on `2026-04-21`:
-      - the old `FORMAL_BACKEND=sby` path is now deprecated
+      - the old `FORMAL_BACKEND=sby` path is now deprecated and blocked
       - the wrapper entry points remain stable
         (`formal_ingress.sh`, `formal_mover.sh`, `formal_egress.sh`)
       - any existing OSS `sby` results remain historical evidence only

@@ -32,7 +32,7 @@
 | ℹ️ | log.cg_subh | `23.61` |
 | ℹ️ | log.cg_bp | `0.0` |
 | ℹ️ | log.cg_csr | `92.26` |
-| ℹ️ | log.cg_credit | `46.67` |
+| ℹ️ | log.cg_credit | `73.33` |
 | ℹ️ | log.cg_drop | `48.61` |
 | ℹ️ | log.cg_drr | `40.33` |
 | ℹ️ | log.cg_ingress | `100.0` |
@@ -48,13 +48,13 @@
 
 | metric | standalone | isolated_per_txn | bucket_gain | bucket_merged_after | bucket_gain_per_txn |
 |---|---|---|---|---|---|
-| stmt | 75.38 | 75.38 | 1.41 | 75.50 | 1.41 |
-| branch | 66.21 | 66.21 | 2.05 | 66.49 | 2.05 |
-| cond | 35.41 | 35.41 | 3.40 | 35.69 | 3.40 |
-| expr | 57.29 | 57.29 | 3.12 | 57.29 | 3.12 |
+| stmt | 72.47 | 72.47 | 0.93 | 72.57 | 0.93 |
+| branch | 64.98 | 64.98 | 1.45 | 65.22 | 1.45 |
+| cond | 33.94 | 33.94 | 3.36 | 34.97 | 3.36 |
+| expr | 48.94 | 48.94 | 2.13 | 48.94 | 2.13 |
 | fsm_state | 84.09 | 84.09 | 0.00 | 84.09 | 0.00 |
 | fsm_trans | 42.00 | 42.00 | 1.00 | 42.00 | 1.00 |
-| toggle | 20.20 | 20.20 | 1.62 | 27.07 | 1.62 |
+| toggle | 19.25 | 19.25 | 1.87 | 23.00 | 1.87 |
 
 ---
 _Back to [bucket](../buckets/PROF.md) &middot; [dashboard](../../DV_REPORT.md)_

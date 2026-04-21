@@ -56,10 +56,19 @@ Signoff evidence in this tree is required to come from `DUT_IMPL=native_sv`.
   `DV_ERROR.md`, while the explicit reduced-depth must-drop witness is tracked
   under `DV_CROSS.md`.
 - In the current monolithic harness, a lane may be idle in hits but not silent in frame cadence. Directed single-lane tests therefore drive empty frames on the inactive peer lane instead of holding it permanently quiet.
-- On this host the supported simulator runtime is `QuestaOne 2026` at
+- On this host the only supported simulator runtime is `QuestaOne 2026` at
   `/data1/questaone_sim/questasim`, with `LM_LICENSE_FILE`,
   `MGLS_LICENSE_FILE`, and `SALT_LICENSE_SERVER` all set to
   `8161@lic-mentor.ethz.ch`.
+- Validation note on `2026-04-21`: the supported QuestaOne 2026 reruns are now
+  refreshed on the maintained native-SV flow. `scripts/run_all.sh` and
+  `scripts/run_cov_closure.sh` complete cleanly, and the generated
+  [`DV_REPORT.md`](DV_REPORT.md) / [`DV_COV.md`](DV_COV.md) bundle has been
+  rebuilt from current evidence. The remaining live supplemental signoff-run
+  failure is `opq_cross_bp_predrop_boundary_test`; the former
+  `opq_all_buckets_frame_native_sv_test` load-flake was cleared by isolated
+  rerun, and the reduced-depth `opq_error_ftable_overflow_test` evidence is
+  now refreshed on the supported 2026 toolchain with coverage enabled.
 - The live `opq_basic_smoke_test` now passes on the active monolithic harness with scoreboard hit-integrity
   checks enabled: same hits in, same hits out, and the first merged subheader lands in the correct time slot.
 - The remaining signoff work is closure, not basic bring-up: lint disposition, coverage closure, more buckets from

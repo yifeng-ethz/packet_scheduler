@@ -8,8 +8,8 @@
 |:---:|---|---|
 | ℹ️ | case_count | `1` |
 | ℹ️ | effort | `practical` |
-| ℹ️ | txns | `14` |
-| ✅ | functional_cross_pct | `62.32` |
+| ℹ️ | txns | `10` |
+| ✅ | functional_cross_pct | `62.4` |
 | ✅ | counter_checks_failed | `0` |
 | ✅ | unexpected_outputs | `0` |
 | ⚠️ | limitation | This is a supplemental signoff run that freezes the current green two-step legal-overflow boundary on the default build with ft_drop counters held at zero. |
@@ -29,13 +29,13 @@
 
 | metric | pct |
 |---|---|
-| stmt | 80.81 |
-| branch | 74.88 |
-| cond | 52.53 |
-| expr | 67.38 |
-| fsm_state | 93.18 |
-| fsm_trans | 52.00 |
-| toggle | 36.82 |
+| stmt | 77.24 |
+| branch | 71.01 |
+| cond | 48.70 |
+| expr | 63.83 |
+| fsm_state | 88.64 |
+| fsm_trans | 45.00 |
+| toggle | 33.12 |
 
 ## Transaction growth curve
 
