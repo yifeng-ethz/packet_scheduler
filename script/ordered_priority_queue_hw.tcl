@@ -8,7 +8,7 @@ package require -exact altera_terp 1.0
 
 set_module_property NAME                             ordered_priority_queue
 set_module_property DISPLAY_NAME                     "Ordered Priority Queue"
-set_module_property VERSION                          26.3.57.0421
+set_module_property VERSION                          26.3.58.0421
 set_module_property DESCRIPTION                      "Ordered Priority Queue Mu3e IP Core"
 set_module_property GROUP                            "Mu3e Data Plane/Modules"
 set_module_property AUTHOR                           "Yifeng Wang (yifenwan@phys.ethz.ch)"
@@ -296,7 +296,7 @@ set VERSION_MAJOR_DEFAULT_CONST 26
 set VERSION_MINOR_DEFAULT_CONST 3
 set VERSION_PATCH_DEFAULT_CONST 29
 set BUILD_DEFAULT_CONST         420
-set VERSION_DATE_DEFAULT_CONST  20260420
+set VERSION_DATE_DEFAULT_CONST  20260421
 # 32-bit packaged provenance stamp for this release family
 set VERSION_GIT_DEFAULT_CONST   2897562749
 set INSTANCE_ID_DEFAULT_CONST   0

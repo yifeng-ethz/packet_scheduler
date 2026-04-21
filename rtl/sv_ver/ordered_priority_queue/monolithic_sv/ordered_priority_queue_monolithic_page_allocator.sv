@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_page_allocator
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.56
+// Version : 26.3.58
 // Date    : 20260421
-// Change  : Carry per-subheader frame serial into allocator drop/tail decisions so frame identity survives wrapped timestamp aliases
+// Change  : Reactivate late current-frame SOP joins so inactive lanes cannot age same-frame body tickets into late drops
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_page_allocator #(
@@ -684,6 +684,28 @@ module ordered_priority_queue_monolithic_page_allocator #(
         // straggling body ticket one cycle later.
         active_frame_pending_nonfuture_ticket = 1'b1;
       end
+      if ((page_allocator.frame_lane_active != '0) &&
+          !page_allocator.frame_lane_active[i] &&
+          page_allocator_is_pending_ticket[i] &&
+          page_allocator_is_tk_sop[i] &&
+          page_allocator_is_tk_curr[i]) begin
+        // An inactive lane can still surface the current-frame SOP after the
+        // frame has already been opened by another lane. Keep the frame live
+        // until that SOP is absorbed and the lane is reactivated, otherwise
+        // the following body ticket ages into the late-drop path.
+        active_frame_pending_nonfuture_ticket = 1'b1;
+      end
+      if ((page_allocator.frame_lane_active != '0) &&
+          !page_allocator.frame_lane_active[i] &&
+          !page_allocator_is_pending_ticket[i] &&
+          ingress_parser_busy_i[i] &&
+          (ingress_frame_ts_i[i] == page_allocator.frame_ts)) begin
+        // A lane can still be parsing the current frame after another lane has
+        // already opened it. Keep the frame alive until that parser either
+        // surfaces its ticket or drains to idle; otherwise the late body
+        // ticket can be reclassified against the next frame and dropped.
+        active_frame_pending_nonfuture_ticket = 1'b1;
+      end
       if (page_allocator_is_pending_ticket[i] && !page_allocator_is_pending_ticket_lane[i]) begin
         all_lanes_fetch_ready = 1'b0;
       end
@@ -1182,10 +1204,20 @@ module ordered_priority_queue_monolithic_page_allocator #(
           end else if (fetch_join_absorb_only_q) begin
             lane_masked_v[i] = 1'b1;
             lane_credit_valid_v[i] = 1'b0;
-            if (fetch_tk_sop_q[i] &&
-                fetch_tk_past_q[i] &&
-                (fetch_ticket_raw_q[i][TICKET_FRAME_TS_HI:TICKET_FRAME_TS_LO] +
-                  48'(FRAME_DURATION_CYCLES) == page_allocator.frame_ts)) begin
+            if ((page_allocator.frame_lane_active != '0) &&
+                !page_allocator.frame_lane_active[i] &&
+                fetch_tk_sop_q[i] &&
+                fetch_tk_curr_q[i]) begin
+              // During the join window, absorb a late current-frame SOP from
+              // an inactive lane and mark that lane active before its body
+              // ticket appears on the next fetch.
+              lane_action_v[i] = FETCH_LANE_ADVANCE_ONLY;
+              lane_credit_valid_v[i] = 1'b1;
+              lane_reactivate_v[i] = !fetch_tail_dropped_q[i];
+            end else if (fetch_tk_sop_q[i] &&
+                         fetch_tk_past_q[i] &&
+                         (fetch_ticket_raw_q[i][TICKET_FRAME_TS_HI:TICKET_FRAME_TS_LO] +
+                           48'(FRAME_DURATION_CYCLES) == page_allocator.frame_ts)) begin
               lane_action_v[i] = FETCH_LANE_ADVANCE_ONLY;
               lane_credit_valid_v[i] = 1'b1;
               lane_reactivate_v[i] = 1'b1;
@@ -1209,6 +1241,18 @@ module ordered_priority_queue_monolithic_page_allocator #(
               lane_masked_v[i] = 1'b1;
               lane_credit_valid_v[i] = 1'b0;
             end
+          end else if ((page_allocator.frame_lane_active != '0) &&
+                       !page_allocator.frame_lane_active[i] &&
+                       fetch_tk_curr_q[i] &&
+                       fetch_tk_sop_q[i] &&
+                       !fetch_tail_dropped_q[i]) begin
+            // Outside the explicit join window, a late current-frame SOP still
+            // belongs to the active frame. Consume it and reactivate the lane
+            // so its body ticket stays on the live-frame path.
+            lane_action_v[i] = FETCH_LANE_ADVANCE_ONLY;
+            lane_masked_v[i] = 1'b1;
+            lane_credit_valid_v[i] = 1'b1;
+            lane_reactivate_v[i] = 1'b1;
           end else if (fetch_tk_future_q[i]) begin
             lane_masked_v[i] = 1'b1;
             lane_credit_valid_v[i] = 1'b0;
@@ -1809,6 +1853,19 @@ module ordered_priority_queue_monolithic_page_allocator #(
       else $error("OPQ_PAGE_ALLOCATOR late-drop serial did not match the dropped ticket identity");
 
 `ifdef OPQ_NATIVE_FORMAL_STRICT
+    property p_busy_parser_same_frame_keeps_frame_live;
+      @(posedge d_clk) disable iff (d_reset)
+        (page_allocator.frame_lane_active != '0) &&
+        !page_allocator.frame_lane_active[g] &&
+        !page_allocator_is_pending_ticket[g] &&
+        ingress_parser_busy_i[g] &&
+        (ingress_frame_ts_i[g] == page_allocator.frame_ts)
+        |->
+        active_frame_pending_nonfuture_ticket;
+    endproperty
+    ap_busy_parser_same_frame_keeps_frame_live: assert property (p_busy_parser_same_frame_keeps_frame_live)
+      else $error("OPQ_PAGE_ALLOCATOR retired a live frame while an inactive lane parser was still busy on that same frame timestamp");
+
     property p_active_frame_body_serial_is_not_past;
       @(posedge d_clk) disable iff (d_reset)
         (page_allocator.frame_lane_active != '0) &&
@@ -1828,6 +1885,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
         $past((page_allocator_state == PAGE_ALLOCATOR_FETCH_TICKET) &&
               all_lanes_fetch_ready &&
               (page_allocator.frame_lane_active != '0) &&
+              page_allocator_is_pending_ticket[g] &&
               !ticket_fifos_rd_data_i[g][TICKET_ALT_SOP_LOC] &&
               (ticket_fifos_rd_data_i[g][TICKET_TS_HI:TICKET_TS_LO] == page_allocator.running_ts) &&
               (ticket_fifos_rd_data_i[g][TICKET_BODY_SERIAL_HI:TICKET_BODY_SERIAL_LO] ==
@@ -1843,6 +1901,34 @@ module ordered_priority_queue_monolithic_page_allocator #(
     ap_fetch_active_frame_body_serial_is_not_past: assert property (p_fetch_active_frame_body_serial_is_not_past)
       else $error("OPQ_PAGE_ALLOCATOR registered fetch path marked an active-frame body ticket as past");
 
+    property p_fetch_current_join_sop_reactivates_inactive_lane;
+      @(posedge d_clk) disable iff (d_reset || !formal_past_valid)
+        $past((page_allocator_state == PAGE_ALLOCATOR_DECIDE_TICKET) &&
+              (page_allocator.frame_lane_active != '0) &&
+              !page_allocator.frame_lane_active[g] &&
+              fetch_pending_q[g] &&
+              fetch_tk_curr_q[g] &&
+              fetch_tk_sop_q[g] &&
+              !fetch_tail_dropped_q[g])
+        |->
+        (fetch_lane_action_q[g] == FETCH_LANE_ADVANCE_ONLY) &&
+        fetch_lane_credit_valid_q[g] &&
+        fetch_lane_reactivate_q[g];
+    endproperty
+    ap_fetch_current_join_sop_reactivates_inactive_lane: assert property (p_fetch_current_join_sop_reactivates_inactive_lane)
+      else $error("OPQ_PAGE_ALLOCATOR failed to absorb a late current-frame SOP and reactivate its inactive lane");
+
+    property p_apply_reactivate_marks_lane_active;
+      @(posedge d_clk) disable iff (d_reset || !formal_past_valid)
+        $past((page_allocator_state == PAGE_ALLOCATOR_APPLY_TICKET) &&
+              (fetch_lane_action_q[g] == FETCH_LANE_ADVANCE_ONLY) &&
+              fetch_lane_reactivate_q[g])
+        |->
+        page_allocator.frame_lane_active[g];
+    endproperty
+    ap_apply_reactivate_marks_lane_active: assert property (p_apply_reactivate_marks_lane_active)
+      else $error("OPQ_PAGE_ALLOCATOR consumed a join SOP but failed to mark the lane active");
+
     cp_tail_bypass_shadow_drop_window: cover property (@(posedge d_clk) disable iff (d_reset)
       ingress_tail_bypass_valid_i[g] && ingress_tail_bypass_drop_i[g]
       ##1 page_allocator.ingress_tail_seen_valid[g]
@@ -1851,6 +1937,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
 
     cp_active_frame_body_serial_window: cover property (@(posedge d_clk) disable iff (d_reset)
       (page_allocator.frame_lane_active != '0) &&
+      page_allocator_is_pending_ticket[g] &&
       (page_allocator_state == PAGE_ALLOCATOR_FETCH_TICKET) &&
       all_lanes_fetch_ready &&
       !ticket_fifos_rd_data_i[g][TICKET_ALT_SOP_LOC] &&
@@ -1858,6 +1945,27 @@ module ordered_priority_queue_monolithic_page_allocator #(
       (ticket_fifos_rd_data_i[g][TICKET_BODY_SERIAL_HI:TICKET_BODY_SERIAL_LO] ==
         page_allocator.frame_serial_this)
       ##1 fetch_pending_q[g] && !fetch_tk_past_q[g]);
+
+    cp_current_join_sop_window: cover property (@(posedge d_clk) disable iff (d_reset)
+      (page_allocator.frame_lane_active != '0) &&
+      !page_allocator.frame_lane_active[g] &&
+      page_allocator_is_pending_ticket[g] &&
+      page_allocator_is_tk_sop[g] &&
+      page_allocator_is_tk_curr[g]
+      ##[1:4] ((page_allocator_state == PAGE_ALLOCATOR_DECIDE_TICKET) &&
+               fetch_pending_q[g] &&
+               fetch_tk_sop_q[g] &&
+               fetch_tk_curr_q[g] &&
+               !fetch_tail_dropped_q[g])
+      ##1 fetch_lane_reactivate_q[g]);
+
+    cp_busy_parser_same_frame_window: cover property (@(posedge d_clk) disable iff (d_reset)
+      (page_allocator.frame_lane_active != '0) &&
+      !page_allocator.frame_lane_active[g] &&
+      !page_allocator_is_pending_ticket[g] &&
+      ingress_parser_busy_i[g] &&
+      (ingress_frame_ts_i[g] == page_allocator.frame_ts)
+      ##1 active_frame_pending_nonfuture_ticket);
 `endif
 
     cover property (@(posedge d_clk) disable iff (d_reset)
