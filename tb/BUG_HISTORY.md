@@ -49,10 +49,10 @@ Fix status detail contract for active entries and future updates:
 | [BUG-022-R](#bug-022-r-new-frame-running-ts-seeded-from-frame-header-ts-instead-of-the-current-subheader-ts) | R | hard stuck error | `n/a (exact repro)` | fixed | `opq_cross_hit3_exact_183_190_repro_test` on `2026-04-19` | `466b935` | A new frame seeded allocator `running_ts` from the frame header timestamp instead of the parser's current running subheader timestamp, so same-frame payload tickets were misclassified as `future` and the allocator could emit an empty tail before fetching payload. |
 | [BUG-023-H](#bug-023-h-expanded-no-restart-signoff-matrix-reused-stale-frame-identity-and-under-specified-credit-restore-idle) | H | non-datapath-refactor | `n/a (no-restart directed)` | fixed | `opq_bucket_frame_native_sv_test`, `opq_all_buckets_frame_native_sv_test` on `2026-04-20` | `36de7a3` | The expanded no-restart signoff matrix falsely failed until composed sequences carried monotonic frame identity across lanes and waited for true idle credit restore. |
 | [BUG-024-R](#bug-024-r-overwrite-launch-window-can-still-flush-the-live-head-before-first-accept) | R | soft error | `n/a (reduced-depth directed)` | fixed | `opq_error_ftable_overflow_test` on `2026-04-20` | `89de4bf` | The reduced-depth overwrite screen is clean again after the presenter protects the live head through the first visible beat and exports lane-resolved overwrite-drop accounting. |
-| [BUG-025-R](#bug-025-r-active-lane-retirement-still-depends-on-a-level-eop-flag-that-the-parser-can-clear-too-early) | R | hard stuck error | `n/a (large constrained-random)` | fixed | `opq_cross_drr_bursty_random_test` on `2026-04-20` | `ebf7f3a` | The active-lane retirement race is no longer reproducible after the allocator switched from level EOP dependence to serial-tagged tail-seen/drop state; the `frame_count=3` repro and refreshed seed `1..8` constrained-random reruns are green on `2026-04-21`. |
-| [BUG-026-R](#bug-026-r-live-head-overwrite-protection-suppresses-unread-tail-drop-accounting) | R | soft error | `n/a (overflow random-ready)` | fixed | `opq_cross_random_ready_overflow_seconds_soak_test` on `2026-04-20` | `ebf7f3a` | Default-build random-ready overflow no longer corrupts accepted egress after the presenter preserves every stalled resident RAM word, and the reduced-depth `12x16` overwrite-local must-drop witness is green again on `2026-04-21`. |
-| [BUG-027-R](#bug-027-r-masked-zero-hit-subheader-recovery-kept-tail-bypass-drop-asserted-through-the-trailer) | R | soft error | `n/a (localized formal-like ingress stress)` | fixed | `formal_ingress.sh` / `opq_formal_like_ingress_recovery_stress_test` on `2026-04-21` | `ebf7f3a` | A legal zero-hit subheader after a masked subheader no longer leaves the parser in `MASK_PKT`; trailer bypass now reports only the surviving local drop semantics and the refreshed ingress fallback suite is green on `2026-04-21`. |
-| [BUG-028-H](#bug-028-h-lane-hit-ledger-retired-delivered-beats-against-parser-timestamps-instead-of-canonical-egress-timestamps) | H | non-datapath-refactor | `n/a (4-lane supplemental rerun)` | fixed | `opq_cross_random_ready_overflow_step2_boundary_test` on `2026-04-21` @ `OPQ_N_LANE=4 OPQ_N_SHD=128` | `ebf7f3a` | The 4-lane no-restart ledger is clean again after the scoreboard started carrying both canonical delivery timestamps and parser/accounting timestamps per hit. |
+| [BUG-025-R](#bug-025-r-active-lane-retirement-still-depends-on-a-level-eop-flag-that-the-parser-can-clear-too-early) | R | hard stuck error | `n/a (large constrained-random)` | fixed | `opq_cross_drr_bursty_random_test` on `2026-04-20` | `a813795` | The active-lane retirement race is no longer reproducible after the allocator switched from level EOP dependence to serial-tagged tail-seen/drop state; the `frame_count=3` repro and refreshed seed `1..8` constrained-random reruns are green on `2026-04-21`. |
+| [BUG-026-R](#bug-026-r-live-head-overwrite-protection-suppresses-unread-tail-drop-accounting) | R | soft error | `n/a (overflow random-ready)` | fixed | `opq_cross_random_ready_overflow_seconds_soak_test` on `2026-04-20` | `a813795` | Default-build random-ready overflow no longer corrupts accepted egress after the presenter preserves every stalled resident RAM word, and the reduced-depth `12x16` overwrite-local must-drop witness is green again on `2026-04-21`. |
+| [BUG-027-R](#bug-027-r-masked-zero-hit-subheader-recovery-kept-tail-bypass-drop-asserted-through-the-trailer) | R | soft error | `n/a (localized formal-like ingress stress)` | fixed | `formal_ingress.sh` / `opq_formal_like_ingress_recovery_stress_test` on `2026-04-21` | `a813795` | A legal zero-hit subheader after a masked subheader no longer leaves the parser in `MASK_PKT`; trailer bypass now reports only the surviving local drop semantics and the refreshed ingress fallback suite is green on `2026-04-21`. |
+| [BUG-028-H](#bug-028-h-lane-hit-ledger-retired-delivered-beats-against-parser-timestamps-instead-of-canonical-egress-timestamps) | H | non-datapath-refactor | `n/a (4-lane supplemental rerun)` | fixed | `opq_cross_random_ready_overflow_step2_boundary_test` on `2026-04-21` @ `OPQ_N_LANE=4 OPQ_N_SHD=128` | `a813795` | The 4-lane no-restart ledger is clean again after the scoreboard started carrying both canonical delivery timestamps and parser/accounting timestamps per hit. |
 
 ## 2026-04-17
 
@@ -796,7 +796,7 @@ Fix status detail contract for active entries and future updates:
   - no active `BUG-025-R` failure boundary is currently reproduced on the
     named deterministic bracket or the refreshed constrained-random seed sweep
 - Commit:
-  - ebf7f3a
+  - a813795
 
 ### BUG-028-H: Lane hit ledger retired delivered beats against parser timestamps instead of canonical egress timestamps
 - First seen in:
@@ -886,7 +886,7 @@ Fix status detail contract for active entries and future updates:
     was already fixed, so the supplemental wider-lane screens are again usable
     for closure instead of falsely reopening clean datapath cases
 - Commit:
-  - ebf7f3a
+  - a813795
 
 ### BUG-026-R: Live-head overwrite protection suppresses unread-tail drop accounting
 - First seen in:
@@ -1022,7 +1022,7 @@ Fix status detail contract for active entries and future updates:
     legal-overflow screens remain useful shape-checks, and the dedicated
     reduced-depth overwrite-local witness is green again
 - Commit:
-  - ebf7f3a
+  - a813795
 
 ## 2026-04-21
 
@@ -1095,4 +1095,4 @@ Fix status detail contract for active entries and future updates:
   - the refreshed ingress fallback suite on `2026-04-21` is again usable as a
     fast local checker for that contract instead of a known failing probe
 - Commit:
-  - ebf7f3a
+  - a813795
