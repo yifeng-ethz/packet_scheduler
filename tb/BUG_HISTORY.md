@@ -56,7 +56,7 @@ Historical formal note:
 | [BUG-022-R](#bug-022-r-new-frame-running-ts-seeded-from-frame-header-ts-instead-of-the-current-subheader-ts) | R | hard stuck error | `n/a (exact repro)` | fixed | `opq_cross_hit3_exact_183_190_repro_test` on `2026-04-19` | `466b935` | A new frame seeded allocator `running_ts` from the frame header timestamp instead of the parser's current running subheader timestamp, so same-frame payload tickets were misclassified as `future` and the allocator could emit an empty tail before fetching payload. |
 | [BUG-023-H](#bug-023-h-expanded-no-restart-signoff-matrix-reused-stale-frame-identity-and-under-specified-credit-restore-idle) | H | non-datapath-refactor | `n/a (no-restart directed)` | fixed | `opq_bucket_frame_native_sv_test`, `opq_all_buckets_frame_native_sv_test` on `2026-04-20` | `36de7a3` | The expanded no-restart signoff matrix falsely failed until composed sequences carried monotonic frame identity across lanes and waited for true idle credit restore. |
 | [BUG-024-R](#bug-024-r-overwrite-launch-window-can-still-flush-the-live-head-before-first-accept) | R | soft error | `n/a (reduced-depth directed)` | fixed | `opq_error_ftable_overflow_test` on `2026-04-20` | `89de4bf` | The reduced-depth overwrite screen is clean again after the presenter protects the live head through the first visible beat and exports lane-resolved overwrite-drop accounting. |
-| [BUG-025-R](#bug-025-r-active-lane-retirement-still-depends-on-a-level-eop-flag-that-the-parser-can-clear-too-early) | R | hard stuck error | `n/a (large constrained-random)` | fixed | `opq_cross_drr_bursty_random_test` on `2026-04-20` | `a813795` | The active-lane retirement race is no longer reproducible after the allocator switched from level EOP dependence to serial-tagged tail-seen/drop state; the `frame_count=3` repro and refreshed seed `1..8` constrained-random reruns are green on `2026-04-21`. |
+| [BUG-025-R](#bug-025-r-active-lane-retirement-still-depends-on-a-level-eop-flag-that-the-parser-can-clear-too-early) | R | hard stuck error | `n/a (large constrained-random)` | fixed | `opq_cross_drr_bursty_random_test` on `2026-04-20` | `733a58c` | The active-lane retirement race is no longer reproducible after the allocator switched from level EOP dependence to serial-tagged tail-seen/drop state and reactivated late current-frame SOP joins before their body tickets could age into late drops. |
 | [BUG-026-R](#bug-026-r-live-head-overwrite-protection-suppresses-unread-tail-drop-accounting) | R | soft error | `n/a (overflow random-ready)` | fixed | `opq_cross_random_ready_overflow_seconds_soak_test` on `2026-04-20` | `a813795` | Default-build random-ready overflow no longer corrupts accepted egress after the presenter preserves every stalled resident RAM word, and the reduced-depth `12x16` overwrite-local must-drop witness is green again on `2026-04-21`. |
 | [BUG-027-R](#bug-027-r-masked-zero-hit-subheader-recovery-kept-tail-bypass-drop-asserted-through-the-trailer) | R | soft error | `n/a (localized formal-like ingress stress)` | fixed | `formal_ingress.sh` / `opq_formal_like_ingress_recovery_stress_test` on `2026-04-21` | `a813795` | A legal zero-hit subheader after a masked subheader no longer leaves the parser in `MASK_PKT`; trailer bypass now reports only the surviving local drop semantics and the refreshed ingress fallback suite is green on `2026-04-21`. |
 | [BUG-028-H](#bug-028-h-lane-hit-ledger-retired-delivered-beats-against-parser-timestamps-instead-of-canonical-egress-timestamps) | H | non-datapath-refactor | `n/a (4-lane supplemental rerun)` | fixed | `opq_cross_random_ready_overflow_step2_boundary_test` on `2026-04-21` @ `OPQ_N_LANE=4 OPQ_N_SHD=128` | `a813795` | The 4-lane no-restart ledger is clean again after the scoreboard started carrying both canonical delivery timestamps and parser/accounting timestamps per hit. |
@@ -767,12 +767,26 @@ Historical formal note:
     - current-SOP classification now also consults an exact per-serial
       tail-status shadow, so a later tail can prove readiness without erasing
       the drop status of the earlier packet currently being classified
+    - an inactive lane that surfaces a late current-frame SOP now consumes that
+      SOP as `ADVANCE_ONLY + reactivate` instead of parking it through the join
+      window, so its following same-frame body ticket stays on the live-frame
+      path instead of aging into `tk_past`
+    - `active_frame_pending_nonfuture_ticket` now also treats inactive
+      current-frame SOP ownership as live, so the allocator cannot retire the
+      frame one cycle before that join is absorbed
     - if a current SOP is already known dropped, the allocator now advances and
       returns ticket credit instead of opening a header-only frame
   - before_fix_outcome:
     - the original hazard could strand `frame_lane_active` after the parser had
       already cleared its level EOP flag, and later-tail aliasing could still
       let an already-dropped SOP seed a synthetic header-only frame
+    - the follow-on 4-lane directed repro
+      `opq_basic_subheader_shape_test @ OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256`
+      also exposed a late-join hole: lane1 parked its current SOP at
+      `ts=0x800`, never reactivated, and then late-dropped the `32`-hit body at
+      `running_ts=0x810`, ending with
+      `lane1_drop_shd=1 lane1_drop_hit=32` and hit integrity
+      `expected=136 actual=104 missing=32 ghost=0`
   - after_fix_outcome:
     - `opq_cross_drr_bursty_frame3_repro_test` rerun on `2026-04-21` closes with
       `expected=714 actual=714 missing=0 ghost=0`
@@ -785,6 +799,12 @@ Historical formal note:
       - seed 1: `expected=990 actual=990 missing=0 ghost=0`
       - seeds 2 through 8: `expected=1864 actual=1864 missing=0 ghost=0`
     - every refreshed seed closes with per-lane `unexplained=0`
+    - the new directed 4-lane join repro now also closes cleanly on
+      `2026-04-21`:
+      - `opq_basic_subheader_shape_test` with `FORMAL_STRICT=1` ends with
+        `expected=136 actual=136 missing=0 ghost=0`
+      - the refreshed live `DV_BASIC` bucket on the same preset reruns green
+        `7/7`
     - the allocator-side exact-drop repair also removes the stale extra-header
       ownership leak in the reduced-depth pressure witness:
       - before: `wr_hdr=4 rd_hdr=3 drop_hdr=0`
@@ -794,8 +814,9 @@ Historical formal note:
       later-tail drop-status aliasing
     - residual risk is now normal regression drift rather than an active known
       failure family; keep the bursty DRR screen in the promoted random
-      matrix, but the specific `BUG-025-R` retirement hole is not reproduced on
-      the refreshed seed set
+      matrix, and keep the 4-lane `opq_basic_subheader_shape_test` directed
+      anchor in the nightly preset reruns, but the specific `BUG-025-R`
+      retirement / late-join hole is not reproduced on the refreshed screens
   - Claude Opus 4.7 xhigh review decision:
     - pending / not run in this turn
 - Runtime / coverage context:
@@ -814,9 +835,10 @@ Historical formal note:
       - seed 2: `expected=1864 actual=1864 missing=0 ghost=0`
       - seed 8: `expected=1864 actual=1864 missing=0 ghost=0`
   - no active `BUG-025-R` failure boundary is currently reproduced on the
-    named deterministic bracket or the refreshed constrained-random seed sweep
+    named deterministic bracket, the refreshed constrained-random seed sweep,
+    or the 4-lane `opq_basic_subheader_shape_test` directed anchor
 - Commit:
-  - a813795
+  - `733a58c` `packet_scheduler: reactivate late current-frame SOP joins`
 
 ### BUG-029-R: Presenter overlap bookkeeping can strand queued metadata in `IDLE` after a legal trailer retire
 - First seen in:

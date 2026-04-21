@@ -215,8 +215,19 @@ The current open debug picture is now narrower:
   `2026-04-21` closes with `expected=714 actual=714 missing=0 ghost=0`, and
   the refreshed `opq_cross_drr_bursty_random_test` seed sweep `1..8` is also
   green on the same patchset with `UVM_ERROR : 0` and per-lane
-  `unexplained=0`. This bug family is therefore not currently reproduced on
-  the named deterministic or constrained-random screens.
+  `unexplained=0`.
+  A follow-on directed 4-lane repro on `2026-04-21` showed the same family had
+  one more local hole: a late current-frame SOP on an inactive lane could sit
+  through the join window, fail to reactivate that lane, and let the following
+  same-frame body ticket age into `tk_past` at `running_ts+1`. The allocator
+  now absorbs that SOP as `ADVANCE_ONLY + reactivate` and also treats inactive
+  current-frame SOP ownership as live for frame-retirement gating. The strict
+  rerun of `opq_basic_subheader_shape_test @ OPQ_N_LANE=4 OPQ_N_SHD=128
+  OPQ_TICKET_FIFO_DEPTH=256` is green again with
+  `expected=136 actual=136 missing=0 ghost=0`, and the refreshed live
+  `DV_BASIC` bucket on the same preset is `7/7` pass. This bug family is
+  therefore not currently reproduced on the named deterministic,
+  constrained-random, or 4-lane directed screens.
 - `BUG-026-R` is now closed on the current tree. The presenter delays
   retirement until the final egress acceptance boundary and preserves any
   unread resident `page_ram.q` word in a skid path whenever the launch pipe
