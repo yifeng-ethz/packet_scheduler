@@ -144,10 +144,12 @@ interface opq_drop_if #(parameter int N_LANE = 2) (input logic clk);
   logic [15:0] post_hit_drop_cnt [N_LANE];
   logic [N_LANE-1:0] exact_pre_valid;
   logic [47:0] exact_pre_ts [N_LANE];
+  logic [15:0] exact_pre_serial [N_LANE];
   logic [15:0] exact_pre_shd_cnt [N_LANE];
   logic [15:0] exact_pre_hit_cnt [N_LANE];
   logic [N_LANE-1:0] exact_post_valid;
   logic [47:0] exact_post_ts [N_LANE];
+  logic [15:0] exact_post_serial [N_LANE];
   logic [15:0] exact_post_shd_cnt [N_LANE];
   logic [15:0] exact_post_hit_cnt [N_LANE];
 
@@ -155,7 +157,7 @@ interface opq_drop_if #(parameter int N_LANE = 2) (input logic clk);
     input reset, valid, hdr_drop_cnt, shd_drop_cnt, hit_drop_cnt;
     input pre_shd_drop_cnt, pre_hit_drop_cnt;
     input post_hdr_drop_cnt, post_shd_drop_cnt, post_hit_drop_cnt;
-    input exact_pre_valid, exact_pre_ts, exact_pre_shd_cnt, exact_pre_hit_cnt;
-    input exact_post_valid, exact_post_ts, exact_post_shd_cnt, exact_post_hit_cnt;
+    input exact_pre_valid, exact_pre_ts, exact_pre_serial, exact_pre_shd_cnt, exact_pre_hit_cnt;
+    input exact_post_valid, exact_post_ts, exact_post_serial, exact_post_shd_cnt, exact_post_hit_cnt;
   endclocking
 endinterface

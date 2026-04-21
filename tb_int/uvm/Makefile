@@ -2,11 +2,17 @@
 # IP Name   : packet_scheduler/tb_int
 # Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
 # Description:
-#   Questa FSE UVM Makefile for the packet_scheduler integration testbench.
+#   QuestaOne UVM Makefile for the packet_scheduler integration testbench.
 #   Mirrors tb/uvm/Makefile but points at the 4-lane monolithic OPQ and the
 #   tb_int_* sources. Phase 1 compiles only the OPQ + swb_ingress_stub +
 #   walking-skeleton tb_int_top. Phase 2 will pull in emulator_mutrig,
 #   mutrig_frame_deassembly, mts_processor, ring_buffer_cam, feb_frame_assembly.
+#
+#   FEB firmware RTL (emulator_mutrig, mutrig_frame_deassembly, mts_processor,
+#   ring_buffer_cam, feb_frame_assembly) is compiled from the authoritative
+#   copies under quartus_system/feb_system_v3/synthesis/submodules/ — the
+#   Qsys-generated top-level submodule tree that Quartus compiles for the FEB
+#   FPGA bitstream. This keeps tb_int in lock-step with the integration build.
 #------------------------------------------------------------------------------
 TB_INT_UVM_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 TB_INT_DIR     := $(abspath $(TB_INT_UVM_DIR)/..)
@@ -15,39 +21,41 @@ REPO_ROOT      := $(abspath $(PKT_DIR)/..)
 RTL_GEN_DIR    := $(abspath $(TB_INT_DIR)/rtl_gen_monolithic_4lane)
 BUILD_DIR      := $(abspath $(TB_INT_UVM_DIR)/build)
 
-QUESTA_HOME    ?= /data1/intelFPGA_pro/23.1/questa_fse
-QUESTA_LICENSE := $(firstword $(wildcard $(QUESTA_HOME)/LR-*_License.dat))
+QUESTA_HOME    ?= /data1/questaone_sim/questasim
 ETH_MENTOR_SERVER ?= 8161@lic-mentor.ethz.ch
-TB_LICENSE_CHAIN := $(ETH_MENTOR_SERVER)
-ifneq ($(wildcard $(QUESTA_LICENSE)),)
-TB_LICENSE_CHAIN := $(ETH_MENTOR_SERVER):$(QUESTA_LICENSE)
-endif
+QSIM_INI := $(QUESTA_HOME)/modelsim.ini
+LM_LICENSE_FILE := $(ETH_MENTOR_SERVER)
+MGLS_LICENSE_FILE := $(ETH_MENTOR_SERVER)
+SALT_LICENSE_SERVER := $(ETH_MENTOR_SERVER)
+export LM_LICENSE_FILE MGLS_LICENSE_FILE SALT_LICENSE_SERVER QSIM_INI
 
 VLIB := $(firstword $(wildcard $(QUESTA_HOME)/bin/vlib $(QUESTA_HOME)/linux_x86_64/vlib))
 VMAP := $(firstword $(wildcard $(QUESTA_HOME)/bin/vmap $(QUESTA_HOME)/linux_x86_64/vmap))
 VLOG := $(firstword $(wildcard $(QUESTA_HOME)/bin/vlog $(QUESTA_HOME)/linux_x86_64/vlog))
 VCOM := $(firstword $(wildcard $(QUESTA_HOME)/bin/vcom $(QUESTA_HOME)/linux_x86_64/vcom))
 VSIM := $(firstword $(wildcard $(QUESTA_HOME)/bin/vsim $(QUESTA_HOME)/linux_x86_64/vsim))
+UVM_DPI_SO := $(firstword $(wildcard $(QUESTA_HOME)/uvm-1.2/linux_x86_64/uvm_dpi.so $(QUESTA_HOME)/verilog_src/uvm-1.2/linux_x86_64/uvm_dpi.so))
+UVM_DPI_LIB := $(basename $(UVM_DPI_SO))
 
-UVM_SRC := $(QUESTA_HOME)/verilog_src/uvm-1.2/src
-QUESTA_MODELSIM_INI ?= $(QUESTA_HOME)/modelsim.ini
+UVM_SRC := $(firstword $(wildcard $(QUESTA_HOME)/verilog_src/uvm-1.2/src $(QUESTA_HOME)/uvm-1.2/src))
+QUESTA_MODELSIM_INI ?= $(QSIM_INI)
 MODELSIM_INI := $(BUILD_DIR)/modelsim.ini
 
 QUARTUS_SH     ?= /data1/intelFPGA_pro/23.1/quartus/bin/quartus_sh
 QUARTUS_ROOTDIR := /data1/intelFPGA_pro/23.1/quartus
 QUARTUS_SIM_LIB := $(QUARTUS_ROOTDIR)/eda/sim_lib
 IP_ROOT        := $(abspath $(REPO_ROOT))
-EMU_DIR        := $(IP_ROOT)/emulator_mutrig/rtl
-FRAME_RCV_DIR  := $(IP_ROOT)/mutrig_frame_deassembly
-MTS_DIR        := $(IP_ROOT)/mutrig_timestamp_processor
-RBCAM_DIR      := $(IP_ROOT)/ring-buffer_cam
-FFA_DIR        := $(IP_ROOT)/feb_frame_assembly
+# FEB firmware RTL is pulled from the Qsys-generated top-level submodule
+# tree used by the FEB compile, so tb_int tracks the exact source set in
+# feb_system_v3/synthesis/submodules/ (see CLAUDE.md "Qsys IP Source File Rule").
+QUARTUS_SYSTEM_DIR := $(IP_ROOT)/quartus_system
+FEB_SUBMOD_DIR := $(QUARTUS_SYSTEM_DIR)/feb_system_v3/synthesis/submodules
 DPI_CPP_PATH   ?= /usr/bin/gcc
 OPQ_PAGE_RAM_DEPTH ?= 65536
 OPQ_N_SHD          ?= 256
 OPQ_TICKET_FIFO_DEPTH ?= 256
 
-UVM_DEFINES ?= +define+UVM_NO_DPI
+UVM_DEFINES ?=
 TB_INT_EXTRA_DEFINES ?=
 UVM_DEFINES += +define+OPQ_PAGE_RAM_DEPTH=$(OPQ_PAGE_RAM_DEPTH)
 UVM_DEFINES += +define+OPQ_N_SHD=$(OPQ_N_SHD)
@@ -57,11 +65,6 @@ UVM_DEFINES += $(TB_INT_EXTRA_DEFINES)
 TEST ?= tb_int_smoke_test
 RUN_DO ?= run -all; quit -f
 PLUSARGS ?=
-
-LM_LICENSE_FILE := $(TB_LICENSE_CHAIN)
-export LM_LICENSE_FILE
-MGLS_LICENSE_FILE := $(TB_LICENSE_CHAIN)
-export MGLS_LICENSE_FILE
 
 ALT_RAM_SRCS := \
 	$(PKT_DIR)/rtl/sv_ver/vendor/alt_ram/frame_table.v \
@@ -76,48 +79,50 @@ LPM_SRCS := \
 	$(QUARTUS_SIM_LIB)/220pack.vhd \
 	$(QUARTUS_SIM_LIB)/220model.vhd
 
-# RTL: IP cores pulled from mu3e-ip-cores/<ip>/ (matching each IP's hw.tcl order)
+# RTL: FEB firmware IPs pulled from the feb_system_v3 Qsys submodule tree
+# (authoritative copy for the FEB compile). File order matches each IP's
+# _hw.tcl so compile-order dependencies are preserved.
 EMU_SV_SRCS := \
-	$(EMU_DIR)/emulator_mutrig_pkg.sv \
-	$(EMU_DIR)/prbs15_lfsr.sv \
-	$(EMU_DIR)/crc16_8.sv \
-	$(EMU_DIR)/hit_generator.sv \
-	$(EMU_DIR)/frame_assembler.sv \
-	$(EMU_DIR)/emulator_mutrig.sv
+	$(FEB_SUBMOD_DIR)/emulator_mutrig_pkg.sv \
+	$(FEB_SUBMOD_DIR)/prbs15_lfsr.sv \
+	$(FEB_SUBMOD_DIR)/crc16_8.sv \
+	$(FEB_SUBMOD_DIR)/hit_generator.sv \
+	$(FEB_SUBMOD_DIR)/frame_assembler.sv \
+	$(FEB_SUBMOD_DIR)/emulator_mutrig.sv
 
 FRAME_RCV_SRCS := \
-	$(FRAME_RCV_DIR)/crc16_calc.vhd \
-	$(FRAME_RCV_DIR)/frame_rcv_ip.vhd
+	$(FEB_SUBMOD_DIR)/crc16_calc.vhd \
+	$(FEB_SUBMOD_DIR)/frame_rcv_ip.vhd
 
 MTS_V_SRCS := \
-	$(MTS_DIR)/dual_port_rom.v
+	$(FEB_SUBMOD_DIR)/dual_port_rom.v
 MTS_VHDL_SRCS := \
-	$(MTS_DIR)/mts_processor.vhd
+	$(FEB_SUBMOD_DIR)/mts_processor.vhd
 
 RBCAM_V_SRCS := \
-	$(RBCAM_DIR)/rtl/b2o_encoder.v
+	$(FEB_SUBMOD_DIR)/b2o_encoder.v
 RBCAM_VHDL_SRCS := \
-	$(RBCAM_DIR)/rtl/cam_helper_pkg.vhd \
-	$(RBCAM_DIR)/rtl/alt_simple_dpram.vhd \
-	$(RBCAM_DIR)/cam_mem_blk_a5.vhd \
-	$(RBCAM_DIR)/cam_mem_a5.vhd \
-	$(RBCAM_DIR)/rtl/alt_fifo/scfifo_w40d256.vhd \
-	$(RBCAM_DIR)/rtl/alt_fifo/cmd_fifo/cmd_fifo.vhd \
-	$(RBCAM_DIR)/addr_enc_logic_small.vhd \
-	$(RBCAM_DIR)/addr_enc_logic_partitioned.vhd \
-	$(RBCAM_DIR)/ring_buffer_cam_v2_core.vhd \
-	$(RBCAM_DIR)/ring_buffer_cam.vhd
+	$(FEB_SUBMOD_DIR)/cam_helper_pkg.vhd \
+	$(FEB_SUBMOD_DIR)/alt_simple_dpram.vhd \
+	$(FEB_SUBMOD_DIR)/cam_mem_blk_a5.vhd \
+	$(FEB_SUBMOD_DIR)/cam_mem_a5.vhd \
+	$(FEB_SUBMOD_DIR)/alt_fifo/scfifo_w40d256.vhd \
+	$(FEB_SUBMOD_DIR)/alt_fifo/cmd_fifo/cmd_fifo.vhd \
+	$(FEB_SUBMOD_DIR)/addr_enc_logic_small.vhd \
+	$(FEB_SUBMOD_DIR)/addr_enc_logic_partitioned.vhd \
+	$(FEB_SUBMOD_DIR)/ring_buffer_cam_v2_core.vhd \
+	$(FEB_SUBMOD_DIR)/ring_buffer_cam.vhd
 
 FFA_VHDL_SRCS := \
-	$(FFA_DIR)/alt_fifos/alt_dcfifo_w40d256/alt_dcfifo_w40d256.vhd \
-	$(FFA_DIR)/alt_fifos/alt_dcfifo_w40d256/alt_dcfifo_w40d256_patched.vhd \
-	$(FFA_DIR)/alt_fifos/alt_dcfifo_w48d4/alt_dcfifo_w48d4.vhd \
-	$(FFA_DIR)/alt_fifos/alt_scfifo_w40d8/alt_scfifo_w40d8.vhd \
-	$(FFA_DIR)/alt_fifos/main_fifo/main_fifo.vhd \
-	$(FFA_DIR)/alt_lpm/alt_parallel_add.vhd \
-	$(FFA_DIR)/search_for_extreme.vhd \
-	$(FFA_DIR)/search_for_extreme3.vhd \
-	$(FFA_DIR)/feb_frame_assembly.vhd
+	$(FEB_SUBMOD_DIR)/alt_dcfifo_w40d256.vhd \
+	$(FEB_SUBMOD_DIR)/alt_dcfifo_w40d256_patched.vhd \
+	$(FEB_SUBMOD_DIR)/alt_dcfifo_w48d4.vhd \
+	$(FEB_SUBMOD_DIR)/alt_scfifo_w40d8.vhd \
+	$(FEB_SUBMOD_DIR)/main_fifo.vhd \
+	$(FEB_SUBMOD_DIR)/alt_parallel_add.vhd \
+	$(FEB_SUBMOD_DIR)/search_for_extreme.vhd \
+	$(FEB_SUBMOD_DIR)/search_for_extreme3.vhd \
+	$(FEB_SUBMOD_DIR)/feb_frame_assembly.vhd
 
 VHDL_SRCS := \
 	$(RTL_GEN_DIR)/ordered_priority_queue_dut4_impl.vhd \
@@ -146,10 +151,10 @@ V_SRCS := \
 	$(MTS_V_SRCS) \
 	$(RBCAM_V_SRCS)
 
-VLOG_FLAGS := -modelsimini $(MODELSIM_INI) -sv -work $(BUILD_DIR)/work $(UVM_DEFINES) +incdir+$(UVM_SRC) +incdir+$(TB_INT_UVM_DIR) +incdir+$(EMU_DIR)
+VLOG_FLAGS := -modelsimini $(MODELSIM_INI) -sv -work $(BUILD_DIR)/work $(UVM_DEFINES) +incdir+$(UVM_SRC) +incdir+$(TB_INT_UVM_DIR) +incdir+$(FEB_SUBMOD_DIR)
 VCOM_FLAGS := -modelsimini $(MODELSIM_INI) -2008 -work $(BUILD_DIR)/work
 VCOM_LPM_FLAGS := -modelsimini $(MODELSIM_INI) -2008 -work $(BUILD_DIR)/lpm
-VSIM_FLAGS := -modelsimini $(MODELSIM_INI) -L altera_mf -L lpm -voptargs=+acc -nodpiexports -suppress 19 -suppress 3009
+VSIM_FLAGS := -modelsimini $(MODELSIM_INI) -L altera_mf -L lpm -voptargs=+acc $(if $(UVM_DPI_LIB),-dpicpppath $(DPI_CPP_PATH) -sv_lib $(UVM_DPI_LIB)) -suppress 19 -suppress 3009
 
 .PHONY: all gen_dut prepare compile run run_cached clean
 
@@ -168,10 +173,13 @@ prepare:
 		chmod u+w $(MODELSIM_INI) && \
 		( [ -d $(BUILD_DIR)/work ] || $(VLIB) work ) && \
 		( [ -d $(BUILD_DIR)/lpm  ] || $(VLIB) lpm ) && \
+		( [ -d $(BUILD_DIR)/altera_mf ] || $(VLIB) altera_mf ) && \
 		$(VMAP) -modelsimini $(MODELSIM_INI) work $(BUILD_DIR)/work >/dev/null && \
 		$(VMAP) -modelsimini $(MODELSIM_INI) lpm  $(BUILD_DIR)/lpm  >/dev/null && \
-		$(VMAP) -modelsimini $(MODELSIM_INI) altera_mf $(QUESTA_HOME)/intel/vhdl/altera_mf >/dev/null
-	cp $(MTS_DIR)/dual_port_rom_init.txt $(BUILD_DIR)/dual_port_rom_init.txt
+		$(VMAP) -modelsimini $(MODELSIM_INI) altera_mf $(BUILD_DIR)/altera_mf >/dev/null
+	cp $(FEB_SUBMOD_DIR)/dual_port_rom_init.txt $(BUILD_DIR)/dual_port_rom_init.txt
+	@$(VCOM) -modelsimini $(MODELSIM_INI) -2008 -work altera_mf $(QUARTUS_SIM_LIB)/altera_mf_components.vhd
+	@$(VCOM) -modelsimini $(MODELSIM_INI) -2008 -work altera_mf $(QUARTUS_SIM_LIB)/altera_mf.vhd
 	@if [ -x "$(DPI_CPP_PATH)" ]; then \
 		tmp_file="$(MODELSIM_INI).tmp"; \
 		awk ' \

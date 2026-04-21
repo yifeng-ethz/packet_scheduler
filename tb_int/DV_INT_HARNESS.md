@@ -242,8 +242,8 @@ The live tree now meets that contract by:
 
 ## 7. Compile / elaboration order
 
-1. Questa FSE license block from the top-level `CLAUDE.md` pattern.
-2. Compile UVM 1.2 package with `+define+UVM_NO_DPI`.
+1. QuestaOne 2026 license/runtime block from the workspace `AGENTS.md` pattern.
+2. Compile UVM 1.2 package with native DPI enabled.
 3. Compile `packet_scheduler` monolithic VHDL (same file set as `tb/`).
 4. Compile `emulator_mutrig` SV, `ring_buffer_cam` VHDL, `feb_frame_assembly`
    VHDL from `mu3e-ip-cores`. Use the IP source directly, not the generated
@@ -251,7 +251,7 @@ The live tree now meets that contract by:
 5. Compile `runctl_mgmt_host` (FEB run-control IP) sources.
 6. Compile `rtl/tb_int_top.sv` and its stubs.
 7. Compile `uvm/tb_int_pkg.sv` with all agent / env / test files.
-8. Elaborate with `-nodpiexports -suppress 19 -suppress 3009`.
+8. Elaborate with native DPI enabled and the standard `-suppress 19 -suppress 3009` flags.
 
 The generator-side VHDL from `feb_system_v2/synthesis/submodules/` is
 **not** used; we pull each IP from `mu3e-ip-cores/<ip>/rtl` to avoid

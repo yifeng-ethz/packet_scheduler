@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_block_path
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.26
+// Version : 26.3.54
 // Date    : 20260420
-// Change  : Keep payload_commit_idle low while the allocator is still fetching or allocating tickets so the presenter cannot launch a frame before payload commit is actually ready, and latch newly picked mover grants before exposing them to the page-RAM write mux so the DRR compare/select cone does not feed page write data in the same cycle
+// Change  : Preserve active mover page-RAM progress; presenter backpressure is handled by allocator-side ownership gating
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_block_path #(
@@ -238,7 +238,9 @@ module ordered_priority_queue_monolithic_block_path #(
         lane_fifos_rd_addr_o[i] = block_mover_handle_src[i] + lane_fifo_addr_t'(block_mover_word_wr_cnt[i]);
       end
 
-      b2p_arb_req_raw[i] = block_mover_page_wreq[i] && !pa_writing_v;
+      b2p_arb_req_raw[i] =
+        block_mover_page_wreq[i] &&
+        !pa_writing_v;
       if (b2p_arb.quantum[i] >= 10'(block_mover_handle_blk_len[i])) begin
         b2p_arb_req_eligible[i] = b2p_arb_req_raw[i];
       end else begin

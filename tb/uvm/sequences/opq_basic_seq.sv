@@ -476,6 +476,8 @@ class opq_basic_feb_packet_virtual_sequence extends opq_virtual_sequence_base;
   endfunction
 
   task body();
+    opq_frame_item lane0_frames[$];
+    opq_frame_item lane1_frames[$];
     opq_frame_item lane_frames[OPQ_N_LANE][$];
     bit [47:0] ts_step;
 
@@ -538,6 +540,8 @@ class opq_whole_frame_skew_virtual_sequence extends opq_virtual_sequence_base;
   endfunction
 
   task body();
+    opq_frame_item lane0_frames[$];
+    opq_frame_item lane1_frames[$];
     opq_frame_item lane_frames[OPQ_N_LANE][$];
     bit [47:0] ts_step;
 
@@ -801,8 +805,6 @@ class opq_single_lane_virtual_sequence extends opq_virtual_sequence_base;
   endfunction
 
   task body();
-    opq_frame_item lane0_frames[$];
-    opq_frame_item lane1_frames[$];
     opq_frame_item lane_frames[OPQ_N_LANE][$];
     bit [47:0] ts_step;
 
@@ -817,10 +819,8 @@ class opq_single_lane_virtual_sequence extends opq_virtual_sequence_base;
 
     for (int frame_idx = 0; frame_idx < frame_count; frame_idx++) begin
       opq_frame_item tr;
-      opq_frame_item idle_tr;
       int unsigned pre_gap_cycles;
       int unsigned shd_ts_base;
-      int unsigned idle_lane;
 
       pre_gap_cycles = (frame_idx == 0) ? 0 : inter_frame_gap_cycles;
       shd_ts_base = (frame_idx == 0) ? 1 : frame_idx * OPQ_N_SHD;
@@ -835,43 +835,34 @@ class opq_single_lane_virtual_sequence extends opq_virtual_sequence_base;
         hit_count,
         32'h7800_0000 + (active_lane << 20) + frame_idx
       );
-
-      if (active_lane == 0) begin
-        lane0_frames.push_back(tr);
-      end else begin
-        lane1_frames.push_back(tr);
-      end
+      lane_frames[active_lane].push_back(tr);
 
       if (drive_idle_frame_cadence) begin
-        idle_lane = (active_lane == 0) ? 1 : 0;
-        idle_tr = build_frame(
-          $sformatf("lane%0d_idle_%0d", idle_lane, frame_idx),
-          idle_lane,
-          ts_step * frame_idx,
-          frame_idx[15:0],
-          subheaders_per_frame,
-          shd_ts_base,
-          pre_gap_cycles,
-          '0,
-          '0,
-          0
-        );
-        if (idle_lane == 0) begin
-          lane0_frames.push_back(idle_tr);
-        end else begin
-          lane1_frames.push_back(idle_tr);
+        for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+          opq_frame_item idle_tr;
+
+          if (lane == active_lane) begin
+            continue;
+          end
+          idle_tr = build_frame(
+            $sformatf("lane%0d_idle_%0d", lane, frame_idx),
+            lane,
+            ts_step * frame_idx,
+            frame_idx[15:0],
+            subheaders_per_frame,
+            shd_ts_base,
+            pre_gap_cycles,
+            '0,
+            '0,
+            0
+          );
+          lane_frames[lane].push_back(idle_tr);
         end
       end
     end
 
-    foreach (lane0_frames[i]) lane_frames[0].push_back(lane0_frames[i]);
-    foreach (lane1_frames[i]) lane_frames[1].push_back(lane1_frames[i]);
     apply_absolute_frame_slot_schedule(lane_frames, inter_frame_gap_cycles);
-    lane0_frames.delete();
-    lane1_frames.delete();
-    foreach (lane_frames[0][i]) lane0_frames.push_back(lane_frames[0][i]);
-    foreach (lane_frames[1][i]) lane1_frames.push_back(lane_frames[1][i]);
-    start_lane_frames(lane0_frames, lane1_frames);
+    start_lane_frame_matrix(lane_frames);
   endtask
 endclass
 
@@ -890,17 +881,27 @@ class opq_masked_drop_virtual_sequence extends opq_virtual_sequence_base;
   endfunction
 
   task body();
-    opq_frame_item lane0_frames[$];
-    opq_frame_item lane1_frames[$];
-    bit [31:0] lane0_hits[$];
-    bit [31:0] lane1_hits[$];
+    opq_frame_item lane_frames[OPQ_N_LANE][$];
 
-    lane0_hits = {32'hAAAA_0001, 32'hAAAA_0002};
-    lane1_hits = {32'hBBBB_0001, 32'hBBBB_0002};
+    for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+      bit [31:0] lane_hits[$];
 
-    lane0_frames.push_back(build_single_subheader_frame("lane0_masked", 0, 48'd0, 16'd0, 8'h01, 0, lane0_hits));
-    lane1_frames.push_back(build_single_subheader_frame("lane1_masked", 1, 48'd0, 16'd0, 8'h01, 0, lane1_hits));
-    start_lane_frames(lane0_frames, lane1_frames);
+      lane_hits = {
+        32'hA000_0002 + (lane * 32'h0100_0000),
+        32'hA000_0001 + (lane * 32'h0100_0000)
+      };
+      lane_frames[lane].push_back(build_single_subheader_frame(
+        $sformatf("lane%0d_masked", lane),
+        lane,
+        48'd0,
+        16'd0,
+        8'h01,
+        0,
+        lane_hits
+      ));
+    end
+
+    start_lane_frame_matrix(lane_frames);
   endtask
 endclass
 
@@ -916,21 +917,26 @@ class opq_single_hit_masked_drop_virtual_sequence extends opq_virtual_sequence_b
   endfunction
 
   task body();
-    opq_frame_item lane0_frames[$];
-    opq_frame_item lane1_frames[$];
-    bit [31:0] lane0_hits[$];
-    bit [31:0] lane1_hits[$];
+    opq_frame_item lane_frames[OPQ_N_LANE][$];
 
-    lane0_hits = {32'hAAA1_0001};
-    lane1_hits = {32'hBBB1_0001};
+    for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+      bit [31:0] lane_hits[$];
 
-    lane0_frames.push_back(build_single_subheader_frame(
-      "lane0_masked_single", 0, 48'd0, 16'd0, 8'h01, 0, lane0_hits
-    ));
-    lane1_frames.push_back(build_single_subheader_frame(
-      "lane1_masked_single", 1, 48'd0, 16'd0, 8'h01, 0, lane1_hits
-    ));
-    start_lane_frames(lane0_frames, lane1_frames);
+      lane_hits = {
+        32'hA100_0001 + (lane * 32'h0100_0000)
+      };
+      lane_frames[lane].push_back(build_single_subheader_frame(
+        $sformatf("lane%0d_masked_single", lane),
+        lane,
+        48'd0,
+        16'd0,
+        8'h01,
+        0,
+        lane_hits
+      ));
+    end
+
+    start_lane_frame_matrix(lane_frames);
   endtask
 endclass
 
@@ -953,44 +959,36 @@ class opq_burst_masked_drop_virtual_sequence extends opq_virtual_sequence_base;
   endfunction
 
   task body();
-    opq_frame_item lane0_frames[$];
-    opq_frame_item lane1_frames[$];
+    opq_frame_item lane_frames[OPQ_N_LANE][$];
     bit [47:0] ts_step;
 
     ts_step = OPQ_N_SHD * 16;
 
-    for (int frame_idx = 0; frame_idx < frame_count; frame_idx++) begin
-      int unsigned pre_gap_cycles;
-      int unsigned shd_ts_base;
+    for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+      for (int frame_idx = 0; frame_idx < frame_count; frame_idx++) begin
+        int unsigned pre_gap_cycles;
+        int unsigned shd_ts_base;
+        bit [31:0] seed_base;
 
-      pre_gap_cycles = (frame_idx == 0) ? 0 : OPQ_MIN_SOP_GAP_CYCLES;
-      shd_ts_base = (frame_idx == 0) ? 1 : frame_idx * OPQ_N_SHD;
+        pre_gap_cycles = (frame_idx == 0) ? 0 : OPQ_MIN_SOP_GAP_CYCLES;
+        shd_ts_base = (frame_idx == 0) ? 1 : frame_idx * OPQ_N_SHD;
+        seed_base = 32'h7A00_0000 + (lane * 32'h0100_0000) + frame_idx;
 
-      lane0_frames.push_back(build_dense_frame(
-        $sformatf("lane0_masked_burst_%0d", frame_idx),
-        0,
-        ts_step * frame_idx,
-        frame_idx[15:0],
-        subheaders_per_frame,
-        shd_ts_base,
-        pre_gap_cycles,
-        hit_count_per_subheader,
-        32'h7A00_0000 + frame_idx
-      ));
-      lane1_frames.push_back(build_dense_frame(
-        $sformatf("lane1_masked_burst_%0d", frame_idx),
-        1,
-        ts_step * frame_idx,
-        frame_idx[15:0],
-        subheaders_per_frame,
-        shd_ts_base,
-        pre_gap_cycles,
-        hit_count_per_subheader,
-        32'h7B00_0000 + frame_idx
-      ));
+        lane_frames[lane].push_back(build_dense_frame(
+          $sformatf("lane%0d_masked_burst_%0d", lane, frame_idx),
+          lane,
+          ts_step * frame_idx,
+          frame_idx[15:0],
+          subheaders_per_frame,
+          shd_ts_base,
+          pre_gap_cycles,
+          hit_count_per_subheader,
+          seed_base
+        ));
+      end
     end
 
-    start_lane_frames(lane0_frames, lane1_frames);
+    start_lane_frame_matrix(lane_frames);
   endtask
 endclass
 
@@ -1091,6 +1089,7 @@ class opq_subheader_error_recovery_virtual_sequence extends opq_virtual_sequence
     opq_frame_item tr;
     opq_subheader_desc bad_shd;
     opq_subheader_desc good_shd;
+    opq_hit_desc bad_hit;
 
     tr = opq_frame_item::type_id::create(name);
     tr.lane_id = lane_id;
@@ -1102,6 +1101,11 @@ class opq_subheader_error_recovery_virtual_sequence extends opq_virtual_sequence
     bad_shd = opq_subheader_desc::type_id::create({name, "_bad_shd"});
     bad_shd.shd_ts = 8'h01;
     bad_shd.error_bits = 3'b010;
+    bad_hit = opq_hit_desc::type_id::create({name, "_bad_shd_hit0"});
+    bad_hit.payload_word = 32'h7E80_0000 + lane_id;
+    bad_hit.debug_hit_id = next_debug_hit_id;
+    next_debug_hit_id++;
+    bad_shd.hits.push_back(bad_hit);
     tr.subheaders.push_back(bad_shd);
 
     good_shd = opq_subheader_desc::type_id::create({name, "_good_shd"});
@@ -1130,6 +1134,101 @@ class opq_subheader_error_recovery_virtual_sequence extends opq_virtual_sequence
     ));
     lane1_frames.push_back(build_single_subheader_frame(
       "lane1_shd_recovery", 1, ts_step, 16'd1, 8'h03, OPQ_MIN_SOP_GAP_CYCLES, lane1_hits
+    ));
+
+    start_lane_frames(lane0_frames, lane1_frames);
+  endtask
+endclass
+
+class opq_hit_error_recovery_virtual_sequence extends opq_virtual_sequence_base;
+  `uvm_object_utils(opq_hit_error_recovery_virtual_sequence)
+
+  function new(string name = "opq_hit_error_recovery_virtual_sequence");
+    super.new(name);
+  endfunction
+
+  function automatic opq_frame_item build_hit_error_frame(
+    string name,
+    int lane_id,
+    bit [47:0] frame_ts,
+    bit [15:0] pkg_cnt,
+    bit [7:0] shd_ts,
+    int unsigned pre_gap_cycles,
+    bit mask_last_hit
+  );
+    opq_frame_item tr;
+    bit [31:0] hit_words[$];
+    int hit_idx;
+
+    hit_words = {
+      32'h7A00_1000 + lane_id,
+      32'h7A00_2000 + lane_id
+    };
+    tr = build_single_subheader_frame(
+      name,
+      lane_id,
+      frame_ts,
+      pkg_cnt,
+      shd_ts,
+      pre_gap_cycles,
+      hit_words
+    );
+    if (mask_last_hit) begin
+      hit_idx = tr.subheaders[0].hits.size() - 1;
+    end else begin
+      hit_idx = 0;
+    end
+    tr.subheaders[0].hits[hit_idx].error_bits = 3'b001;
+    return tr;
+  endfunction
+
+  task body();
+    opq_frame_item lane0_frames[$];
+    opq_frame_item lane1_frames[$];
+    bit [31:0] lane0_hits[$];
+    bit [31:0] lane1_hits[$];
+    bit [47:0] ts_step;
+
+    ts_step = OPQ_N_SHD * 16;
+    lane0_hits = {32'h7A10_0001, 32'h7A10_0002};
+    lane1_hits = {32'h7B10_0001, 32'h7B10_0002};
+
+    lane0_frames.push_back(build_hit_error_frame(
+      "lane0_hit_err_first",
+      0,
+      48'd0,
+      16'd0,
+      8'h01,
+      0,
+      1'b0
+    ));
+    lane1_frames.push_back(build_hit_error_frame(
+      "lane1_hit_err_last",
+      1,
+      48'd0,
+      16'd0,
+      8'h01,
+      0,
+      1'b1
+    ));
+
+    lane0_frames.push_back(build_single_subheader_frame(
+      "lane0_hit_recovery",
+      0,
+      ts_step,
+      16'd1,
+      8'h03,
+      OPQ_MIN_SOP_GAP_CYCLES,
+      lane0_hits
+    ));
+    lane1_frames.push_back(build_single_subheader_frame(
+      "lane1_hit_recovery",
+      1,
+      ts_step,
+      16'd1,
+      8'h03,
+      OPQ_MIN_SOP_GAP_CYCLES,
+      lane1_hits
     ));
 
     start_lane_frames(lane0_frames, lane1_frames);

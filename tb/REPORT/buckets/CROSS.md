@@ -15,13 +15,13 @@
 
 | status | metric | merged_pct | target |
 |:---:|---|---|---|
-| ⚠️ | stmt | 82.43 | 95.0 |
-| ⚠️ | branch | 78.30 | 90.0 |
-| ℹ️ | cond | 54.33 | - |
-| ℹ️ | expr | 72.41 | - |
-| ⚠️ | fsm_state | 93.18 | 95.0 |
-| ⚠️ | fsm_trans | 52.00 | 90.0 |
-| ⚠️ | toggle | 50.51 | 80.0 |
+| ⚠️ | stmt | 77.61 | 95.0 |
+| ⚠️ | branch | 73.24 | 90.0 |
+| ℹ️ | cond | 48.32 | - |
+| ℹ️ | expr | 70.34 | - |
+| ⚠️ | fsm_state | 90.91 | 95.0 |
+| ⚠️ | fsm_trans | 47.00 | 90.0 |
+| ⚠️ | toggle | 49.87 | 80.0 |
 
 ## Ordered merge trace
 
@@ -35,7 +35,7 @@
 | ✅ | 6 | `COMBO_OPQ_506_cross_idle_lane_backpressure_test` | `opq_cross_idle_lane_backpressure_test` | stmt=74.36, branch=67.90, cond=41.85, expr=59.18, fsm_state=86.36, fsm_trans=43.00, toggle=33.58 | [case](../cases/COMBO_OPQ_506_cross_idle_lane_backpressure_test.md) |
 | ✅ | 7 | `COMBO_OPQ_507_cross_mixed_bucket_random_soak_test` | `opq_cross_mixed_bucket_random_soak_test` | stmt=75.74, branch=70.91, cond=44.36, expr=67.24, fsm_state=90.91, fsm_trans=47.00, toggle=44.93 | [case](../cases/COMBO_OPQ_507_cross_mixed_bucket_random_soak_test.md) |
 | ✅ | 8 | `COMBO_OPQ_508_cross_drr_bursty_frame2_boundary_test` | `opq_cross_drr_bursty_frame2_boundary_test` | stmt=76.27, branch=71.88, cond=46.98, expr=68.10, fsm_state=90.91, fsm_trans=47.00, toggle=45.33 | [case](../cases/COMBO_OPQ_508_cross_drr_bursty_frame2_boundary_test.md) |
-| ✅ | 9 | `COMBO_OPQ_509_cross_random_ready_overflow_step2_boundary_test` | `opq_cross_random_ready_overflow_step2_boundary_test` | stmt=82.43, branch=78.30, cond=54.33, expr=72.41, fsm_state=93.18, fsm_trans=52.00, toggle=50.51 | [case](../cases/COMBO_OPQ_509_cross_random_ready_overflow_step2_boundary_test.md) |
+| ✅ | 9 | `COMBO_OPQ_509_cross_random_ready_overflow_step2_boundary_test` | `opq_cross_random_ready_overflow_step2_boundary_test` | stmt=77.61, branch=73.24, cond=48.32, expr=70.34, fsm_state=90.91, fsm_trans=47.00, toggle=49.87 | [case](../cases/COMBO_OPQ_509_cross_random_ready_overflow_step2_boundary_test.md) |
 
 ---
 _Back to [dashboard](../../DV_REPORT.md)_

@@ -268,22 +268,20 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       - keep the testcase outside the fixed no-restart baselines and do not
         treat the reduced-depth point as closed until that accepted-egress
         contract failure is debugged again
-- [ ] Refresh the larger bursty DRR random closure path before promoting
+- [x] Refresh the larger bursty DRR random closure path before promoting
       `opq_cross_drr_bursty_random_test`.
-      Status on `2026-04-20`:
-      - root cause was the page allocator advancing merged-frame progress
-        ahead of an already-active busy lane that had not yet surfaced its
-        current ticket, which silently discarded same-frame late tickets
-      - the same envelope now brackets a clean reduction boundary:
-        `frame_count=2` passes, while the new named
-        `opq_cross_drr_bursty_frame3_repro_test` fails with
-        `expected=484 actual=254 missing=230 ghost=0`
-      - the fresh larger constrained-random rerun on `2026-04-20` still fails
-        with `expected=852 actual=622 missing=368 ghost=138` and lane0
-        `unexplained=368`
-      - keep both the reduced `frame3` anchor and the larger random envelope
-        probe-only until that remaining
-        hit-accounting loss is debugged or explicitly retired
+      Status on `2026-04-21`:
+      - the allocator repair now holds merged-frame progress until every
+        already-active busy lane has surfaced its current ticket, so the late
+        same-frame ticket loss is no longer reproduced
+      - the named `opq_cross_drr_bursty_frame3_repro_test` is green again with
+        `expected=714 actual=714 missing=0 ghost=0`
+      - the refreshed larger constrained-random reruns are also green:
+        seed `1` closes with `expected=990 actual=990 missing=0 ghost=0`,
+        seeds `2..8` close with `expected=1864 actual=1864 missing=0 ghost=0`,
+        and every rerun ends with per-lane `unexplained=0`
+      - the bursty DRR random screen stays supplemental by reporting choice,
+        not because of an active correctness failure
 - [x] Promote the `2026-04-20` isolated-pass bucket expansions into the live
       report flow only after wrapper order, bucket-frame coverage ordering, and
       no-restart evidence are captured:
@@ -478,13 +476,9 @@ Execution order frozen on 2026-04-18 for the next closure phase:
 - [x] Stabilize a no-backend fallback API that keeps the future proof entry
       points intact.
       Status on `2026-04-18`:
-      - wrappers now support `FORMAL_BACKEND=auto|stress|qverify|sby`
+      - wrappers now support `FORMAL_BACKEND=auto|stress|qverify`
       - wrappers now support `QVERIFY_BIN=/path/to/qverify` as the
         backend handoff point once the proof binary is installed
-      - wrappers now support `SBY_BIN=/path/to/sby`,
-        `YOSYS_BIN=/path/to/yosys`, and
-        `BITWUZLA_BIN=/path/to/bitwuzla` as the OSS backend handoff
-        points once that toolchain is installed
       - wrappers now support `FORMAL_STRESS_TESTS` for targeted fallback runs
       - default fallback status:
         - ingress: pass on `opq_basic_smoke_test` +
@@ -501,25 +495,19 @@ Execution order frozen on 2026-04-18 for the next closure phase:
           now passes as a clean backpressure/hold regression after the
           `BUG-014-R` presenter read-data skid fix
       - ingress probe-only exclusions: none in the current promoted matrix
-- [x] Add the first OSS-friendly formal harness subset for
-      `FORMAL_BACKEND=sby`.
-      Status on `2026-04-18`:
-      - shared OSS tool stack is installed for all users at
-        `/data1/oss_formal`
-      - ingress wrapper now runs `opq_oss_ingress.sby` for real and
-        records `formal=sby_fail`
-      - mover wrapper now runs `opq_oss_block_path.sby` for real and
-        records `formal=sby_fail`
-      - egress wrapper now runs `opq_oss_basic_presenter.sby` for real and
-        records `formal=sby_pass`
-      - plane naming and wrapper entry points stayed stable
+- [x] Record the old OSS formal bring-up as historical evidence only.
+      Status on `2026-04-21`:
+      - the old `FORMAL_BACKEND=sby` path is now deprecated
+      - the wrapper entry points remain stable
         (`formal_ingress.sh`, `formal_mover.sh`, `formal_egress.sh`)
+      - any existing OSS `sby` results remain historical evidence only
 - [x] Run the first actual formal proof round once the proof backend is
       installed, then record any failing properties back into
       `DV_FORMAL.md` and `BUG_HISTORY.md` when a real RTL issue is exposed.
       Status on `2026-04-18`:
-      - first wrapper-managed `sby` round is captured in
+      - the old wrapper-managed `sby` round remains captured in
         `tb/formal_runs/csv/formal_{ingress,mover,egress}_latest.csv`
+        as historical evidence; the active path is now `qverify`
       - current tracked blockers:
         - `BUG-015-H`: closed for the current OSS ingress subset; the
           harness now freezes credit accounting until post-reset tracking

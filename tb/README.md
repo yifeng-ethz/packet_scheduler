@@ -52,12 +52,14 @@ Signoff evidence in this tree is required to come from `DUT_IMPL=native_sv`.
   yet promoted into the generated DV dashboard.
 - The probe runner carries the currently useful non-promoted screens,
   including the bursty DRR large-random stress and the long-runtime mixed-bucket
-  seconds soak. The reduced-depth overwrite case is now tracked under
-  `DV_ERROR.md` as isolated promoted evidence.
+  seconds soak. The reduced-depth overwrite shape-check remains tracked under
+  `DV_ERROR.md`, while the explicit reduced-depth must-drop witness is tracked
+  under `DV_CROSS.md`.
 - In the current monolithic harness, a lane may be idle in hits but not silent in frame cadence. Directed single-lane tests therefore drive empty frames on the inactive peer lane instead of holding it permanently quiet.
-- On this host the working floating-license path is `questa_fse` with `LM_LICENSE_FILE` and `MGLS_LICENSE_FILE`
-  chained to `8161@lic-mentor.ethz.ch:/data1/intelFPGA_pro/23.1/questa_fse/LR-287689_License.dat`.
-  The FE executable still rejects the environment here.
+- On this host the supported simulator runtime is `QuestaOne 2026` at
+  `/data1/questaone_sim/questasim`, with `LM_LICENSE_FILE`,
+  `MGLS_LICENSE_FILE`, and `SALT_LICENSE_SERVER` all set to
+  `8161@lic-mentor.ethz.ch`.
 - The live `opq_basic_smoke_test` now passes on the active monolithic harness with scoreboard hit-integrity
   checks enabled: same hits in, same hits out, and the first merged subheader lands in the correct time slot.
 - The remaining signoff work is closure, not basic bring-up: lint disposition, coverage closure, more buckets from

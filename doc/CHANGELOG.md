@@ -1,6 +1,40 @@
 # Changelog
 Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 
+> Note on formal-tool history: older entries below mention the temporary
+> OSS/SBY/Yosys fallback that was used before the current toolchain migration.
+> The active formal direction is now `qverify` / `znformal` with simulation
+> stress fallback only when the Siemens binaries are not present on the host.
+
+## 26.3.56.0421
+
+- **RTL / Native-SV Allocator + Ingress Closure**: closed the current
+  `BUG-025-R` / `BUG-027-R` bug family by carrying frame serial identity on
+  non-SOP tickets and credit-drop debug paths, removing dependence on the
+  transient ingress `alert_eop` level, and restoring the zero-hit masked
+  subheader recovery branch back to the normal body state.
+- **Verification / 4-Lane Supplemental Matrix**: refreshed the
+  `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256` supplemental reruns.
+  `opq_basic_single_active_lane_test`,
+  `opq_basic_feb_packet_contract_test`,
+  `opq_error_hit_mask_recovery_test`,
+  `opq_cross_drr_bursty_frame2_boundary_test`,
+  `opq_cross_random_ready_overflow_step2_boundary_test`,
+  `opq_cross_masked_drop_exact_102_117_repro_test`, and
+  `opq_cross_mixed_bucket_random_soak_test` all now exit with `UVM_ERROR : 0`.
+- **Verification / Overwrite Witness Scope**: kept the reduced-depth
+  overwrite-local must-drop proof on the named `opq_cross_bp_mustdrop_witness_test`
+  profile, which now reruns green on `OPQ_PAGE_RAM_DEPTH=512` for the same
+  refreshed `4-lane/128` preset. The older `opq_error_ftable_overflow_test`
+  legacy profile remains a historical reduced-depth shape-check and is no
+  longer the portable must-drop witness on the wider-lane matrix.
+- **Harness / Lane Ledger Repair**: fixed the scoreboard's lane-accounting
+  model so delivered hits retire against canonical delivery timestamps while
+  exact-drop bookkeeping keeps the parser/accounting timestamp domain. This
+  closes the false `unexplained` residue that had reopened clean 4-lane/128
+  overflow-step2 and mixed-soak reruns after the RTL bug family was already
+  fixed.
+
 ## 26.3.29.0420
 
 - **Packaging / Representative Presets**: added a GUI-visible `PRESET` selector to `ordered_priority_queue_hw.tcl` with nine visible options (`CUSTOM` plus eight named presets). All concrete named presets intentionally pin `N_SHD=128`, keep the safe `32 data + 4 datak` / `36-bit` egress contract, and scale `N_LANE` plus `LANE_FIFO_DEPTH` as representative starting points for later quantitative closure work.

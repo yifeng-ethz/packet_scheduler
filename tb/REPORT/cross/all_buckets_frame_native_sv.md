@@ -6,7 +6,7 @@
 
 | status | field | value |
 |:---:|---|---|
-| ℹ️ | case_count | `37` |
+| ℹ️ | case_count | `38` |
 | ℹ️ | effort | `practical` |
 | ℹ️ | txns | `434` |
 | ✅ | functional_cross_pct | `77.74` |
@@ -14,12 +14,12 @@
 | ✅ | unexpected_outputs | `0` |
 | ⚠️ | limitation | PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime. |
 | ⚠️ | limitation | opq_cross_mixed_bucket_random_soak_test is tracked as a dedicated supplemental signoff run; this fixed baseline remains case-ordered and deterministic. |
-| ⚠️ | limitation | opq_cross_drr_bursty_frame2_boundary_test is tracked as a dedicated supplemental signoff run because it freezes the last known green bursty DRR envelope below the open frame_count=3 retirement failure. |
+| ⚠️ | limitation | opq_cross_drr_bursty_frame2_boundary_test is tracked as a dedicated supplemental signoff run because it freezes one deterministic bursty DRR boundary while the complementary frame_count=3 repro and large-random sweep remain tracked separately. |
 | ⚠️ | limitation | opq_cross_bp_predrop_boundary_test is tracked as a dedicated supplemental signoff run because it proves the default-build legal pre-drop boundary under sustained backpressure rather than a promoted fixed bucket-frame case. |
-| ⚠️ | limitation | opq_cross_random_ready_overflow_step2_boundary_test is tracked as a dedicated supplemental signoff run because it freezes the current green two-step legal-overflow boundary while the later must-drop path remains probe-only. |
+| ⚠️ | limitation | opq_cross_random_ready_overflow_step2_boundary_test is tracked as a dedicated supplemental signoff run because it freezes the current green two-step legal-overflow boundary while the explicit overwrite-local must-drop proof is carried by a separate reduced-depth witness. |
 | ⚠️ | limitation | opq_error_counter_clear_test is tracked as a dedicated supplemental signoff run because it intentionally clears live CSR counters mid-run. |
 | ⚠️ | limitation | opq_error_ftable_overflow_test is tracked as a dedicated supplemental signoff run because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration. |
-| ⚠️ | limitation | This run appends two extra tail sequences after the 37 promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases. |
+| ⚠️ | limitation | This run appends two extra tail sequences after the 38 promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases. |
 
 ## Execution Order
 
@@ -55,9 +55,10 @@
   `ERROR` -> [`CORNER_OPQ_402_error_lane_mask_single_hit_test`](../cases/CORNER_OPQ_402_error_lane_mask_single_hit_test.md) (`opq_error_lane_mask_single_hit_test`)
   `ERROR` -> [`CORNER_OPQ_403_error_lane_mask_burst_test`](../cases/CORNER_OPQ_403_error_lane_mask_burst_test.md) (`opq_error_lane_mask_burst_test`)
   `ERROR` -> [`CORNER_OPQ_404_error_lane_mask_recovery_test`](../cases/CORNER_OPQ_404_error_lane_mask_recovery_test.md) (`opq_error_lane_mask_recovery_test`)
-  `ERROR` -> [`CORNER_OPQ_405_error_subheader_mask_recovery_test`](../cases/CORNER_OPQ_405_error_subheader_mask_recovery_test.md) (`opq_error_subheader_mask_recovery_test`)
-  `ERROR` -> [`CORNER_OPQ_406_error_header_mask_recovery_test`](../cases/CORNER_OPQ_406_error_header_mask_recovery_test.md) (`opq_error_header_mask_recovery_test`)
-  `ERROR` -> [`CORNER_OPQ_407_error_header_word_mask_recovery_test`](../cases/CORNER_OPQ_407_error_header_word_mask_recovery_test.md) (`opq_error_header_word_mask_recovery_test`)
+  `ERROR` -> [`CORNER_OPQ_405_error_hit_mask_recovery_test`](../cases/CORNER_OPQ_405_error_hit_mask_recovery_test.md) (`opq_error_hit_mask_recovery_test`)
+  `ERROR` -> [`CORNER_OPQ_406_error_subheader_mask_recovery_test`](../cases/CORNER_OPQ_406_error_subheader_mask_recovery_test.md) (`opq_error_subheader_mask_recovery_test`)
+  `ERROR` -> [`CORNER_OPQ_407_error_header_mask_recovery_test`](../cases/CORNER_OPQ_407_error_header_mask_recovery_test.md) (`opq_error_header_mask_recovery_test`)
+  `ERROR` -> [`CORNER_OPQ_408_error_header_word_mask_recovery_test`](../cases/CORNER_OPQ_408_error_header_word_mask_recovery_test.md) (`opq_error_header_word_mask_recovery_test`)
   `CROSS` -> [`COMBO_OPQ_501_cross_bp_credit_test`](../cases/COMBO_OPQ_501_cross_bp_credit_test.md) (`opq_cross_bp_credit_test`)
   `CROSS` -> [`COMBO_OPQ_502_cross_drr_allowance_test`](../cases/COMBO_OPQ_502_cross_drr_allowance_test.md) (`opq_cross_drr_allowance_test`)
   `CROSS` -> [`COMBO_OPQ_503_cross_drr_idle_lane_test`](../cases/COMBO_OPQ_503_cross_drr_idle_lane_test.md) (`opq_cross_drr_idle_lane_test`)
@@ -68,12 +69,12 @@
 - extra_tail: `ERROR` -> `extra_err_seq` (extra subheader-recovery tail beyond the promoted default-build matrix)
 - limitation: PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.
 - limitation: opq_cross_mixed_bucket_random_soak_test is tracked as a dedicated supplemental signoff run; this fixed baseline remains case-ordered and deterministic.
-- limitation: opq_cross_drr_bursty_frame2_boundary_test is tracked as a dedicated supplemental signoff run because it freezes the last known green bursty DRR envelope below the open frame_count=3 retirement failure.
+- limitation: opq_cross_drr_bursty_frame2_boundary_test is tracked as a dedicated supplemental signoff run because it freezes one deterministic bursty DRR boundary while the complementary frame_count=3 repro and large-random sweep remain tracked separately.
 - limitation: opq_cross_bp_predrop_boundary_test is tracked as a dedicated supplemental signoff run because it proves the default-build legal pre-drop boundary under sustained backpressure rather than a promoted fixed bucket-frame case.
-- limitation: opq_cross_random_ready_overflow_step2_boundary_test is tracked as a dedicated supplemental signoff run because it freezes the current green two-step legal-overflow boundary while the later must-drop path remains probe-only.
+- limitation: opq_cross_random_ready_overflow_step2_boundary_test is tracked as a dedicated supplemental signoff run because it freezes the current green two-step legal-overflow boundary while the explicit overwrite-local must-drop proof is carried by a separate reduced-depth witness.
 - limitation: opq_error_counter_clear_test is tracked as a dedicated supplemental signoff run because it intentionally clears live CSR counters mid-run.
 - limitation: opq_error_ftable_overflow_test is tracked as a dedicated supplemental signoff run because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration.
-- limitation: This run appends two extra tail sequences after the 37 promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases.
+- limitation: This run appends two extra tail sequences after the 38 promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases.
 
 ## Code coverage
 

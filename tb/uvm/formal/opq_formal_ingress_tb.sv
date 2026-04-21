@@ -19,9 +19,10 @@ module opq_formal_ingress_tb;
   localparam int unsigned FRAME_HIT_CNT_SIZE = 16;
   localparam int unsigned MAX_PKT_LENGTH = HIT_SIZE * N_HIT;
   localparam int unsigned MAX_PKT_LENGTH_BITS = (MAX_PKT_LENGTH <= 1) ? 1 : $clog2(MAX_PKT_LENGTH);
-  localparam int unsigned TICKET_FIFO_DATA_WIDTH_A = 48 + $clog2(LANE_FIFO_DEPTH) + MAX_PKT_LENGTH_BITS + 2;
+  localparam int unsigned TICKET_FIFO_DATA_WIDTH_A =
+    48 + $clog2(LANE_FIFO_DEPTH) + MAX_PKT_LENGTH_BITS + FRAME_SERIAL_SIZE + 2;
   localparam int unsigned TICKET_FIFO_DATA_WIDTH_B =
-    FRAME_SERIAL_SIZE + FRAME_SUBH_CNT_SIZE + FRAME_HIT_CNT_SIZE + 2;
+    FRAME_SERIAL_SIZE + FRAME_SUBH_CNT_SIZE + FRAME_HIT_CNT_SIZE + 6 + 16 + 48 + 2;
   localparam int unsigned TICKET_FIFO_DATA_WIDTH =
     (TICKET_FIFO_DATA_WIDTH_A > TICKET_FIFO_DATA_WIDTH_B) ? TICKET_FIFO_DATA_WIDTH_A : TICKET_FIFO_DATA_WIDTH_B;
   localparam int unsigned TICKET_FIFO_ADDR_WIDTH = $clog2(TICKET_FIFO_DEPTH);
@@ -43,8 +44,20 @@ module opq_formal_ingress_tb;
   logic [LANE_FIFO_ADDR_WIDTH-1:0]                   lane_wptr;
   logic                                              lane_we;
   logic [47:0]                                       running_ts_dbg;
+  logic [47:0]                                       frame_ts_base_dbg;
   logic [5:0]                                        dt_type_dbg;
   logic [15:0]                                       feb_id_dbg;
+  logic                                              parser_busy_o;
+  logic                                              credit_drop_valid_o;
+  logic                                              credit_drop_lane_o;
+  logic                                              credit_drop_ticket_o;
+  logic [47:0]                                       credit_drop_ts_o;
+  logic [15:0]                                       credit_drop_shd_cnt_o;
+  logic [15:0]                                       credit_drop_hit_cnt_o;
+  logic                                              tail_bypass_valid_o;
+  logic                                              tail_bypass_drop_o;
+  logic [15:0]                                       tail_bypass_serial_o;
+  logic [47:0]                                       tail_bypass_ts_o;
   logic                                              alert_eop_state_o;
   logic                                              eop_flush_ack_i;
   logic                                              d_clk;
@@ -105,8 +118,20 @@ module opq_formal_ingress_tb;
     .lane_wptr(lane_wptr),
     .lane_we(lane_we),
     .running_ts_dbg(running_ts_dbg),
+    .frame_ts_base_dbg(frame_ts_base_dbg),
     .dt_type_dbg(dt_type_dbg),
     .feb_id_dbg(feb_id_dbg),
+    .parser_busy_o(parser_busy_o),
+    .credit_drop_valid_o(credit_drop_valid_o),
+    .credit_drop_lane_o(credit_drop_lane_o),
+    .credit_drop_ticket_o(credit_drop_ticket_o),
+    .credit_drop_ts_o(credit_drop_ts_o),
+    .credit_drop_shd_cnt_o(credit_drop_shd_cnt_o),
+    .credit_drop_hit_cnt_o(credit_drop_hit_cnt_o),
+    .tail_bypass_valid_o(tail_bypass_valid_o),
+    .tail_bypass_drop_o(tail_bypass_drop_o),
+    .tail_bypass_serial_o(tail_bypass_serial_o),
+    .tail_bypass_ts_o(tail_bypass_ts_o),
     .alert_eop_state_o(alert_eop_state_o),
     .eop_flush_ack_i(eop_flush_ack_i),
     .d_clk(d_clk),

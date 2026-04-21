@@ -588,12 +588,16 @@ class opq_cross_drr_bursty_random_test extends opq_base_test;
     validate_bursty_allowance(hot_allowance, cold_allowance);
 
     hot_lane = seq.hot_lane;
+    for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+      lane_allowance_cfg[lane] = OPQ_DRR_DEFAULT_ALLOWANCE;
+    end
     lane_allowance_cfg[0] = (hot_lane == 0) ? hot_allowance : cold_allowance;
     lane_allowance_cfg[1] = (hot_lane == 1) ? hot_allowance : cold_allowance;
 
     csr_clear_counters();
-    csr_write_lane_drr_allowance(0, lane_allowance_cfg[0]);
-    csr_write_lane_drr_allowance(1, lane_allowance_cfg[1]);
+    for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+      csr_write_lane_drr_allowance(lane, lane_allowance_cfg[lane]);
+    end
 
     bp_seq = opq_bp_sequence::type_id::create("bp_seq");
     bp_item = opq_bp_item::type_id::create("bp_item");
@@ -639,6 +643,9 @@ class opq_cross_drr_bursty_random_test extends opq_base_test;
     cold_lane = (hot_lane == 0) ? 1 : 0;
 
     for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+      bit lane_has_service;
+
+      lane_has_service = (env.scoreboard.get_expected_lane_hit_cnt(lane) != 0);
       check_lane_drop_accounting_and_credit(lane, 1'b0);
       read_lane_drr_snapshot(
         lane,
@@ -648,7 +655,12 @@ class opq_cross_drr_bursty_random_test extends opq_base_test;
         beat_cnt_word,
         defer_cnt_word
       );
-      sample_lane_drr_snapshot(lane, lane_allowance_cfg[lane], 1'b1, lane == hot_lane);
+      sample_lane_drr_snapshot(
+        lane,
+        lane_allowance_cfg[lane],
+        lane_has_service,
+        lane_has_service && (lane == hot_lane)
+      );
 
       if (beat_cnt_word != env.scoreboard.get_accepted_lane_hit_cnt(lane)) begin
         `uvm_error(get_type_name(), $sformatf(

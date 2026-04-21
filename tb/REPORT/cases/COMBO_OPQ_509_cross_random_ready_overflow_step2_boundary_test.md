@@ -29,8 +29,8 @@
 | ℹ️ | log.cg_bp | `83.33` |
 | ℹ️ | log.cg_csr | `92.26` |
 | ℹ️ | log.cg_credit | `46.67` |
-| ℹ️ | log.cg_drop | `52.78` |
-| ℹ️ | log.cg_drr | `42.33` |
+| ℹ️ | log.cg_drop | `59.03` |
+| ℹ️ | log.cg_drr | `40.33` |
 | ℹ️ | log.cg_ingress | `100.0` |
 | ℹ️ | log.cg_egress | `100.0` |
 | ℹ️ | log.lane0_monitored_frames | `7` |
@@ -44,13 +44,13 @@
 
 | metric | standalone | isolated_per_txn | bucket_gain | bucket_merged_after | bucket_gain_per_txn |
 |---|---|---|---|---|---|
-| stmt | 80.25 | 40.12 | 6.16 | 82.43 | 3.08 |
-| branch | 74.27 | 37.13 | 6.42 | 78.30 | 3.21 |
-| cond | 50.84 | 25.42 | 7.35 | 54.33 | 3.67 |
-| expr | 71.43 | 35.72 | 4.31 | 72.41 | 2.15 |
-| fsm_state | 93.18 | 46.59 | 2.27 | 93.18 | 1.14 |
-| fsm_trans | 52.00 | 26.00 | 5.00 | 52.00 | 2.50 |
-| toggle | 36.91 | 18.45 | 5.18 | 50.51 | 2.59 |
+| stmt | 80.81 | 40.41 | 1.34 | 77.61 | 0.67 |
+| branch | 74.88 | 37.44 | 1.36 | 73.24 | 0.68 |
+| cond | 52.53 | 26.27 | 1.34 | 48.32 | 0.67 |
+| expr | 67.38 | 33.69 | 2.24 | 70.34 | 1.12 |
+| fsm_state | 93.18 | 46.59 | 0.00 | 90.91 | 0.00 |
+| fsm_trans | 52.00 | 26.00 | 0.00 | 47.00 | 0.00 |
+| toggle | 36.82 | 18.41 | 4.54 | 49.87 | 2.27 |
 
 ---
 _Back to [bucket](../buckets/CROSS.md) &middot; [dashboard](../../DV_REPORT.md)_

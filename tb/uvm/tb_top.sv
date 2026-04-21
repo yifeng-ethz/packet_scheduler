@@ -79,10 +79,12 @@ module tb_top;
       assign drop_if.post_hit_drop_cnt[i] = 16'd0;
       assign drop_if.exact_pre_valid[i] = 1'b0;
       assign drop_if.exact_pre_ts[i] = '0;
+      assign drop_if.exact_pre_serial[i] = '0;
       assign drop_if.exact_pre_shd_cnt[i] = '0;
       assign drop_if.exact_pre_hit_cnt[i] = '0;
       assign drop_if.exact_post_valid[i] = 1'b0;
       assign drop_if.exact_post_ts[i] = '0;
+      assign drop_if.exact_post_serial[i] = '0;
       assign drop_if.exact_post_shd_cnt[i] = '0;
       assign drop_if.exact_post_hit_cnt[i] = '0;
     end
@@ -99,10 +101,12 @@ module tb_top;
       assign drop_if.post_hit_drop_cnt[i] = 16'd0;
       assign drop_if.exact_pre_valid[i] = 1'b0;
       assign drop_if.exact_pre_ts[i] = '0;
+      assign drop_if.exact_pre_serial[i] = '0;
       assign drop_if.exact_pre_shd_cnt[i] = '0;
       assign drop_if.exact_pre_hit_cnt[i] = '0;
       assign drop_if.exact_post_valid[i] = 1'b0;
       assign drop_if.exact_post_ts[i] = '0;
+      assign drop_if.exact_post_serial[i] = '0;
       assign drop_if.exact_post_shd_cnt[i] = '0;
       assign drop_if.exact_post_hit_cnt[i] = '0;
     end
@@ -121,10 +125,12 @@ module tb_top;
       assign drop_if.post_hit_drop_cnt[i] = gen_dut_2lane.dut.native_drop_evt_post_hit_dbg[i];
       assign drop_if.exact_pre_valid[i] = gen_dut_2lane.dut.native_exact_pre_valid_dbg[i];
       assign drop_if.exact_pre_ts[i] = gen_dut_2lane.dut.native_exact_pre_ts_dbg[i];
+      assign drop_if.exact_pre_serial[i] = gen_dut_2lane.dut.native_exact_pre_serial_dbg[i];
       assign drop_if.exact_pre_shd_cnt[i] = gen_dut_2lane.dut.native_exact_pre_shd_dbg[i];
       assign drop_if.exact_pre_hit_cnt[i] = gen_dut_2lane.dut.native_exact_pre_hit_dbg[i];
       assign drop_if.exact_post_valid[i] = gen_dut_2lane.dut.native_exact_post_valid_dbg[i];
       assign drop_if.exact_post_ts[i] = gen_dut_2lane.dut.native_exact_post_ts_dbg[i];
+      assign drop_if.exact_post_serial[i] = gen_dut_2lane.dut.native_exact_post_serial_dbg[i];
       assign drop_if.exact_post_shd_cnt[i] = gen_dut_2lane.dut.native_exact_post_shd_dbg[i];
       assign drop_if.exact_post_hit_cnt[i] = gen_dut_2lane.dut.native_exact_post_hit_dbg[i];
     end
@@ -141,10 +147,12 @@ module tb_top;
       assign drop_if.post_hit_drop_cnt[i] = gen_dut_4lane.dut4.native_drop_evt_post_hit_dbg[i];
       assign drop_if.exact_pre_valid[i] = gen_dut_4lane.dut4.native_exact_pre_valid_dbg[i];
       assign drop_if.exact_pre_ts[i] = gen_dut_4lane.dut4.native_exact_pre_ts_dbg[i];
+      assign drop_if.exact_pre_serial[i] = gen_dut_4lane.dut4.native_exact_pre_serial_dbg[i];
       assign drop_if.exact_pre_shd_cnt[i] = gen_dut_4lane.dut4.native_exact_pre_shd_dbg[i];
       assign drop_if.exact_pre_hit_cnt[i] = gen_dut_4lane.dut4.native_exact_pre_hit_dbg[i];
       assign drop_if.exact_post_valid[i] = gen_dut_4lane.dut4.native_exact_post_valid_dbg[i];
       assign drop_if.exact_post_ts[i] = gen_dut_4lane.dut4.native_exact_post_ts_dbg[i];
+      assign drop_if.exact_post_serial[i] = gen_dut_4lane.dut4.native_exact_post_serial_dbg[i];
       assign drop_if.exact_post_shd_cnt[i] = gen_dut_4lane.dut4.native_exact_post_shd_dbg[i];
       assign drop_if.exact_post_hit_cnt[i] = gen_dut_4lane.dut4.native_exact_post_hit_dbg[i];
     end
@@ -251,7 +259,7 @@ module tb_top;
         for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
           if (gen_dut_2lane.dut.native_drop_evt_valid_dbg[lane]) begin
             $display(
-              "[opq_drop_evt] t=%0t lane%0d total(hdr=%0d shd=%0d hit=%0d) pre(shd=%0d hit=%0d) post(hdr=%0d shd=%0d hit=%0d) src(mask=%0b credit=%0b late=%0b handle=%0b) exact_pre(valid=%0b ts=0x%012h shd=%0d hit=%0d) exact_post(valid=%0b ts=0x%012h shd=%0d hit=%0d)",
+              "[opq_drop_evt] t=%0t lane%0d total(hdr=%0d shd=%0d hit=%0d) pre(shd=%0d hit=%0d) post(hdr=%0d shd=%0d hit=%0d) src(mask=%0b credit=%0b late=%0b handle=%0b) exact_pre(valid=%0b serial=%0d ts=0x%012h shd=%0d hit=%0d) exact_post(valid=%0b serial=%0d ts=0x%012h shd=%0d hit=%0d)",
               $time,
               lane,
               gen_dut_2lane.dut.native_drop_evt_hdr_dbg[lane],
@@ -270,10 +278,12 @@ module tb_top;
               gen_dut_2lane.dut.native_handle_we_dbg[lane] &&
                 gen_dut_2lane.dut.native_handle_flag_dbg[lane],
               gen_dut_2lane.dut.native_exact_pre_valid_dbg[lane],
+              gen_dut_2lane.dut.native_exact_pre_serial_dbg[lane],
               gen_dut_2lane.dut.native_exact_pre_ts_dbg[lane],
               gen_dut_2lane.dut.native_exact_pre_shd_dbg[lane],
               gen_dut_2lane.dut.native_exact_pre_hit_dbg[lane],
               gen_dut_2lane.dut.native_exact_post_valid_dbg[lane],
+              gen_dut_2lane.dut.native_exact_post_serial_dbg[lane],
               gen_dut_2lane.dut.native_exact_post_ts_dbg[lane],
               gen_dut_2lane.dut.native_exact_post_shd_dbg[lane],
               gen_dut_2lane.dut.native_exact_post_hit_dbg[lane]
@@ -344,7 +354,7 @@ module tb_top;
         for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
           if (gen_dut_4lane.dut4.native_drop_evt_valid_dbg[lane]) begin
             $display(
-              "[opq_drop_evt] t=%0t lane%0d total(hdr=%0d shd=%0d hit=%0d) pre(shd=%0d hit=%0d) post(hdr=%0d shd=%0d hit=%0d) src(mask=%0b credit=%0b late=%0b handle=%0b) exact_pre(valid=%0b ts=0x%012h shd=%0d hit=%0d) exact_post(valid=%0b ts=0x%012h shd=%0d hit=%0d)",
+              "[opq_drop_evt] t=%0t lane%0d total(hdr=%0d shd=%0d hit=%0d) pre(shd=%0d hit=%0d) post(hdr=%0d shd=%0d hit=%0d) src(mask=%0b credit=%0b late=%0b handle=%0b) exact_pre(valid=%0b serial=%0d ts=0x%012h shd=%0d hit=%0d) exact_post(valid=%0b serial=%0d ts=0x%012h shd=%0d hit=%0d)",
               $time,
               lane,
               gen_dut_4lane.dut4.native_drop_evt_hdr_dbg[lane],
@@ -363,10 +373,12 @@ module tb_top;
               gen_dut_4lane.dut4.native_handle_we_dbg[lane] &&
                 gen_dut_4lane.dut4.native_handle_flag_dbg[lane],
               gen_dut_4lane.dut4.native_exact_pre_valid_dbg[lane],
+              gen_dut_4lane.dut4.native_exact_pre_serial_dbg[lane],
               gen_dut_4lane.dut4.native_exact_pre_ts_dbg[lane],
               gen_dut_4lane.dut4.native_exact_pre_shd_dbg[lane],
               gen_dut_4lane.dut4.native_exact_pre_hit_dbg[lane],
               gen_dut_4lane.dut4.native_exact_post_valid_dbg[lane],
+              gen_dut_4lane.dut4.native_exact_post_serial_dbg[lane],
               gen_dut_4lane.dut4.native_exact_post_ts_dbg[lane],
               gen_dut_4lane.dut4.native_exact_post_shd_dbg[lane],
               gen_dut_4lane.dut4.native_exact_post_hit_dbg[lane]

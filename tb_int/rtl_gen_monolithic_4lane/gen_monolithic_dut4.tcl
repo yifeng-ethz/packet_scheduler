@@ -1,6 +1,6 @@
 lappend auto_path "$::env(QUARTUS_ROOTDIR)/../ip/altera/common/hw_tcl_packages"
 package require -exact altera_terp 1.0
-set template_file [file normalize {/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/ordered_priority_queue/monolithic/ordered_priority_queue.terp.vhd}]
+set template_file [file normalize {/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/legacy/ordered_priority_queue/monolithic/ordered_priority_queue.terp.vhd}]
 set template [read [open $template_file r]]
 set params(n_lane) 4
 set params(fifos_names) [list "ticket_fifo" "lane_fifo" "handle_fifo"]

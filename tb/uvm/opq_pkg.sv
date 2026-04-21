@@ -329,10 +329,12 @@ package opq_pkg;
     int unsigned post_hit_drop_cnt;
     bit          exact_pre_valid;
     bit [47:0]   exact_pre_ts;
+    bit [15:0]   exact_pre_serial;
     int unsigned exact_pre_shd_cnt;
     int unsigned exact_pre_hit_cnt;
     bit          exact_post_valid;
     bit [47:0]   exact_post_ts;
+    bit [15:0]   exact_post_serial;
     int unsigned exact_post_shd_cnt;
     int unsigned exact_post_hit_cnt;
 
@@ -348,10 +350,12 @@ package opq_pkg;
       `uvm_field_int(post_hit_drop_cnt, UVM_DEFAULT)
       `uvm_field_int(exact_pre_valid, UVM_DEFAULT)
       `uvm_field_int(exact_pre_ts, UVM_DEFAULT)
+      `uvm_field_int(exact_pre_serial, UVM_DEFAULT)
       `uvm_field_int(exact_pre_shd_cnt, UVM_DEFAULT)
       `uvm_field_int(exact_pre_hit_cnt, UVM_DEFAULT)
       `uvm_field_int(exact_post_valid, UVM_DEFAULT)
       `uvm_field_int(exact_post_ts, UVM_DEFAULT)
+      `uvm_field_int(exact_post_serial, UVM_DEFAULT)
       `uvm_field_int(exact_post_shd_cnt, UVM_DEFAULT)
       `uvm_field_int(exact_post_hit_cnt, UVM_DEFAULT)
     `uvm_object_utils_end
@@ -369,10 +373,12 @@ package opq_pkg;
       post_hit_drop_cnt = 0;
       exact_pre_valid = 1'b0;
       exact_pre_ts = '0;
+      exact_pre_serial = '0;
       exact_pre_shd_cnt = 0;
       exact_pre_hit_cnt = 0;
       exact_post_valid = 1'b0;
       exact_post_ts = '0;
+      exact_post_serial = '0;
       exact_post_shd_cnt = 0;
       exact_post_hit_cnt = 0;
     endfunction

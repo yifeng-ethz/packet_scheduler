@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_sv
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.28
-// Date    : 20260419
-// Change  : Carry per-frame header metadata inside SOP tickets and late-drop identity into the shared debug surface
+// Version : 26.3.56
+// Date    : 20260421
+// Change  : Preserve frame serial on every ticket/drop debug path so allocator tail/drop state and scoreboard identity stay aligned across timestamp alias windows
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_sv #(
@@ -31,7 +31,8 @@ module ordered_priority_queue_monolithic_sv #(
   parameter int unsigned DEBUG_LV = 1,
   parameter int unsigned MAX_PKT_LENGTH = HIT_SIZE * N_HIT,
   parameter int unsigned MAX_PKT_LENGTH_BITS = (MAX_PKT_LENGTH <= 1) ? 1 : $clog2(MAX_PKT_LENGTH),
-  parameter int unsigned TICKET_FIFO_DATA_WIDTH_A = 48 + $clog2(LANE_FIFO_DEPTH) + MAX_PKT_LENGTH_BITS + 2,
+  parameter int unsigned TICKET_FIFO_DATA_WIDTH_A =
+    48 + $clog2(LANE_FIFO_DEPTH) + MAX_PKT_LENGTH_BITS + FRAME_SERIAL_SIZE + 2,
   parameter int unsigned TICKET_FIFO_DATA_WIDTH_B =
     FRAME_SERIAL_SIZE + FRAME_SUBH_CNT_SIZE + FRAME_HIT_CNT_SIZE + 6 + 16 + 48 + 2,
   parameter int unsigned TICKET_FIFO_DATA_WIDTH =
@@ -81,15 +82,21 @@ module ordered_priority_queue_monolithic_sv #(
   logic [N_LANE-1:0] ingress_lane_we;
   logic [N_LANE-1:0][47:0] ingress_running_ts_dbg;
   logic [N_LANE-1:0][47:0] ingress_frame_ts_base_dbg;
+  logic [N_LANE-1:0][FRAME_SERIAL_SIZE-1:0] ingress_pkg_cnt_dbg;
   logic [N_LANE-1:0][5:0] ingress_dt_type_dbg;
   logic [N_LANE-1:0][15:0] ingress_feb_id_dbg;
   logic [N_LANE-1:0] ingress_parser_busy_dbg;
   logic [N_LANE-1:0] ingress_credit_drop_valid_dbg;
   logic [N_LANE-1:0] ingress_credit_drop_lane_dbg;
   logic [N_LANE-1:0] ingress_credit_drop_ticket_dbg;
+  logic [N_LANE-1:0][FRAME_SERIAL_SIZE-1:0] ingress_credit_drop_pkg_cnt_dbg;
   logic [N_LANE-1:0][47:0] ingress_credit_drop_ts_dbg;
   logic [N_LANE-1:0][15:0] ingress_credit_drop_shd_cnt_dbg;
   logic [N_LANE-1:0][15:0] ingress_credit_drop_hit_cnt_dbg;
+  logic [N_LANE-1:0] ingress_tail_bypass_valid_dbg;
+  logic [N_LANE-1:0] ingress_tail_bypass_drop_dbg;
+  logic [N_LANE-1:0][FRAME_SERIAL_SIZE-1:0] ingress_tail_bypass_serial_dbg;
+  logic [N_LANE-1:0][47:0] ingress_tail_bypass_ts_dbg;
   logic [N_LANE-1:0] ingress_alert_eop_dbg;
   logic [N_LANE-1:0] ingress_eop_flush_ack_dbg;
   logic [N_LANE-1:0][LANE_FIFO_ADDR_WIDTH-1:0] lane_credit_update;
@@ -114,6 +121,7 @@ module ordered_priority_queue_monolithic_sv #(
   logic [N_LANE-1:0][15:0] late_frame_drop_hdr_cnt_dbg;
   logic [N_LANE-1:0][15:0] late_frame_drop_shd_cnt_dbg;
   logic [N_LANE-1:0][15:0] late_frame_drop_hit_cnt_dbg;
+  logic [N_LANE-1:0][FRAME_SERIAL_SIZE-1:0] late_frame_drop_serial_dbg;
   logic [N_LANE-1:0][47:0] late_frame_drop_ts_dbg;
   logic [N_LANE-1:0] tk_future_dbg;
   logic fetch_ticket_active_dbg;
@@ -125,6 +133,10 @@ module ordered_priority_queue_monolithic_sv #(
   logic [2:0] write_meta_flow_d1_dbg;
   logic [PAGE_RAM_ADDR_WIDTH-1:0] frame_start_addr_dbg;
   logic [PAGE_RAM_ADDR_WIDTH-1:0] packet_complete_frame_start_addr_dbg;
+  logic [$clog2(N_SHD * N_LANE):0] packet_complete_shr_cnt_dbg;
+  logic [15:0] packet_complete_hit_cnt_dbg;
+  logic [N_LANE-1:0][$clog2(N_SHD * N_LANE):0] packet_complete_lane_shd_cnt_dbg;
+  logic [N_LANE-1:0][15:0] packet_complete_lane_hit_cnt_dbg;
   logic [$clog2(N_SHD * N_LANE):0] frame_shr_cnt_this_dbg;
   logic [15:0] frame_hit_cnt_this_dbg;
   logic [N_LANE-1:0][$clog2(N_SHD * N_LANE):0] frame_lane_shd_cnt_this_dbg;
@@ -137,6 +149,7 @@ module ordered_priority_queue_monolithic_sv #(
   logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_wr_data_dbg;
   logic [PAGE_RAM_ADDR_WIDTH-1:0] page_ram_rd_addr_dbg;
   logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_rd_data_dbg;
+  logic presenter_resident_hold_dbg;
   logic payload_commit_idle_dbg;
   logic packet_complete_pulse_dbg;
   logic [1:0] packet_complete_presenter_delay_dbg;
@@ -243,15 +256,21 @@ module ordered_priority_queue_monolithic_sv #(
       .lane_we(ingress_lane_we[g]),
       .running_ts_dbg(ingress_running_ts_dbg[g]),
       .frame_ts_base_dbg(ingress_frame_ts_base_dbg[g]),
+      .pkg_cnt_dbg(ingress_pkg_cnt_dbg[g]),
       .dt_type_dbg(ingress_dt_type_dbg[g]),
       .feb_id_dbg(ingress_feb_id_dbg[g]),
       .parser_busy_o(ingress_parser_busy_dbg[g]),
       .credit_drop_valid_o(ingress_credit_drop_valid_dbg[g]),
       .credit_drop_lane_o(ingress_credit_drop_lane_dbg[g]),
       .credit_drop_ticket_o(ingress_credit_drop_ticket_dbg[g]),
+      .credit_drop_pkg_cnt_o(ingress_credit_drop_pkg_cnt_dbg[g]),
       .credit_drop_ts_o(ingress_credit_drop_ts_dbg[g]),
       .credit_drop_shd_cnt_o(ingress_credit_drop_shd_cnt_dbg[g]),
       .credit_drop_hit_cnt_o(ingress_credit_drop_hit_cnt_dbg[g]),
+      .tail_bypass_valid_o(ingress_tail_bypass_valid_dbg[g]),
+      .tail_bypass_drop_o(ingress_tail_bypass_drop_dbg[g]),
+      .tail_bypass_serial_o(ingress_tail_bypass_serial_dbg[g]),
+      .tail_bypass_ts_o(ingress_tail_bypass_ts_dbg[g]),
       .alert_eop_state_o(ingress_alert_eop_dbg[g]),
       .eop_flush_ack_i(ingress_eop_flush_ack_dbg[g]),
       .d_clk(d_clk),
@@ -278,12 +297,15 @@ module ordered_priority_queue_monolithic_sv #(
   ) page_allocator_i (
     .ingress_ticket_wptr(ingress_ticket_wptr),
     .ticket_fifos_rd_data_i(ticket_fifos_rd_data),
-    .ingress_alert_eop_i(ingress_alert_eop_dbg),
     .ingress_dt_type_i(ingress_dt_type_dbg),
     .ingress_feb_id_i(ingress_feb_id_dbg),
     .ingress_frame_ts_i(ingress_frame_ts_base_dbg),
     .ingress_running_ts_i(ingress_running_ts_dbg),
     .ingress_parser_busy_i(ingress_parser_busy_dbg),
+    .ingress_tail_bypass_valid_i(ingress_tail_bypass_valid_dbg),
+    .ingress_tail_bypass_drop_i(ingress_tail_bypass_drop_dbg),
+    .ingress_tail_bypass_serial_i(ingress_tail_bypass_serial_dbg),
+    .ingress_tail_bypass_ts_i(ingress_tail_bypass_ts_dbg),
     .ticket_credit_update_o(ticket_credit_update),
     .ticket_credit_update_valid_o(ticket_credit_update_valid),
     .handle_wdata_o(handle_wdata_dbg),
@@ -295,6 +317,7 @@ module ordered_priority_queue_monolithic_sv #(
     .late_frame_drop_hdr_cnt_o(late_frame_drop_hdr_cnt_dbg),
     .late_frame_drop_shd_cnt_o(late_frame_drop_shd_cnt_dbg),
     .late_frame_drop_hit_cnt_o(late_frame_drop_hit_cnt_dbg),
+    .late_frame_drop_serial_o(late_frame_drop_serial_dbg),
     .late_frame_drop_ts_o(late_frame_drop_ts_dbg),
     .late_frame_lane_credit_update_o(late_drop_lane_credit_update),
     .late_frame_lane_credit_update_valid_o(late_drop_lane_credit_update_valid),
@@ -316,7 +339,12 @@ module ordered_priority_queue_monolithic_sv #(
     .frame_lane_shd_cnt_this_o(frame_lane_shd_cnt_this_dbg),
     .frame_lane_hit_cnt_this_o(frame_lane_hit_cnt_this_dbg),
     .packet_complete_frame_start_addr_o(packet_complete_frame_start_addr_dbg),
+    .packet_complete_shr_cnt_o(packet_complete_shr_cnt_dbg),
+    .packet_complete_hit_cnt_o(packet_complete_hit_cnt_dbg),
+    .packet_complete_lane_shd_cnt_o(packet_complete_lane_shd_cnt_dbg),
+    .packet_complete_lane_hit_cnt_o(packet_complete_lane_hit_cnt_dbg),
     .packet_complete_pulse_o(packet_complete_pulse_dbg),
+    .resident_backpressure_hold_i(presenter_resident_hold_dbg),
     .d_clk(d_clk),
     .d_reset(d_reset)
   );
@@ -372,21 +400,35 @@ module ordered_priority_queue_monolithic_sv #(
 
   always_ff @(posedge d_clk) begin : proc_presenter_packet_complete_delay
     if (d_reset) begin
-      packet_complete_presenter_delay_dbg <= '0;
-      packet_complete_addr_presenter_delay_dbg[1] <= '0;
-      packet_complete_shr_cnt_presenter_delay_dbg[1] <= '0;
-      packet_complete_hit_cnt_presenter_delay_dbg[1] <= '0;
+      packet_complete_presenter_delay_dbg             <= '0;
+      packet_complete_addr_presenter_delay_dbg[0]     <= '0;
+      packet_complete_addr_presenter_delay_dbg[1]     <= '0;
+      packet_complete_shr_cnt_presenter_delay_dbg[0]  <= '0;
+      packet_complete_shr_cnt_presenter_delay_dbg[1]  <= '0;
+      packet_complete_hit_cnt_presenter_delay_dbg[0]  <= '0;
+      packet_complete_hit_cnt_presenter_delay_dbg[1]  <= '0;
+      packet_complete_lane_shd_cnt_presenter_delay_dbg[0] <= '{default:'0};
       packet_complete_lane_shd_cnt_presenter_delay_dbg[1] <= '{default:'0};
+      packet_complete_lane_hit_cnt_presenter_delay_dbg[0] <= '{default:'0};
       packet_complete_lane_hit_cnt_presenter_delay_dbg[1] <= '{default:'0};
     end else begin
-      packet_complete_presenter_delay_dbg[0] <= packet_complete_pulse_dbg;
-      packet_complete_presenter_delay_dbg[1] <= packet_complete_presenter_delay_dbg[0];
+      packet_complete_presenter_delay_dbg[0]         <= packet_complete_pulse_dbg;
+      packet_complete_presenter_delay_dbg[1]         <= packet_complete_presenter_delay_dbg[0];
+      if (packet_complete_pulse_dbg) begin
+        packet_complete_addr_presenter_delay_dbg[0]     <= packet_complete_frame_start_addr_dbg;
+        packet_complete_shr_cnt_presenter_delay_dbg[0]  <= packet_complete_shr_cnt_dbg;
+        packet_complete_hit_cnt_presenter_delay_dbg[0]  <= packet_complete_hit_cnt_dbg;
+        packet_complete_lane_shd_cnt_presenter_delay_dbg[0] <= packet_complete_lane_shd_cnt_dbg;
+        packet_complete_lane_hit_cnt_presenter_delay_dbg[0] <= packet_complete_lane_hit_cnt_dbg;
+      end
       if (packet_complete_presenter_delay_dbg[0]) begin
-        packet_complete_addr_presenter_delay_dbg[1] <= packet_complete_frame_start_addr_dbg;
-        packet_complete_shr_cnt_presenter_delay_dbg[1] <= frame_shr_cnt_this_dbg;
-        packet_complete_hit_cnt_presenter_delay_dbg[1] <= frame_hit_cnt_this_dbg;
-        packet_complete_lane_shd_cnt_presenter_delay_dbg[1] <= frame_lane_shd_cnt_this_dbg;
-        packet_complete_lane_hit_cnt_presenter_delay_dbg[1] <= frame_lane_hit_cnt_this_dbg;
+        packet_complete_addr_presenter_delay_dbg[1]     <= packet_complete_addr_presenter_delay_dbg[0];
+        packet_complete_shr_cnt_presenter_delay_dbg[1]  <= packet_complete_shr_cnt_presenter_delay_dbg[0];
+        packet_complete_hit_cnt_presenter_delay_dbg[1]  <= packet_complete_hit_cnt_presenter_delay_dbg[0];
+        packet_complete_lane_shd_cnt_presenter_delay_dbg[1] <=
+          packet_complete_lane_shd_cnt_presenter_delay_dbg[0];
+        packet_complete_lane_hit_cnt_presenter_delay_dbg[1] <=
+          packet_complete_lane_hit_cnt_presenter_delay_dbg[0];
       end
     end
   end
@@ -422,10 +464,10 @@ module ordered_priority_queue_monolithic_sv #(
           page_allocator_i.page_allocator.frame_serial,
           page_allocator_i.page_allocator.frame_shr_cnt,
           page_allocator_i.page_allocator.frame_hit_cnt,
-          frame_shr_cnt_this_dbg,
-          frame_hit_cnt_this_dbg,
+          packet_complete_shr_cnt_dbg,
+          packet_complete_hit_cnt_dbg,
           page_allocator_i.page_allocator.page_length,
-          frame_start_addr_dbg
+          packet_complete_frame_start_addr_dbg
         );
       end
       if (packet_complete_presenter_dbg) begin
@@ -471,12 +513,12 @@ module ordered_priority_queue_monolithic_sv #(
           "[opq_native_owner] t=%0t evt=alloc_complete frame_serial_this=0x%0h frame_start=0x%0h page_len=0x%0h shd_accum=%0d hit_accum=%0d shd_this=%0d hit_this=%0d",
           $time,
           page_allocator_i.page_allocator.frame_serial_this,
-          frame_start_addr_dbg,
+          packet_complete_frame_start_addr_dbg,
           page_allocator_i.page_allocator.page_length,
           page_allocator_i.page_allocator.frame_shr_cnt,
           page_allocator_i.page_allocator.frame_hit_cnt,
-          frame_shr_cnt_this_dbg,
-          frame_hit_cnt_this_dbg
+          packet_complete_shr_cnt_dbg,
+          packet_complete_hit_cnt_dbg
         );
       end
       if (packet_complete_presenter_dbg) begin
@@ -533,6 +575,7 @@ module ordered_priority_queue_monolithic_sv #(
     .payload_commit_idle_i(payload_commit_idle_dbg),
     .page_ram_rd_addr_o(page_ram_rd_addr_dbg),
     .page_ram_rd_data_i(page_ram_rd_data_dbg),
+    .resident_backpressure_hold_o(presenter_resident_hold_dbg),
     .ft_drop_valid_o(ft_drop_valid_dbg),
     .ft_drop_hdr_cnt_o(ft_drop_hdr_cnt_dbg),
     .ft_drop_shd_cnt_o(ft_drop_shd_cnt_dbg),

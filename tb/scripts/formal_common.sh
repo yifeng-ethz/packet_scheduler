@@ -12,12 +12,13 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/../../../scripts/questa_one_env.sh"
 TB_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 UVM_DIR="${TB_DIR}/uvm"
 FORMAL_RUN_DIR="${TB_DIR}/formal_runs"
 FORMAL_LOG_DIR="${FORMAL_RUN_DIR}/logs"
 FORMAL_CSV_DIR="${FORMAL_RUN_DIR}/csv"
-ETH_MENTOR_SERVER="${ETH_MENTOR_SERVER:-8161@lic-mentor.ethz.ch}"
+ETH_MENTOR_SERVER="${ETH_MENTOR_SERVER:-${QUESTA_LICENSE_SERVER:-8161@lic-mentor.ethz.ch}}"
 
 mkdir -p "${FORMAL_LOG_DIR}" "${FORMAL_CSV_DIR}"
 
@@ -34,100 +35,21 @@ formal_csv_escape() {
 formal_find_qverify() {
   local candidate
   local -a candidates=()
+  local questa_home="${QUESTA_HOME:-/data1/questaone_sim/questasim}"
 
   if [[ -n "${QVERIFY_BIN:-}" ]]; then
     candidates+=("${QVERIFY_BIN}")
   fi
+  if [[ -n "${ZNFORMAL_BIN:-}" ]]; then
+    candidates+=("${ZNFORMAL_BIN}")
+  fi
   candidates+=(
     qverify
-    /data1/intelFPGA_pro/23.1/questa_fse/bin/qverify
-    /data1/intelFPGA_pro/23.1/questa_fe/bin/qverify
-  )
-
-  for candidate in "${candidates[@]}"; do
-    [[ -n "${candidate}" ]] || continue
-    if [[ "${candidate}" == */* ]]; then
-      if [[ -x "${candidate}" ]]; then
-        printf '%s\n' "${candidate}"
-        return 0
-      fi
-    elif command -v "${candidate}" >/dev/null 2>&1; then
-      command -v "${candidate}"
-      return 0
-    fi
-  done
-
-  return 1
-}
-
-formal_find_sby() {
-  local candidate
-  local -a candidates=()
-
-  if [[ -n "${SBY_BIN:-}" ]]; then
-    candidates+=("${SBY_BIN}")
-  fi
-  candidates+=(
-    /data1/oss_formal/bin/sby
-    /data1/oss_formal/bin/symbiyosys
-    sby
-    symbiyosys
-  )
-
-  for candidate in "${candidates[@]}"; do
-    [[ -n "${candidate}" ]] || continue
-    if [[ "${candidate}" == */* ]]; then
-      if [[ -x "${candidate}" ]]; then
-        printf '%s\n' "${candidate}"
-        return 0
-      fi
-    elif command -v "${candidate}" >/dev/null 2>&1; then
-      command -v "${candidate}"
-      return 0
-    fi
-  done
-
-  return 1
-}
-
-formal_find_yosys() {
-  local candidate
-  local -a candidates=()
-
-  if [[ -n "${YOSYS_BIN:-}" ]]; then
-    candidates+=("${YOSYS_BIN}")
-  fi
-  candidates+=(
-    /data1/oss_formal/bin/yosys
-    yosys
-  )
-
-  for candidate in "${candidates[@]}"; do
-    [[ -n "${candidate}" ]] || continue
-    if [[ "${candidate}" == */* ]]; then
-      if [[ -x "${candidate}" ]]; then
-        printf '%s\n' "${candidate}"
-        return 0
-      fi
-    elif command -v "${candidate}" >/dev/null 2>&1; then
-      command -v "${candidate}"
-      return 0
-    fi
-  done
-
-  return 1
-}
-
-formal_find_bitwuzla() {
-  local candidate
-  local -a candidates=()
-
-  if [[ -n "${BITWUZLA_BIN:-}" ]]; then
-    candidates+=("${BITWUZLA_BIN}")
-  fi
-  candidates+=(
-    /data1/oss_formal/bin/bitwuzla
-    bitwuzla
+    znformal
+    "${questa_home}/bin/qverify"
+    "${questa_home}/linux_x86_64/qverify"
+    "${questa_home}/bin/znformal"
+    "${questa_home}/linux_x86_64/znformal"
   )
 
   for candidate in "${candidates[@]}"; do
@@ -147,14 +69,10 @@ formal_find_bitwuzla() {
 }
 
 formal_use_license_env() {
-  local chain="${ETH_MENTOR_SERVER}"
-
-  if [[ -n "${LM_LICENSE_FILE:-}" ]]; then
-    chain="${ETH_MENTOR_SERVER}:${LM_LICENSE_FILE}"
-  fi
-
-  export LM_LICENSE_FILE="${chain}"
-  export MGLS_LICENSE_FILE="${chain}"
+  export QUESTA_HOME="${QUESTA_HOME:-/data1/questaone_sim/questasim}"
+  export QSIM_INI="${QSIM_INI:-${QUESTA_HOME}/modelsim.ini}"
+  export LM_LICENSE_FILE="${ETH_MENTOR_SERVER}"
+  export MGLS_LICENSE_FILE="${ETH_MENTOR_SERVER}"
   export SALT_LICENSE_SERVER="${ETH_MENTOR_SERVER}"
 }
 
@@ -207,7 +125,6 @@ formal_run_stress_suite() {
     make_args=(
       "-C" "${UVM_DIR}"
       "run_no_compile"
-      "QUESTA_PREFER_FE=${QUESTA_PREFER_FE:-0}"
       "TEST=${test}"
       "TOP=${stress_top}"
       "RUN_DO=${run_do}"
@@ -253,85 +170,6 @@ formal_run_stress_suite() {
     FORMAL_RESULT_STATUS="fallback_stress_pass"
   else
     FORMAL_RESULT_STATUS="fallback_stress_fail"
-  fi
-}
-
-formal_run_sby_suite() {
-  local plane="$1"
-  local timestamp="$2"
-  local suite_log="$3"
-  local sby_bin="$4"
-  local sby_engine="$5"
-  local sby_jobs="$6"
-  local plane_note="$7"
-  local sby_tasks="${FORMAL_SBY_TASKS:-prove}"
-  local -a summaries=()
-  local -a task_args=()
-  local job
-  local job_log
-  local status
-  local rc
-  local pass_count=0
-  local fail_count=0
-  local error_count=0
-  local summary_joined=""
-
-  if [[ -z "${sby_jobs}" ]]; then
-    FORMAL_RESULT_STATUS="blocked_no_scripted_sby_flow"
-    FORMAL_RESULT_BACKEND="sby+yosys+${sby_engine}"
-    FORMAL_RESULT_NOTE="${plane_note}; OSS formal toolchain is installed, but a plane-specific Yosys/SBY harness is not wired yet."
-    return 0
-  fi
-
-  for task in ${sby_tasks}; do
-    task_args+=("${task}")
-  done
-
-  printf '[formal_%s] sby_tasks=%s jobs=%s\n' "${plane}" "${sby_tasks}" "${sby_jobs}" | tee -a "${suite_log}"
-
-  for job in ${sby_jobs}; do
-    job_log="${FORMAL_LOG_DIR}/formal_${plane}_${job}_${timestamp}.log"
-    printf '[formal_%s] sby_job=%s log=%s\n' "${plane}" "${job}" "${job_log}" | tee -a "${suite_log}"
-    set +e
-    (
-      cd "${TB_DIR}/formal_sby"
-      "${sby_bin}" -f "${job}.sby" "${task_args[@]}"
-    ) > "${job_log}" 2>&1
-    rc=$?
-    set -e
-
-    case "${rc}" in
-      0)
-        status="pass"
-        pass_count=$((pass_count + 1))
-        ;;
-      2)
-        status="fail"
-        fail_count=$((fail_count + 1))
-        ;;
-      *)
-        status="error"
-        error_count=$((error_count + 1))
-        ;;
-    esac
-
-    summaries+=("${job}:${status}")
-    printf '[formal_%s] sby_job=%s status=%s rc=%s\n' "${plane}" "${job}" "${status}" "${rc}" | tee -a "${suite_log}"
-  done
-
-  if ((${#summaries[@]} > 0)); then
-    summary_joined="$(printf '%s;' "${summaries[@]}")"
-    summary_joined="${summary_joined%;}"
-  fi
-
-  FORMAL_RESULT_BACKEND="sby+yosys+${sby_engine}"
-  FORMAL_RESULT_NOTE="${plane_note}; sby jobs=${summary_joined}; pass=${pass_count}; fail=${fail_count}; error=${error_count}"
-  if ((error_count > 0)); then
-    FORMAL_RESULT_STATUS="sby_error"
-  elif ((fail_count > 0)); then
-    FORMAL_RESULT_STATUS="sby_fail"
-  else
-    FORMAL_RESULT_STATUS="sby_pass"
   fi
 }
 
@@ -424,7 +262,7 @@ formal_run_plane() {
   local plane_note="$7"
   local stress_tests="${8:-}"
   local probe_tests="${9:-}"
-  local sby_jobs="${10:-}"
+  local _legacy_jobs_unused="${10:-}"
   local timestamp
   local build_dir
   local n_lane
@@ -434,10 +272,6 @@ formal_run_plane() {
   local strict_mode
   local backend_mode
   local qverify_bin=""
-  local sby_bin=""
-  local yosys_bin=""
-  local bitwuzla_bin=""
-  local sby_engine
   local compile_status="not_run"
   local elab_status="not_run"
   local formal_status="not_run"
@@ -448,7 +282,6 @@ formal_run_plane() {
   local history_csv
   local top
   local elab_fail=0
-  local -a missing_tools=()
 
   timestamp="$(date +%Y%m%d_%H%M%S)"
   build_dir="${BUILD_DIR:-${UVM_DIR}/build_formal_${plane}}"
@@ -458,16 +291,12 @@ formal_run_plane() {
   page_ram_depth="${FORMAL_OPQ_PAGE_RAM_DEPTH:-${default_page_ram_depth}}"
   strict_mode="${FORMAL_STRICT:-0}"
   backend_mode="${FORMAL_BACKEND:-auto}"
-  sby_engine="${FORMAL_SBY_ENGINE:-bitwuzla}"
   log_file="${FORMAL_LOG_DIR}/formal_${plane}_${timestamp}.log"
   latest_csv="${FORMAL_CSV_DIR}/formal_${plane}_latest.csv"
   history_csv="${FORMAL_CSV_DIR}/formal_${plane}_history.csv"
 
   if [[ -n "${FORMAL_STRESS_TESTS:-}" ]]; then
     stress_tests="${FORMAL_STRESS_TESTS}"
-  fi
-  if [[ -n "${FORMAL_SBY_JOBS:-}" ]]; then
-    sby_jobs="${FORMAL_SBY_JOBS}"
   fi
   if [[ "${FORMAL_STRESS_INCLUDE_PROBES:-0}" == "1" && -n "${probe_tests}" ]]; then
     stress_tests="${stress_tests} ${probe_tests}"
@@ -531,12 +360,10 @@ formal_run_plane() {
   if [[ "${compile_status}" == "pass" && "${elab_fail}" -eq 0 ]]; then
     case "${backend_mode}" in
       auto)
-        if [[ "${FORMAL_QVERIFY_ENABLE:-0}" == "1" ]]; then
-          backend_mode="qverify"
-        elif [[ "${FORMAL_SBY_ENABLE:-0}" == "1" ]]; then
-          backend_mode="sby"
-        else
+        if [[ "${FORMAL_STRESS_ENABLE:-0}" == "1" ]]; then
           backend_mode="stress"
+        else
+          backend_mode="qverify"
         fi
         ;;
     esac
@@ -546,43 +373,11 @@ formal_run_plane() {
         if qverify_bin="$(formal_find_qverify 2>/dev/null)"; then
           formal_status="blocked_no_scripted_qverify_flow"
           backend="${qverify_bin}"
-          note="${plane_note}; qverify is installed but a scripted plane-specific proof harness is not yet wired on this host"
+          note="${plane_note}; qverify/ZnFormal is installed but a scripted plane-specific proof harness is not yet wired on this host"
         else
           formal_status="blocked_no_qverify"
           backend="compile_elab_only"
-          note="${plane_note}; compile and elaboration passed, but qverify/znformal is not installed on this host"
-        fi
-        ;;
-      sby)
-        missing_tools=()
-        if ! sby_bin="$(formal_find_sby 2>/dev/null)"; then
-          missing_tools+=("sby")
-        fi
-        if ! yosys_bin="$(formal_find_yosys 2>/dev/null)"; then
-          missing_tools+=("yosys")
-        fi
-        if [[ "${sby_engine}" == "bitwuzla" ]]; then
-          if ! bitwuzla_bin="$(formal_find_bitwuzla 2>/dev/null)"; then
-            missing_tools+=("bitwuzla")
-          fi
-        fi
-
-        if ((${#missing_tools[@]} > 0)); then
-          formal_status="blocked_no_sby_toolchain"
-          backend="compile_elab_only"
-          note="${plane_note}; FORMAL_BACKEND=sby requested but missing tools: ${missing_tools[*]}"
-        else
-          formal_run_sby_suite \
-            "${plane}" \
-            "${timestamp}" \
-            "${log_file}" \
-            "${sby_bin}" \
-            "${sby_engine}" \
-            "${sby_jobs}" \
-            "${plane_note}"
-          formal_status="${FORMAL_RESULT_STATUS}"
-          backend="${FORMAL_RESULT_BACKEND}"
-          note="${FORMAL_RESULT_NOTE}"
+          note="${plane_note}; compile and elaboration passed, but qverify/ZnFormal is not installed under ${QUESTA_HOME:-/data1/questaone_sim/questasim}"
         fi
         ;;
       stress)

@@ -120,7 +120,7 @@ matching script wrappers under `packet_scheduler/tb/scripts/`.
 | `DV_PARAM` | `DV_PARAM.md` | `run_param.sh` | `opq_basic_smoke_test`, `opq_basic_ts_boundary_test`, `opq_edge_max_hits_test` across `N_SHD=128/256/512` | Compile / elaboration-time configuration sweep for the active harness |
 | `DV_EDGE` | `DV_EDGE.md` | `run_edge.sh` | `opq_edge_backpressure_test`, `opq_edge_always_ready_test`, `opq_edge_ready_medium_profile_test`, `opq_edge_stuck_low_backpressure_test`, `opq_edge_max_hits_test`, `opq_edge_toggle_backpressure_test`, `opq_edge_burst_restart_profile_test`, `opq_edge_long_toggle_backpressure_test`, `opq_edge_max_hits_backpressure_test` | Backpressure restart, always-ready baseline, medium/stuck-low ready profiles, max-hit packet shape, short/long-toggle ready behavior, and max-hit under healthy restart |
 | `DV_PROF` | `DV_PROF.md` | `run_perf.sh` | `opq_prof_stress_test`, `opq_prof_lane_skew_test`, `opq_prof_whole_frame_skew_test`, `opq_prof_missing_empty_frame_test`, `opq_prof_long_soak_test`, `opq_prof_heavy_lane_skew_test`, `opq_prof_deep_whole_frame_skew_test`, `opq_prof_asymmetric_missing_empty_frame_test` | Sustained traffic without drop, lane skew, deeper whole-frame cadence skew, asymmetric missing-empty-frame residency, and longer healthy soaks on the active 2-lane contract |
-| `DV_ERROR` | `DV_ERROR.md` | `run_error.sh` | `opq_error_lane_mask_test`, `opq_error_lane_mask_single_hit_test`, `opq_error_lane_mask_burst_test`, `opq_error_lane_mask_recovery_test`, `opq_error_subheader_mask_recovery_test`, `opq_error_header_mask_recovery_test`, `opq_error_header_word_mask_recovery_test`, `opq_error_counter_clear_test`, `opq_error_ftable_overflow_test` | Mask-at-boundary recovery, malformed subheader/header recovery, the passing counter-clear supplemental screen, and the currently reopened reduced-depth overflow/drop path |
+| `DV_ERROR` | `DV_ERROR.md` | `run_error.sh` | `opq_error_lane_mask_test`, `opq_error_lane_mask_single_hit_test`, `opq_error_lane_mask_burst_test`, `opq_error_lane_mask_recovery_test`, `opq_error_hit_mask_recovery_test`, `opq_error_subheader_mask_recovery_test`, `opq_error_header_mask_recovery_test`, `opq_error_header_word_mask_recovery_test`, `opq_error_counter_clear_test`, `opq_error_ftable_overflow_test` | Mask-at-boundary recovery, typed ingress error masking at hit/subheader/header scope, the passing counter-clear supplemental screen, and the reduced-depth overwrite/drop elaboration point |
 | `DV_CROSS` | `DV_CROSS.md` | `run_cross.sh` | `opq_cross_bp_credit_test`, `opq_cross_drr_allowance_test`, `opq_cross_drr_idle_lane_test`, `opq_cross_drr_zero_allowance_test`, `opq_cross_drr_short_allowance_test`, `opq_cross_idle_lane_backpressure_test`, `opq_cross_mixed_bucket_random_soak_test` | Backpressure × credit, block-level DRR allowance/defer accounting, idle-lane backpressure, and the supplemental mixed-bucket random-soak signoff screen |
 
 Open reproducers stay outside the default bucket runners and are grouped under
@@ -268,17 +268,31 @@ These checks are currently valid and rerun against the live DUT:
     `ft_drop_*` stays at zero, `wr = rd + drop` remains clean, and both lanes
     close with `unexplained=0`
   - this closes the "must not drop" half of the default-build overflow
-    contract while the separate must-drop bug anchor remains probe-only
+    contract while the separate reduced-depth must-drop witness covers the
+    overwrite-local side explicitly
+- `opq_cross_bp_mustdrop_witness_test`
+  - dedicated reduced-depth supplemental native-SV signoff screen
+  - proves a clean overwrite-local must-drop path under
+    `OPQ_PAGE_RAM_DEPTH=512` when run with
+    `+OPQ_BP_MUSTDROP_NODROP_FRAME_COUNT=1`,
+    `+OPQ_BP_MUSTDROP_NODROP_HITS=1`,
+    `+OPQ_BP_MUSTDROP_FRAME_COUNT=12`, and
+    `+OPQ_BP_MUSTDROP_HITS=16`
+  - the no-drop pre-phase keeps `ft_drop_hdr/shd/hit=0/0/0`, while the
+    pressure phase advances `ft_drop_hdr/shd/hit=10/80/2400` and still closes
+    with aggregate `accepted=735 delivered=735 unexplained=0` and
+    `core_principles first_break=clean`
 - `opq_cross_random_ready_overflow_step2_boundary_test`
   - dedicated default-build supplemental native-SV signoff screen
   - freezes the current green early-window random-ready overflow boundary in
     shape-check mode
-  - closes on `2026-04-20` with final `wr_hdr/shd/hit=6/13/1129`,
-    `rd_hdr/shd/hit=6/13/1129`, `ft_drop_hdr/shd/hit=0/0/0`, aggregate
-    `accepted=1129 delivered=1129 unexplained=0`, and
+  - refreshed on `2026-04-21` with final `wr_hdr/shd/hit=6/11/1176`,
+    `rd_hdr/shd/hit=6/11/1176`, `ft_drop_hdr/shd/hit=0/0/0`, aggregate
+    `accepted=1176 delivered=1176 unexplained=0`, and
     `core_principles first_break=clean`
   - this closes the early legal-overflow half of the default-build
-    random-ready path while the later must-drop bug anchor remains probe-only
+    random-ready path while explicit overwrite-local must-drop coverage is
+    carried by the reduced-depth witness
 - `opq_error_lane_mask_recovery_test`
   - promoted signoff testcase
   - validates clean recovery after the active-lane mask is cleared
@@ -296,36 +310,42 @@ These checks are currently valid and rerun against the live DUT:
     legal frame timestamp base
 - `opq_error_ftable_overflow_test`
   - dedicated reduced-depth supplemental native-SV signoff screen
-  - the fresh `2026-04-20` rerun reopened the path with
-    `opq_hit3_contract` frame-trailer/pkg_cnt/timestamp errors on accepted
-    egress, so it is currently not signoff-clean
+  - on the current tree the legacy reduced-depth `frame_count=32` profile is
+    back to a shape-check screen by default rather than a must-drop proof:
+    it closes with `UVM_ERROR : 0`, frame-table ledger
+    `wr_hdr=32 rd_hdr=20 drop_hdr=12`,
+    `wr_shd=8191 rd_shd=5120 drop_shd=3071`,
+    `wr_hit=44 rd_hit=28 drop_hit=16`, and aggregate
+    `accepted=28 delivered=28 unexplained=0`
   - it remains outside the fixed default-build no-restart baseline because it
     requires a separate `OPQ_PAGE_RAM_DEPTH=512` elaboration point
 - `opq_cross_drr_bursty_random_test`
   - constrained-random hot-lane / cold-lane DRR stress with periodic egress stalls
-  - intentionally kept probe-only because a fresh large-random rerun on
-    `2026-04-20` still exits with lane0 `unexplained=368`
-  - the current-tree reduced named repro
-    `opq_cross_drr_bursty_frame3_repro_test` now fails with
-    `expected=484 actual=254 missing=230 ghost=0`, while the same envelope
-    passes at `frame_count=2`; the larger constrained-random envelope is not
-    yet signoff-clean
+  - refreshed native-SV reruns on `2026-04-20` are currently green through
+    seeds 1 through 8, all with `missing=0 ghost=0` and per-lane
+    `unexplained=0`
+  - this no longer serves as an active failing anchor; keep it as a continued
+    supplemental confidence screen until the dashboard is refreshed
 - `opq_cross_drr_bursty_frame3_repro_test`
-  - reduced deterministic bursty DRR retirement anchor for `BUG-025-R`
-  - freezes the smallest named `2026-04-20` failing envelope found so far:
+  - reduced deterministic bursty DRR retirement screen for the old
+    `BUG-025-R` claim
+  - freezes the smallest previously failing `2026-04-20` envelope:
     `frame_count=3`, `subheaders=11`, `hot_hits=46`, `cold_hits=4`,
     `hot_gap=8`, `cold_gap=4032`, allowance `1/46`
-  - the identical `frame_count=2` envelope is green, so this testcase is the
-    current shortest named boundary for the remaining active-lane retirement
-    bug
+  - that named repro now reruns green on the current tree with
+    `expected=714 actual=714 missing=0 ghost=0`, so it is no longer the
+    current shortest failing boundary
 - `opq_cross_random_ready_overflow_seconds_soak_test`
   - default-build random-ready overflow / backpressure soak with per-step
     frame-table and per-lane hit ledgers
-  - intentionally kept probe-only because a fresh rerun on `2026-04-20`
-    already fails at `overflow_step_0` with `ft_wr_shd wr=5 rd=7 drop=0`,
-    `ft_wr_hit wr=540 rd=545 drop=0`, and lane1 `unexplained=174`
-  - this screen is now the default-build overflow bug anchor beside the
-    reduced-depth `opq_error_ftable_overflow_test` elaboration point
+  - on the current tree this is back to a default-build shape-check screen:
+    the 12-step rerun closes with `UVM_ERROR : 0`,
+    `ft_drop_hdr/shd/hit=0/0/0`, `wr_hdr/shd/hit=29/68/5545`,
+    `rd_hdr/shd/hit=29/68/5545`, aggregate
+    `accepted=5545 delivered=5545 unexplained=0`, and
+    `core_principles first_break=clean`
+  - it therefore remains useful as a legal-overflow screen, not as the active
+    must-drop anchor
 
 ---
 
@@ -371,11 +391,11 @@ closure progress without reading the whole testcase catalog.
 | Lane mask at packet boundary | `DV_ERROR` | CSR lane-mask helpers + counter checks | Implemented / green | Medium | Medium |
 | DRR allowance programming | `DV_CROSS` | `opq_cross_drr_allowance_test`, DRR CSR reads | Implemented / green | Medium | Medium |
 | DRR defer / lock contract | `DV_CROSS`, formal backlog | `opq_drr_sva`, DRR covergroup bins, DRR CSR counters | Implemented / green on directed allowance case | Medium | Medium |
-| Bursty hot-lane DRR stress | `DV_CROSS`, formal backlog | `opq_cross_drr_bursty_random_test`, `opq_cross_drr_bursty_frame2_boundary_test`, `opq_cross_drr_bursty_frame3_repro_test` | Named green `frame2` boundary is now evidenced, but the reduced deterministic `frame3` repro and the full 8-frame screen still fail; keep the failure family probe-only | High | High |
+| Bursty hot-lane DRR stress | `DV_CROSS`, formal backlog | `opq_cross_drr_bursty_random_test`, `opq_cross_drr_bursty_frame2_boundary_test`, `opq_cross_drr_bursty_frame3_repro_test` | Implemented / green on `2026-04-21`: the named `frame2` boundary, the `frame3` repro, and refreshed seeds `1..8` of the large constrained-random screen all close with per-lane `unexplained=0` | High | Medium |
 | Default-build legal pre-drop boundary | `DV_CROSS`, architecture note | `opq_cross_bp_predrop_boundary_test`, per-step hit ledgers, FT CSR ledger checks | Implemented / green on `2026-04-20`: sustained pressure keeps `ft_drop_* = 0` while hit conservation and `wr = rd + drop` still close | High | Medium |
-| Default-build legal early-overflow boundary | `DV_CROSS`, architecture note | `opq_cross_random_ready_overflow_step2_boundary_test`, per-step hit ledgers, FT CSR ledger checks | Implemented / green on `2026-04-20`: the first two random-ready overflow windows keep `ft_drop_* = 0`, `wr = rd + drop`, and `unexplained = 0` | High | Medium |
-| Overflow + random-ready backpressure stress | `DV_CROSS`, formal backlog | `opq_cross_random_ready_overflow_seconds_soak_test`, per-step hit ledgers, FT CSR ledger checks | Probe-only: the refreshed `2026-04-20` rerun fails with `ft_wr < ft_rd + ft_drop` and lane1 `unexplained=174` | High | High |
-| Backpressure hold / restart | `DV_EDGE`, `DV_CROSS`, `DV_ERROR` probe path | `opq_avst_egress_sva`, `opq_hit3_contract_sva`, presenter logic | Implemented / green on the promoted default-build matrix, but the `2026-04-20` reduced-depth overflow rerun reopened accepted-egress contract errors and the larger DRR random probe also remains open | High | High |
+| Default-build legal early-overflow boundary | `DV_CROSS`, architecture note | `opq_cross_random_ready_overflow_step2_boundary_test`, per-step hit ledgers, FT CSR ledger checks | Implemented / green on `2026-04-21`: the first two random-ready overflow windows keep `ft_drop_* = 0`, `wr = rd + drop`, and `unexplained = 0` | High | Medium |
+| Overflow + random-ready backpressure stress | `DV_CROSS`, formal backlog | `opq_cross_random_ready_overflow_seconds_soak_test`, per-step hit ledgers, FT CSR ledger checks | Shape-check green on the current tree; explicit overwrite-local must-drop progress is now covered separately by the green reduced-depth `opq_cross_bp_mustdrop_witness_test` witness | High | Medium |
+| Backpressure hold / restart | `DV_EDGE`, `DV_CROSS`, `DV_ERROR` probe path | `opq_avst_egress_sva`, `opq_hit3_contract_sva`, presenter logic | Implemented / green on the promoted default-build matrix, the refreshed bursty-DRR screens, and the reduced-depth must-drop witness; no active live restart corruption bug is currently reproduced | High | Medium |
 
 ---
 
@@ -390,7 +410,7 @@ states which items are really closed and which are still backlog.
 | UVM-only `HIT_ID` for missing/ghost-hit tracking | Implemented / green | scoreboard contract in `DV_HARNESS.md`, promoted integrity tests |
 | `N_SHD=256` default plus `128/256/512` signoff sweep | Implemented / green | `DV_PARAM.md`, `run_param.sh`, `cg_cfg` |
 | DRR per-lane allowance through CSR plus monitors/counters | Implemented / green on directed path | `DV_CROSS.md`, `opq_cross_drr_allowance_test`, DRR CSR checks |
-| DRR SVA and constrained-random stress | Partial: directed SVA closure is green, the named green-side companion `opq_cross_drr_bursty_frame2_boundary_test` is now evidenced, but the current-tree bursty retirement bug still fails at `opq_cross_drr_bursty_frame3_repro_test` and in the larger constrained-random screen | `opq_drr_sva`, `opq_cross_drr_bursty_random_test`, `opq_cross_drr_bursty_frame2_boundary_test`, `opq_cross_drr_bursty_frame3_repro_test`, `DV_FORMAL.md`, `DV_PROBE.md` |
+| DRR SVA and constrained-random stress | Implemented / green on current named screens: directed SVA closure is green, `opq_cross_drr_bursty_frame2_boundary_test` and `opq_cross_drr_bursty_frame3_repro_test` are both green, and the refreshed `opq_cross_drr_bursty_random_test` seed sweep `1..8` closes with `UVM_ERROR : 0` and per-lane `unexplained=0` | `opq_drr_sva`, `opq_cross_drr_bursty_random_test`, `opq_cross_drr_bursty_frame2_boundary_test`, `opq_cross_drr_bursty_frame3_repro_test`, `DV_FORMAL.md`, `DV_PROBE.md` |
 | Formal section separate from directed/random | Implemented in plan | `DV_FORMAL.md` |
 | Realistic FEB-like driver contract derived from frontend frame format | Implemented at FEB-frame contract level, not yet the full `online_dpv2` IP chain | `DV_HARNESS.md`, packet builders in `opq_pkg.sv` |
 | Full `online_dpv2` FEB datapath in the active harness | Open backlog | not yet wired into the current-tree harness |
@@ -401,15 +421,15 @@ states which items are really closed and which are still backlog.
 
 | Metric | Current live evidence | Status |
 |--------|-----------------------|--------|
-| Functional coverage | `90.04%` promoted functional closure (`45/46` promoted cases evidenced); per-bucket merged covergroup totals are rendered in `DV_COV.md` | Active promoted baseline with the reduced-depth overflow point currently reopened |
+| Functional coverage | `90.04%` promoted functional closure (`45/46` promoted cases evidenced); per-bucket merged covergroup totals are rendered in `DV_COV.md` | Active promoted baseline; the reduced-depth overflow supplemental screens are green on the current tree |
 | Structural code coverage | `stmt=83.73`, `branch=80.83`, `fsm_state=95.45`, `fsm_trans=58.00`, `toggle=46.48` on the current merged UCDB flow | Active baseline, not closed |
 | Directive coverage | `100.00%` on the current merged UCDB flow | Active baseline |
 | DRR directed closure | `opq_cross_drr_allowance_test` green | Closed for directed allowance path |
-| DRR bursty closure | `opq_cross_drr_bursty_frame2_boundary_test` is green with `expected=298 actual=298 missing=0 ghost=0`, but `opq_cross_drr_bursty_frame3_repro_test` still fails with `expected=484 actual=254 missing=230 ghost=0` and the larger `opq_cross_drr_bursty_random_test` still fails on the refreshed `2026-04-20` rerun with lane0 `unexplained=368` | Probe-only pending debug above the green `frame2` boundary |
+| DRR bursty closure | `opq_cross_drr_bursty_frame2_boundary_test` remains green, `opq_cross_drr_bursty_frame3_repro_test` reruns green with `expected=714 actual=714 missing=0 ghost=0`, and the refreshed `opq_cross_drr_bursty_random_test` seed sweep `1..8` is green on the current `2026-04-21` patchset with per-lane `unexplained=0` | No active failing boundary currently reproduced on the named deterministic or constrained-random screens |
 | Default-build legal pre-drop boundary | `opq_cross_bp_predrop_boundary_test` is green on `2026-04-20`, with final `ft_drop_hdr/shd/hit=0/0/0`, aggregate `accepted=13260 dropped=66612 delivered=13260 unexplained=0`, and `core_principles first_break=clean` | Closed for the legal pre-drop half of the default-build overflow contract |
-| Default-build legal early-overflow boundary | `opq_cross_random_ready_overflow_step2_boundary_test` is green on `2026-04-20`, with final `ft_drop_hdr/shd/hit=0/0/0`, `wr_hdr/shd/hit=6/13/1129`, `rd_hdr/shd/hit=6/13/1129`, aggregate `accepted=1129 delivered=1129 unexplained=0`, and `core_principles first_break=clean` | Closed for the named early-window legal-overflow half of the default-build random-ready path |
-| Default-build overflow closure | `opq_cross_random_ready_overflow_seconds_soak_test` rerun on `2026-04-20` fails at `overflow_step_0` with `ft_wr_shd wr=5 rd=7 drop=0`, `ft_wr_hit wr=540 rd=545 drop=0`, and lane1 `unexplained=174` | Probe-only pending debug |
-| Forced overwrite closure | `opq_error_ftable_overflow_test` rerun on `2026-04-20` reopens reduced-depth accepted-egress contract errors despite the dedicated supplemental screen plumbing | Reopened / debug required |
+| Default-build legal early-overflow boundary | `opq_cross_random_ready_overflow_step2_boundary_test` is green on `2026-04-21`, with final `ft_drop_hdr/shd/hit=0/0/0`, `wr_hdr/shd/hit=6/11/1176`, `rd_hdr/shd/hit=6/11/1176`, aggregate `accepted=1176 delivered=1176 unexplained=0`, and `core_principles first_break=clean` | Closed for the named early-window legal-overflow half of the default-build random-ready path |
+| Default-build overflow closure | `opq_cross_random_ready_overflow_seconds_soak_test` rerun on `2026-04-20` is back to a shape-check green screen with final `ft_drop_hdr/shd/hit=0/0/0`, `wr_hdr/shd/hit=29/68/5545`, `rd_hdr/shd/hit=29/68/5545`, aggregate `accepted=5545 delivered=5545 unexplained=0`, and `core_principles first_break=clean` | Closed for the legal-overflow shape-check side of the default-build path; not itself a must-drop witness |
+| Forced overwrite closure | The refreshed `opq_cross_bp_mustdrop_witness_test` `12x16` profile on `2026-04-21` now re-establishes the named reduced-depth overwrite-local proof point: no-drop pre-phase `ft_drop_delta hdr/shd/hit=0/0/0`, pressure phase `ft_drop_delta hdr/shd/hit=10/80/2400`, final ledger `wr_hdr/shd/hit=13/224/3135`, `rd_hdr/shd/hit=3/144/735`, `drop_hdr/shd/hit=10/80/2400`, aggregate `accepted=735 delivered=735 unexplained=0`, and `core_principles first_break=clean` | Closed for the named reduced-depth overwrite-local must-drop path |
 
 ---
 

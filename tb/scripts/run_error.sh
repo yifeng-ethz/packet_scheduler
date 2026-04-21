@@ -15,6 +15,7 @@ if [[ "$#" -eq 0 ]]; then
     opq_error_lane_mask_single_hit_test \
     opq_error_lane_mask_burst_test \
     opq_error_lane_mask_recovery_test \
+    opq_error_hit_mask_recovery_test \
     opq_error_subheader_mask_recovery_test \
     opq_error_header_mask_recovery_test \
     opq_error_header_word_mask_recovery_test \

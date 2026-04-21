@@ -4,8 +4,8 @@
 
 ## Intent
 
-- **Scenario:** Deterministic bursty DRR boundary at the last green frame_count=2 envelope below the active retirement failure.
-- **Primary checks:** Named green-side DRR boundary where the hot-lane/cold-lane asymmetry still closes with complete hit conservation and no ghost hits.
+- **Scenario:** Deterministic bursty DRR frame_count=2 boundary companion to the separately tracked green frame_count=3 repro.
+- **Primary checks:** Named bursty DRR boundary where the hot-lane/cold-lane asymmetry still closes with complete hit conservation and no ghost hits.
 - **Contract anchor:** DV_CROSS bursty DRR green-side boundary evidence.
 
 ## Execution Evidence

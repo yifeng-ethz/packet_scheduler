@@ -21,7 +21,7 @@
 
 - bucket_order: `ERROR`
 - ordered_steps:
-  `ERROR` -> [`CORNER_OPQ_408_error_counter_clear_test`](../cases/CORNER_OPQ_408_error_counter_clear_test.md) (`opq_error_counter_clear_test`)
+  `ERROR` -> [`CORNER_OPQ_409_error_counter_clear_test`](../cases/CORNER_OPQ_409_error_counter_clear_test.md) (`opq_error_counter_clear_test`)
 - limitation: This is a supplemental signoff run that validates CSR zeroization semantics after masked-drop traffic.
 - limitation: The testcase intentionally clears live counters before end-of-run reporting, so it is tracked outside the fixed bucket-frame baselines.
 

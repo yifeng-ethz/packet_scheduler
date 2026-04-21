@@ -21,7 +21,7 @@
 
 - bucket_order: `ERROR`
 - ordered_steps:
-  `ERROR` -> [`CORNER_OPQ_409_error_ftable_overflow_test`](../cases/CORNER_OPQ_409_error_ftable_overflow_test.md) (`opq_error_ftable_overflow_test`)
+  `ERROR` -> [`CORNER_OPQ_410_error_ftable_overflow_test`](../cases/CORNER_OPQ_410_error_ftable_overflow_test.md) (`opq_error_ftable_overflow_test`)
 - limitation: This is a supplemental signoff run that intentionally uses OPQ_PAGE_RAM_DEPTH=512 to force the overwrite / frame-table-drop path.
 - limitation: Because it requires a separate elaboration point, it cannot be folded into the fixed default-build no-restart baselines.
 

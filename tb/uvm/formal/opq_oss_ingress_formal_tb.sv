@@ -19,21 +19,36 @@ module opq_oss_ingress_formal_tb;
   localparam int unsigned FRAME_HIT_CNT_SIZE = 16;
   localparam int unsigned MAX_PKT_LENGTH = HIT_SIZE * N_HIT;
   localparam int unsigned MAX_PKT_LENGTH_BITS = (MAX_PKT_LENGTH <= 1) ? 1 : $clog2(MAX_PKT_LENGTH);
-  localparam int unsigned TICKET_FIFO_DATA_WIDTH_A = 48 + $clog2(LANE_FIFO_DEPTH) + MAX_PKT_LENGTH_BITS + 2;
+  localparam int unsigned TICKET_FIFO_DATA_WIDTH_A =
+    48 + $clog2(LANE_FIFO_DEPTH) + MAX_PKT_LENGTH_BITS + FRAME_SERIAL_SIZE + 2;
   localparam int unsigned TICKET_FIFO_DATA_WIDTH_B =
-    FRAME_SERIAL_SIZE + FRAME_SUBH_CNT_SIZE + FRAME_HIT_CNT_SIZE + 2;
+    FRAME_SERIAL_SIZE + FRAME_SUBH_CNT_SIZE + FRAME_HIT_CNT_SIZE + 6 + 16 + 48 + 2;
   localparam int unsigned TICKET_FIFO_DATA_WIDTH =
     (TICKET_FIFO_DATA_WIDTH_A > TICKET_FIFO_DATA_WIDTH_B) ? TICKET_FIFO_DATA_WIDTH_A : TICKET_FIFO_DATA_WIDTH_B;
   localparam int unsigned TICKET_FIFO_ADDR_WIDTH = $clog2(TICKET_FIFO_DEPTH);
   localparam int unsigned LANE_FIFO_ADDR_WIDTH = $clog2(LANE_FIFO_DEPTH);
   localparam int unsigned TICKET_FIFO_MAX_CREDIT = TICKET_FIFO_DEPTH - 1;
   localparam int unsigned LANE_FIFO_MAX_CREDIT = LANE_FIFO_DEPTH - 2;
+  localparam int unsigned TICKET_BLOCK_LEN_LO = 48 + LANE_FIFO_ADDR_WIDTH;
+  localparam int unsigned TICKET_BLOCK_LEN_HI = TICKET_BLOCK_LEN_LO + MAX_PKT_LENGTH_BITS - 1;
   localparam logic [2:0] INGRESS_PARSER_IDLE = 3'd0;
   localparam logic [2:0] INGRESS_PARSER_RESET = 3'd5;
   localparam logic [2:0] INGRESS_PARSER_WR_HITS = 3'd4;
   localparam logic [7:0] K285 = 8'hBC;
   localparam logic [7:0] K284 = 8'h9C;
   localparam logic [7:0] K237 = 8'hF7;
+
+  typedef enum logic [3:0] {
+    ING_MON_IDLE,
+    ING_MON_HDR0,
+    ING_MON_HDR1,
+    ING_MON_HDR2,
+    ING_MON_HDR3,
+    ING_MON_BODY,
+    ING_MON_HITS,
+    ING_MON_MASK_SUBH,
+    ING_MON_MASK_FRAME
+  } ingress_mon_state_t;
 
   (* gclk *) reg gclk;
   reg f_past_valid = 1'b0;
@@ -43,6 +58,9 @@ module opq_oss_ingress_formal_tb;
   reg [15:0] f_ticket_credit_outstanding = '0;
   reg [15:0] f_lane_credit_model = LANE_FIFO_MAX_CREDIT;
   reg [15:0] f_ticket_credit_model = TICKET_FIFO_MAX_CREDIT;
+  ingress_mon_state_t f_ingress_mon_state = ING_MON_IDLE;
+  reg [7:0] f_ingress_mon_hits_remaining = '0;
+  reg [7:0] f_ingress_mon_hits_accepted = '0;
 
   wire d_reset = f_reset_sr[1];
 
@@ -79,7 +97,14 @@ module opq_oss_ingress_formal_tb;
   wire                                                          credit_drop_ticket_o;
   wire [15:0]                                                   credit_drop_shd_cnt_o;
   wire [15:0]                                                   credit_drop_hit_cnt_o;
+  wire [47:0]                                                   credit_drop_ts_o;
+  wire                                                          tail_bypass_valid_o;
+  wire                                                          tail_bypass_drop_o;
+  wire [15:0]                                                   tail_bypass_serial_o;
+  wire [47:0]                                                   tail_bypass_ts_o;
   wire                                                          alert_eop_state_o;
+  wire [47:0]                                                   frame_ts_base_dbg;
+  wire                                                          parser_busy_o;
   wire [15:0]                                                   lane_credit_consume_amt;
   wire [15:0]                                                   lane_credit_return_amt;
   wire [15:0]                                                   ticket_credit_consume_amt;
@@ -89,6 +114,13 @@ module opq_oss_ingress_formal_tb;
   wire [15:0]                                                   ticket_credit_model_next;
   wire [15:0]                                                   ticket_credit_outstanding_next;
   wire                                                          credit_tracking_active;
+  reg                                                           f_ingress_clean_hit_d = 1'b0;
+  reg                                                           f_ingress_hit_error_d = 1'b0;
+  reg                                                           f_ingress_shd_error_d = 1'b0;
+  reg                                                           f_ingress_hdr_error_d = 1'b0;
+  reg                                                           f_ingress_zero_hit_subheader_d = 1'b0;
+  reg                                                           f_ingress_last_hit_d = 1'b0;
+  reg [MAX_PKT_LENGTH_BITS-1:0]                                 f_ingress_last_hit_accepted_d = '0;
 
   function automatic logic is_preamble_word(input logic [35:0] word_v);
     is_preamble_word = (word_v[35:32] == 4'b0001) && (word_v[7:0] == K285);
@@ -171,15 +203,27 @@ module opq_oss_ingress_formal_tb;
     .credit_drop_valid_o(credit_drop_valid_o),
     .credit_drop_lane_o(credit_drop_lane_o),
     .credit_drop_ticket_o(credit_drop_ticket_o),
+    .credit_drop_ts_o(credit_drop_ts_o),
     .credit_drop_shd_cnt_o(credit_drop_shd_cnt_o),
     .credit_drop_hit_cnt_o(credit_drop_hit_cnt_o),
+    .tail_bypass_valid_o(tail_bypass_valid_o),
+    .tail_bypass_drop_o(tail_bypass_drop_o),
+    .tail_bypass_serial_o(tail_bypass_serial_o),
+    .tail_bypass_ts_o(tail_bypass_ts_o),
     .alert_eop_state_o(alert_eop_state_o),
+    .frame_ts_base_dbg(frame_ts_base_dbg),
+    .parser_busy_o(parser_busy_o),
     .eop_flush_ack_i(eop_flush_ack_i),
     .d_clk(gclk),
     .d_reset(d_reset)
   );
 
   always @(posedge gclk) begin
+    bit hdr_err_legal_v;
+    bit shd_err_legal_v;
+    bit hit_err_legal_v;
+    reg [MAX_PKT_LENGTH_BITS-1:0] hits_accepted_final_v;
+
     f_past_valid <= 1'b1;
     if (!f_past_valid) begin
       assume(d_reset);
@@ -199,6 +243,16 @@ module opq_oss_ingress_formal_tb;
       assume(ticket_credit_dbg_oss == TICKET_FIFO_MAX_CREDIT);
       assume(ingress_state_dbg_oss == INGRESS_PARSER_RESET);
       assume(!lane_we && !ticket_we);
+      f_ingress_mon_state <= ING_MON_IDLE;
+      f_ingress_mon_hits_remaining <= '0;
+      f_ingress_mon_hits_accepted <= '0;
+      f_ingress_clean_hit_d <= 1'b0;
+      f_ingress_hit_error_d <= 1'b0;
+      f_ingress_shd_error_d <= 1'b0;
+      f_ingress_hdr_error_d <= 1'b0;
+      f_ingress_zero_hit_subheader_d <= 1'b0;
+      f_ingress_last_hit_d <= 1'b0;
+      f_ingress_last_hit_accepted_d <= '0;
     end
 
     if (!(&f_post_reset_sr)) begin
@@ -212,14 +266,41 @@ module opq_oss_ingress_formal_tb;
     end
 
     if (!d_reset) begin
+      hdr_err_legal_v = 1'b0;
+      if (f_ingress_mon_state == ING_MON_IDLE) begin
+        hdr_err_legal_v = asi_ingress_startofpacket && is_preamble_word(asi_ingress_data);
+      end else begin
+        hdr_err_legal_v =
+          (f_ingress_mon_state == ING_MON_HDR0) ||
+          (f_ingress_mon_state == ING_MON_HDR1) ||
+          (f_ingress_mon_state == ING_MON_HDR2) ||
+          (f_ingress_mon_state == ING_MON_HDR3);
+      end
+      shd_err_legal_v =
+        ((f_ingress_mon_state == ING_MON_IDLE) ||
+         (f_ingress_mon_state == ING_MON_BODY) ||
+         (f_ingress_mon_state == ING_MON_MASK_SUBH)) &&
+        is_subheader_word(asi_ingress_data);
+      hit_err_legal_v = (f_ingress_mon_state == ING_MON_HITS);
+      hits_accepted_final_v = f_ingress_mon_hits_accepted[MAX_PKT_LENGTH_BITS-1:0];
+      if (asi_ingress_valid && hit_err_legal_v && !asi_ingress_error[0]) begin
+        hits_accepted_final_v = hits_accepted_final_v + MAX_PKT_LENGTH_BITS'(1);
+      end
+
       assume(!asi_ingress_startofpacket || asi_ingress_valid);
       assume(!asi_ingress_endofpacket || asi_ingress_valid);
       assume(asi_ingress_valid || (!asi_ingress_startofpacket && !asi_ingress_endofpacket));
+      assume(asi_ingress_valid || (asi_ingress_error == '0));
+      assume(!asi_ingress_valid || $onehot0(asi_ingress_error));
       assume(!asi_ingress_startofpacket ||
         is_preamble_word(asi_ingress_data) || is_subheader_word(asi_ingress_data));
       assume(!asi_ingress_endofpacket ||
         is_trailer_word(asi_ingress_data) ||
         (asi_ingress_startofpacket && is_preamble_word(asi_ingress_data)));
+      assume(!asi_ingress_error[2] || hdr_err_legal_v);
+      assume(!asi_ingress_error[1] || shd_err_legal_v);
+      assume(!asi_ingress_error[0] || hit_err_legal_v);
+      assume(!(is_trailer_word(asi_ingress_data) && (asi_ingress_error != '0)));
 
       // Credit returns are modeled as an external environment contract. They
       // may restore capacity but cannot return more credits than the modeled
@@ -237,6 +318,33 @@ module opq_oss_ingress_formal_tb;
         assume(!lane_issue_dbg_oss && !ticket_issue_dbg_oss);
         assume(credit_drop_lane_o || credit_drop_ticket_o);
       end
+
+      f_ingress_clean_hit_d <=
+        asi_ingress_valid &&
+        hit_err_legal_v &&
+        !asi_ingress_error[0];
+      f_ingress_hit_error_d <=
+        asi_ingress_valid &&
+        hit_err_legal_v &&
+        asi_ingress_error[0];
+      f_ingress_shd_error_d <=
+        asi_ingress_valid &&
+        shd_err_legal_v &&
+        asi_ingress_error[1];
+      f_ingress_hdr_error_d <=
+        asi_ingress_valid &&
+        hdr_err_legal_v &&
+        asi_ingress_error[2];
+      f_ingress_zero_hit_subheader_d <=
+        asi_ingress_valid &&
+        shd_err_legal_v &&
+        !asi_ingress_error[1] &&
+        (asi_ingress_data[15:8] == 8'd0);
+      f_ingress_last_hit_d <=
+        (f_ingress_mon_state == ING_MON_HITS) &&
+        asi_ingress_valid &&
+        (f_ingress_mon_hits_remaining == 8'd1);
+      f_ingress_last_hit_accepted_d <= hits_accepted_final_v;
     end
 
     if (f_past_valid && (&f_post_reset_sr) && (ingress_state_dbg_oss != INGRESS_PARSER_RESET)) begin
@@ -246,6 +354,28 @@ module opq_oss_ingress_formal_tb;
       assert(!credit_drop_valid_o || (!lane_issue_dbg_oss && !ticket_issue_dbg_oss));
       assert(!credit_drop_lane_o || credit_drop_valid_o);
       assert(!credit_drop_ticket_o || credit_drop_valid_o);
+      assert(!lane_we || f_ingress_clean_hit_d);
+      if (f_ingress_shd_error_d) begin
+        assert(!lane_we && !ticket_we);
+      end
+      if (f_ingress_hdr_error_d) begin
+        assert(!lane_we && !ticket_we);
+      end
+      if (f_ingress_hit_error_d) begin
+        assert(!lane_we);
+      end
+      if (f_ingress_zero_hit_subheader_d) begin
+        assert(ticket_we);
+        assert(!lane_we);
+        assert(ticket_wdata[TICKET_BLOCK_LEN_HI:TICKET_BLOCK_LEN_LO] == '0);
+      end
+      if (f_ingress_last_hit_d) begin
+        assert(ticket_we);
+        assert(ticket_wdata[TICKET_BLOCK_LEN_HI:TICKET_BLOCK_LEN_LO] == f_ingress_last_hit_accepted_d);
+      end
+      cover(asi_ingress_valid && hdr_err_legal_v && asi_ingress_error[2]);
+      cover(asi_ingress_valid && shd_err_legal_v && asi_ingress_error[1]);
+      cover(asi_ingress_valid && hit_err_legal_v && asi_ingress_error[0]);
     end
 
     if (d_reset) begin
@@ -258,6 +388,142 @@ module opq_oss_ingress_formal_tb;
       f_ticket_credit_outstanding <= ticket_credit_outstanding_next;
       f_lane_credit_model <= lane_credit_model_next;
       f_ticket_credit_model <= ticket_credit_model_next;
+
+      if (asi_ingress_valid) begin
+        unique case (f_ingress_mon_state)
+          ING_MON_IDLE: begin
+            if (asi_ingress_startofpacket && is_preamble_word(asi_ingress_data)) begin
+              if (asi_ingress_error[2]) begin
+                f_ingress_mon_state <= ING_MON_MASK_FRAME;
+              end else begin
+                f_ingress_mon_state <= ING_MON_HDR0;
+              end
+              f_ingress_mon_hits_remaining <= '0;
+              f_ingress_mon_hits_accepted <= '0;
+            end else if (is_subheader_word(asi_ingress_data)) begin
+              if (asi_ingress_error[1]) begin
+                f_ingress_mon_state <= ING_MON_MASK_SUBH;
+                f_ingress_mon_hits_remaining <= '0;
+                f_ingress_mon_hits_accepted <= '0;
+              end else if (asi_ingress_data[15:8] != 8'd0) begin
+                f_ingress_mon_state <= ING_MON_HITS;
+                f_ingress_mon_hits_remaining <= asi_ingress_data[15:8];
+                f_ingress_mon_hits_accepted <= '0;
+              end else begin
+                f_ingress_mon_state <= ING_MON_BODY;
+                f_ingress_mon_hits_remaining <= '0;
+                f_ingress_mon_hits_accepted <= '0;
+              end
+            end else if (is_trailer_word(asi_ingress_data) && asi_ingress_endofpacket) begin
+              f_ingress_mon_state <= ING_MON_IDLE;
+              f_ingress_mon_hits_remaining <= '0;
+              f_ingress_mon_hits_accepted <= '0;
+            end
+          end
+
+          ING_MON_HDR0: begin
+            if (asi_ingress_error[2]) begin
+              f_ingress_mon_state <= ING_MON_MASK_FRAME;
+            end else begin
+              f_ingress_mon_state <= ING_MON_HDR1;
+            end
+          end
+
+          ING_MON_HDR1: begin
+            if (asi_ingress_error[2]) begin
+              f_ingress_mon_state <= ING_MON_MASK_FRAME;
+            end else begin
+              f_ingress_mon_state <= ING_MON_HDR2;
+            end
+          end
+
+          ING_MON_HDR2: begin
+            if (asi_ingress_error[2]) begin
+              f_ingress_mon_state <= ING_MON_MASK_FRAME;
+            end else begin
+              f_ingress_mon_state <= ING_MON_HDR3;
+            end
+          end
+
+          ING_MON_HDR3: begin
+            if (asi_ingress_error[2]) begin
+              f_ingress_mon_state <= ING_MON_MASK_FRAME;
+            end else begin
+              f_ingress_mon_state <= ING_MON_BODY;
+            end
+          end
+
+          ING_MON_BODY: begin
+            if (is_subheader_word(asi_ingress_data)) begin
+              if (asi_ingress_error[1]) begin
+                f_ingress_mon_state <= ING_MON_MASK_SUBH;
+                f_ingress_mon_hits_remaining <= '0;
+                f_ingress_mon_hits_accepted <= '0;
+              end else if (asi_ingress_data[15:8] != 8'd0) begin
+                f_ingress_mon_state <= ING_MON_HITS;
+                f_ingress_mon_hits_remaining <= asi_ingress_data[15:8];
+                f_ingress_mon_hits_accepted <= '0;
+              end else begin
+                f_ingress_mon_state <= ING_MON_BODY;
+                f_ingress_mon_hits_remaining <= '0;
+                f_ingress_mon_hits_accepted <= '0;
+              end
+            end else if (is_trailer_word(asi_ingress_data) && asi_ingress_endofpacket) begin
+              f_ingress_mon_state <= ING_MON_IDLE;
+              f_ingress_mon_hits_remaining <= '0;
+              f_ingress_mon_hits_accepted <= '0;
+            end
+          end
+
+          ING_MON_HITS: begin
+            if (!asi_ingress_error[0]) begin
+              f_ingress_mon_hits_accepted <= f_ingress_mon_hits_accepted + 8'd1;
+            end
+            if (f_ingress_mon_hits_remaining == 8'd1) begin
+              f_ingress_mon_state <= ING_MON_BODY;
+              f_ingress_mon_hits_remaining <= '0;
+            end else begin
+              f_ingress_mon_hits_remaining <= f_ingress_mon_hits_remaining - 8'd1;
+            end
+          end
+
+          ING_MON_MASK_SUBH: begin
+            if (is_trailer_word(asi_ingress_data) && asi_ingress_endofpacket) begin
+              f_ingress_mon_state <= ING_MON_IDLE;
+              f_ingress_mon_hits_remaining <= '0;
+              f_ingress_mon_hits_accepted <= '0;
+            end else if (is_subheader_word(asi_ingress_data)) begin
+              if (asi_ingress_error[1]) begin
+                f_ingress_mon_state <= ING_MON_MASK_SUBH;
+                f_ingress_mon_hits_remaining <= '0;
+                f_ingress_mon_hits_accepted <= '0;
+              end else if (asi_ingress_data[15:8] != 8'd0) begin
+                f_ingress_mon_state <= ING_MON_HITS;
+                f_ingress_mon_hits_remaining <= asi_ingress_data[15:8];
+                f_ingress_mon_hits_accepted <= '0;
+              end else begin
+                f_ingress_mon_state <= ING_MON_BODY;
+                f_ingress_mon_hits_remaining <= '0;
+                f_ingress_mon_hits_accepted <= '0;
+              end
+            end
+          end
+
+          ING_MON_MASK_FRAME: begin
+            if (is_trailer_word(asi_ingress_data) && asi_ingress_endofpacket) begin
+              f_ingress_mon_state <= ING_MON_IDLE;
+              f_ingress_mon_hits_remaining <= '0;
+              f_ingress_mon_hits_accepted <= '0;
+            end
+          end
+
+          default: begin
+            f_ingress_mon_state <= ING_MON_IDLE;
+            f_ingress_mon_hits_remaining <= '0;
+            f_ingress_mon_hits_accepted <= '0;
+          end
+        endcase
+      end
     end
 
     cover(f_past_valid && ticket_we);

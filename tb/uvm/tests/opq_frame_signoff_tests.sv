@@ -83,13 +83,24 @@ class opq_frame_signoff_base_test extends opq_base_test;
   endtask
 
   task automatic configure_no_restart_sequence(opq_virtual_sequence_base seq);
+    string pkg_base_str;
+
     seq.configure_continuous_frame(no_restart_next_pkg_cnt_base, no_restart_next_frame_ts_base);
+    pkg_base_str = "";
+    foreach (no_restart_next_pkg_cnt_base[lane]) begin
+      if (lane != 0) begin
+        pkg_base_str = {pkg_base_str, " "};
+      end
+      pkg_base_str = {
+        pkg_base_str,
+        $sformatf("lane%0d_pkg_base=%0d", lane, no_restart_next_pkg_cnt_base[lane])
+      };
+    end
     `uvm_info(get_type_name(), $sformatf(
-      "No-restart identity for %s: frame_ts_base=0x%012h lane0_pkg_base=%0d lane1_pkg_base=%0d",
+      "No-restart identity for %s: frame_ts_base=0x%012h %s",
       seq.get_name(),
       no_restart_next_frame_ts_base,
-      no_restart_next_pkg_cnt_base[0],
-      (OPQ_N_LANE > 1) ? no_restart_next_pkg_cnt_base[1] : '0
+      pkg_base_str
     ), UVM_LOW)
   endtask
 
@@ -97,23 +108,26 @@ class opq_frame_signoff_base_test extends opq_base_test;
     bit [47:0] frame_duration_cycles;
     int unsigned frame_slots_emitted;
     bit emits_egress_frames;
+    bit [15:0] curr_pkg_cnt_base;
     bit [15:0] next_pkg_cnt_base;
 
     frame_duration_cycles = 48'(OPQ_N_SHD * 16);
     frame_slots_emitted = seq.get_continuous_frame_slots_emitted();
     emits_egress_frames = seq.continuous_frame_emits_egress_frames();
     if (emits_egress_frames) begin
-      next_pkg_cnt_base = '0;
+      curr_pkg_cnt_base = '0;
       foreach (no_restart_next_pkg_cnt_base[lane]) begin
-        if (seq.get_next_pkg_cnt_base(lane) > next_pkg_cnt_base) begin
-          next_pkg_cnt_base = seq.get_next_pkg_cnt_base(lane);
+        if (no_restart_next_pkg_cnt_base[lane] > curr_pkg_cnt_base) begin
+          curr_pkg_cnt_base = no_restart_next_pkg_cnt_base[lane];
         end
       end
+      next_pkg_cnt_base = curr_pkg_cnt_base + frame_slots_emitted[15:0];
       foreach (no_restart_next_pkg_cnt_base[lane]) begin
         // The native continuous-frame handoff needs one monotonic SOP serial
         // across lanes once a later case resumes traffic on a previously idle
-        // lane. Keeping the max next pkg_cnt across the composed step avoids
-        // reusing stale per-lane serial windows after asymmetric frame counts.
+        // lane. Advancing the shared pkg_cnt window by the composed slot count
+        // keeps the per-lane serial window mathematically aligned with the
+        // frame-ts base even when a particular step leaves some lanes idle.
         no_restart_next_pkg_cnt_base[lane] = next_pkg_cnt_base;
       end
       no_restart_next_frame_ts_base = no_restart_next_frame_ts_base +
@@ -516,6 +530,7 @@ class opq_frame_signoff_base_test extends opq_base_test;
   endtask
 
   task automatic run_error_bucket();
+    opq_hit_error_recovery_virtual_sequence hit_recovery_seq;
     opq_subheader_error_recovery_virtual_sequence shd_recovery_seq;
     opq_header_error_recovery_virtual_sequence header_recovery_seq;
     opq_header_word_error_recovery_virtual_sequence header_word_recovery_seq;
@@ -524,6 +539,9 @@ class opq_frame_signoff_base_test extends opq_base_test;
     run_masked_drop_case(opq_single_hit_masked_drop_virtual_sequence::get_type());
     run_masked_drop_case(opq_burst_masked_drop_virtual_sequence::get_type());
     run_masked_drop_recovery_case("masked_recovery");
+
+    hit_recovery_seq = opq_hit_error_recovery_virtual_sequence::type_id::create("hit_recovery_seq");
+    run_vseq(hit_recovery_seq);
 
     shd_recovery_seq = opq_subheader_error_recovery_virtual_sequence::type_id::create("shd_recovery_seq");
     run_vseq(shd_recovery_seq);
@@ -1184,7 +1202,9 @@ class opq_cross_random_ready_overflow_seconds_soak_test extends opq_frame_signof
     super.new(name, parent);
     soak_iterations = 12;
     bp_segment_count = 48;
-    require_ft_drop = 1'b1;
+    // The default-build overflow soak is shape-check by default. A separate
+    // plusarg can still promote it back into an explicit must-drop probe.
+    require_ft_drop = 1'b0;
     if ($value$plusargs("OPQ_OVERFLOW_SOAK_STEPS=%d", soak_iterations_plusarg) &&
         (soak_iterations_plusarg > 0)) begin
       soak_iterations = soak_iterations_plusarg;
@@ -1840,6 +1860,34 @@ class opq_cross_random_ready_overflow_step2_boundary_test extends opq_cross_rand
   endfunction
 endclass
 
+class opq_cross_random_ready_overflow_step2_boundary_hit_integrity_test extends
+  opq_cross_random_ready_overflow_step2_boundary_test;
+  `uvm_component_utils(opq_cross_random_ready_overflow_step2_boundary_hit_integrity_test)
+
+  function new(
+    string name = "opq_cross_random_ready_overflow_step2_boundary_hit_integrity_test",
+    uvm_component parent = null
+  );
+    super.new(name, parent);
+    if (!$test$plusargs("OPQ_OVERFLOW_SOAK_STEPS")) begin
+      soak_iterations = 1;
+    end
+  endfunction
+
+  virtual function opq_scoreboard_cfg create_scoreboard_cfg();
+    opq_scoreboard_cfg cfg;
+
+    cfg = super.create_scoreboard_cfg();
+    cfg.check_hit_integrity = 1'b1;
+    cfg.min_sop_count = 1;
+    return cfg;
+  endfunction
+
+  virtual function string soak_label();
+    return "overflow_step2_boundary_hit_integrity";
+  endfunction
+endclass
+
 class opq_cross_bp_predrop_boundary_test extends opq_cross_random_ready_overflow_seconds_soak_test;
   `uvm_component_utils(opq_cross_bp_predrop_boundary_test)
 
@@ -1863,6 +1911,26 @@ class opq_cross_bp_predrop_boundary_test extends opq_cross_random_ready_overflow
 
   virtual function string soak_label();
     return "bp_predrop_boundary";
+  endfunction
+
+  virtual function int unsigned no_drop_frame_count();
+    return HYBRID_NODROP_FRAME_COUNT;
+  endfunction
+
+  virtual function int unsigned no_drop_hit_count_per_subheader();
+    return HYBRID_NODROP_HIT_COUNT_PER_SUBHEADER;
+  endfunction
+
+  virtual function int unsigned pressure_frame_count();
+    return HYBRID_PRESSURE_FRAME_COUNT;
+  endfunction
+
+  virtual function int unsigned pressure_hit_count_per_subheader();
+    return HYBRID_PRESSURE_HIT_COUNT_PER_SUBHEADER;
+  endfunction
+
+  virtual function bit pressure_phase_requires_drop_progress();
+    return 1'b0;
   endfunction
 
   task automatic build_no_drop_bp_sequence(ref opq_bp_sequence bp_seq);
@@ -2093,17 +2161,17 @@ class opq_cross_bp_predrop_boundary_test extends opq_cross_random_ready_overflow
 
     run_bp_overflow_phase(
       "bp_predrop_boundary_nodrop",
-      HYBRID_NODROP_FRAME_COUNT,
-      HYBRID_NODROP_HIT_COUNT_PER_SUBHEADER,
+      no_drop_frame_count(),
+      no_drop_hit_count_per_subheader(),
       1'b0,
       1'b0
     );
     run_bp_overflow_phase(
       "bp_predrop_boundary_pressure",
-      HYBRID_PRESSURE_FRAME_COUNT,
-      HYBRID_PRESSURE_HIT_COUNT_PER_SUBHEADER,
+      pressure_frame_count(),
+      pressure_hit_count_per_subheader(),
       1'b1,
-      1'b0
+      pressure_phase_requires_drop_progress()
     );
   endtask
 
@@ -2120,23 +2188,105 @@ class opq_cross_bp_predrop_boundary_test extends opq_cross_random_ready_overflow
         no_drop_ft_drop_hit_total
       ))
     end
-    if ((pressure_ft_drop_hdr_total != 0) ||
-        (pressure_ft_drop_shd_total != 0) ||
-        (pressure_ft_drop_hit_total != 0)) begin
-      `uvm_error(get_type_name(), $sformatf(
-        "Pressure boundary phase unexpectedly advanced frame-table drop counters no_drop=%0d/%0d/%0d pressure=%0d/%0d/%0d",
-        no_drop_ft_drop_hdr_total,
-        no_drop_ft_drop_shd_total,
-        no_drop_ft_drop_hit_total,
-        pressure_ft_drop_hdr_total,
-        pressure_ft_drop_shd_total,
-        pressure_ft_drop_hit_total
-      ))
-    end
-    if (overflow_steps_with_ft_drop != 0) begin
-      `uvm_error(get_type_name(), "Pre-drop boundary testcase unexpectedly recorded a frame-table drop transition")
+    if (pressure_phase_requires_drop_progress()) begin
+      if ((pressure_ft_drop_hdr_total == 0) &&
+          (pressure_ft_drop_shd_total == 0) &&
+          (pressure_ft_drop_hit_total == 0)) begin
+        `uvm_error(get_type_name(), $sformatf(
+          "Pressure witness phase never advanced frame-table drop counters no_drop=%0d/%0d/%0d pressure=%0d/%0d/%0d",
+          no_drop_ft_drop_hdr_total,
+          no_drop_ft_drop_shd_total,
+          no_drop_ft_drop_hit_total,
+          pressure_ft_drop_hdr_total,
+          pressure_ft_drop_shd_total,
+          pressure_ft_drop_hit_total
+        ))
+      end
+      if (overflow_steps_with_ft_drop == 0) begin
+        `uvm_error(get_type_name(), "Pressure witness testcase never recorded a frame-table drop transition")
+      end
+    end else begin
+      if ((pressure_ft_drop_hdr_total != 0) ||
+          (pressure_ft_drop_shd_total != 0) ||
+          (pressure_ft_drop_hit_total != 0)) begin
+        `uvm_error(get_type_name(), $sformatf(
+          "Pressure boundary phase unexpectedly advanced frame-table drop counters no_drop=%0d/%0d/%0d pressure=%0d/%0d/%0d",
+          no_drop_ft_drop_hdr_total,
+          no_drop_ft_drop_shd_total,
+          no_drop_ft_drop_hit_total,
+          pressure_ft_drop_hdr_total,
+          pressure_ft_drop_shd_total,
+          pressure_ft_drop_hit_total
+        ))
+      end
+      if (overflow_steps_with_ft_drop != 0) begin
+        `uvm_error(get_type_name(), "Pre-drop boundary testcase unexpectedly recorded a frame-table drop transition")
+      end
     end
   endtask
+endclass
+
+class opq_cross_bp_mustdrop_witness_test extends opq_cross_bp_predrop_boundary_test;
+  `uvm_component_utils(opq_cross_bp_mustdrop_witness_test)
+
+  int unsigned mustdrop_nodrop_frame_count;
+  int unsigned mustdrop_nodrop_hit_count_per_subheader;
+  int unsigned mustdrop_pressure_frame_count;
+  int unsigned mustdrop_pressure_hit_count_per_subheader;
+
+  function new(string name = "opq_cross_bp_mustdrop_witness_test", uvm_component parent = null);
+    int unsigned plusarg_value;
+
+    super.new(name, parent);
+    require_ft_drop = 1'b1;
+    mustdrop_nodrop_frame_count = 1;
+    mustdrop_nodrop_hit_count_per_subheader = 1;
+    mustdrop_pressure_frame_count = 12;
+    mustdrop_pressure_hit_count_per_subheader = 16;
+
+    if ($value$plusargs("OPQ_BP_MUSTDROP_NODROP_FRAME_COUNT=%d", plusarg_value) &&
+        (plusarg_value > 0)) begin
+      mustdrop_nodrop_frame_count = plusarg_value;
+    end
+    if ($value$plusargs("OPQ_BP_MUSTDROP_NODROP_HITS=%d", plusarg_value) &&
+        (plusarg_value > 0) &&
+        (plusarg_value <= OPQ_N_HIT)) begin
+      mustdrop_nodrop_hit_count_per_subheader = plusarg_value;
+    end
+    if ($value$plusargs("OPQ_BP_MUSTDROP_FRAME_COUNT=%d", plusarg_value) &&
+        (plusarg_value > 0)) begin
+      mustdrop_pressure_frame_count = plusarg_value;
+    end
+    if ($value$plusargs("OPQ_BP_MUSTDROP_HITS=%d", plusarg_value) &&
+        (plusarg_value > 0) &&
+        (plusarg_value <= OPQ_N_HIT)) begin
+      mustdrop_pressure_hit_count_per_subheader = plusarg_value;
+    end
+  endfunction
+
+  virtual function string soak_label();
+    return "bp_mustdrop_witness";
+  endfunction
+
+  virtual function int unsigned no_drop_frame_count();
+    return mustdrop_nodrop_frame_count;
+  endfunction
+
+  virtual function int unsigned no_drop_hit_count_per_subheader();
+    return mustdrop_nodrop_hit_count_per_subheader;
+  endfunction
+
+  virtual function int unsigned pressure_frame_count();
+    return mustdrop_pressure_frame_count;
+  endfunction
+
+  virtual function int unsigned pressure_hit_count_per_subheader();
+    return mustdrop_pressure_hit_count_per_subheader;
+  endfunction
+
+  virtual function bit pressure_phase_requires_drop_progress();
+    return 1'b1;
+  endfunction
 endclass
 
 class opq_cross_random_ready_half_saturation_1s_simtime_test extends opq_cross_random_ready_overflow_seconds_soak_test;

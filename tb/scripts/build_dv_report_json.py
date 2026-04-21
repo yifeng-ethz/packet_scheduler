@@ -17,7 +17,7 @@ REPORT_LOG_DIR = TB_DIR / "uvm" / "logs"
 REPORT_COV_DIR = TB_DIR / "uvm" / "cov_after"
 WORK_DIR = TB_DIR / "sim_runs" / "report_work"
 REPORT_JSON = TB_DIR / "DV_REPORT.json"
-QUESTA_HOME = Path(os.environ.get("QUESTA_HOME", "/data1/intelFPGA_pro/23.1/questa_fse"))
+QUESTA_HOME = Path(os.environ.get("QUESTA_HOME", "/data1/questaone_sim/questasim"))
 INSTANCE_FILTER = "/tb_top/gen_dut_2lane/dut."
 RTL_VARIANT = "after"
 SEED = 1
@@ -57,10 +57,10 @@ INSTANCE_HOLE_SPECS = [
         ],
         "classification": "real gap",
         "reason": (
-            "The remaining low FSM-transition coverage still lines up with the "
-            "bursty DRR large-random screen, which re-opened hit-accounting loss "
-            "on the latest native-SV rerun, plus the lack of dedicated signed-off "
-            "4-lane DV evidence."
+            "The remaining low FSM-transition coverage is no longer attached to "
+            "an active 2-lane bursty-DRR correctness failure after the refreshed "
+            "2026-04-21 seed sweep, but it still reflects unswept DRR profile "
+            "diversity plus the lack of dedicated signed-off 4-lane DV evidence."
         ),
         "evidence_anchor": (
             "BUG-009-R; opq_cross_drr_bursty_random_test; "
@@ -68,9 +68,10 @@ INSTANCE_HOLE_SPECS = [
             "doc/SIGNOFF.md standalone_syn"
         ),
         "next_action": (
-            "Keep the bursty DRR large-random screen probe-only, root-cause the "
-            "remaining lane0 unexplained-hit loss, and record real 4-lane DV plus "
-            "A10 standalone closure before expanding the signoff claim."
+            "Keep the refreshed bursty DRR large-random screen in the regression "
+            "matrix, expand DRR profile diversity only if coverage still stalls, "
+            "and record real 4-lane DV plus A10 standalone closure before "
+            "expanding the signoff claim."
         ),
     },
     {
@@ -95,7 +96,8 @@ INSTANCE_HOLE_SPECS = [
             "Keep the reduced-depth overwrite point as the current must-drop proof, "
             "use opq_cross_bp_predrop_boundary_test as the default-build legal "
             "pre-drop proof, and only promote a default-build must-drop hybrid once "
-            "it can advance ft_drop_* cleanly with no malformed accepted egress."
+            "it can advance ft_drop_* cleanly without relying on the separate "
+            "reduced-depth elaboration."
         ),
     },
     {
@@ -451,6 +453,12 @@ BUCKET_CASES = OrderedDict(
                     "DV_ERROR control-action recovery closure.",
                 ),
                 case_entry(
+                    "opq_error_hit_mask_recovery_test",
+                    "Mask the first or last hit of a subheader, then follow with legal recovery traffic on both active lanes.",
+                    "Hit-error masking consumes the declared beat, suppresses the lane write, and preserves accepted-hit ticket length plus clean recovery.",
+                    "DV_ERROR hit-word recovery closure.",
+                ),
+                case_entry(
                     "opq_error_subheader_mask_recovery_test",
                     "Inject a malformed subheader, then follow with a legal recovery frame on both active lanes.",
                     "Ingress subheader-error masking without poisoning the following legal packet.",
@@ -533,8 +541,8 @@ BUCKET_CASES = OrderedDict(
                 ),
                 case_entry(
                     "opq_cross_drr_bursty_frame2_boundary_test",
-                    "Deterministic bursty DRR boundary at the last green frame_count=2 envelope below the active retirement failure.",
-                    "Named green-side DRR boundary where the hot-lane/cold-lane asymmetry still closes with complete hit conservation and no ghost hits.",
+                    "Deterministic bursty DRR frame_count=2 boundary companion to the separately tracked green frame_count=3 repro.",
+                    "Named bursty DRR boundary where the hot-lane/cold-lane asymmetry still closes with complete hit conservation and no ghost hits.",
                     "DV_CROSS bursty DRR green-side boundary evidence.",
                     effort="high",
                 ),
@@ -552,9 +560,7 @@ BUCKET_CASES = OrderedDict(
     ]
 )
 
-EXCLUDED_CASES = [
-    "opq_cross_drr_bursty_random_test",
-]
+EXCLUDED_CASES = []
 
 CATALOG_SOURCES = {
     "BASIC": {
@@ -625,6 +631,7 @@ BUCKET_FRAME_LEGACY_ORDER = [
     ("ERROR", "opq_error_lane_mask_single_hit_test"),
     ("ERROR", "opq_error_lane_mask_burst_test"),
     ("ERROR", "opq_error_lane_mask_recovery_test"),
+    ("ERROR", "opq_error_hit_mask_recovery_test"),
     ("ERROR", "opq_error_subheader_mask_recovery_test"),
     ("ERROR", "opq_error_header_mask_recovery_test"),
     ("ERROR", "opq_error_header_word_mask_recovery_test"),
@@ -682,9 +689,9 @@ SIGNOFF_RUN_SPECS = [
         "limitations": [
             "PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.",
             "opq_cross_mixed_bucket_random_soak_test is tracked as a dedicated supplemental signoff run; this fixed baseline remains case-ordered and deterministic.",
-            "opq_cross_drr_bursty_frame2_boundary_test is tracked as a dedicated supplemental signoff run because it freezes the last known green bursty DRR envelope below the open frame_count=3 retirement failure.",
+            "opq_cross_drr_bursty_frame2_boundary_test is tracked as a dedicated supplemental signoff run because it freezes one deterministic bursty DRR boundary while the complementary frame_count=3 repro and large-random sweep remain tracked separately.",
             "opq_cross_bp_predrop_boundary_test is tracked as a dedicated supplemental signoff run because it proves the default-build legal pre-drop boundary under sustained backpressure rather than a promoted fixed bucket-frame case.",
-            "opq_cross_random_ready_overflow_step2_boundary_test is tracked as a dedicated supplemental signoff run because it freezes the current green two-step legal-overflow boundary while the later must-drop path remains probe-only.",
+            "opq_cross_random_ready_overflow_step2_boundary_test is tracked as a dedicated supplemental signoff run because it freezes the current green two-step legal-overflow boundary while the explicit overwrite-local must-drop proof is carried by a separate reduced-depth witness.",
             "opq_error_counter_clear_test is tracked as a dedicated supplemental signoff run because it intentionally clears live CSR counters mid-run.",
             "opq_error_ftable_overflow_test is tracked as a dedicated supplemental signoff run because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration.",
         ],
@@ -703,9 +710,9 @@ SIGNOFF_RUN_SPECS = [
         "limitations": [
             "PARAM build points are excluded because they require separate elaboration and cannot be composed into one no-restart runtime.",
             "opq_cross_mixed_bucket_random_soak_test is tracked as a dedicated supplemental signoff run; this fixed baseline remains case-ordered and deterministic.",
-            "opq_cross_drr_bursty_frame2_boundary_test is tracked as a dedicated supplemental signoff run because it freezes the last known green bursty DRR envelope below the open frame_count=3 retirement failure.",
+            "opq_cross_drr_bursty_frame2_boundary_test is tracked as a dedicated supplemental signoff run because it freezes one deterministic bursty DRR boundary while the complementary frame_count=3 repro and large-random sweep remain tracked separately.",
             "opq_cross_bp_predrop_boundary_test is tracked as a dedicated supplemental signoff run because it proves the default-build legal pre-drop boundary under sustained backpressure rather than a promoted fixed bucket-frame case.",
-            "opq_cross_random_ready_overflow_step2_boundary_test is tracked as a dedicated supplemental signoff run because it freezes the current green two-step legal-overflow boundary while the later must-drop path remains probe-only.",
+            "opq_cross_random_ready_overflow_step2_boundary_test is tracked as a dedicated supplemental signoff run because it freezes the current green two-step legal-overflow boundary while the explicit overwrite-local must-drop proof is carried by a separate reduced-depth witness.",
             "opq_error_counter_clear_test is tracked as a dedicated supplemental signoff run because it intentionally clears live CSR counters mid-run.",
             "opq_error_ftable_overflow_test is tracked as a dedicated supplemental signoff run because its reduced-depth OPQ_PAGE_RAM_DEPTH=512 build point requires separate elaboration.",
             f"This run appends two extra tail sequences after the {SIGNOFF_CASE_COUNT} promoted default-build cases; those tail sequences are stress-only and are not counted as separate promoted cases.",
@@ -724,7 +731,7 @@ SIGNOFF_RUN_SPECS = [
         "payload_cap": None,
         "limitations": [
             "This is a supplemental signoff run, not the fixed bucket-frame baseline; execution order is intentionally seed-driven rather than case-id ordered.",
-            "The run reuses only already-promoted safe bucket slices so it can stress chained no-restart behavior without reopening known probe-only bursty DRR loss.",
+            "The run reuses only already-promoted safe bucket slices so it can stress chained no-restart behavior without folding the separate bursty DRR supplemental screens into the fixed baseline.",
         ],
     },
     {
@@ -739,8 +746,8 @@ SIGNOFF_RUN_SPECS = [
         "iter_cap": None,
         "payload_cap": None,
         "limitations": [
-            "This is a supplemental signoff run that freezes the largest green bursty DRR envelope below the open frame_count=3 active-lane retirement failure.",
-            "It is intentionally tracked outside the promoted fixed bucket-frame baselines because the larger bursty DRR probe family remains open.",
+            "This is a supplemental signoff run that freezes a deterministic bursty DRR frame_count=2 boundary alongside the separately tracked green frame_count=3 repro.",
+            "It is intentionally tracked outside the promoted fixed bucket-frame baselines because bursty DRR stress evidence is maintained as a supplemental screen, not because of an active correctness failure.",
         ],
     },
     {
@@ -772,7 +779,7 @@ SIGNOFF_RUN_SPECS = [
         "payload_cap": None,
         "limitations": [
             "This is a supplemental signoff run that freezes the current green two-step legal-overflow boundary on the default build with ft_drop counters held at zero.",
-            "It does not close the later must-drop path; the longer random-ready overflow soak remains probe-only until the presenter overwrite accounting bug is fixed.",
+            "The explicit overwrite-local must-drop proof is carried separately by the reduced-depth opq_cross_bp_mustdrop_witness_test witness, so this run remains the early-window legal-overflow boundary only.",
         ],
     },
     {
@@ -1375,9 +1382,8 @@ def build() -> dict:
             "mode_scope": "MERGING mode only is claimed in the active native-SV report",
             "n_shd_scope": "native-SV signoff claim covers OPQ_N_SHD = 128 / 256 / 512 only",
             "four_lane_status": "4-lane native-SV remains out of signoff scope until dedicated 4-lane DV evidence is promoted; the standalone Arria 10 synthesis result is now recorded separately in signoff",
-            "bursty_drr_probe_status": "the named green-side companion opq_cross_drr_bursty_frame2_boundary_test now passes with expected=298 actual=298 missing=0 ghost=0, but the reduced deterministic opq_cross_drr_bursty_frame3_repro_test still fails with expected=484 actual=254 missing=230 ghost=0 and the full 8-frame screen still fails with lane0 unexplained=368; the larger failure family remains probe-only",
             "mixed_bucket_seconds_probe_status": "the exact 183..190 reproducer is green, and the full stretched mixed-bucket seconds soak now also passes end to end on the repaired allocator state; the screen remains probe-only because of runtime, not because of a live failure",
-            "continuous_frame_scope": "fixed bucket-frame baselines cover the default-build promoted matrix only; dedicated supplemental signoff runs now track mixed-bucket random soak, the bursty DRR frame_count=2 green boundary, the default-build legal pre-drop boundary, the default-build two-step legal overflow boundary, counter-clear semantics, and the reduced-depth overflow build point, while PARAM elaboration points still remain separate",
+            "continuous_frame_scope": "fixed bucket-frame baselines cover the default-build promoted matrix only; dedicated supplemental signoff runs now track mixed-bucket random soak, the bursty DRR frame_count=2/frame_count=3 boundary pair, the refreshed bursty DRR large-random seed sweep, the default-build legal pre-drop boundary, the default-build two-step legal overflow boundary, counter-clear semantics, the reduced-depth overwrite shape-check, and the named reduced-depth must-drop witness, while PARAM elaboration points still remain separate",
         },
         "execution_modes": {
             "isolated": {

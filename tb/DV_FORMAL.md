@@ -251,6 +251,26 @@ ap_trailer_clears_alert_eop: assert property (
   |=> ##[0:2] !ingress_parser.alert_eop[g]);
 ```
 
+The live ingress checker now also freezes the typed error contract that DV uses
+on the native-SV path:
+
+- `asi_ingress_error[2]` is a header-level mask request and is legal only on
+  the preamble/header beats; the DUT response is full-frame mask
+- `asi_ingress_error[1]` is a subheader-level mask request and is legal only on
+  subheader beats; the DUT response is subheader-plus-associated-hit mask
+- `asi_ingress_error[0]` is a hit-level mask request and is legal only on hit
+  beats; the DUT still consumes that beat from the declared subheader stream,
+  but suppresses the lane write and emits a ticket length that counts only
+  accepted hits
+- any other location for those bits is illegal stimulus and stays on the
+  assumption side of the formal model
+
+One implementation detail matters for these checks: the checker aligns
+"previous beat classification" to the DUT's registered `lane_we` / `ticket_we`
+pulses, because the public write strobes and the live ingress word are sampled
+in different assertion phases. Without that shadow alignment the fallback
+stress mode false-fires on legal hit-mask traffic.
+
 ### 2.7 Bad-packet mode
 
 The paper's `pkt_good` flag is reused here so the same harness can prove
@@ -259,6 +279,12 @@ the parser either *accepts* a malformed frame (e.g. subheader with
 *rejects* it (early-terminates). In that mode the top assumption becomes
 `not(prop_pkt_ingress(0))` and the assertion becomes
 `|-> (ingress_parser_state[g] inside {MASK_PKT, MASK_PKT_EXTENDED, RESET})`.
+
+The typed ingress-error paths above are not treated as "wrong-format arbitrary
+bad packets". They are a supported subspace of the ingress contract. The formal
+bad-packet mode is reserved for genuinely illegal framing or illegal
+wrong-location error assertions that the runtime bucket does not claim to
+support.
 
 ---
 
@@ -290,8 +316,8 @@ The analogous pair holds for `ingress_lane_wptr[m]` and
 *Caveat already noted in the native RTL comment at
 `ingress_parser.sv:425`: both pulse and pointer are driven from the same
 clocked process, so sampling directly on the public ports false-fires.
-The formal flow binds a `p_shadow` register one delta-cycle earlier and
-compares against that instead.*
+The live ingress checker now keeps a beat-class shadow aligned to the public
+write pulses and compares against that instead.*
 
 ### 3.2 Credit conservation (the key invariant)
 
@@ -996,20 +1022,17 @@ use standalone elaboration tops (`opq_formal_ingress_tb`,
 `opq_formal_ftable_tb`) so those planes can be checked without relying
 on unsupported full-top parameter reductions.
 
-The wrapper API is intentionally stable ahead of a real `qverify`
-install:
+The wrapper API is now stabilized around the supported Questa formal path:
 
 - `FORMAL_BACKEND=auto|stress|qverify` selects the backend. `auto`
-  chooses `stress` unless `FORMAL_QVERIFY_ENABLE=1` or
-  `FORMAL_SBY_ENABLE=1` is set.
-- `QVERIFY_BIN=/path/to/qverify` points the same wrappers at the future
-  proof executable without changing testcase names, tops, or plane
-  ordering.
-- `FORMAL_BACKEND=sby` selects the OSS backend path.
-- `SBY_BIN=/path/to/sby`, `YOSYS_BIN=/path/to/yosys`, and
-  `BITWUZLA_BIN=/path/to/bitwuzla` point the same wrappers at an OSS
-  toolchain without changing testcase names, tops, or plane ordering.
-- `FORMAL_SBY_ENGINE=bitwuzla` records the intended SMT engine for the
+  now chooses `qverify` by default and only falls back to `stress` when
+  `FORMAL_STRESS_ENABLE=1` is set explicitly.
+- `QVERIFY_BIN=/path/to/qverify` points the same wrappers at the
+  installed `qverify` / `znformal` executable without changing testcase
+  names, tops, or plane ordering.
+- `FORMAL_BACKEND=sby` is deprecated in this workspace and intentionally
+  reports a blocked/deprecated status instead of driving the old OSS
+  Yosys flow.
   future OSS flow; today the wrappers treat it as metadata and a binary
   requirement check.
 - `FORMAL_STRESS_TESTS` overrides the default simulation fallback test
@@ -1019,18 +1042,26 @@ install:
 - `FORMAL_STRESS_EXTRA_TESTS="..."` appends ad hoc tests to the default
   list.
 
-### 10.4.1 Current host execution status (2026-04-18)
+### 10.4.1 Current host execution status (2026-04-21)
 
-The wrappers were executed on **2026-04-18** with the current host tool
-installation:
+The wrappers were executed on **2026-04-18** and refreshed with targeted ingress
+reruns on **2026-04-21** with the current host tool installation:
 
 - `formal_ingress.sh`: compile/elaboration passed on
   `opq_formal_ingress_tb`, and the current default fallback stress suite
   now passes with `FORMAL_BACKEND=stress` on the smallest known-good
   contract-preserving abstraction:
   `FORMAL_OPQ_N_SHD=256`, `FORMAL_OPQ_TICKET_FIFO_DEPTH=512`,
-  stress tests `opq_basic_smoke_test` and
-  `opq_formal_like_ingress_recovery_stress_test`.
+  stress tests `opq_basic_smoke_test`,
+  `opq_formal_like_ingress_recovery_stress_test`, and
+  `opq_error_hit_mask_recovery_test`.
+  The refreshed `2026-04-21` rerun is now fully green after the localized
+  ingress trailer-bypass checks exposed and closed a real zero-hit subheader
+  recovery bug: a legal zero-hit subheader following a masked subheader used
+  to leave the parser in `MASK_PKT`, which kept `tail_bypass_drop` high
+  through the trailer. The parser now returns that branch to its normal
+  body/idle state, and the standalone ingress-formal tops and registered-write
+  timing checks remain aligned to the live port map.
 - `formal_mover.sh`: compile/elaboration passed on the live allocator /
   block-mover path, and the current default fallback stress suite
   passes: `opq_cross_bp_credit_test` and
@@ -1041,11 +1072,12 @@ installation:
   path, and the current default fallback stress suite passes:
   `opq_edge_toggle_backpressure_test` and
   `opq_edge_stuck_low_backpressure_test`. The reduced-depth
-  `opq_error_ftable_overflow_test` flush-atomicity companion is still
-  kept as a dedicated reduced-depth supplemental screen, but the fresh
-  `2026-04-20` rerun reopened accepted-egress contract errors, so it is
-  not part of the default fallback suite and it still requires a separate
-  `OPQ_PAGE_RAM_DEPTH=512` elaboration point.
+  `opq_error_ftable_overflow_test` flush-atomicity companion is green
+  again on the refreshed current tree, and the stronger reduced-depth
+  `opq_cross_bp_mustdrop_witness_test` `12x16` witness is also green on
+  `2026-04-21`. They remain outside the default fallback suite because
+  they require the separate `OPQ_PAGE_RAM_DEPTH=512` elaboration point,
+  not because of a live accepted-egress failure.
 - Targeted egress probe status:
   `FORMAL_STRESS_TESTS=opq_formal_like_egress_flush_backpressure_stress_test
   FORMAL_BACKEND=stress bash tb/scripts/formal_egress.sh` now passes as
@@ -1058,6 +1090,9 @@ installation:
 
 Current ingress fallback classification:
 
+- `opq_error_hit_mask_recovery_test` is part of the supported typed ingress
+  error contract, not a probe-only malformed-packet exception. The targeted
+  `2026-04-21` fallback stress rerun is green.
 - `opq_error_header_mask_recovery_test` is promoted in the live
   native-SV signoff matrix, but it remains **fallback-only probe
   classified** here because the reduced fallback stimulus intentionally
@@ -1075,66 +1110,23 @@ Current ingress fallback classification:
   model where one recovery hit is lost and one lane credit does not
   restore, while the normal-size run closes cleanly. The stable wrapper
   entry point for that fallback role is now
-  `opq_formal_like_ingress_recovery_stress_test`.
+  `opq_formal_like_ingress_recovery_stress_test`, and a direct
+  `2026-04-21` native-SV rerun of
+  `opq_error_subheader_mask_recovery_test` is also green after the
+  zero-hit recovery branch was returned to the normal body state.
 
-Current blocker: the ETH license server exposes `znformal`, but the
-current host tool installation does **not** provide a runnable
-`qverify`/`znformal` binary in `PATH` or under the checked Questa
-install trees. So the current wrappers close compile/elaboration
-readiness and can execute a consistent simulation-backed fallback flow,
-but they do not yet execute a real proof engine on this host.
+Current blocker on **2026-04-21**: the ETH license server exposes
+`znformal`, but the current host tool installation still does **not**
+provide a runnable `qverify` / `znformal` executable under
+`/data1/questaone_sim/questasim` or on `PATH`. The wrappers therefore
+close compile/elaboration readiness and can still execute the explicit
+simulation-backed `stress` mode, but they do not yet execute a real
+proof engine on this host.
 
-Current OSS alternative status:
-
-- the wrapper layer now also accepts `FORMAL_BACKEND=sby` with explicit
-  `SBY_BIN`, `YOSYS_BIN`, and `BITWUZLA_BIN` hooks
-- a shared OSS stack is now installed for all users under
-  `/data1/oss_formal`, with stable wrappers in `/data1/oss_formal/bin`
-  and a shell activation script at `/data1/oss_formal/activate.sh`
-- the OPQ wrapper layer also probes `/data1/oss_formal/bin/{sby,yosys,bitwuzla}`
-  directly, so `FORMAL_BACKEND=sby` works on this host without a
-  per-user shell setup
-- current host result with that shared install:
-  - ingress:
-    `compile=pass`,
-    `elab=pass`,
-    `formal=sby_pass`,
-    `backend=sby+yosys+bitwuzla`
-    via `formal_ingress.sh`
-    `FORMAL_BACKEND=sby`
-    `FORMAL_SBY_TASKS=prove`
-  - mover:
-    `compile=pass`,
-    `elab=pass`,
-    `formal=sby_pass`,
-    `backend=sby+yosys+bitwuzla`
-    via `formal_mover.sh`
-    `FORMAL_BACKEND=sby`
-    `FORMAL_SBY_TASKS=prove`
-  - egress:
-    `compile=pass`,
-    `elab=pass`,
-    `formal=sby_pass`,
-    `backend=sby+yosys+bitwuzla`
-    via `formal_egress.sh`
-    `FORMAL_BACKEND=sby`
-    `FORMAL_SBY_TASKS=prove`
-- the OSS path is therefore no longer just a backend/API handoff:
-  the ingress, mover, and egress jobs are now all truly scripted and
-  execute real `sby` runs on this host
-- current wrapper-managed OSS blockers for backend bring-up are closed:
-  - `BUG-015-H`: closed for the current OSS ingress subset; the
-    reset-warmup credit pollution was removed and the proof now checks
-    pulse-level write/drop consistency rather than phase-ambiguous
-    public credit buses
-  - `BUG-016-H`: closed for the current OSS egress subset; the live
-    Avalon-ST hold-under-backpressure slice now passes after isolating
-    the overwrite-drop scan from the OSS backend and fixing the basic
-    presenter RAM-return hold bug on the live native-SV path
-  - `BUG-017-H`: closed for the current OSS mover subset;
-    `formal_mover.sh` now records `formal=sby_pass`
-- current OSS non-claims:
-  - ingress free-credit debug counters are treated as observability-only
+Historical note: the older OSS `sby` / Yosys evidence from
+`2026-04-18` remains recorded in `BUG_HISTORY.md` and prior CSVs as
+historical bring-up evidence only. That path is now deprecated and is
+no longer part of the active formal signoff recipe.
     and are no longer used as exact proof anchors in the SBY harness;
     the proven subset is packet-shape plus write/drop pulse legality
 - non-claim for the current OSS egress pass:
@@ -1156,7 +1148,7 @@ Current OSS alternative status:
 | §3.2 credit conservation | `opq_edge_backpressure_test`, `opq_edge_toggle_backpressure_test` |
 | §4.2 page-RAM exclusion | any `opq_cross_drr_*` + `opq_error_*` |
 | §5.1 DRR legality | `opq_cross_drr_allowance_test`, `opq_cross_drr_bursty_random_test` |
-| §6.1–6.2 flush atomicity | `opq_error_ftable_overflow_test` reduced-depth supplemental screen (reopened on the fresh `2026-04-20` rerun) |
+| §6.1–6.2 flush atomicity | reduced-depth supplemental screens `opq_error_ftable_overflow_test` and `opq_cross_bp_mustdrop_witness_test` (`12x16` green on `2026-04-21`) |
 | §7.3.3–7.3.5 backpressure + flush | `opq_edge_backpressure_test` × `opq_error_ftable_overflow_test` hybrid (TODO to add as a directed case) |
 | §8.1–8.2 end-to-end integrity | fixed `opq_cross_*` signoff baselines plus the supplemental `opq_cross_mixed_bucket_random_soak_test` screen |
 
@@ -1184,8 +1176,8 @@ to `tb/uvm/tests/` as a directed regression case.
   only plane-level property not yet planned; needs the ingress
   parser's `pkg_cnt` to be exported as a DUT-level observation port so
   the property can bind.
-- Host-side tool block: on **2026-04-18** the ETH floating license for
+- Host-side tool block: on **2026-04-21** the ETH floating license for
   `znformal` was available, but no `qverify` / `znformal` executable was
-  present in the installed Questa trees on this machine. First real
+  present in the active QuestaOne tree on this machine. First real
   proof execution therefore remains blocked on tool installation rather
   than on the OPQ RTL build.

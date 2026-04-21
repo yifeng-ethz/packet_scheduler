@@ -21,6 +21,6 @@ formal_run_plane \
   "512" \
   "1024" \
   "Plane A/B ingress-parser packet-shape and credit invariants on the live native-SV path" \
-  "opq_basic_smoke_test opq_formal_like_ingress_recovery_stress_test" \
+  "opq_basic_smoke_test opq_formal_like_ingress_recovery_stress_test opq_error_hit_mask_recovery_test" \
   "opq_error_header_mask_recovery_test opq_error_header_word_mask_recovery_test" \
   "opq_oss_ingress"

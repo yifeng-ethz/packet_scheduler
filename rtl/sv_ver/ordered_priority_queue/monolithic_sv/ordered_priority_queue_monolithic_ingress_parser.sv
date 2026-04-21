@@ -1,8 +1,8 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_ingress_parser
-// Version : 26.3.25
-// Date    : 20260419
-// Change  : Keep parser busy export Quartus-18-compatible in synthesis while preserving the simulation-visible state contract
+// Version : 26.3.56
+// Date    : 20260421
+// Change  : Carry the current frame serial on every non-SOP ticket so allocator drop/tail decisions stay frame-accurate across wrapped subheader timestamps
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_ingress_parser #(
@@ -18,7 +18,8 @@ module ordered_priority_queue_monolithic_ingress_parser #(
   parameter int unsigned FRAME_HIT_CNT_SIZE = 16,
   parameter int unsigned MAX_PKT_LENGTH = HIT_SIZE * N_HIT,
   parameter int unsigned MAX_PKT_LENGTH_BITS = (MAX_PKT_LENGTH <= 1) ? 1 : $clog2(MAX_PKT_LENGTH),
-  parameter int unsigned TICKET_FIFO_DATA_WIDTH_A = 48 + $clog2(LANE_FIFO_DEPTH) + MAX_PKT_LENGTH_BITS + 2,
+  parameter int unsigned TICKET_FIFO_DATA_WIDTH_A =
+    48 + $clog2(LANE_FIFO_DEPTH) + MAX_PKT_LENGTH_BITS + FRAME_SERIAL_SIZE + 2,
   parameter int unsigned TICKET_FIFO_DATA_WIDTH_B =
     FRAME_SERIAL_SIZE + FRAME_SUBH_CNT_SIZE + FRAME_HIT_CNT_SIZE + 6 + 16 + 48 + 2,
   parameter int unsigned TICKET_FIFO_DATA_WIDTH =
@@ -45,6 +46,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
   output logic                                              lane_we,
   output logic [47:0]                                       running_ts_dbg,
   output logic [47:0]                                       frame_ts_base_dbg,
+  output logic [FRAME_SERIAL_SIZE-1:0]                      pkg_cnt_dbg,
   output logic [5:0]                                        dt_type_dbg,
   output logic [15:0]                                       feb_id_dbg,
   output logic                                              parser_busy_o,
@@ -61,9 +63,14 @@ module ordered_priority_queue_monolithic_ingress_parser #(
   output logic                                              credit_drop_valid_o,
   output logic                                              credit_drop_lane_o,
   output logic                                              credit_drop_ticket_o,
+  output logic [FRAME_SERIAL_SIZE-1:0]                      credit_drop_pkg_cnt_o,
   output logic [47:0]                                       credit_drop_ts_o,
   output logic [15:0]                                       credit_drop_shd_cnt_o,
   output logic [15:0]                                       credit_drop_hit_cnt_o,
+  output logic                                              tail_bypass_valid_o,
+  output logic                                              tail_bypass_drop_o,
+  output logic [FRAME_SERIAL_SIZE-1:0]                      tail_bypass_serial_o,
+  output logic [47:0]                                       tail_bypass_ts_o,
   output logic                                              alert_eop_state_o,
   input  logic                                              eop_flush_ack_i,
   input  logic                                              d_clk,
@@ -79,6 +86,8 @@ module ordered_priority_queue_monolithic_ingress_parser #(
   localparam int unsigned TICKET_LANE_RD_OFST_HI = 48 + LANE_FIFO_ADDR_WIDTH - 1;
   localparam int unsigned TICKET_BLOCK_LEN_LO = 48 + LANE_FIFO_ADDR_WIDTH;
   localparam int unsigned TICKET_BLOCK_LEN_HI = 48 + LANE_FIFO_ADDR_WIDTH + MAX_PKT_LENGTH_BITS - 1;
+  localparam int unsigned TICKET_BODY_SERIAL_LO = TICKET_BLOCK_LEN_HI + 1;
+  localparam int unsigned TICKET_BODY_SERIAL_HI = TICKET_BODY_SERIAL_LO + FRAME_SERIAL_SIZE - 1;
   localparam int unsigned TICKET_SERIAL_LO = 0;
   localparam int unsigned TICKET_SERIAL_HI = FRAME_SERIAL_SIZE - 1;
   localparam int unsigned TICKET_N_SUBH_LO = FRAME_SERIAL_SIZE;
@@ -136,6 +145,8 @@ module ordered_priority_queue_monolithic_ingress_parser #(
     logic [47:0]           running_ts;
     logic [47:0]           frame_ts_base;
     pkt_length_t           shd_len;
+    pkt_length_t           shd_decl_len;
+    pkt_length_t           shd_seen_cnt;
     logic [5:0]            dt_type;
     logic [15:0]           feb_id;
     lane_fifo_addr_t       lane_start_addr;
@@ -182,6 +193,8 @@ module ordered_priority_queue_monolithic_ingress_parser #(
   endfunction
 
   always_comb begin : proc_ingress_parser_comb
+    pkt_length_t wr_hits_block_len_v;
+
     ingress_parser_is_subheader = (asi_ingress_data[7:0] == K237) && (asi_ingress_data[35:32] == 4'b0001);
     ingress_parser_is_preamble = (asi_ingress_data[7:0] == K285) && (asi_ingress_data[35:32] == 4'b0001);
     ingress_parser_is_trailer = (asi_ingress_data[7:0] == K284) && (asi_ingress_data[35:32] == 4'b0001);
@@ -201,6 +214,12 @@ module ordered_priority_queue_monolithic_ingress_parser #(
     ingress_parser_if_preamble_feb_id = asi_ingress_data[23:8];
 
     ingress_parser_if_write_ticket_data = '0;
+    wr_hits_block_len_v = ingress_parser.shd_len;
+    if ((ingress_parser_state == INGRESS_PARSER_WR_HITS) &&
+        asi_ingress_valid &&
+        !ingress_parser_hit_err) begin
+      wr_hits_block_len_v = ingress_parser.shd_len + pkt_length_t'(1);
+    end
     if (ingress_parser_is_subheader) begin
       ingress_parser_if_write_ticket_data[TICKET_TS_HI:TICKET_TS_LO] = ingress_parser_if_current_subheader_ts;
       ingress_parser_if_write_ticket_data[TICKET_LANE_RD_OFST_HI:TICKET_LANE_RD_OFST_LO] =
@@ -211,7 +230,12 @@ module ordered_priority_queue_monolithic_ingress_parser #(
       ingress_parser_if_write_ticket_data[TICKET_TS_HI:TICKET_TS_LO] = ingress_parser.running_ts;
       ingress_parser_if_write_ticket_data[TICKET_LANE_RD_OFST_HI:TICKET_LANE_RD_OFST_LO] =
         ingress_parser.lane_start_addr;
-      ingress_parser_if_write_ticket_data[TICKET_BLOCK_LEN_HI:TICKET_BLOCK_LEN_LO] = ingress_parser.shd_len;
+      ingress_parser_if_write_ticket_data[TICKET_BLOCK_LEN_HI:TICKET_BLOCK_LEN_LO] = wr_hits_block_len_v;
+    end
+
+    if (!ingress_parser.alert_sop) begin
+      ingress_parser_if_write_ticket_data[TICKET_BODY_SERIAL_HI:TICKET_BODY_SERIAL_LO] =
+        ingress_parser.pkg_cnt;
     end
 
     if ((ingress_parser_state == INGRESS_PARSER_UPDATE_HEADER_TS) && (update_header_ts_flow == 2'd3)) begin
@@ -236,9 +260,10 @@ module ordered_priority_queue_monolithic_ingress_parser #(
     lane_wdata = ingress_parser.lane_wdata;
     lane_wptr = ingress_parser.lane_wptr;
     lane_we = ingress_parser.lane_we;
-    running_ts_dbg = ingress_parser.running_ts;
-    frame_ts_base_dbg = ingress_parser.frame_ts_base;
-    dt_type_dbg = ingress_parser.dt_type;
+  running_ts_dbg = ingress_parser.running_ts;
+  frame_ts_base_dbg = ingress_parser.frame_ts_base;
+  pkg_cnt_dbg = ingress_parser.pkg_cnt;
+  dt_type_dbg = ingress_parser.dt_type;
     feb_id_dbg = ingress_parser.feb_id;
 `ifdef SYNTHESIS
     // Quartus 18.1 can mis-resolve the enum-based state compare through the
@@ -263,6 +288,12 @@ module ordered_priority_queue_monolithic_ingress_parser #(
   end
 
   always_ff @(posedge d_clk) begin : proc_ingress_parser
+    bit hit_consume_v;
+    bit hit_accept_v;
+    bit hit_last_v;
+    pkt_length_t shd_seen_next_v;
+    pkt_length_t shd_accept_next_v;
+
     ingress_parser.lane_we <= 1'b0;
     ingress_parser.ticket_we <= 1'b0;
 `ifdef OPQ_OSS_FORMAL
@@ -274,9 +305,27 @@ module ordered_priority_queue_monolithic_ingress_parser #(
     credit_drop_valid_o <= 1'b0;
     credit_drop_lane_o <= 1'b0;
     credit_drop_ticket_o <= 1'b0;
+    credit_drop_pkg_cnt_o <= '0;
     credit_drop_ts_o <= '0;
     credit_drop_shd_cnt_o <= '0;
     credit_drop_hit_cnt_o <= '0;
+    tail_bypass_valid_o <= 1'b0;
+    tail_bypass_drop_o <= 1'b0;
+    tail_bypass_serial_o <= '0;
+    tail_bypass_ts_o <= '0;
+    hit_consume_v = asi_ingress_valid;
+    hit_accept_v = asi_ingress_valid && !ingress_parser_hit_err;
+    shd_seen_next_v = ingress_parser.shd_seen_cnt;
+    if (hit_consume_v) begin
+      shd_seen_next_v = ingress_parser.shd_seen_cnt + pkt_length_t'(1);
+    end
+    shd_accept_next_v = ingress_parser.shd_len;
+    if (hit_accept_v) begin
+      shd_accept_next_v = ingress_parser.shd_len + pkt_length_t'(1);
+    end
+    hit_last_v =
+      hit_consume_v &&
+      (shd_seen_next_v == ingress_parser.shd_decl_len);
 
     if (lane_credit_update_valid) begin
       ingress_parser.lane_credit <= ingress_parser.lane_credit + lane_credit_update;
@@ -293,10 +342,13 @@ module ordered_priority_queue_monolithic_ingress_parser #(
         if (asi_ingress_valid) begin
           if (ingress_parser_is_subheader && !ingress_parser_shd_err) begin
             ingress_parser.running_ts <= ingress_parser_if_current_subheader_ts;
-            ingress_parser.shd_len <= ingress_parser_if_subheader_hit_cnt;
+            ingress_parser.shd_len <= '0;
+            ingress_parser.shd_decl_len <= ingress_parser_if_subheader_hit_cnt;
+            ingress_parser.shd_seen_cnt <= '0;
             if (int'(ingress_parser_if_subheader_hit_cnt) >= int'(ingress_parser.lane_credit)) begin
               credit_drop_valid_o <= 1'b1;
               credit_drop_lane_o <= 1'b1;
+              credit_drop_pkg_cnt_o <= ingress_parser.pkg_cnt;
               credit_drop_ts_o <= ingress_parser_if_current_subheader_ts;
 `ifdef OPQ_OSS_FORMAL
               credit_drop_lane_decision_dbg_oss <= 1'b1;
@@ -307,6 +359,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
             end else if (ingress_parser.ticket_credit == '0) begin
               credit_drop_valid_o <= 1'b1;
               credit_drop_ticket_o <= 1'b1;
+              credit_drop_pkg_cnt_o <= ingress_parser.pkg_cnt;
               credit_drop_ts_o <= ingress_parser_if_current_subheader_ts;
 `ifdef OPQ_OSS_FORMAL
               credit_drop_ticket_decision_dbg_oss <= 1'b1;
@@ -449,10 +502,13 @@ module ordered_priority_queue_monolithic_ingress_parser #(
         if (asi_ingress_valid) begin
           if (ingress_parser_is_subheader && !ingress_parser_shd_err) begin
             ingress_parser.running_ts <= ingress_parser_if_current_subheader_ts;
-            ingress_parser.shd_len <= ingress_parser_if_subheader_hit_cnt;
+            ingress_parser.shd_len <= '0;
+            ingress_parser.shd_decl_len <= ingress_parser_if_subheader_hit_cnt;
+            ingress_parser.shd_seen_cnt <= '0;
             if (int'(ingress_parser_if_subheader_hit_cnt) >= int'(ingress_parser.lane_credit)) begin
               credit_drop_valid_o <= 1'b1;
               credit_drop_lane_o <= 1'b1;
+              credit_drop_pkg_cnt_o <= ingress_parser.pkg_cnt;
               credit_drop_ts_o <= ingress_parser_if_current_subheader_ts;
 `ifdef OPQ_OSS_FORMAL
               credit_drop_lane_decision_dbg_oss <= 1'b1;
@@ -463,6 +519,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
             end else if (ingress_parser.ticket_credit == '0) begin
               credit_drop_valid_o <= 1'b1;
               credit_drop_ticket_o <= 1'b1;
+              credit_drop_pkg_cnt_o <= ingress_parser.pkg_cnt;
               credit_drop_ts_o <= ingress_parser_if_current_subheader_ts;
 `ifdef OPQ_OSS_FORMAL
               credit_drop_ticket_decision_dbg_oss <= 1'b1;
@@ -492,6 +549,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
               end
 `endif
               ingress_parser.alert_eop <= 1'b0;
+              ingress_parser_state <= INGRESS_PARSER_IDLE;
               if (ticket_credit_update_valid) begin
                 ingress_parser.ticket_credit <= ingress_parser.ticket_credit + ticket_credit_update -
                   TICKET_FIFO_ADDR_ONE_CONST;
@@ -512,37 +570,38 @@ module ordered_priority_queue_monolithic_ingress_parser #(
       end
 
       INGRESS_PARSER_WR_HITS: begin
-        if (asi_ingress_valid && !ingress_parser_hit_err) begin
+        if (hit_accept_v) begin
           ingress_parser.lane_wdata <= ingress_parser_if_write_lane_data;
           ingress_parser.lane_wptr <= ingress_parser.lane_wptr + LANE_FIFO_ADDR_ONE_CONST;
           ingress_parser.lane_we <= 1'b1;
 `ifdef OPQ_OSS_FORMAL
           lane_issue_dbg_oss <= 1'b1;
 `endif
+          ingress_parser.shd_len <= shd_accept_next_v;
         end else if (ingress_parser_shd_err) begin
           ingress_parser.error_lane_wr_early_term <= 1'b1;
         end
 
-        if (asi_ingress_valid && !ingress_parser_hit_err) begin
-            if ((ingress_parser.lane_start_addr + ingress_parser.shd_len) ==
-                (ingress_parser.lane_wptr + LANE_FIFO_ADDR_ONE_CONST)) begin
-              ingress_parser.ticket_we <= 1'b1;
+        if (hit_consume_v) begin
+          ingress_parser.shd_seen_cnt <= shd_seen_next_v;
+          if (hit_last_v) begin
+            ingress_parser.ticket_we <= 1'b1;
 `ifdef OPQ_OSS_FORMAL
-              ticket_issue_dbg_oss <= 1'b1;
+            ticket_issue_dbg_oss <= 1'b1;
 `endif
-              ingress_parser.ticket_wptr <= ingress_parser.ticket_wptr + TICKET_FIFO_ADDR_ONE_CONST;
-              ingress_parser.ticket_wdata <= ingress_parser_if_write_ticket_data;
+            ingress_parser.ticket_wptr <= ingress_parser.ticket_wptr + TICKET_FIFO_ADDR_ONE_CONST;
+            ingress_parser.ticket_wdata <= ingress_parser_if_write_ticket_data;
 `ifndef SYNTHESIS
-              if (opq_trace_boundary_en && ($time >= opq_trace_after_ps)) begin
-                $display("[opq_boundary] t=%0t parser_ticket_we ts=0x%0h lane_start=0x%0h len=%0d sop=%0b eop=%0b next_ticket_wptr=0x%0h",
-                  $time,
-                  ingress_parser_if_write_ticket_data[TICKET_TS_HI:TICKET_TS_LO],
-                  ingress_parser_if_write_ticket_data[TICKET_LANE_RD_OFST_HI:TICKET_LANE_RD_OFST_LO],
-                  ingress_parser_if_write_ticket_data[TICKET_BLOCK_LEN_HI:TICKET_BLOCK_LEN_LO],
-                  ingress_parser_if_write_ticket_data[TICKET_ALT_SOP_LOC],
-                  ingress_parser_if_write_ticket_data[TICKET_ALT_EOP_LOC],
-                  ingress_parser.ticket_wptr + TICKET_FIFO_ADDR_ONE_CONST);
-              end
+            if (opq_trace_boundary_en && ($time >= opq_trace_after_ps)) begin
+              $display("[opq_boundary] t=%0t parser_ticket_we ts=0x%0h lane_start=0x%0h len=%0d sop=%0b eop=%0b next_ticket_wptr=0x%0h",
+                $time,
+                ingress_parser_if_write_ticket_data[TICKET_TS_HI:TICKET_TS_LO],
+                ingress_parser_if_write_ticket_data[TICKET_LANE_RD_OFST_HI:TICKET_LANE_RD_OFST_LO],
+                ingress_parser_if_write_ticket_data[TICKET_BLOCK_LEN_HI:TICKET_BLOCK_LEN_LO],
+                ingress_parser_if_write_ticket_data[TICKET_ALT_SOP_LOC],
+                ingress_parser_if_write_ticket_data[TICKET_ALT_EOP_LOC],
+                ingress_parser.ticket_wptr + TICKET_FIFO_ADDR_ONE_CONST);
+            end
 `endif
             if (ticket_credit_update_valid) begin
               ingress_parser.ticket_credit <= ingress_parser.ticket_credit + ticket_credit_update -
@@ -551,12 +610,16 @@ module ordered_priority_queue_monolithic_ingress_parser #(
               ingress_parser.ticket_credit <= ingress_parser.ticket_credit - TICKET_FIFO_ADDR_ONE_CONST;
             end
             if (lane_credit_update_valid) begin
-              ingress_parser.lane_credit <= ingress_parser.lane_credit - ingress_parser.shd_len +
+              ingress_parser.lane_credit <= ingress_parser.lane_credit - shd_accept_next_v +
                 lane_credit_update;
             end else begin
-              ingress_parser.lane_credit <= ingress_parser.lane_credit - ingress_parser.shd_len;
+              ingress_parser.lane_credit <= ingress_parser.lane_credit - shd_accept_next_v;
             end
-            ingress_parser.lane_start_addr <= ingress_parser.lane_wptr + LANE_FIFO_ADDR_ONE_CONST;
+            if (hit_accept_v) begin
+              ingress_parser.lane_start_addr <= ingress_parser.lane_wptr + LANE_FIFO_ADDR_ONE_CONST;
+            end else begin
+              ingress_parser.lane_start_addr <= ingress_parser.lane_wptr;
+            end
             ingress_parser_state <= INGRESS_PARSER_IDLE;
           end
         end
@@ -580,6 +643,15 @@ module ordered_priority_queue_monolithic_ingress_parser #(
       ingress_parser.alert_eop <= 1'b0;
     end
 
+    if (asi_ingress_valid && ingress_parser_is_trailer) begin
+      tail_bypass_valid_o <= 1'b1;
+      tail_bypass_drop_o <=
+        (ingress_parser_state == INGRESS_PARSER_MASK_PKT) ||
+        (ingress_parser_state == INGRESS_PARSER_MASK_PKT_EXTENDED);
+      tail_bypass_serial_o <= ingress_parser.pkg_cnt;
+      tail_bypass_ts_o <= ingress_parser.running_ts;
+    end
+
     if (d_reset) begin
       ingress_parser <= '0;
       ingress_parser.lane_credit <= LANE_FIFO_MAX_CREDIT_CONST;
@@ -589,9 +661,14 @@ module ordered_priority_queue_monolithic_ingress_parser #(
       credit_drop_valid_o <= 1'b0;
       credit_drop_lane_o <= 1'b0;
       credit_drop_ticket_o <= 1'b0;
+      credit_drop_pkg_cnt_o <= '0;
       credit_drop_ts_o <= '0;
       credit_drop_shd_cnt_o <= '0;
       credit_drop_hit_cnt_o <= '0;
+      tail_bypass_valid_o <= 1'b0;
+      tail_bypass_drop_o <= 1'b0;
+      tail_bypass_serial_o <= '0;
+      tail_bypass_ts_o <= '0;
 `ifdef OPQ_OSS_FORMAL
       lane_issue_dbg_oss <= 1'b0;
       ticket_issue_dbg_oss <= 1'b0;
@@ -616,6 +693,26 @@ module ordered_priority_queue_monolithic_ingress_parser #(
       (ticket_we && ingress_parser.alert_eop) |=> !ingress_parser.alert_eop;
   endproperty
   ap_alert_eop_clears_after_ticket_write: assert property (p_alert_eop_clears_after_ticket_write);
+
+  property p_subheader_ticket_carries_pkg_serial;
+    @(posedge d_clk) disable iff (d_reset)
+      (ticket_we && !ticket_wdata[TICKET_ALT_SOP_LOC])
+      |-> (ticket_wdata[TICKET_BODY_SERIAL_HI:TICKET_BODY_SERIAL_LO] == $past(ingress_parser.pkg_cnt));
+  endproperty
+  ap_subheader_ticket_carries_pkg_serial: assert property (p_subheader_ticket_carries_pkg_serial);
+
+  property p_credit_drop_carries_pkg_cnt;
+    @(posedge d_clk) disable iff (d_reset)
+      credit_drop_valid_o |-> (credit_drop_pkg_cnt_o == ingress_parser.pkg_cnt);
+  endproperty
+  ap_credit_drop_carries_pkg_cnt: assert property (p_credit_drop_carries_pkg_cnt);
+
+  cover property (@(posedge d_clk) disable iff (d_reset)
+    ticket_we && !ticket_wdata[TICKET_ALT_SOP_LOC] &&
+    (ticket_wdata[TICKET_BODY_SERIAL_HI:TICKET_BODY_SERIAL_LO] == $past(ingress_parser.pkg_cnt)));
+
+  cover property (@(posedge d_clk) disable iff (d_reset)
+    credit_drop_valid_o && (credit_drop_pkg_cnt_o == ingress_parser.pkg_cnt));
 `endif
 
 `ifdef OPQ_ENABLE_NATIVE_FORMAL_INGRESS
@@ -625,6 +722,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
     .LANE_FIFO_ADDR_WIDTH(LANE_FIFO_ADDR_WIDTH),
     .TICKET_FIFO_ADDR_WIDTH(TICKET_FIFO_ADDR_WIDTH),
     .TICKET_FIFO_DATA_WIDTH(TICKET_FIFO_DATA_WIDTH),
+    .MAX_PKT_LENGTH_BITS(MAX_PKT_LENGTH_BITS),
     .TICKET_ALT_EOP_LOC(TICKET_ALT_EOP_LOC),
     .TICKET_ALT_SOP_LOC(TICKET_ALT_SOP_LOC)
   ) native_formal_sva_i (
@@ -646,6 +744,8 @@ module ordered_priority_queue_monolithic_ingress_parser #(
     .lane_we(lane_we),
     .lane_credit_dbg(ingress_parser.lane_credit),
     .ticket_credit_dbg(ingress_parser.ticket_credit),
+    .tail_bypass_valid_dbg(tail_bypass_valid_o),
+    .tail_bypass_drop_dbg(tail_bypass_drop_o),
     .alert_eop_dbg(ingress_parser.alert_eop),
     .eop_flush_ack_i(eop_flush_ack_i)
   );

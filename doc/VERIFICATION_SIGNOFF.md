@@ -109,10 +109,11 @@ but these signoff gaps remain:
 
 ## Current Bring-Up Status
 
-- The new current-tree UVM harness compiles and runs under the ETH floating
-  Mentor license on this host with `questa_fse`, `LM_LICENSE_FILE`, and
-  `MGLS_LICENSE_FILE` chained to
-  `8161@lic-mentor.ethz.ch:/data1/intelFPGA_pro/23.1/questa_fse/LR-287689_License.dat`.
+- The new current-tree UVM harness compiles and runs under the supported
+  QuestaOne 2026 runtime on this host:
+  `/data1/questaone_sim/questasim` with `LM_LICENSE_FILE`,
+  `MGLS_LICENSE_FILE`, and `SALT_LICENSE_SERVER` all set to
+  `8161@lic-mentor.ethz.ch`.
 - The current promoted regression on the VHDL monolithic DUT is:
   - `opq_basic_smoke_test`
   - `opq_basic_ts_boundary_test`

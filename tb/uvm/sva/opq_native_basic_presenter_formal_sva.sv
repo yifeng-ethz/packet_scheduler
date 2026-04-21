@@ -100,6 +100,10 @@ module opq_native_basic_presenter_formal_sva #(
     else $error("OPQ_NATIVE_BASIC_PRESENTER_FORMAL trailer retire did not advance meta pointers exactly once");
 
   assert property (@(posedge d_clk) disable iff (d_reset)
+    retire_pending && aso_egress_valid |-> aso_egress_endofpacket)
+    else $error("OPQ_NATIVE_BASIC_PRESENTER_FORMAL retire_pending exposed a non-trailer beat");
+
+  assert property (@(posedge d_clk) disable iff (d_reset)
     packet_complete_i |=> (meta_pkt_wcnt == ($past(meta_pkt_wcnt) + META_ADDR_WIDTH'(1))))
     else $error("OPQ_NATIVE_BASIC_PRESENTER_FORMAL packet_complete did not advance meta_pkt_wcnt");
 

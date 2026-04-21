@@ -1,4 +1,4 @@
-# ✅ CORNER_OPQ_408_error_counter_clear_test
+# ✅ CORNER_OPQ_409_error_counter_clear_test
 
 **Bucket:** `ERROR` &nbsp; **Method:** `D` &nbsp; **Build:** `after` &nbsp; **Effort:** `practical` &nbsp; **Result:** `pass`
 
@@ -12,12 +12,12 @@
 
 | status | field | value |
 |:---:|---|---|
-| ✅ | report_case_id | `CORNER_OPQ_408_error_counter_clear_test` |
+| ✅ | report_case_id | `CORNER_OPQ_409_error_counter_clear_test` |
 | ℹ️ | legacy_test_name | `opq_error_counter_clear_test` |
 | ℹ️ | observed_txn | `1` |
 | ℹ️ | implementation_mode | `native_sv` |
-| ℹ️ | log | [`uvm/logs/CORNER_OPQ_408_error_counter_clear_test_after_s1.log`](../../uvm/logs/CORNER_OPQ_408_error_counter_clear_test_after_s1.log) |
-| ℹ️ | ucdb | [`uvm/cov_after/CORNER_OPQ_408_error_counter_clear_test_s1.ucdb`](../../uvm/cov_after/CORNER_OPQ_408_error_counter_clear_test_s1.ucdb) |
+| ℹ️ | log | [`uvm/logs/CORNER_OPQ_409_error_counter_clear_test_after_s1.log`](../../uvm/logs/CORNER_OPQ_409_error_counter_clear_test_after_s1.log) |
+| ℹ️ | ucdb | [`uvm/cov_after/CORNER_OPQ_409_error_counter_clear_test_s1.ucdb`](../../uvm/cov_after/CORNER_OPQ_409_error_counter_clear_test_s1.ucdb) |
 | ℹ️ | build_knobs.OPQ_N_LANE | `2` |
 | ℹ️ | build_knobs.OPQ_N_SHD | `256` |
 | ℹ️ | build_knobs.OPQ_TICKET_FIFO_DEPTH | `512` |
@@ -44,13 +44,13 @@
 
 | metric | standalone | isolated_per_txn | bucket_gain | bucket_merged_after | bucket_gain_per_txn |
 |---|---|---|---|---|---|
-| stmt | 47.84 | 47.84 | 0.06 | 79.30 | 0.06 |
-| branch | 33.11 | 33.11 | 0.14 | 74.66 | 0.14 |
-| cond | 8.50 | 8.50 | 0.00 | 43.34 | 0.00 |
-| expr | 18.75 | 18.75 | 0.00 | 65.62 | 0.00 |
+| stmt | 47.84 | 47.84 | 0.05 | 79.11 | 0.05 |
+| branch | 33.11 | 33.11 | 0.13 | 73.37 | 0.13 |
+| cond | 8.50 | 8.50 | 0.00 | 41.36 | 0.00 |
+| expr | 18.75 | 18.75 | 0.00 | 56.03 | 0.00 |
 | fsm_state | 29.55 | 29.55 | 0.00 | 93.18 | 0.00 |
 | fsm_trans | 5.00 | 5.00 | 0.00 | 56.00 | 0.00 |
-| toggle | 4.15 | 4.15 | 0.01 | 26.96 | 0.01 |
+| toggle | 4.15 | 4.15 | 0.01 | 25.69 | 0.01 |
 
 ---
 _Back to [bucket](../buckets/ERROR.md) &middot; [dashboard](../../DV_REPORT.md)_

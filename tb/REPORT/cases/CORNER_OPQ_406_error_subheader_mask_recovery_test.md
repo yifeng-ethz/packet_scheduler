@@ -1,4 +1,4 @@
-# ✅ CORNER_OPQ_405_error_subheader_mask_recovery_test
+# ✅ CORNER_OPQ_406_error_subheader_mask_recovery_test
 
 **Bucket:** `ERROR` &nbsp; **Method:** `D` &nbsp; **Build:** `after` &nbsp; **Effort:** `practical` &nbsp; **Result:** `pass`
 
@@ -12,12 +12,12 @@
 
 | status | field | value |
 |:---:|---|---|
-| ✅ | report_case_id | `CORNER_OPQ_405_error_subheader_mask_recovery_test` |
+| ✅ | report_case_id | `CORNER_OPQ_406_error_subheader_mask_recovery_test` |
 | ℹ️ | legacy_test_name | `opq_error_subheader_mask_recovery_test` |
 | ℹ️ | observed_txn | `1` |
 | ℹ️ | implementation_mode | `native_sv` |
-| ℹ️ | log | [`uvm/logs/CORNER_OPQ_405_error_subheader_mask_recovery_test_after_s1.log`](../../uvm/logs/CORNER_OPQ_405_error_subheader_mask_recovery_test_after_s1.log) |
-| ℹ️ | ucdb | [`uvm/cov_after/CORNER_OPQ_405_error_subheader_mask_recovery_test_s1.ucdb`](../../uvm/cov_after/CORNER_OPQ_405_error_subheader_mask_recovery_test_s1.ucdb) |
+| ℹ️ | log | [`uvm/logs/CORNER_OPQ_406_error_subheader_mask_recovery_test_after_s1.log`](../../uvm/logs/CORNER_OPQ_406_error_subheader_mask_recovery_test_after_s1.log) |
+| ℹ️ | ucdb | [`uvm/cov_after/CORNER_OPQ_406_error_subheader_mask_recovery_test_s1.ucdb`](../../uvm/cov_after/CORNER_OPQ_406_error_subheader_mask_recovery_test_s1.ucdb) |
 | ℹ️ | build_knobs.OPQ_N_LANE | `2` |
 | ℹ️ | build_knobs.OPQ_N_SHD | `256` |
 | ℹ️ | build_knobs.OPQ_TICKET_FIFO_DEPTH | `512` |
@@ -48,13 +48,13 @@
 
 | metric | standalone | isolated_per_txn | bucket_gain | bucket_merged_after | bucket_gain_per_txn |
 |---|---|---|---|---|---|
-| stmt | 74.62 | 74.62 | 1.28 | 77.89 | 1.28 |
-| branch | 65.94 | 65.94 | 3.27 | 71.53 | 3.27 |
-| cond | 31.44 | 31.44 | 1.99 | 41.08 | 1.99 |
-| expr | 55.21 | 55.21 | 1.04 | 65.62 | 1.04 |
+| stmt | 74.62 | 74.62 | 1.24 | 77.77 | 1.24 |
+| branch | 65.94 | 65.94 | 2.96 | 70.53 | 2.96 |
+| cond | 31.44 | 31.44 | 1.84 | 39.27 | 1.84 |
+| expr | 55.21 | 55.21 | 0.86 | 56.03 | 0.86 |
 | fsm_state | 88.64 | 88.64 | 4.55 | 88.64 | 4.55 |
 | fsm_trans | 45.00 | 45.00 | 4.00 | 45.00 | 4.00 |
-| toggle | 13.99 | 13.99 | 0.98 | 26.76 | 0.98 |
+| toggle | 13.99 | 13.99 | 0.32 | 25.60 | 0.32 |
 
 ---
 _Back to [bucket](../buckets/ERROR.md) &middot; [dashboard](../../DV_REPORT.md)_

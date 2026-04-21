@@ -14,6 +14,13 @@ Encounter sim-time legend:
 - `n/a (...)` = directed-only, formal-only, reporting-only, or otherwise not honestly measurable in the current randomized harness
 - current measured mixed-soak encounter stats come from `10` seeded `opq_cross_mixed_bucket_seconds_soak_test` runs with `+OPQ_MIXED_SOAK_STEPS=200`; raw per-seed data is archived in `/tmp/opq_bug_encounter_20260419/encounter_summary.tsv`
 
+Fix status detail contract for active entries and future updates:
+- `state` = fixed / open / partial plus the current verification gate
+- `mechanism` = how the implemented repair changes the RTL or harness behavior
+- `before_fix_outcome` and `after_fix_outcome` = concise evidence showing what changed
+- `potential_hazard` = whether the fix looks permanent or is still provisional / profile-limited
+- `Claude Opus 4.7 xhigh review decision` = explicit review state; use `pending / not run` until that review has actually happened
+
 ## Index
 
 | bug_id | class | severity | encounter sim-time | status | first seen | commit | summary |
@@ -42,8 +49,10 @@ Encounter sim-time legend:
 | [BUG-022-R](#bug-022-r-new-frame-running-ts-seeded-from-frame-header-ts-instead-of-the-current-subheader-ts) | R | hard stuck error | `n/a (exact repro)` | fixed | `opq_cross_hit3_exact_183_190_repro_test` on `2026-04-19` | `466b935` | A new frame seeded allocator `running_ts` from the frame header timestamp instead of the parser's current running subheader timestamp, so same-frame payload tickets were misclassified as `future` and the allocator could emit an empty tail before fetching payload. |
 | [BUG-023-H](#bug-023-h-expanded-no-restart-signoff-matrix-reused-stale-frame-identity-and-under-specified-credit-restore-idle) | H | non-datapath-refactor | `n/a (no-restart directed)` | fixed | `opq_bucket_frame_native_sv_test`, `opq_all_buckets_frame_native_sv_test` on `2026-04-20` | `36de7a3` | The expanded no-restart signoff matrix falsely failed until composed sequences carried monotonic frame identity across lanes and waited for true idle credit restore. |
 | [BUG-024-R](#bug-024-r-overwrite-launch-window-can-still-flush-the-live-head-before-first-accept) | R | soft error | `n/a (reduced-depth directed)` | fixed | `opq_error_ftable_overflow_test` on `2026-04-20` | `89de4bf` | The reduced-depth overwrite screen is clean again after the presenter protects the live head through the first visible beat and exports lane-resolved overwrite-drop accounting. |
-| [BUG-025-R](#bug-025-r-active-lane-retirement-still-depends-on-a-level-eop-flag-that-the-parser-can-clear-too-early) | R | hard stuck error | `n/a (large constrained-random)` | open | `opq_cross_drr_bursty_random_test` on `2026-04-20` | `pending` | The named `frame_count=2` bursty boundary is green, but the allocator can still strand accepted lane0 hits once the same envelope grows to `frame_count=3+`, leaving `frame_lane_active` set after tail state is forgotten. |
-| [BUG-026-R](#bug-026-r-live-head-overwrite-protection-suppresses-unread-tail-drop-accounting) | R | soft error | `n/a (overflow random-ready)` | open | `opq_cross_random_ready_overflow_seconds_soak_test` on `2026-04-20` | `pending` | The named two-step legal-overflow boundary is now green, but full-depth evidence for legal frame-table overwrite accounting beyond that early window is still pending. |
+| [BUG-025-R](#bug-025-r-active-lane-retirement-still-depends-on-a-level-eop-flag-that-the-parser-can-clear-too-early) | R | hard stuck error | `n/a (large constrained-random)` | fixed | `opq_cross_drr_bursty_random_test` on `2026-04-20` | `pending` | The active-lane retirement race is no longer reproducible after the allocator switched from level EOP dependence to serial-tagged tail-seen/drop state; the `frame_count=3` repro and refreshed seed `1..8` constrained-random reruns are green on `2026-04-21`. |
+| [BUG-026-R](#bug-026-r-live-head-overwrite-protection-suppresses-unread-tail-drop-accounting) | R | soft error | `n/a (overflow random-ready)` | fixed | `opq_cross_random_ready_overflow_seconds_soak_test` on `2026-04-20` | `pending` | Default-build random-ready overflow no longer corrupts accepted egress after the presenter preserves every stalled resident RAM word, and the reduced-depth `12x16` overwrite-local must-drop witness is green again on `2026-04-21`. |
+| [BUG-027-R](#bug-027-r-masked-zero-hit-subheader-recovery-kept-tail-bypass-drop-asserted-through-the-trailer) | R | soft error | `n/a (localized formal-like ingress stress)` | fixed | `formal_ingress.sh` / `opq_formal_like_ingress_recovery_stress_test` on `2026-04-21` | `pending` | A legal zero-hit subheader after a masked subheader no longer leaves the parser in `MASK_PKT`; trailer bypass now reports only the surviving local drop semantics and the refreshed ingress fallback suite is green on `2026-04-21`. |
+| [BUG-028-H](#bug-028-h-lane-hit-ledger-retired-delivered-beats-against-parser-timestamps-instead-of-canonical-egress-timestamps) | H | non-datapath-refactor | `n/a (4-lane supplemental rerun)` | fixed | `opq_cross_random_ready_overflow_step2_boundary_test` on `2026-04-21` @ `OPQ_N_LANE=4 OPQ_N_SHD=128` | `pending` | The 4-lane no-restart ledger is clean again after the scoreboard started carrying both canonical delivery timestamps and parser/accounting timestamps per hit. |
 
 ## 2026-04-17
 
@@ -217,9 +226,9 @@ Encounter sim-time legend:
   - the repaired focused repro at that point also closed the per-lane hit ledger:
     - lane0 `accepted=1840 dropped=2208 pre_drop=0 post_drop=2208 delivered=1840 unexplained=0`
     - lane1 `accepted=24 dropped=328 pre_drop=0 post_drop=328 delivered=24 unexplained=0`
-  - the original running-timestamp loss is still closed at commit `9b516d7`, but
-    the same testcase is no longer a current-tree green proof because the
-    separate active-lane retirement bug family in `BUG-025-R` now reopens it
+  - the original running-timestamp loss remains closed at commit `9b516d7`, and
+    the former reopening through `BUG-025-R` is no longer reproduced on the
+    refreshed current-tree reruns
 - Commit:
   - `9b516d7` `Fix OPQ bursty DRR frame-progress loss`
 
@@ -724,25 +733,158 @@ Encounter sim-time legend:
     lose its tail-ready state before the allocator observes the flush point,
     leaving `frame_lane_active` stuck high and stranding accepted traffic
 - Fix status:
-  - open
+  - state:
+    - fixed on the current patchset; the exact reduced boundary and the
+      refreshed constrained-random seed sweep now both close with
+      `unexplained=0`
+  - mechanism:
+    - the ingress parser already exports serial-tagged `tail_bypass_valid`,
+      `tail_bypass_drop`, `tail_bypass_serial`, and `tail_bypass_ts`
+    - the page allocator no longer depends on transient
+      `alert_eop` / `all_lanes_alert_eop` levels to retire active lanes
+    - active-frame retirement now uses the latched `frame_lane_tail_seen`
+      state plus the serial-tagged tail-bypass high-water mark
+    - current-SOP classification now also consults an exact per-serial
+      tail-status shadow, so a later tail can prove readiness without erasing
+      the drop status of the earlier packet currently being classified
+    - if a current SOP is already known dropped, the allocator now advances and
+      returns ticket credit instead of opening a header-only frame
+  - before_fix_outcome:
+    - the original hazard could strand `frame_lane_active` after the parser had
+      already cleared its level EOP flag, and later-tail aliasing could still
+      let an already-dropped SOP seed a synthetic header-only frame
+  - after_fix_outcome:
+    - `opq_cross_drr_bursty_frame3_repro_test` rerun on `2026-04-21` closes with
+      `expected=714 actual=714 missing=0 ghost=0`
+    - the same rerun ends with:
+      - lane0 `accepted=690 dropped=828 delivered=690 unexplained=0`
+      - lane1 `accepted=24 dropped=108 delivered=24 unexplained=0`
+    - the refreshed `opq_cross_drr_bursty_random_test` seed sweep on
+      `2026-04-21` is also green on seeds `1` through `8`
+    - representative refreshed endpoints on the current patchset are:
+      - seed 1: `expected=990 actual=990 missing=0 ghost=0`
+      - seeds 2 through 8: `expected=1864 actual=1864 missing=0 ghost=0`
+    - every refreshed seed closes with per-lane `unexplained=0`
+    - the allocator-side exact-drop repair also removes the stale extra-header
+      ownership leak in the reduced-depth pressure witness:
+      - before: `wr_hdr=4 rd_hdr=3 drop_hdr=0`
+      - after: `wr_hdr=2 rd_hdr=2 drop_hdr=0`
+  - potential_hazard:
+    - this looks like a permanent architectural fix for the alert-EOP race and
+      later-tail drop-status aliasing
+    - residual risk is now normal regression drift rather than an active known
+      failure family; keep the bursty DRR screen in the promoted random
+      matrix, but the specific `BUG-025-R` retirement hole is not reproduced on
+      the refreshed seed set
+  - Claude Opus 4.7 xhigh review decision:
+    - pending / not run in this turn
 - Runtime / coverage context:
-  - the remaining bug is now bracketed by a reduced deterministic boundary:
-    the named `opq_cross_drr_bursty_frame2_boundary_test` passes with
-    `expected=298 actual=298 missing=0 ghost=0`, while the named
-    `opq_cross_drr_bursty_frame3_repro_test` fails with
-    `expected=484 actual=254 missing=230 ghost=0`, lane0
-    `accepted=460 dropped=1058 delivered=230 unexplained=230`, and lane1
-    `accepted=24 dropped=108 delivered=24 unexplained=0`
-  - clean rerun on `2026-04-20` with an isolated build still reproduces the
-    full-envelope failure signature:
-    `BUILD_DIR=/tmp/opq_bug25_build RUN_DIR=/tmp/opq_bug25_run LOG_DIR=/tmp/opq_bug25_run/logs COV_DIR=/tmp/opq_bug25_run/coverage bash packet_scheduler/tb/scripts/run_uvm.sh opq_cross_drr_bursty_random_test`
-  - that rerun ends with
-    `expected=852 actual=622 missing=368 ghost=138`, lane0
-    `accepted=828 dropped=3220 delivered=460 unexplained=368`, and the traced
-    end-state still leaves `frame_lane_active=0x3` with `pending=0`
-  - an attempted sticky-EOP allocator experiment was reverted after it failed
-    to move the large-random signature, so the missing per-lane tail memory is
-    still a working hypothesis, not a proved full fix
+  - the original reduced deterministic bracket is now green on the current
+    tree:
+    - `opq_cross_drr_bursty_frame2_boundary_test` still passes with
+      `expected=298 actual=298 missing=0 ghost=0`
+    - `opq_cross_drr_bursty_frame3_repro_test` now reruns green with
+      `expected=714 actual=714 missing=0 ghost=0`
+  - refreshed constrained-random reruns on the current `2026-04-21` patchset
+    also stay green on seeds 1 through 8:
+    - each seed closes with `UVM_ERROR : 0`, `missing=0 ghost=0`, and
+      per-lane `unexplained=0`
+    - current refreshed endpoints include:
+      - seed 1: `expected=990 actual=990 missing=0 ghost=0`
+      - seed 2: `expected=1864 actual=1864 missing=0 ghost=0`
+      - seed 8: `expected=1864 actual=1864 missing=0 ghost=0`
+  - no active `BUG-025-R` failure boundary is currently reproduced on the
+    named deterministic bracket or the refreshed constrained-random seed sweep
+- Commit:
+  - pending
+
+### BUG-028-H: Lane hit ledger retired delivered beats against parser timestamps instead of canonical egress timestamps
+- First seen in:
+  - refreshed `2026-04-21` supplemental rerun
+    `TEST=opq_cross_random_ready_overflow_step2_boundary_test`
+    with `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256`
+  - later confirmed by the same residual pattern in
+    `opq_cross_masked_drop_exact_102_117_repro_test` and
+    `opq_cross_mixed_bucket_random_soak_test` on the same `4-lane/128`
+    preset
+- Symptom:
+  - the 4-lane/128 overflow-step2 rerun kept the frame-table ledger perfectly
+    closed at
+    `wr_hdr/shd/hit=7/19/1607`, `rd_hdr/shd/hit=7/19/1607`,
+    `drop_hdr/shd/hit=0/0/0`, but still ended with
+    `accepted=1607 delivered=941 unexplained=666` and
+    `core_principles first_break=drain_not_closed`
+  - the failing unexplained residue clustered on delivered lane0/lane1 traffic
+    even though the same tests stayed hit-integrity clean or frame-table clean,
+    which pointed away from a datapath loss and toward the lane-accounting
+    harness
+- Root cause:
+  - `opq_scoreboard.sv` stored only one timestamp per accepted hit in
+    `lane_accounting_hits`, and that timestamp followed the parser / exact-drop
+    bookkeeping convention rather than the canonical ingress/egress delivery
+    timestamp
+  - actual egress retirement then tried to delete delivered hits from the same
+    queue using the canonical egress timestamp, so delivered beats could remain
+    stranded in the lane ledger even when the packet contract and frame-table
+    ownership were both correct
+- Fix status:
+  - state:
+    - fixed on the refreshed `2026-04-21` 4-lane/128 reruns
+  - mechanism:
+    - `opq_scoreboard.sv` now carries both `hit_ts` and
+      `accounting_hit_ts` per accepted hit
+    - actual egress retirement uses canonical `hit_ts`
+    - exact-drop and parser-side bookkeeping keep using
+      `accounting_hit_ts`
+    - the earlier unique `ts + word` fallback is kept only as a secondary
+      safeguard when merged egress serials differ
+  - before_fix_outcome:
+    - the first failing 4-lane/128 overflow-step2 rerun on `2026-04-21`
+      ended with:
+      - `accepted=1607 delivered=941 unexplained=666`
+      - `core_principles first_break=drain_not_closed`
+      - `UVM_ERROR : 6`
+    - the 4-lane/128 masked-drop exact rerun was hit-integrity clean but still
+      reported residual lane ledger drift:
+      - lane1 `accepted=158 delivered=148 unexplained=10`
+      - lane3 `accepted=16 delivered=6 unexplained=10`
+    - the 4-lane/128 mixed-bucket random soak was also hit-integrity clean but
+      still ended with lane ledger residue:
+      - lane0 `accepted=8801 delivered=8779 unexplained=22`
+      - lane1 `accepted=4950 delivered=4910 unexplained=40`
+      - lane2 `accepted=460 delivered=438 unexplained=22`
+      - lane3 `accepted=336 delivered=292 unexplained=44`
+  - after_fix_outcome:
+    - the refreshed `opq_cross_random_ready_overflow_step2_boundary_test`
+      rerun on `2026-04-21` now closes with:
+      - `wr_hdr/shd/hit=7/19/1607`
+      - `rd_hdr/shd/hit=7/19/1607`
+      - `ft_drop_hdr/shd/hit=0/0/0`
+      - aggregate `accepted=1607 delivered=1607 unexplained=0`
+      - `core_principles first_break=clean`
+      - `UVM_ERROR : 0`
+    - the refreshed `opq_cross_masked_drop_exact_102_117_repro_test` rerun on
+      the same preset now exits with
+      `expected=752 actual=752 missing=0 ghost=0` and per-lane
+      `accepted=delivered unexplained=0`
+    - the refreshed `opq_cross_mixed_bucket_random_soak_test` rerun on the
+      same preset now exits with
+      `expected=14547 actual=14547 missing=0 ghost=0` and per-lane
+      `accepted=delivered unexplained=0`
+  - potential_hazard:
+    - this looks like a permanent harness fix rather than a provisional
+      testcase tweak, because the scoreboard now models both timestamp domains
+      explicitly instead of overloading one field for two contracts
+    - the only residual limitation is the secondary merged-serial fallback:
+      it still assumes `ts + word` uniqueness when the packet serial itself is
+      not canonical, but the main delivery path no longer depends on that
+      fallback
+  - Claude Opus 4.7 xhigh review decision:
+    - pending / not run in this turn
+- Runtime / coverage context:
+  - this repaired the first 4-lane/128 rerun failure after the RTL bug family
+    was already fixed, so the supplemental wider-lane screens are again usable
+    for closure instead of falsely reopening clean datapath cases
 - Commit:
   - pending
 
@@ -767,39 +909,190 @@ Encounter sim-time legend:
     `overwrite_head_accepted_or_accepting` is true
   - that protects the live head itself, but it also prevents the presenter
     from accounting overlapped unread tail residents behind that live head
+  - the same presenter was also still treating `page_ram.q` as if it were
+    stable whenever the launch pipe paused; in reality the synchronous RAM
+    rereads `page_ram_rptr` every cycle, so an unread resident header word
+    could roll from `word2` to `word3` before it was loaded, corrupting the
+    emitted five-word frame header under early or repeated backpressure
   - under random-ready overflow backpressure, accepted tail subheaders can
     therefore be overwritten in page RAM without corresponding
-    `ft_drop_*` accounting, leaving `ft_wr < ft_rd + ft_drop` and non-zero
-    unexplained accepted hits
+    `ft_drop_*` accounting, and the same backpressure windows could also skip
+    an unread resident header word, leaving `ft_wr < ft_rd + ft_drop` and
+    tripping accepted-egress `opq_hit3_contract` monotonicity checks
 - Fix status:
-  - open
+  - state:
+    - fixed on the refreshed `2026-04-21` verification set
+  - mechanism:
+    - `ordered_priority_queue_monolithic_basic_presenter.sv` now retires a
+      resident frame only after the final egress beat is actually accepted and
+      preserves unread resident `page_ram.q` contents in a skid path on every
+      non-advance cycle, not only at the startup head
+    - the allocator-side exact per-serial tail-drop shadow prevents
+      already-dropped SOPs from reopening synthetic zero-payload frames while
+      the presenter is protecting the live head
+    - localized formal assertions now pin both hazards mathematically:
+      stalled resident unread words must become skid-visible on the next cycle,
+      and the first visible beat of a packet must remain SOP
+    - together, those changes delay internal ownership updates until data is
+      consumed and remove the resident-header hole that used to poison the
+      default-build overflow witness
+  - before_fix_outcome:
+    - the default-build overflow failure could emit a malformed five-word
+      header at the first overflow window:
+      `header -> word1 -> word3 -> word3 -> word4`
+    - that exact skipped-`word2` trace fired
+      `opq_hit3_contract` frame timestamp / pkg-count monotonicity errors in
+      `opq_cross_random_ready_overflow_step2_boundary_test`
+    - the reduced-depth `12x16` must-drop witness also previously ended with a
+      credit-restore timeout after `10000000000`, flat `ft_drop_*`, and a bad
+      frame-table ledger `wr_hdr=4 rd_hdr=3 drop_hdr=0`
+  - after_fix_outcome:
+    - the focused `2026-04-21` trace at the original bad window now emits the
+      correct resident header sequence:
+      `header -> word1 -> word2(0x0050000005) -> word3 -> word4`
+    - the full `opq_cross_random_ready_overflow_step2_boundary_test` rerun on
+      `2026-04-21` now exits with `UVM_ERROR : 0` and final:
+      - `wr_hdr/shd/hit=6/11/1176`
+      - `rd_hdr/shd/hit=6/11/1176`
+      - `ft_drop_hdr/shd/hit=0/0/0`
+      - aggregate `accepted=1176 delivered=1176 unexplained=0`
+      - `core_principles first_break=clean ft_ownership= ok hit_conservation= ok accepted_delivery= ok drained= ok`
+    - the refreshed reduced-depth `opq_cross_bp_mustdrop_witness_test`
+      `12x16` rerun on `2026-04-21` now re-establishes the overwrite-local
+      proof point end to end:
+      - no-drop pre-phase keeps `ft_drop_delta hdr/shd/hit=0/0/0`
+      - pressure phase advances `ft_drop_delta hdr/shd/hit=10/80/2400`
+      - final frame-table ledger closes at
+        `wr_hdr/shd/hit=13/224/3135`,
+        `rd_hdr/shd/hit=3/144/735`,
+        `drop_hdr/shd/hit=10/80/2400`
+      - aggregate `accepted=735 delivered=735 unexplained=0`
+      - `core_principles first_break=clean ft_ownership= ok hit_conservation= ok accepted_delivery= ok drained= ok`
+      - `UVM_ERROR : 0`
+  - potential_hazard:
+    - the no-hole / consumed-before-retire part looks like a permanent fix for
+      the observed live-head ownership hazard
+    - the remaining limitation is coverage-shaped rather than bug-shaped: the
+      current green overwrite-local proof point is still a reduced-depth
+      elaboration, so a default-build must-drop hybrid is still optional future
+      coverage work rather than a blocker for this bug
+  - Claude Opus 4.7 xhigh review decision:
+    - pending / not run in this turn
 - Runtime / coverage context:
   - the original default-build failure is no longer reproduced by the named
     two-step boundary testcase `opq_cross_random_ready_overflow_step2_boundary_test`
-    on `2026-04-20`
+    on the refreshed `2026-04-21` rerun
   - that testcase keeps the first two overflow checkpoints clean:
-    - `overflow_step_0`: `wr_shd=5 rd_shd=5 drop_shd=0`,
+    - `overflow_step_0`: `wr_shd=3 rd_shd=3 drop_shd=0`,
       `wr_hit=540 rd_hit=540 drop_hit=0`, aggregate `unexplained=0`
-    - `overflow_step_1`: `wr_shd=13 rd_shd=13 drop_shd=0`,
-      `wr_hit=1129 rd_hit=1129 drop_hit=0`, aggregate `unexplained=0`
+    - `overflow_step_1`: `wr_shd=11 rd_shd=11 drop_shd=0`,
+      `wr_hit=1176 rd_hit=1176 drop_hit=0`, aggregate `unexplained=0`
     - both checkpoints end with
       `core_principles first_break=clean ft_ownership= ok hit_conservation= ok accepted_delivery= ok drained= ok`
   - the named testcase also exits green with final
-    `ft_drop_hdr/shd/hit=0/0/0`, `wr_hdr/shd/hit=6/13/1129`,
-    `rd_hdr/shd/hit=6/13/1129`, and aggregate
-    `accepted=1129 delivered=1129 unexplained=0`
+    `ft_drop_hdr/shd/hit=0/0/0`, `wr_hdr/shd/hit=6/11/1176`,
+    `rd_hdr/shd/hit=6/11/1176`, and aggregate
+    `accepted=1176 delivered=1176 unexplained=0`
   - the new default-build supplemental signoff run
     `opq_cross_bp_predrop_boundary_test` now closes the legal pre-drop half of
     the contract on `2026-04-20`:
     - final `ft_drop_hdr/shd/hit=0/0/0`
     - aggregate `accepted=13260 dropped=66612 delivered=13260 unexplained=0`
     - `core_principles first_break=clean ft_ownership= ok hit_conservation= ok accepted_delivery= ok drained= ok`
-  - that narrows this open bug to the remaining default-build must-drop path:
-    the issue is no longer whether early heavy overflow/backpressure can stay
-    legal, but whether a real later default-build overwrite window can retire
-    unread tail ownership with visible `ft_drop_*` identity and no malformed
-    accepted egress
-  - full-depth default-build overflow evidence is therefore still pending
-    before this bug can be closed or downgraded to a testcase-depth issue
+  - the default-build `opq_cross_random_ready_overflow_seconds_soak_test` is
+    also back to a shape-check green rerun on the current tree:
+    - final `ft_drop_hdr/shd/hit=0/0/0`
+    - `wr_hdr/shd/hit=29/68/5545`
+    - `rd_hdr/shd/hit=29/68/5545`
+    - aggregate `accepted=5545 delivered=5545 unexplained=0`
+    - `core_principles first_break=clean`
+  - the reduced-depth `opq_error_ftable_overflow_test` shape-check screen is
+    also green again on the current tree, with final frame-table ledger
+    `wr_hdr=32 rd_hdr=20 drop_hdr=12`, `wr_shd=8191 rd_shd=5120 drop_shd=3071`,
+    `wr_hit=44 rd_hit=28 drop_hit=16`, aggregate
+    `accepted=28 delivered=28 unexplained=0`, and `UVM_ERROR : 0`
+  - the explicit reduced-depth overwrite-local proof point is now restored by
+    `opq_cross_bp_mustdrop_witness_test` at the named `12x16` profile:
+    - no-drop pre-phase `ft_drop_delta hdr/shd/hit=0/0/0`
+    - pressure phase `ft_drop_delta hdr/shd/hit=10/80/2400`
+    - final aggregate `accepted=735 delivered=735 unexplained=0`
+    - final `core_principles first_break=clean`
+    - `UVM_ERROR : 0`
+  - this bug can therefore be closed on the current tree: the default-build
+    legal-overflow screens remain useful shape-checks, and the dedicated
+    reduced-depth overwrite-local witness is green again
+- Commit:
+  - pending
+
+## 2026-04-21
+
+### BUG-027-R: Masked zero-hit subheader recovery kept `tail_bypass_drop` asserted through the trailer
+- First seen in:
+  - `packet_scheduler/tb/scripts/formal_ingress.sh` fallback-stress rerun on
+    `2026-04-21`
+  - localized failure anchor:
+    `opq_formal_like_ingress_recovery_stress_test`
+- Symptom:
+  - the new localized ingress assertion fired on both lanes at `154 ns`:
+    `OPQ_NATIVE_INGRESS_FORMAL trailer-bypass drop flag did not match the parser mask state`
+  - the failing trace was a masked subheader followed by a legal zero-hit
+    recovery subheader and then a trailer; the parser emitted a legal zero-hit
+    ticket, but the trailer still advertised `tail_bypass_drop=1`
+  - the end-to-end scoreboard stayed green, which is exactly why this was a
+    useful localized assume/assert/cover catch instead of a broad scoreboard
+    hunt
+- Root cause:
+  - in
+    `ordered_priority_queue_monolithic_ingress_parser.sv`
+    `INGRESS_PARSER_MASK_PKT`, the legal zero-hit subheader branch wrote the
+    recovery ticket and cleared `alert_eop`, but it never returned the parser
+    to the normal body/idle state
+  - the parser therefore stayed in `MASK_PKT` until the trailer beat, so the
+    trailer-side bypass metadata continued to report the old mask state even
+    after the legal zero-hit recovery subheader had been accepted
+- Fix status:
+  - state:
+    - fixed on the refreshed `2026-04-21` ingress formal and directed
+      recovery reruns
+  - mechanism:
+    - the legal zero-hit recovery branch inside `INGRESS_PARSER_MASK_PKT` now
+      returns to `INGRESS_PARSER_IDLE`, which is the parser's normal in-frame
+      body state after a zero-hit subheader
+    - localized ingress formal checks now assert and cover the trailer-bypass
+      pulse/drop contract directly, and allocator-side localized assertions now
+      pin the live/shadow tail-bypass consumption path used by `BUG-025-R`
+  - before_fix_outcome:
+    - `formal_ingress.sh` on `2026-04-21` initially ended
+      `compile=pass elab=pass formal=fallback_stress_fail`
+    - the only failing fallback testcase was
+      `opq_formal_like_ingress_recovery_stress_test`, and the concrete
+      failure was the new trailer-bypass drop assertion at `154 ns`
+  - after_fix_outcome:
+    - the refreshed `formal_ingress.sh` rerun on `2026-04-21` now closes with
+      `compile=pass elab=pass formal=fallback_stress_pass`
+    - the default ingress fallback stress suite is green:
+      `opq_basic_smoke_test`,
+      `opq_formal_like_ingress_recovery_stress_test`,
+      `opq_error_hit_mask_recovery_test`
+    - the direct native-SV rerun
+      `TEST=opq_error_subheader_mask_recovery_test DUT_IMPL=native_sv`
+      is also green on `2026-04-21` with
+      `expected=2 actual=2 missing=0 ghost=0` and `UVM_ERROR : 0`
+  - potential_hazard:
+    - this looks like a permanent local fix: the bug was a missing state
+      transition in the zero-hit recovery branch, and the repaired contract is
+      now guarded by localized formal assertions plus the named recovery test
+    - the only remaining limitation is tooling-shaped rather than RTL-shaped:
+      the current host still uses the simulation-backed ingress fallback flow
+      instead of a live `qverify` proof engine
+  - Claude Opus 4.7 xhigh review decision:
+    - pending / not run in this turn
+- Runtime / coverage context:
+  - this closure strengthens the typed ingress error contract the user asked
+    for: subheader masking is now local to the bad subheader and its associated
+    hits, and a later legal zero-hit subheader no longer inherits the old drop
+    state through the trailer
+  - the refreshed ingress fallback suite on `2026-04-21` is again usable as a
+    fast local checker for that contract instead of a known failing probe
 - Commit:
   - pending

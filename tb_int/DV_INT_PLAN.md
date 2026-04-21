@@ -320,9 +320,9 @@ tests stay on the planned path below.
 
 ## 8. Hard constraints and open items
 
-- Questa FSE 2022.4 is the primary simulator. Same Questa FSE rules as `tb/`:
-  no `rand`/`constraint`, no `covergroup`, no DPI, `+define+UVM_NO_DPI`,
-  `-nodpiexports`. Any random stimulus is LCG-based in tb code.
+- QuestaOne 2026 is the primary simulator. Same full-Questa rules as `tb/`:
+  `rand`/`constraint`, `covergroup`, and DPI are all available, so the
+  integration harness no longer depends on the old no-DPI compatibility path.
 - `feb_system_v2.qsys` generates ~8k lines of VHDL + SV glue. `tb_int` must
   compile the full submodule list. The file-list comes from the `.qip` in
   `online_dpv2/online/fe_board/fe_scifi/feb_system_v2/synthesis/`. We lift

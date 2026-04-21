@@ -15,6 +15,8 @@ RUN_DIR="${RUN_DIR:-${TB_DIR}/sim_runs}"
 LOG_DIR="${LOG_DIR:-${RUN_DIR}/logs}"
 COV_DIR="${COV_DIR:-${RUN_DIR}/coverage}"
 
+source "${SCRIPT_DIR}/../../../scripts/questa_one_env.sh"
+
 usage() {
   cat <<'EOF'
 Usage:
@@ -26,7 +28,8 @@ Environment:
   OPQ_N_SHD         Optional N_SHD override passed into the DUT wrapper generator and UVM package
   OPQ_TICKET_FIFO_DEPTH Optional ticket FIFO depth override; if unset the script derives a safe power-of-two depth from N_SHD
   OPQ_PAGE_RAM_DEPTH Optional page RAM depth override passed into the DUT wrapper generator
-  QUESTA_PREFER_FE  0 by default; set to 1 to force the FE executable
+  BUILD_DIR         Optional explicit build directory override for a single invocation
+  BUILD_ROOT        Optional parent directory used for auto-generated per-run build directories
   RUN_DIR           Optional root for run artifacts; defaults to tb/sim_runs
   LOG_DIR           Optional log directory override; defaults to $RUN_DIR/logs
   COV_DIR           Optional coverage directory override; defaults to $RUN_DIR/coverage
@@ -66,13 +69,15 @@ run_one() {
   local test_name="$1"
   local log_file="${LOG_DIR}/${test_name}.log"
   local dut_impl="${DUT_IMPL:-native_sv}"
-  local build_dir="${BUILD_DIR:-${UVM_DIR}/build}"
   local page_ram_depth="${OPQ_PAGE_RAM_DEPTH:-65536}"
   local n_shd="${OPQ_N_SHD:-256}"
   local ticket_fifo_depth="${OPQ_TICKET_FIFO_DEPTH:-}"
+  local user_build_dir="${BUILD_DIR:-}"
+  local build_root="${BUILD_ROOT:-${UVM_DIR}/build_runs}"
+  local build_tag=""
+  local build_dir=""
   local -a make_args=(
     "-C" "${UVM_DIR}"
-    "QUESTA_PREFER_FE=${QUESTA_PREFER_FE:-0}"
     "TEST=${test_name}"
     "DUT_IMPL=${dut_impl}"
   )
@@ -112,6 +117,12 @@ run_one() {
   if [[ -z "${ticket_fifo_depth}" ]]; then
     ticket_fifo_depth="$(derive_ticket_fifo_depth "${n_shd}")"
   fi
+  build_tag="${test_name}_lane${OPQ_N_LANE:-2}_nshd${n_shd}_ticket${ticket_fifo_depth}_page${page_ram_depth}"
+  if [[ -n "${user_build_dir}" ]]; then
+    build_dir="${user_build_dir}"
+  else
+    build_dir="${build_root}/${build_tag}"
+  fi
   make_args+=("OPQ_PAGE_RAM_DEPTH=${page_ram_depth}")
   make_args+=("OPQ_N_SHD=${n_shd}")
   make_args+=("OPQ_TICKET_FIFO_DEPTH=${ticket_fifo_depth}")
@@ -130,6 +141,7 @@ run_one() {
   if {
     printf '[run_uvm] DUT_IMPL=%s TEST=%s OPQ_N_LANE=%s OPQ_N_SHD=%s OPQ_TICKET_FIFO_DEPTH=%s OPQ_PAGE_RAM_DEPTH=%s COV_ENABLE=%s VSIM_PLUSARGS=%s\n' \
       "${dut_impl}" "${test_name}" "${OPQ_N_LANE:-2}" "${n_shd}" "${ticket_fifo_depth}" "${page_ram_depth}" "${COV_ENABLE:-0}" "${VSIM_PLUSARGS:-}";
+    printf '[run_uvm] BUILD_DIR=%s\n' "${build_dir}";
     make "${make_args[@]}" "${target}";
   } 2>&1 | tee "${log_file}"; then
     if [[ "${COV_ENABLE:-0}" == "1" ]]; then

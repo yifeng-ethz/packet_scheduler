@@ -7,27 +7,13 @@ REPO_ROOT := $(abspath $(PKT_DIR)/..)
 DEFAULT_BUILD_DIR := $(abspath $(TB_DIR)/build)
 BUILD_DIR ?= $(DEFAULT_BUILD_DIR)
 
-QUESTA_PREFER_FE ?= 0
-ifeq ($(QUESTA_PREFER_FE),1)
-ifneq ($(wildcard /data1/intelFPGA_pro/23.1/questa_fe),)
-QUESTA_HOME ?= /data1/intelFPGA_pro/23.1/questa_fe
-else
-QUESTA_HOME ?= /data1/intelFPGA_pro/23.1/questa_fse
-endif
-else
-ifneq ($(wildcard /data1/intelFPGA_pro/23.1/questa_fse),)
-QUESTA_HOME ?= /data1/intelFPGA_pro/23.1/questa_fse
-else
-QUESTA_HOME ?= /data1/intelFPGA_pro/23.1/questa_fe
-endif
-endif
-QUESTA_FLAVOR := $(notdir $(QUESTA_HOME))
-QUESTA_LICENSE ?= $(firstword $(wildcard $(QUESTA_HOME)/LR-*_License.dat))
+QUESTA_HOME ?= /data1/questaone_sim/questasim
 ETH_MENTOR_SERVER ?= 8161@lic-mentor.ethz.ch
-TB_LICENSE_CHAIN := $(ETH_MENTOR_SERVER)
-ifneq ($(wildcard $(QUESTA_LICENSE)),)
-TB_LICENSE_CHAIN := $(ETH_MENTOR_SERVER):$(QUESTA_LICENSE)
-endif
+QSIM_INI := $(QUESTA_HOME)/modelsim.ini
+LM_LICENSE_FILE := $(ETH_MENTOR_SERVER)
+MGLS_LICENSE_FILE := $(ETH_MENTOR_SERVER)
+SALT_LICENSE_SERVER := $(ETH_MENTOR_SERVER)
+export LM_LICENSE_FILE MGLS_LICENSE_FILE SALT_LICENSE_SERVER QSIM_INI
 
 VLIB := $(firstword $(wildcard $(QUESTA_HOME)/bin/vlib $(QUESTA_HOME)/linux_x86_64/vlib))
 VMAP := $(firstword $(wildcard $(QUESTA_HOME)/bin/vmap $(QUESTA_HOME)/linux_x86_64/vmap))
@@ -37,8 +23,8 @@ VSIM := $(firstword $(wildcard $(QUESTA_HOME)/bin/vsim $(QUESTA_HOME)/linux_x86_
 VOPT := $(firstword $(wildcard $(QUESTA_HOME)/bin/vopt $(QUESTA_HOME)/linux_x86_64/vopt))
 VCOVER := $(firstword $(wildcard $(QUESTA_HOME)/bin/vcover $(QUESTA_HOME)/linux_x86_64/vcover))
 
-UVM_SRC := $(QUESTA_HOME)/verilog_src/uvm-1.2/src
-QUESTA_MODELSIM_INI ?= $(QUESTA_HOME)/modelsim.ini
+UVM_SRC := $(firstword $(wildcard $(QUESTA_HOME)/verilog_src/uvm-1.2/src $(QUESTA_HOME)/uvm-1.2/src))
+QUESTA_MODELSIM_INI ?= $(QSIM_INI)
 MODELSIM_INI := $(BUILD_DIR)/modelsim.ini
 DPI_CPP_PATH ?= /usr/bin/gcc
 OPQ_PAGE_RAM_DEPTH ?= 65536
@@ -48,7 +34,10 @@ OPQ_N_LANE ?= 2
 
 QUARTUS_SH ?= /data1/intelFPGA_pro/23.1/quartus/bin/quartus_sh
 QUARTUS_ROOTDIR := /data1/intelFPGA_pro/23.1/quartus
-UVM_DEFINES ?= +define+UVM_NO_DPI
+QUARTUS_SIM_LIB ?= $(QUARTUS_ROOTDIR)/eda/sim_lib
+UVM_DPI_SO := $(firstword $(wildcard $(QUESTA_HOME)/uvm-1.2/linux_x86_64/uvm_dpi.so $(QUESTA_HOME)/verilog_src/uvm-1.2/linux_x86_64/uvm_dpi.so))
+UVM_DPI_LIB := $(basename $(UVM_DPI_SO))
+UVM_DEFINES ?=
 FORMAL_SVA ?= 0
 FORMAL_STRICT ?= 0
 FORMAL_PLANE ?= all
@@ -84,16 +73,6 @@ COV_CODE ?= sbecft
 RUN_DO ?= run -all; quit -f
 DUT_IMPL ?= native_sv
 VSIM_PLUSARGS ?=
-
-LM_LICENSE_FILE := $(TB_LICENSE_CHAIN)
-export LM_LICENSE_FILE
-MGLS_LICENSE_FILE := $(TB_LICENSE_CHAIN)
-export MGLS_LICENSE_FILE
-unexport SALT_LICENSE_SERVER
-ifeq ($(QUESTA_FLAVOR),questa_fe)
-SALT_LICENSE_SERVER := $(ETH_MENTOR_SERVER)
-export SALT_LICENSE_SERVER
-endif
 
 ifeq ($(OPQ_N_LANE),4)
 RTL_GEN_DIR := $(abspath $(PKT_DIR)/tb/rtl_gen_monolithic_4lane)
@@ -146,7 +125,7 @@ UVM_DEFINES += +define+OPQ_USE_NATIVE_SV
 endif
 VLOG_FLAGS := -modelsimini $(MODELSIM_INI) -sv -work $(BUILD_DIR)/work $(UVM_DEFINES) +incdir+$(UVM_SRC) +incdir+$(TB_DIR)
 VCOM_FLAGS := -modelsimini $(MODELSIM_INI) -2008 -work $(BUILD_DIR)/work
-VSIM_FLAGS := -modelsimini $(MODELSIM_INI) -L altera_mf -voptargs=+acc
+VSIM_FLAGS := -modelsimini $(MODELSIM_INI) -L altera_mf -voptargs=+acc $(if $(UVM_DPI_LIB),-dpicpppath $(DPI_CPP_PATH) -sv_lib $(UVM_DPI_LIB))
 VOPT_FLAGS := -modelsimini $(MODELSIM_INI) -check_synthesis
 ifeq ($(COV),1)
 VLOG_FLAGS += +cover=$(COV_CODE)
@@ -172,8 +151,12 @@ prepare:
 		cp $(QUESTA_MODELSIM_INI) $(MODELSIM_INI) && \
 		chmod u+w $(MODELSIM_INI) && \
 		$(VLIB) work && \
+		$(VLIB) altera_mf && \
 		$(VMAP) -modelsimini $(MODELSIM_INI) work $(BUILD_DIR)/work >/dev/null && \
-		$(VMAP) -modelsimini $(MODELSIM_INI) altera_mf $(QUESTA_HOME)/intel/vhdl/altera_mf >/dev/null
+		$(VMAP) -modelsimini $(MODELSIM_INI) altera_mf $(BUILD_DIR)/altera_mf >/dev/null
+	cd $(BUILD_DIR) && \
+		$(VCOM) -modelsimini $(MODELSIM_INI) -2008 -work altera_mf $(QUARTUS_SIM_LIB)/altera_mf_components.vhd >/dev/null && \
+		$(VCOM) -modelsimini $(MODELSIM_INI) -2008 -work altera_mf $(QUARTUS_SIM_LIB)/altera_mf.vhd >/dev/null
 	@if [ -x "$(DPI_CPP_PATH)" ]; then \
 		tmp_file="$(MODELSIM_INI).tmp"; \
 		awk ' \
@@ -232,7 +215,6 @@ lint_elab: compile
 
 license_diag:
 	@echo "QUESTA_HOME=$(QUESTA_HOME)"
-	@echo "QUESTA_FLAVOR=$(QUESTA_FLAVOR)"
 	@echo "LM_LICENSE_FILE=$(LM_LICENSE_FILE)"
 	@echo "MGLS_LICENSE_FILE=$(MGLS_LICENSE_FILE)"
 	@echo "SALT_LICENSE_SERVER=$(SALT_LICENSE_SERVER)"

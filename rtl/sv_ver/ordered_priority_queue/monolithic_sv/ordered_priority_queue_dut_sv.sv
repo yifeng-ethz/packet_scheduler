@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_dut_sv
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.33
-// Date    : 20260419
-// Change  : Track masked-frame header timing in the native debug/drop plane so no-restart exact pre-drop timestamps stay aligned under lane masking
+// Version : 26.3.56
+// Date    : 20260421
+// Change  : Export frame serial/pkg identity on exact drop events so native DV can disambiguate wrapped subheader timestamps across frames
 //------------------------------------------------------------------------------
 
 `ifndef OPQ_N_SHD
@@ -78,9 +78,11 @@ module ordered_priority_queue_dut_sv (
   localparam int unsigned HANDLE_FIFO_ADDR_WIDTH_CONST = $clog2(HANDLE_FIFO_DEPTH_CONST);
   localparam int unsigned PAGE_RAM_DEPTH_CONST = `OPQ_PAGE_RAM_DEPTH;
   localparam int unsigned PAGE_RAM_ADDR_WIDTH_CONST = $clog2(PAGE_RAM_DEPTH_CONST);
+  localparam int unsigned FRAME_SERIAL_SIZE_CONST = 16;
   localparam int unsigned MAX_PKT_LENGTH_CONST = 255;
   localparam int unsigned MAX_PKT_LENGTH_BITS_CONST = (MAX_PKT_LENGTH_CONST <= 1) ? 1 : $clog2(MAX_PKT_LENGTH_CONST);
-  localparam int unsigned TICKET_FIFO_DATA_WIDTH_A_CONST = 48 + LANE_FIFO_ADDR_WIDTH_CONST + MAX_PKT_LENGTH_BITS_CONST + 2;
+  localparam int unsigned TICKET_FIFO_DATA_WIDTH_A_CONST =
+    48 + LANE_FIFO_ADDR_WIDTH_CONST + MAX_PKT_LENGTH_BITS_CONST + FRAME_SERIAL_SIZE_CONST + 2;
   localparam int unsigned TICKET_FIFO_DATA_WIDTH_B_CONST = 16 + 16 + 16 + 6 + 16 + 48 + 2;
   localparam int unsigned TICKET_FIFO_DATA_WIDTH_CONST =
     (TICKET_FIFO_DATA_WIDTH_A_CONST > TICKET_FIFO_DATA_WIDTH_B_CONST) ?
@@ -178,9 +180,11 @@ module ordered_priority_queue_dut_sv (
   logic [OPQ_N_LANE_LOCAL-1:0] native_ingress_credit_drop_valid_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0] native_ingress_credit_drop_lane_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0] native_ingress_credit_drop_ticket_dbg;
+  logic [OPQ_N_LANE_LOCAL-1:0][FRAME_SERIAL_SIZE_CONST-1:0] native_ingress_credit_drop_pkg_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][47:0] native_ingress_credit_drop_ts_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][15:0] native_ingress_credit_drop_shd_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][15:0] native_ingress_credit_drop_hit_dbg;
+  logic [OPQ_N_LANE_LOCAL-1:0][FRAME_SERIAL_SIZE_CONST-1:0] native_ingress_pkg_cnt_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0] native_handle_we_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0] native_handle_flag_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][MAX_PKT_LENGTH_BITS_CONST-1:0] native_handle_block_len_dbg;
@@ -188,6 +192,7 @@ module ordered_priority_queue_dut_sv (
   logic [OPQ_N_LANE_LOCAL-1:0][15:0] native_late_frame_drop_hdr_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][15:0] native_late_frame_drop_shd_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][15:0] native_late_frame_drop_hit_dbg;
+  logic [OPQ_N_LANE_LOCAL-1:0][FRAME_SERIAL_SIZE_CONST-1:0] native_late_frame_drop_serial_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][47:0] native_late_frame_drop_ts_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0] native_drop_valid_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][15:0] native_drop_shd_dbg;
@@ -203,15 +208,18 @@ module ordered_priority_queue_dut_sv (
   logic [OPQ_N_LANE_LOCAL-1:0][15:0] native_drop_evt_post_hit_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0] native_exact_pre_valid_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][47:0] native_exact_pre_ts_dbg;
+  logic [OPQ_N_LANE_LOCAL-1:0][FRAME_SERIAL_SIZE_CONST-1:0] native_exact_pre_serial_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][15:0] native_exact_pre_shd_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][15:0] native_exact_pre_hit_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0] native_exact_post_valid_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][47:0] native_exact_post_ts_dbg;
+  logic [OPQ_N_LANE_LOCAL-1:0][FRAME_SERIAL_SIZE_CONST-1:0] native_exact_post_serial_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][15:0] native_exact_post_shd_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][15:0] native_exact_post_hit_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][47:0] native_ingress_running_ts_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][47:0] masked_ingress_running_ts_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][47:0] masked_frame_ts_base_dbg;
+  logic [OPQ_N_LANE_LOCAL-1:0][FRAME_SERIAL_SIZE_CONST-1:0] masked_pkg_cnt_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][15:0] masked_running_shd_cnt_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][2:0] masked_header_flow_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0] masked_header_valid_dbg;
@@ -453,9 +461,11 @@ module ordered_priority_queue_dut_sv (
     assign native_ingress_ticket_wdata_dbg[g] = u_native.ingress_ticket_wdata[g];
     assign native_ingress_lane_we_dbg[g] = u_native.ingress_lane_we[g];
     assign native_ingress_running_ts_dbg[g] = u_native.ingress_running_ts_dbg[g];
+    assign native_ingress_pkg_cnt_dbg[g] = u_native.ingress_pkg_cnt_dbg[g];
     assign native_ingress_credit_drop_valid_dbg[g] = u_native.ingress_credit_drop_valid_dbg[g];
     assign native_ingress_credit_drop_lane_dbg[g] = u_native.ingress_credit_drop_lane_dbg[g];
     assign native_ingress_credit_drop_ticket_dbg[g] = u_native.ingress_credit_drop_ticket_dbg[g];
+    assign native_ingress_credit_drop_pkg_dbg[g] = u_native.ingress_credit_drop_pkg_cnt_dbg[g];
     assign native_ingress_credit_drop_ts_dbg[g] = u_native.ingress_credit_drop_ts_dbg[g];
     assign native_ingress_credit_drop_shd_dbg[g] = u_native.ingress_credit_drop_shd_cnt_dbg[g];
     assign native_ingress_credit_drop_hit_dbg[g] = u_native.ingress_credit_drop_hit_cnt_dbg[g];
@@ -467,6 +477,7 @@ module ordered_priority_queue_dut_sv (
     assign native_late_frame_drop_hdr_dbg[g] = u_native.late_frame_drop_hdr_cnt_dbg[g];
     assign native_late_frame_drop_shd_dbg[g] = u_native.late_frame_drop_shd_cnt_dbg[g];
     assign native_late_frame_drop_hit_dbg[g] = u_native.late_frame_drop_hit_cnt_dbg[g];
+    assign native_late_frame_drop_serial_dbg[g] = u_native.late_frame_drop_serial_dbg[g];
     assign native_late_frame_drop_ts_dbg[g] = u_native.late_frame_drop_ts_dbg[g];
     assign native_drr_quantum_dbg[g] = u_native.block_path_i.b2p_arb.quantum[g];
     assign native_drr_req_dbg[g] = u_native.block_path_i.b2p_arb_req_raw[g];
@@ -561,14 +572,17 @@ module ordered_priority_queue_dut_sv (
       native_drop_evt_post_hit_dbg <= '0;
       native_exact_pre_valid_dbg <= '0;
       native_exact_pre_ts_dbg <= '0;
+      native_exact_pre_serial_dbg <= '0;
       native_exact_pre_shd_dbg <= '0;
       native_exact_pre_hit_dbg <= '0;
       native_exact_post_valid_dbg <= '0;
       native_exact_post_ts_dbg <= '0;
+      native_exact_post_serial_dbg <= '0;
       native_exact_post_shd_dbg <= '0;
       native_exact_post_hit_dbg <= '0;
       masked_ingress_running_ts_dbg <= '0;
       masked_frame_ts_base_dbg <= '0;
+      masked_pkg_cnt_dbg <= '0;
       masked_running_shd_cnt_dbg <= '0;
       masked_header_flow_dbg <= '0;
       masked_header_valid_dbg <= '0;
@@ -598,13 +612,14 @@ module ordered_priority_queue_dut_sv (
       native_drop_evt_post_hit_dbg <= '{default:'0};
       native_exact_pre_valid_dbg <= '{default:'0};
       native_exact_pre_ts_dbg <= '{default:'0};
+      native_exact_pre_serial_dbg <= '{default:'0};
       native_exact_pre_shd_dbg <= '{default:'0};
       native_exact_pre_hit_dbg <= '{default:'0};
       native_exact_post_valid_dbg <= '{default:'0};
       native_exact_post_ts_dbg <= '{default:'0};
+      native_exact_post_serial_dbg <= '{default:'0};
       native_exact_post_shd_dbg <= '{default:'0};
       native_exact_post_hit_dbg <= '{default:'0};
-
       if (avs_csr_write) begin
         if (avs_csr_address >= CSR_LANE_REGION_BASE_CONST) begin
           int lane_v;
@@ -688,6 +703,7 @@ module ordered_priority_queue_dut_sv (
             if (asi_ingress_startofpacket_bus[lane] && is_preamble_word(asi_ingress_data_bus[lane])) begin
               masked_header_flow_dbg[lane] <= asi_ingress_error_bus[lane][2] ? 3'd0 : 3'd1;
               masked_header_valid_dbg[lane] <= 1'b0;
+              masked_pkg_cnt_dbg[lane] <= '0;
               masked_running_shd_cnt_dbg[lane] <= '0;
             end else begin
               unique case (masked_header_flow_dbg[lane])
@@ -701,6 +717,7 @@ module ordered_priority_queue_dut_sv (
                     masked_ingress_running_ts_dbg[lane][47:16],
                     asi_ingress_data_bus[lane][31:16]
                   };
+                  masked_pkg_cnt_dbg[lane] <= asi_ingress_data_bus[lane][15:0];
                   masked_header_valid_dbg[lane] <= 1'b1;
                   masked_header_flow_dbg[lane] <= 3'd3;
                 end
@@ -728,6 +745,7 @@ module ordered_priority_queue_dut_sv (
             if (is_trailer_word(asi_ingress_data_bus[lane])) begin
               masked_header_flow_dbg[lane] <= 3'd0;
               masked_header_valid_dbg[lane] <= 1'b0;
+              masked_pkg_cnt_dbg[lane] <= '0;
             end
           end
 
@@ -763,6 +781,7 @@ module ordered_priority_queue_dut_sv (
             drop_pre_hit_delta_v = drop_pre_hit_delta_v + {{24{1'b0}}, asi_ingress_data_bus[lane][15:8]};
             native_exact_pre_valid_dbg[lane] <= 1'b1;
             native_exact_pre_ts_dbg[lane] <= masked_exact_pre_ts_v;
+            native_exact_pre_serial_dbg[lane] <= masked_pkg_cnt_dbg[lane];
             native_exact_pre_shd_dbg[lane] <= 16'd1;
             native_exact_pre_hit_dbg[lane] <= {{8{1'b0}}, asi_ingress_data_bus[lane][15:8]};
           end
@@ -775,6 +794,7 @@ module ordered_priority_queue_dut_sv (
             if (!native_exact_pre_valid_dbg[lane]) begin
               native_exact_pre_valid_dbg[lane] <= 1'b1;
               native_exact_pre_ts_dbg[lane] <= native_ingress_credit_drop_ts_dbg[lane];
+              native_exact_pre_serial_dbg[lane] <= native_ingress_credit_drop_pkg_dbg[lane];
               native_exact_pre_shd_dbg[lane] <= native_ingress_credit_drop_shd_dbg[lane];
               native_exact_pre_hit_dbg[lane] <= native_ingress_credit_drop_hit_dbg[lane];
             end
@@ -790,6 +810,7 @@ module ordered_priority_queue_dut_sv (
             if (!native_exact_post_valid_dbg[lane]) begin
               native_exact_post_valid_dbg[lane] <= 1'b1;
               native_exact_post_ts_dbg[lane] <= native_late_frame_drop_ts_dbg[lane];
+              native_exact_post_serial_dbg[lane] <= native_late_frame_drop_serial_dbg[lane];
               native_exact_post_shd_dbg[lane] <= native_late_frame_drop_shd_dbg[lane];
               native_exact_post_hit_dbg[lane] <= native_late_frame_drop_hit_dbg[lane];
             end
@@ -805,6 +826,8 @@ module ordered_priority_queue_dut_sv (
             native_exact_post_valid_dbg[lane] <= 1'b1;
             native_exact_post_ts_dbg[lane] <=
               u_native.page_allocator_i.page_allocator.ticket[lane].ticket_ts;
+            native_exact_post_serial_dbg[lane] <=
+              u_native.page_allocator_i.page_allocator.ticket[lane].frame_serial;
             native_exact_post_shd_dbg[lane] <= 16'd1;
             native_exact_post_hit_dbg[lane] <=
               {{(16-MAX_PKT_LENGTH_BITS_CONST){1'b0}}, native_handle_block_len_dbg[lane]};

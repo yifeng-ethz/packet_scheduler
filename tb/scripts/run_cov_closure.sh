@@ -4,14 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TB_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 COV_DIR="${TB_DIR}/sim_runs/coverage"
-
-QUESTA_HOME="${QUESTA_HOME:-/data1/intelFPGA_pro/23.1/questa_fse}"
-VCOVER="$(find "${QUESTA_HOME}" -maxdepth 2 -type f -name vcover | head -n1)"
-
-if [[ -z "${VCOVER}" ]]; then
-  echo "vcover not found under ${QUESTA_HOME}" >&2
-  exit 1
-fi
+source "${SCRIPT_DIR}/../../../scripts/questa_one_env.sh"
 
 if [[ "$#" -eq 0 ]]; then
   TESTS=(
