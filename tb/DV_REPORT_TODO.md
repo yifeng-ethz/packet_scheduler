@@ -13,6 +13,15 @@ Current toolchain migration note on 2026-04-21:
 - The maintained packet_scheduler UVM makefiles now target the supported
   QuestaOne 2026 runtime with `-ini` instead of the deprecated
   `-modelsimini` flag for `vlog` / `vcom` / `vsim` / `vopt`.
+- The current QuestaOne compatibility reruns are now split cleanly between
+  real current evidence and the remaining documented non-claim:
+  `opq_basic_smoke_test`,
+  `opq_cross_drr_bursty_large_repro_test`, and
+  `opq_cross_random_ready_overflow_extensive_soak_test` all rerun green on
+  `2026-04-21`, while the full-depth
+  `opq_cross_bp_mustdrop_witness_test` still fails only because
+  `ft_drop_*` never advances even though aggregate hit conservation and the
+  frame-table `wr = rd + drop` ledger stay clean.
 - The supported QuestaOne reruns of `tb/scripts/run_all.sh` and
   `tb/scripts/run_cov_closure.sh` are clean on this host.
 - The refreshed `tb/scripts/run_frame_signoff.sh` evidence is now coherent on

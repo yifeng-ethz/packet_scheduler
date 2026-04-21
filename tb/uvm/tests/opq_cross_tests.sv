@@ -706,6 +706,16 @@ class opq_cross_drr_bursty_random_test extends opq_base_test;
   endtask
 endclass
 
+// Backward-compatible alias for older probe wrappers and stale command lines
+// that still request the historical large-repro testcase name.
+class opq_cross_drr_bursty_large_repro_test extends opq_cross_drr_bursty_random_test;
+  `uvm_component_utils(opq_cross_drr_bursty_large_repro_test)
+
+  function new(string name = "opq_cross_drr_bursty_large_repro_test", uvm_component parent = null);
+    super.new(name, parent);
+  endfunction
+endclass
+
 class opq_cross_drr_bursty_repro_test extends opq_cross_drr_bursty_random_test;
   `uvm_component_utils(opq_cross_drr_bursty_repro_test)
 

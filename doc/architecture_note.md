@@ -172,6 +172,15 @@ architecturally different halves:
   `wr_hdr/shd/hit=29/68/5545`, `rd_hdr/shd/hit=29/68/5545`, aggregate
   `accepted=5545 delivered=5545 unexplained=0`, and
   `core_principles first_break=clean`.
+- The current QuestaOne `2026-04-21` compatibility reruns also keep the
+  broader harness healthy on the same architectural rules:
+  `opq_basic_smoke_test`, the historical alias
+  `opq_cross_drr_bursty_large_repro_test`, and
+  `opq_cross_random_ready_overflow_extensive_soak_test` all close with
+  `UVM_ERROR : 0`. The only red case in that focused rerun set is still the
+  full-depth `opq_cross_bp_mustdrop_witness_test`, and that failure remains
+  the known non-claim: `ft_drop_*` stays flat at zero while aggregate hit
+  conservation and the frame-table ownership ledger both remain clean.
 - `opq_cross_bp_mustdrop_witness_test` at the reduced-depth `12x16` profile is
   now back to being the clean overwrite-local proof point. On the refreshed
   `2026-04-21` rerun with

@@ -388,7 +388,7 @@ class opq_virtual_sequence_base extends uvm_sequence #(uvm_sequence_item);
 
     for (int i = 0; i < OPQ_N_LANE; i++) begin
       lane_seq[i] = opq_lane_frame_sequence::type_id::create($sformatf("lane_seq_%0d", i));
-      foreach (lane_frames[i][j]) begin
+      for (int j = 0; j < lane_frames[i].size(); j++) begin
         lane_seq[i].frames.push_back(lane_frames[i][j]);
       end
     end
@@ -507,7 +507,7 @@ class opq_basic_feb_packet_virtual_sequence extends opq_virtual_sequence_base;
         '0, '0, 0
       ));
 
-      foreach (lane_frames[lane][idx]) begin
+      for (int idx = 0; idx < lane_frames[lane].size(); idx++) begin
         lane_frames[lane][idx].whole_frame_packet = 1'b1;
         lane_frames[lane][idx].feb_id = feb_id[15:0];
       end
@@ -706,8 +706,8 @@ class opq_stress_virtual_sequence extends opq_virtual_sequence_base;
     apply_absolute_frame_slot_schedule(lane_frames, inter_frame_gap_cycles);
     lane0_frames.delete();
     lane1_frames.delete();
-    foreach (lane_frames[0][i]) lane0_frames.push_back(lane_frames[0][i]);
-    foreach (lane_frames[1][i]) lane1_frames.push_back(lane_frames[1][i]);
+    for (int i = 0; i < lane_frames[0].size(); i++) lane0_frames.push_back(lane_frames[0][i]);
+    for (int i = 0; i < lane_frames[1].size(); i++) lane1_frames.push_back(lane_frames[1][i]);
     start_lane_frames(lane0_frames, lane1_frames);
   endtask
 endclass

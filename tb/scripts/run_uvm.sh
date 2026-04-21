@@ -99,6 +99,12 @@ run_one() {
   local target="run"
   local cov_saved=0
 
+  if [[ "${test_name}" == +* || "${test_name}" == *=* ]]; then
+    echo "[FAIL] ${test_name} (looks like a plusarg or env-style token, not a UVM test name; pass simulator plusargs via VSIM_PLUSARGS and shell variables via the environment)" | tee "${log_file}"
+    fail_count=$((fail_count + 1))
+    return
+  fi
+
   resolve_cov_src() {
     local -a candidates=(
       "${build_dir}/opq_${test_name}.ucdb"
