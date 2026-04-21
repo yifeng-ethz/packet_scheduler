@@ -1,10 +1,13 @@
 # Changelog
 Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 
-> Note on formal-tool history: older entries below mention the temporary
-> OSS/SBY/Yosys fallback that was used before the current toolchain migration.
-> The active formal direction is now `qverify` / `znformal` with simulation
-> stress fallback only when the Siemens binaries are not present on the host.
+> Note on formal-tool history: older entries below that mention
+> `OSS` / `sby` / `yosys` are archived evidence only from the temporary
+> pre-migration fallback flow. Since the `2026-04-21` toolchain refresh,
+> the supported simulator runtime is `QuestaOne 2026` at
+> `/data1/questaone_sim/questasim`, and the active formal direction is
+> `qverify` / `znformal` with simulation stress fallback only when the
+> Siemens formal binaries are not present on the host.
 
 ## 26.3.56.0421
 
@@ -75,20 +78,44 @@ Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 ## 26.3.22.0418
 
 - **RTL / Native-SV Presenter Hold Fix**: fixed the basic-presenter synchronous page-RAM return path under held output backpressure. The presenter now skids a returned RAM word across `valid && !ready` and reuses that preserved word on resume, which removes the stale-word skip/duplicate behavior exposed by the aggressive flush-under-backpressure probe.
-- **Verification / OSS Formal Closure**: closed the current OSS `sby+yosys+bitwuzla` plane bring-up on this host. `formal_ingress.sh`, `formal_mover.sh`, and `formal_egress.sh` all now record `formal=sby_pass`, and the targeted `opq_formal_like_egress_flush_backpressure_stress_test` also passes after the live presenter fix.
+- **Verification / Historical OSS Formal Closure**: closed the then-active
+  OSS `sby+yosys+bitwuzla` plane bring-up on this host. `formal_ingress.sh`,
+  `formal_mover.sh`, and `formal_egress.sh` all recorded `formal=sby_pass`,
+  and the targeted `opq_formal_like_egress_flush_backpressure_stress_test`
+  also passed after the live presenter fix.
 - **Verification / Cross Soak Tracking**: kept the stretched mixed-bucket seconds-soak screen honest. After the presenter repair, an exploratory rerun advanced through the earlier failure window without reproducing `opq_hit3_contract`, but the full promoted-length rerun is still pending and remains an explicit open TODO rather than a silent signoff claim.
 
 ## 26.3.20.0418
 
-- **Verification / OSS Formal Egress**: split the basic-presenter overwrite-drop scan under `OPQ_OSS_FORMAL` into a feed-forward oversize-only subset so the Yosys/SBY backend no longer dies in SMT2 lowering. `formal_egress.sh` now records `formal=sby_pass` on the live Avalon-ST hold-under-backpressure slice while leaving the native-SV signoff path unchanged.
-- **Verification / OSS Formal Ingress**: added `shd_len_dbg_oss`, stretched the post-reset warmup window, and encoded the legal `WR_HITS` / drop-cause local-state assumptions explicitly in the ingress OSS harness. The remaining ingress blocker is now narrowed to the lane-credit bound plus `lane_issue_dbg_oss` sampled-write alignment.
-- **Verification / OSS Formal Mover**: added combinational page-writer source mirrors plus sampled source shadows in the mover harness. The remaining mover blocker is now isolated to `page_ram_wr_data_o` equality against the sampled write source after reset/phase cleanup attempts.
+- **Verification / Historical OSS Formal Egress**: split the
+  basic-presenter overwrite-drop scan under `OPQ_OSS_FORMAL` into a
+  feed-forward oversize-only subset so the Yosys/SBY backend no longer died
+  in SMT2 lowering. `formal_egress.sh` recorded `formal=sby_pass` on the
+  live Avalon-ST hold-under-backpressure slice while leaving the native-SV
+  signoff path unchanged.
+- **Verification / Historical OSS Formal Ingress**: added
+  `shd_len_dbg_oss`, stretched the post-reset warmup window, and encoded the
+  legal `WR_HITS` / drop-cause local-state assumptions explicitly in the
+  ingress OSS harness. The remaining ingress blocker was narrowed to the
+  lane-credit bound plus `lane_issue_dbg_oss` sampled-write alignment.
+- **Verification / Historical OSS Formal Mover**: added combinational
+  page-writer source mirrors plus sampled source shadows in the mover
+  harness. The remaining mover blocker was isolated to
+  `page_ram_wr_data_o` equality against the sampled write source after
+  reset/phase cleanup attempts.
 
 ## 26.3.21.0418
 
 - **Verification / Mixed Soak Screen**: fixed the earlier mixed-bucket seconds-soak scoreboard accounting handoff so the old `Drop accounting underrun ... source=monitor` failure no longer reproduces under the stretched `+TB_CLK_PERIOD_NS=250` bug-hunt run. The same earlier long-run screen now reaches much deeper chained traffic and exposes a stricter open hit/sub-header contract failure (`opq_hit3_contract`) instead of dying in the scoreboard first.
-- **Verification / OSS Formal Mover**: closed the current OSS mover subset. `formal_mover.sh` now records `formal=sby_pass` on the proof-clean block-path ownership / arbiter slice, leaving ingress as the only remaining OSS proof blocker.
-- **Verification / OSS Formal Ingress**: kept the ingress proof honest and narrowed the remaining blocker to the phase-sensitive ticket-credit/write coupling in the OSS harness. The lane-credit bound and mover-side arbiter issues are no longer the active formal blockers.
+- **Verification / Historical OSS Formal Mover**: closed the then-active OSS
+  mover subset. `formal_mover.sh` recorded `formal=sby_pass` on the
+  proof-clean block-path ownership / arbiter slice, leaving ingress as the
+  only remaining OSS proof blocker at that time.
+- **Verification / Historical OSS Formal Ingress**: kept the ingress proof
+  honest and narrowed the remaining blocker to the phase-sensitive
+  ticket-credit/write coupling in the OSS harness. The lane-credit bound and
+  mover-side arbiter issues were no longer the active formal blockers in
+  that historical flow.
 
 ## 26.3.19.0418
 

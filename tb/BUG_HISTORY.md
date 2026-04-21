@@ -21,6 +21,13 @@ Fix status detail contract for active entries and future updates:
 - `potential_hazard` = whether the fix looks permanent or is still provisional / profile-limited
 - `Claude Opus 4.7 xhigh review decision` = explicit review state; use `pending / not run` until that review has actually happened
 
+Historical formal note:
+- `BUG-015-H` through `BUG-017-H` are archived OSS `sby` / `yosys` evidence
+  from the pre-`2026-04-21` migration window.
+- The current supported formal direction is `qverify` / `znformal`, and the
+  current supported simulator runtime is `QuestaOne 2026` at
+  `/data1/questaone_sim/questasim`.
+
 ## Index
 
 | bug_id | class | severity | encounter sim-time | status | first seen | commit | summary |
@@ -39,9 +46,9 @@ Fix status detail contract for active entries and future updates:
 | [BUG-012-H](#bug-012-h-edge-medium-ready-profile-testcase-was-wired-as-always-ready) | H | non-datapath-refactor | `n/a (testcase wiring)` | fixed | promoted EDGE isolated rerun on `2026-04-17` | `cbb05e0` | The supposed medium-backpressure testcase never applied stalls and gave false evidence. |
 | [BUG-013-H](#bug-013-h-mixed-bucket-random-soak-was-reported-as-directed-and-omitted-txn-growth-traceability) | H | non-datapath-refactor | `n/a (reporting-only)` | fixed | regenerated native-SV report on `2026-04-17` | `cbb05e0` | The promoted mixed-soak testcase was misclassified as directed and hid required random-case reporting. |
 | [BUG-014-R](#bug-014-r-formal-like-egress-flush-under-backpressure-violates-the-avalon-st-hold-contract) | R | soft error | `n/a (formal probe)` | fixed | `formal_egress.sh` targeted stress probe on `2026-04-18` | `dd6fe75` | Formal-like egress flush-under-backpressure no longer breaks the live Avalon-ST hold contract after the basic presenter preserves synchronous page-RAM return data across held `ready`. |
-| [BUG-015-H](#bug-015-h-oss-ingress-sby-harness-still-false-fails-on-phase-sensitive-write-and-drop-checks) | H | non-datapath-refactor | `n/a (formal-only)` | fixed | `formal_ingress.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `1048b6c` | The ingress OSS proof now passes after the harness stopped consuming reset-warmup debug pulses and switched from phase-ambiguous credit-bus checks to pulse-level write/drop contracts. |
-| [BUG-016-H](#bug-016-h-oss-basic-presenter-sby-lowering-hits-a-logic-loop-in-the-overwrite-scan-path) | H | non-datapath-refactor | `n/a (formal-only)` | fixed | `formal_egress.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `f8448ac` | The OSS basic-presenter proof no longer dies in SMT2 lowering; the live Avalon-ST hold-under-backpressure slice now passes on the OSS subset. |
-| [BUG-017-H](#bug-017-h-oss-mover-sby-harness-now-reaches-proof-but-still-fails-on-arbiter-shape-invariants) | H | non-datapath-refactor | `n/a (formal-only)` | fixed | `formal_mover.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `de65125` | The live OSS mover proof now passes on the current block-path subset after the proof-clean arbiter view was exported and constrained. |
+| [BUG-015-H](#bug-015-h-oss-ingress-sby-harness-still-false-fails-on-phase-sensitive-write-and-drop-checks) | H | non-datapath-refactor | `n/a (formal-only)` | fixed | historical `formal_ingress.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `1048b6c` | Archived OSS ingress proof closure after the harness stopped consuming reset-warmup debug pulses and switched from phase-ambiguous credit-bus checks to pulse-level write/drop contracts. |
+| [BUG-016-H](#bug-016-h-oss-basic-presenter-sby-lowering-hits-a-logic-loop-in-the-overwrite-scan-path) | H | non-datapath-refactor | `n/a (formal-only)` | fixed | historical `formal_egress.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `f8448ac` | Archived OSS basic-presenter proof closure after the overwrite scan was reduced to the live Avalon-ST hold-under-backpressure subset. |
+| [BUG-017-H](#bug-017-h-oss-mover-sby-harness-now-reaches-proof-but-still-fails-on-arbiter-shape-invariants) | H | non-datapath-refactor | `n/a (formal-only)` | fixed | historical `formal_mover.sh` with `FORMAL_BACKEND=sby` on `2026-04-18` | `de65125` | Archived OSS mover proof closure after the proof-clean arbiter view was exported and constrained for the then-active subset. |
 | [BUG-018-H](#bug-018-h-extended-mixed-bucket-seconds-soak-exposes-chained-masked-drop-accounting-underrun) | H | non-datapath-refactor | `11.277854 / 12.797138 / 13.457942 ms` | fixed | `opq_cross_mixed_bucket_seconds_soak_test` on `2026-04-18` | `466b935` | The full stretched mixed-bucket seconds soak now passes end to end after the allocator repairs and the mixed ERROR pool restoration. |
 | [BUG-019-R](#bug-019-r-merged-frame-header-counts-incremented-per-accepted-lane-instead-of-per-emitted-subheader) | R | soft error | `n/a (invariant smoke)` | fixed | `opq_basic_smoke_test` on `2026-04-18` | `466b935` | The native-SV page allocator was double-counting merged subheaders in the frame header, so the advertised subheader count could exceed the emitted K237 count under multi-lane merge. |
 | [BUG-020-R](#bug-020-r-late-drop-lane-credit-return-added-stale-block-path-credit-and-poisoned-no-restart-state) | R | hard stuck error | `n/a (exact repro)` | fixed | `opq_cross_hit3_exact_183_190_repro_test` on `2026-04-19` | `466b935` | Late-drop lane-credit return pulses were adding stale block-path credit data when only one source was valid, corrupting no-restart lane-credit state and the mixed-soak exact failing window. |
@@ -348,6 +355,10 @@ Fix status detail contract for active entries and future updates:
   - `dd6fe75` `Fix OPQ presenter hold bug and close OSS formal slice`
 
 ### BUG-015-H: OSS ingress SBY harness still false-fails on phase-sensitive write and drop checks
+- Historical note:
+  - this fix closed the then-active OSS `sby` harness path only
+  - the current supported formal ownership is `qverify` / `znformal`; keep
+    this entry as archival evidence, not as the live backend claim
 - First seen in:
   - `packet_scheduler/tb/scripts/formal_ingress.sh`
     `FORMAL_BACKEND=sby`
@@ -390,6 +401,10 @@ Fix status detail contract for active entries and future updates:
   - `1048b6c` `Tighten OPQ OSS ingress proof warmup gating`
 
 ### BUG-016-H: OSS basic-presenter SBY lowering hits a logic loop in the overwrite scan path
+- Historical note:
+  - this fix closed the then-active OSS `sby` subset only
+  - the current supported formal ownership is `qverify` / `znformal`; keep
+    this entry as archival evidence, not as the live backend claim
 - First seen in:
   - `packet_scheduler/tb/scripts/formal_egress.sh`
     `FORMAL_BACKEND=sby`
@@ -417,6 +432,10 @@ Fix status detail contract for active entries and future updates:
   - `f8448ac` `Advance OPQ OSS formal proof slices`
 
 ### BUG-017-H: OSS mover SBY harness now reaches proof but still fails on arbiter-shape invariants
+- Historical note:
+  - this fix closed the then-active OSS `sby` subset only
+  - the current supported formal ownership is `qverify` / `znformal`; keep
+    this entry as archival evidence, not as the live backend claim
 - First seen in:
   - `packet_scheduler/tb/scripts/formal_mover.sh`
     `FORMAL_BACKEND=sby`
