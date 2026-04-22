@@ -8,8 +8,8 @@ set_global_assignment -name SDC_FILE opq_native_sv_4lane_signoff.sdc
 set_global_assignment -name VERILOG_MACRO "SYNTHESIS=1"
 set_global_assignment -name VERILOG_MACRO "OPQ_USE_NATIVE_SV"
 set_global_assignment -name VERILOG_MACRO "OPQ_N_LANE=4"
-set_global_assignment -name VERILOG_MACRO "OPQ_N_SHD=256"
-set_global_assignment -name VERILOG_MACRO "OPQ_TICKET_FIFO_DEPTH=512"
+set_global_assignment -name VERILOG_MACRO "OPQ_N_SHD=128"
+set_global_assignment -name VERILOG_MACRO "OPQ_TICKET_FIFO_DEPTH=256"
 set_global_assignment -name VERILOG_MACRO "OPQ_PAGE_RAM_DEPTH=65536"
 
 set_global_assignment -name NUM_PARALLEL_PROCESSORS 16
@@ -40,7 +40,7 @@ set_global_assignment -name SYSTEMVERILOG_FILE ../../../rtl/sv_ver/ordered_prior
 set_global_assignment -name SYSTEMVERILOG_FILE src_compat/ordered_priority_queue_monolithic_block_path.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../../../rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_tracker.sv
 set_global_assignment -name SYSTEMVERILOG_FILE src_compat/ordered_priority_queue_monolithic_frame_table_presenter.sv
-set_global_assignment -name SYSTEMVERILOG_FILE src_compat/ordered_priority_queue_monolithic_basic_presenter.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../../rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv
 set_global_assignment -name SYSTEMVERILOG_FILE src_compat/ordered_priority_queue_monolithic.sv
 set_global_assignment -name SYSTEMVERILOG_FILE opq_native_sv_4lane_signoff_top.sv
 
