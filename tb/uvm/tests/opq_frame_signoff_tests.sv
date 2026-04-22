@@ -483,6 +483,7 @@ class opq_frame_signoff_base_test extends opq_base_test;
     opq_soak_virtual_sequence long_soak_seq;
     opq_stress_virtual_sequence heavy_skew_seq;
     opq_whole_frame_skew_virtual_sequence deep_whole_frame_seq;
+    opq_per_lane_skew_sweep_virtual_sequence per_lane_half_frame_skew_seq;
     opq_missing_empty_frame_virtual_sequence asym_sparse_seq;
     int unsigned deep_subheaders_per_frame;
 
@@ -532,6 +533,17 @@ class opq_frame_signoff_base_test extends opq_base_test;
     deep_whole_frame_seq.hit_count_when_active = 2;
     deep_whole_frame_seq.inter_frame_gap_cycles = OPQ_MIN_SOP_GAP_CYCLES;
     run_vseq(deep_whole_frame_seq);
+
+    per_lane_half_frame_skew_seq =
+      opq_per_lane_skew_sweep_virtual_sequence::type_id::create("per_lane_half_frame_skew_seq");
+    per_lane_half_frame_skew_seq.frame_count_per_phase = 6;
+    per_lane_half_frame_skew_seq.subheaders_per_frame = deep_subheaders_per_frame;
+    per_lane_half_frame_skew_seq.hit_period = 3;
+    per_lane_half_frame_skew_seq.hit_count_when_active = 2;
+    per_lane_half_frame_skew_seq.inter_frame_gap_cycles = OPQ_MIN_SOP_GAP_CYCLES;
+    per_lane_half_frame_skew_seq.sweep_phase_count = 4;
+    per_lane_half_frame_skew_seq.max_extra_gap_cycles = (OPQ_N_SHD * 16) / 2;
+    run_vseq(per_lane_half_frame_skew_seq);
 
     asym_sparse_seq = opq_missing_empty_frame_virtual_sequence::type_id::create("asym_sparse_seq");
     asym_sparse_seq.lane_frame_count[0] = 4;
@@ -743,6 +755,10 @@ class opq_cross_mixed_bucket_random_soak_test extends opq_frame_signoff_base_tes
 
   virtual function time credit_restore_timeout();
     return cycles_to_time(MIXED_SOAK_TIMEOUT_CYCLES);
+  endfunction
+
+  function automatic string mixed_soak_label();
+    return "mixed_bucket";
   endfunction
 
   function automatic string mixed_bucket_name(int unsigned bucket_idx);
@@ -1142,6 +1158,12 @@ class opq_cross_mixed_bucket_random_soak_test extends opq_frame_signoff_base_tes
     endcase
   endtask
 
+  task automatic report_mixed_soak_checkpoint(string label);
+    report_frame_table_accounting_checkpoint(label, 1'b1);
+    report_lane_hit_accounting_checkpoint(label, 1'b1);
+    report_core_principle_checkpoint(label, 1'b1, 1'b1);
+  endtask
+
   virtual task run_main_sequence();
     reset_no_restart_identity();
     csr_clear_counters();
@@ -1155,6 +1177,7 @@ class opq_cross_mixed_bucket_random_soak_test extends opq_frame_signoff_base_tes
 
     for (int unsigned step_idx = 0; step_idx < soak_iterations; step_idx++) begin
       run_random_mixed_step(step_idx);
+      report_mixed_soak_checkpoint($sformatf("%s_step_%0d", mixed_soak_label(), step_idx));
     end
 
     foreach (bucket_visit_count[idx]) begin
@@ -1173,6 +1196,8 @@ class opq_cross_mixed_bucket_random_soak_test extends opq_frame_signoff_base_tes
         )
       end
     end
+
+    report_mixed_soak_checkpoint({mixed_soak_label(), "_final"});
   endtask
 endclass
 
@@ -2612,6 +2637,75 @@ class opq_cross_single_hit_masked_then_sparse_repro_test extends opq_frame_signo
     sparse_seq =
       opq_missing_empty_frame_virtual_sequence::type_id::create("repro_sparse_followup");
     run_vseq(sparse_seq);
+  endtask
+endclass
+
+class opq_cross_masked_empty_recovery_boundary_test extends opq_frame_signoff_base_test;
+  `uvm_component_utils(opq_cross_masked_empty_recovery_boundary_test)
+
+  localparam int unsigned REPRO_DWELL_CYCLES = 500_000;
+  localparam int unsigned REPRO_TIMEOUT_CYCLES = 500_000;
+
+  function new(
+    string name = "opq_cross_masked_empty_recovery_boundary_test",
+    uvm_component parent = null
+  );
+    super.new(name, parent);
+  endfunction
+
+  virtual function time dwell_time();
+    return cycles_to_time(REPRO_DWELL_CYCLES);
+  endfunction
+
+  virtual function time credit_restore_timeout();
+    return cycles_to_time(REPRO_TIMEOUT_CYCLES);
+  endfunction
+
+  virtual task run_main_sequence();
+    opq_single_hit_masked_drop_virtual_sequence masked_seq;
+    opq_single_subheader_empty_virtual_sequence empty_seq;
+    bit [31:0] mask_word;
+
+    reset_no_restart_identity();
+    csr_clear_counters();
+    csr_write32(OPQ_CSR_WORD_LANE_MASK, 32'h0000_0000);
+
+    mask_word = '0;
+    mask_word[OPQ_N_LANE-1:0] = {OPQ_N_LANE{1'b1}};
+    csr_write32(OPQ_CSR_WORD_LANE_MASK, mask_word);
+
+    masked_seq =
+      opq_single_hit_masked_drop_virtual_sequence::type_id::create("masked_empty_boundary_masked_seq");
+    empty_seq =
+      opq_single_subheader_empty_virtual_sequence::type_id::create("masked_empty_boundary_empty_seq");
+
+    configure_no_restart_sequence(masked_seq);
+    `uvm_info(get_type_name(), $sformatf("Starting no-restart case %s", masked_seq.get_name()), UVM_LOW)
+    masked_seq.start(env.vseqr);
+    wait_for_ingress_idle(
+      $sformatf("%s_ingress_idle", masked_seq.get_name()),
+      credit_restore_timeout(),
+      credit_restore_poll()
+    );
+    advance_no_restart_sequence(masked_seq);
+
+    csr_write32(OPQ_CSR_WORD_LANE_MASK, 32'h0000_0000);
+
+    configure_no_restart_sequence(empty_seq);
+    `uvm_info(get_type_name(), $sformatf("Starting no-restart case %s", empty_seq.get_name()), UVM_LOW)
+    empty_seq.start(env.vseqr);
+    wait_for_ingress_idle(
+      $sformatf("%s_ingress_idle", empty_seq.get_name()),
+      credit_restore_timeout(),
+      credit_restore_poll()
+    );
+    advance_no_restart_sequence(empty_seq);
+    wait_for_credit_restore(
+      "masked_empty_boundary_credit_restore",
+      credit_restore_timeout(),
+      credit_restore_poll()
+    );
+    #(inter_case_gap_time());
   endtask
 endclass
 

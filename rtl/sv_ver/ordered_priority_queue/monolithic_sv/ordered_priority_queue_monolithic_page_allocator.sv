@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_page_allocator
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.62
-// Date    : 20260421
-// Change  : Move tail-flush ack into the prepare/write stage so the IDLE completion cone no longer drives eop_flush_ack timing
+// Version : 26.3.67
+// Date    : 20260422
+// Change  : Predict current-frame fit from the last completed internal frame so allocator pre-drop matches presenter-visible frame spans instead of raw SOP totals, move the tail-shadow serial epoch into a BRAM-backed lookup while keeping the existing fetch/sample/resolve cadence, and split the IDLE ticket snapshot into raw capture plus classify so ticket RAM decode no longer feeds the tail-retire state decision directly
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_page_allocator #(
@@ -39,7 +39,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
   parameter int unsigned HANDLE_LENGTH = LANE_FIFO_ADDR_WIDTH + PAGE_RAM_ADDR_WIDTH + MAX_PKT_LENGTH_BITS,
   parameter int unsigned FIFO_RAW_DELAY = 2,
   parameter int unsigned FRAME_DURATION_CYCLES = N_SHD * 16,
-  parameter int unsigned FRAME_JOIN_WAIT_CYCLES = 64,
+  parameter int unsigned FRAME_JOIN_WAIT_CYCLES = FRAME_DURATION_CYCLES,
   parameter int unsigned MAX_SHR_CNT_BITS = $clog2(N_SHD * N_LANE) + 1,
   parameter int unsigned MAX_HIT_CNT_BITS = (($clog2(N_SHD * N_HIT) + 1) < 16) ? ($clog2(N_SHD * N_HIT) + 1) : 16,
   parameter int unsigned ALLOC_PAGE_FLOW_WIDTH = (N_LANE <= 1) ? 1 : $clog2(N_LANE),
@@ -96,6 +96,11 @@ module ordered_priority_queue_monolithic_page_allocator #(
   output logic [N_LANE-1:0][MAX_HIT_CNT_BITS-1:0]           packet_complete_lane_hit_cnt_o,
   output logic                                              packet_complete_pulse_o,
   input  logic                                              resident_backpressure_hold_i,
+  input  logic                                              resident_protect_valid_i,
+  input  logic [PAGE_RAM_ADDR_WIDTH-1:0]                    resident_protect_addr_i,
+  input  logic [PAGE_RAM_ADDR_WIDTH-1:0]                    resident_protect_len_i,
+  input  logic                                              resident_protect_full_ring_i,
+  input  logic                                              resident_protect_has_successor_i,
   input  logic                                              d_clk,
   input  logic                                              d_reset
 );
@@ -184,6 +189,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
     PAGE_ALLOCATOR_IDLE,
     PAGE_ALLOCATOR_PREPARE_WRITE_TAIL,
     PAGE_ALLOCATOR_FETCH_TICKET,
+    PAGE_ALLOCATOR_SAMPLE_TAIL,
     PAGE_ALLOCATOR_RESOLVE_TAIL,
     PAGE_ALLOCATOR_CLASSIFY_TICKET,
     PAGE_ALLOCATOR_ACCUM_TICKET,
@@ -216,6 +222,8 @@ module ordered_priority_queue_monolithic_page_allocator #(
   typedef fetch_lane_action_t fetch_lane_actions_t [N_LANE];
   localparam int unsigned FUTURE_FRAME_PAIR_COUNT = (N_LANE + 1) / 2;
   localparam int unsigned FUTURE_FRAME_LANE_WIDTH = (N_LANE <= 1) ? 1 : $clog2(N_LANE);
+  localparam int unsigned TAIL_STATUS_WRAP_WIDTH =
+    (FRAME_SERIAL_SIZE > TICKET_FIFO_ADDR_WIDTH) ? (FRAME_SERIAL_SIZE - TICKET_FIFO_ADDR_WIDTH) : 1;
 
   typedef struct packed {
     logic                        valid;
@@ -253,7 +261,90 @@ module ordered_priority_queue_monolithic_page_allocator #(
     end
   endfunction
 
-`ifndef SYNTHESIS
+  function automatic page_ram_addr_t frame_length_from_counts(
+    input frame_shr_cnt_t shd_cnt,
+    input frame_hit_cnt_t hit_cnt
+  );
+    logic [PAGE_RAM_ADDR_WIDTH:0] shd_ext;
+    logic [PAGE_RAM_ADDR_WIDTH:0] hit_ext;
+    logic [PAGE_RAM_ADDR_WIDTH:0] frame_len_ext;
+    begin
+      shd_ext = shd_cnt;
+      hit_ext = hit_cnt;
+      frame_len_ext = (shd_ext * SHD_SIZE) + (hit_ext * HIT_SIZE) + HDR_SIZE + TRL_SIZE;
+      frame_length_from_counts = frame_len_ext[PAGE_RAM_ADDR_WIDTH-1:0];
+    end
+  endfunction
+
+  function automatic logic frame_length_spans_full_ring(
+    input frame_shr_cnt_t shd_cnt,
+    input frame_hit_cnt_t hit_cnt
+  );
+    int unsigned shd_words_v;
+    int unsigned hit_words_v;
+    int unsigned frame_len_words_v;
+    begin
+      shd_words_v = int'(shd_cnt) * SHD_SIZE;
+      hit_words_v = int'(hit_cnt) * HIT_SIZE;
+      frame_len_words_v = shd_words_v + hit_words_v + HDR_SIZE + TRL_SIZE;
+      frame_length_spans_full_ring = (frame_len_words_v >= PAGE_RAM_DEPTH);
+    end
+  endfunction
+
+  function automatic logic frame_lengths_exceed_ring_capacity(
+    input page_ram_addr_t lhs_len,
+    input page_ram_addr_t rhs_len
+  );
+    logic [PAGE_RAM_ADDR_WIDTH:0] lhs_ext;
+    logic [PAGE_RAM_ADDR_WIDTH:0] rhs_ext;
+    logic [PAGE_RAM_ADDR_WIDTH+1:0] sum_ext;
+    begin
+      lhs_ext = lhs_len;
+      rhs_ext = rhs_len;
+      sum_ext = lhs_ext + rhs_ext;
+      frame_lengths_exceed_ring_capacity = (sum_ext > PAGE_RAM_DEPTH);
+    end
+  endfunction
+
+  function automatic logic [PAGE_RAM_ADDR_WIDTH+1:0] circular_distance(
+    input page_ram_addr_t from_addr,
+    input page_ram_addr_t to_addr
+  );
+    logic [PAGE_RAM_ADDR_WIDTH+1:0] from_ext;
+    logic [PAGE_RAM_ADDR_WIDTH+1:0] to_ext;
+    begin
+      from_ext = from_addr;
+      to_ext = to_addr;
+      if (to_ext >= from_ext) begin
+        circular_distance = to_ext - from_ext;
+      end else begin
+        circular_distance = (PAGE_RAM_DEPTH - from_ext) + to_ext;
+      end
+    end
+  endfunction
+
+  function automatic bit circular_range_overlaps(
+    input page_ram_addr_t lhs_addr,
+    input page_ram_addr_t lhs_len,
+    input page_ram_addr_t rhs_addr,
+    input page_ram_addr_t rhs_len
+  );
+    logic [PAGE_RAM_ADDR_WIDTH+1:0] lhs_len_ext;
+    logic [PAGE_RAM_ADDR_WIDTH+1:0] rhs_len_ext;
+    begin
+      circular_range_overlaps = 1'b0;
+      if ((lhs_len == '0) || (rhs_len == '0)) begin
+        circular_range_overlaps = 1'b0;
+      end else begin
+        lhs_len_ext = lhs_len;
+        rhs_len_ext = rhs_len;
+        circular_range_overlaps =
+          (circular_distance(lhs_addr, rhs_addr) < lhs_len_ext) ||
+          (circular_distance(rhs_addr, lhs_addr) < rhs_len_ext);
+      end
+    end
+  endfunction
+
   function automatic logic [FRAME_SERIAL_SIZE-1:0] tail_target_serial_from_raw(
     input logic [TICKET_FIFO_DATA_WIDTH-1:0] ticket_raw_v
   );
@@ -273,6 +364,20 @@ module ordered_priority_queue_monolithic_page_allocator #(
       tail_status_slot = ticket_fifo_addr_t'(serial_v);
     end
   endfunction
+
+  function automatic logic [TAIL_STATUS_WRAP_WIDTH-1:0] tail_status_wrap(
+    input logic [FRAME_SERIAL_SIZE-1:0] serial_v
+  );
+    logic [TAIL_STATUS_WRAP_WIDTH-1:0] wrap_v;
+    begin
+      wrap_v = '0;
+      if (FRAME_SERIAL_SIZE > TICKET_FIFO_ADDR_WIDTH) begin
+        wrap_v = serial_v[FRAME_SERIAL_SIZE-1:TICKET_FIFO_ADDR_WIDTH];
+      end
+      tail_status_wrap = wrap_v;
+    end
+  endfunction
+`ifndef SYNTHESIS
 `endif
 
   typedef struct {
@@ -386,6 +491,11 @@ module ordered_priority_queue_monolithic_page_allocator #(
   (* preserve *) logic [N_LANE-1:0] fetch_tk_curr_q;
   (* preserve *) logic [N_LANE-1:0] fetch_tk_future_q;
   (* preserve *) logic [N_LANE-1:0] fetch_tk_past_q;
+  (* preserve *) logic [N_LANE-1:0] idle_tk_sop_q;
+  (* preserve *) logic [N_LANE-1:0] idle_tk_curr_q;
+  (* preserve *) logic [N_LANE-1:0] idle_tk_future_q;
+  (* preserve *) logic [N_LANE-1:0] idle_tk_past_q;
+  (* preserve *) logic [N_LANE-1:0] idle_tk_active_frame_q;
   logic [N_LANE-1:0] fetch_lane_masked_q;
   logic [N_LANE-1:0] fetch_lane_credit_valid_q;
   logic [N_LANE-1:0] fetch_lane_reactivate_q;
@@ -397,6 +507,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
   logic fetch_start_new_frame_q;
   logic fetch_rebase_future_frame_q;
   logic fetch_join_absorb_only_q;
+  logic fetch_predrop_current_frame_q;
   logic [N_LANE-1:0] fetch_lanes_with_curr_sop_q;
   logic [N_LANE-1:0][MAX_SHR_CNT_BITS-1:0] fetch_curr_sop_n_subh_q;
   logic [N_LANE-1:0][MAX_HIT_CNT_BITS-1:0] fetch_curr_sop_n_hit_q;
@@ -417,11 +528,15 @@ module ordered_priority_queue_monolithic_page_allocator #(
   logic [FUTURE_FRAME_LANE_WIDTH-1:0] fetch_future_frame_lane_q;
   logic [47:0] fetch_future_frame_ts_q;
   logic [N_LANE-1:0][FRAME_SERIAL_SIZE-1:0] fetch_tail_target_serial_q;
+  logic [N_LANE-1:0][TICKET_FIFO_ADDR_WIDTH-1:0] fetch_tail_status_slot_q;
+  logic [N_LANE-1:0][TAIL_STATUS_WRAP_WIDTH-1:0] fetch_tail_target_wrap_q;
   logic [N_LANE-1:0] fetch_tail_ready_q;
+  logic [N_LANE-1:0] fetch_tail_shadow_valid_q;
+  logic [N_LANE-1:0] fetch_tail_shadow_drop_q;
   logic [N_LANE-1:0] fetch_tail_dropped_q;
   logic [N_LANE-1:0][TICKET_FIFO_DEPTH-1:0] ingress_tail_status_valid_q;
   logic [N_LANE-1:0][TICKET_FIFO_DEPTH-1:0] ingress_tail_status_drop_q;
-  logic [N_LANE-1:0][TICKET_FIFO_DEPTH-1:0][FRAME_SERIAL_SIZE-1:0] ingress_tail_status_serial_q;
+  logic [N_LANE-1:0][TAIL_STATUS_WRAP_WIDTH-1:0] ingress_tail_status_wrap_rd_q;
   logic [N_LANE-1:0] page_allocator_is_pending_ticket;
   logic [N_LANE-1:0] page_allocator_is_pending_ticket_lane;
   logic [N_LANE-1:0] page_allocator_ticket_q_valid;
@@ -448,6 +563,13 @@ module ordered_priority_queue_monolithic_page_allocator #(
   logic active_frame_pending_nonfuture_ticket;
   logic frame_join_hold;
   logic all_active_lanes_tail_ready;
+  (* preserve *) logic [N_LANE-1:0] idle_tk_pending_d1_q;
+  (* preserve *) logic [N_LANE-1:0] idle_tk_sop_d1_q;
+  (* preserve *) logic [N_LANE-1:0][FRAME_SERIAL_SIZE-1:0] idle_tk_serial_d1_q;
+  (* preserve *) logic [N_LANE-1:0][47:0] idle_tk_ts_d1_q;
+  logic [FRAME_SERIAL_SIZE-1:0] idle_tk_serial_ref_d1_q;
+  logic [FRAME_SERIAL_SIZE-1:0] idle_tk_frame_serial_this_d1_q;
+  logic [47:0] idle_tk_running_ts_d1_q;
   logic [N_LANE-1:0] lanes_with_sop_ticket;
   logic [N_LANE-1:0] lanes_with_curr_sop_ticket;
   logic [5:0] header_dt_type;
@@ -469,6 +591,22 @@ module ordered_priority_queue_monolithic_page_allocator #(
   frame_hit_cnt_t packet_complete_hit_cnt;
   frame_shr_cnt_t packet_complete_lane_shd_cnt [N_LANE];
   frame_hit_cnt_t packet_complete_lane_hit_cnt [N_LANE];
+  genvar tail_status_lane_idx;
+  generate
+    for (tail_status_lane_idx = 0; tail_status_lane_idx < N_LANE; tail_status_lane_idx++) begin : gen_tail_status_wrap_ram
+      tile_fifo #(
+        .DATA_WIDTH(TAIL_STATUS_WRAP_WIDTH),
+        .ADDR_WIDTH(TICKET_FIFO_ADDR_WIDTH)
+      ) tail_status_wrap_ram_i (
+        .data(tail_status_wrap(ingress_tail_bypass_serial_i[tail_status_lane_idx])),
+        .read_addr(fetch_tail_status_slot_q[tail_status_lane_idx]),
+        .write_addr(tail_status_slot(ingress_tail_bypass_serial_i[tail_status_lane_idx])),
+        .we(ingress_tail_bypass_valid_i[tail_status_lane_idx]),
+        .clk(d_clk),
+        .q(ingress_tail_status_wrap_rd_q[tail_status_lane_idx])
+      );
+    end
+  endgenerate
 
   always_comb begin : proc_page_allocator_comb
     int unsigned total_subh_v;
@@ -596,12 +734,10 @@ module ordered_priority_queue_monolithic_page_allocator #(
       if (page_allocator_is_pending_ticket[i] && ticket_fifos_rd_data_i[i][TICKET_ALT_SOP_LOC]) begin
         page_allocator_is_tk_sop[i] = 1'b1;
         lanes_with_sop_ticket[i] = 1'b1;
-        any_pending_sop_ticket = 1'b1;
         if (ticket_fifos_rd_data_i[i][TICKET_SERIAL_HI:TICKET_SERIAL_LO] ==
             page_allocator_ticket_serial_ref) begin
           page_allocator_is_tk_curr[i] = 1'b1;
           lanes_with_curr_sop_ticket[i] = 1'b1;
-          any_pending_curr_sop_ticket = 1'b1;
           total_subh_v += int'(ticket_fifos_rd_data_i[i][TICKET_N_SUBH_HI:TICKET_N_SUBH_LO]);
           total_hit_v += int'(ticket_fifos_rd_data_i[i][TICKET_N_HIT_HI:TICKET_N_HIT_LO]);
           if (!header_lane_selected_v) begin
@@ -661,43 +797,6 @@ module ordered_priority_queue_monolithic_page_allocator #(
           ingress_parser_busy_i[i]) begin
         active_frame_waiting_busy_lane = 1'b1;
       end
-      if (page_allocator.frame_lane_active[i] &&
-          page_allocator_is_pending_ticket[i]) begin
-        // Future SOP tickets can belong to the next frame and should not block
-        // retirement of the current one. Any unread non-SOP ticket still
-        // belongs to the active frame, even if its timestamp is still ahead of
-        // running_ts, so keep the frame alive until those subheaders are
-        // drained.
-        if (!page_allocator_is_tk_sop[i] ||
-            !(page_allocator_is_pending_ticket_lane[i] &&
-              page_allocator_ticket_q_valid[i] &&
-              page_allocator_is_tk_future[i])) begin
-          active_frame_pending_nonfuture_ticket = 1'b1;
-        end
-      end
-      if ((page_allocator.frame_lane_active != '0) &&
-          !page_allocator.frame_lane_active[i] &&
-          page_allocator_is_pending_ticket[i] &&
-          !page_allocator_is_tk_sop[i] &&
-          (page_allocator_if_read_ticket_ticket[i].frame_serial ==
-            page_allocator.frame_serial_this)) begin
-        // A skewed whole-frame lane can surface its first body ticket after
-        // another lane has already opened the frame. Keep that current-frame
-        // ownership alive instead of retiring the frame and late-dropping the
-        // straggling body ticket one cycle later.
-        active_frame_pending_nonfuture_ticket = 1'b1;
-      end
-      if ((page_allocator.frame_lane_active != '0) &&
-          !page_allocator.frame_lane_active[i] &&
-          page_allocator_is_pending_ticket[i] &&
-          page_allocator_is_tk_sop[i] &&
-          page_allocator_is_tk_curr[i]) begin
-        // An inactive lane can still surface the current-frame SOP after the
-        // frame has already been opened by another lane. Keep the frame live
-        // until that SOP is absorbed and the lane is reactivated, otherwise
-        // the following body ticket ages into the late-drop path.
-        active_frame_pending_nonfuture_ticket = 1'b1;
-      end
       if ((page_allocator.frame_lane_active != '0) &&
           !page_allocator.frame_lane_active[i] &&
           !page_allocator_is_pending_ticket[i] &&
@@ -715,12 +814,54 @@ module ordered_priority_queue_monolithic_page_allocator #(
       if (page_allocator_is_pending_ticket[i] && !page_allocator_ticket_q_valid[i]) begin
         all_lanes_fetch_ready = 1'b0;
       end
-      if (page_allocator_is_pending_ticket[i] && !page_allocator_is_tk_sop[i]) begin
+      if (page_allocator_is_pending_ticket[i] && idle_tk_sop_q[i]) begin
+        any_pending_sop_ticket = 1'b1;
+        if (idle_tk_curr_q[i]) begin
+          any_pending_curr_sop_ticket = 1'b1;
+        end
+      end
+      if (page_allocator_is_pending_ticket[i] && !idle_tk_sop_q[i]) begin
         all_present_tk_sop = 1'b0;
       end
       if (page_allocator.frame_lane_active[i] &&
+          page_allocator_is_pending_ticket[i] &&
+          (!page_allocator_is_pending_ticket_lane[i] ||
+           !page_allocator_ticket_q_valid[i] ||
+           !idle_tk_sop_q[i] ||
+           !idle_tk_future_q[i])) begin
+        // The tail-retire path now consumes the registered IDLE decode
+        // snapshot. Any newly arrived or still-unstable ticket therefore
+        // blocks retirement until the snapshot has a confirmed class.
+        active_frame_pending_nonfuture_ticket = 1'b1;
+      end
+      if ((page_allocator.frame_lane_active != '0) &&
+          !page_allocator.frame_lane_active[i] &&
+          page_allocator_is_pending_ticket[i]) begin
+        if (!page_allocator_is_pending_ticket_lane[i] ||
+            !page_allocator_ticket_q_valid[i]) begin
+          active_frame_pending_nonfuture_ticket = 1'b1;
+        end else if (!idle_tk_sop_q[i] &&
+                     idle_tk_active_frame_q[i]) begin
+          // A skewed whole-frame lane can surface its first body ticket after
+          // another lane has already opened the frame. Keep that current-frame
+          // ownership alive instead of retiring the frame and late-dropping the
+          // straggling body ticket one cycle later.
+          active_frame_pending_nonfuture_ticket = 1'b1;
+        end else if (idle_tk_sop_q[i] &&
+                     idle_tk_curr_q[i]) begin
+          // An inactive lane can still surface the current-frame SOP after the
+          // frame has already been opened by another lane. Keep the frame live
+          // until that SOP is absorbed and the lane is reactivated, otherwise
+          // the following body ticket ages into the late-drop path.
+          active_frame_pending_nonfuture_ticket = 1'b1;
+        end
+      end
+      if (page_allocator.frame_lane_active[i] &&
           !(lane_tail_ready_v &&
-            (!page_allocator_is_pending_ticket[i] || page_allocator_is_tk_future[i]))) begin
+            (!page_allocator_is_pending_ticket[i] ||
+             (page_allocator_is_pending_ticket_lane[i] &&
+              page_allocator_ticket_q_valid[i] &&
+              idle_tk_future_q[i])))) begin
         all_active_lanes_tail_ready = 1'b0;
       end
 
@@ -733,6 +874,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
 
     if ((page_allocator.frame_join_wait != '0) &&
         (page_allocator.frame_lane_active != '0) &&
+        (page_allocator.frame_lane_active != '1) &&
         !any_pending_sop_ticket) begin
       frame_join_hold = 1'b1;
     end
@@ -744,6 +886,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
     page_waddr_o = page_allocator.page_waddr;
     fetch_ticket_active_o =
       (page_allocator_state == PAGE_ALLOCATOR_FETCH_TICKET) ||
+      (page_allocator_state == PAGE_ALLOCATOR_SAMPLE_TAIL) ||
       (page_allocator_state == PAGE_ALLOCATOR_RESOLVE_TAIL) ||
       (page_allocator_state == PAGE_ALLOCATOR_CLASSIFY_TICKET) ||
       (page_allocator_state == PAGE_ALLOCATOR_ACCUM_TICKET) ||
@@ -811,7 +954,6 @@ module ordered_priority_queue_monolithic_page_allocator #(
         page_allocator.ingress_tail_ts_seen[i] <= ingress_tail_bypass_ts_i[i];
         ingress_tail_status_valid_q[i][tail_status_slot_v] <= 1'b1;
         ingress_tail_status_drop_q[i][tail_status_slot_v] <= ingress_tail_bypass_drop_i[i];
-        ingress_tail_status_serial_q[i][tail_status_slot_v] <= ingress_tail_bypass_serial_i[i];
       end
       if (page_allocator.frame_lane_active[i] &&
           ((ingress_tail_bypass_valid_i[i] &&
@@ -915,6 +1057,8 @@ module ordered_priority_queue_monolithic_page_allocator #(
               tail_target_serial_v = page_allocator_if_read_ticket_ticket[i].frame_serial;
             end
             fetch_tail_target_serial_q[i] <= tail_target_serial_v;
+            fetch_tail_status_slot_q[i] <= tail_status_slot(tail_target_serial_v);
+            fetch_tail_target_wrap_q[i] <= tail_status_wrap(tail_target_serial_v);
           end
           // Fallback header fields are only used when no current-frame SOP lane
           // is selected. Seed them from stable parser inputs here and let the
@@ -923,16 +1067,14 @@ module ordered_priority_queue_monolithic_page_allocator #(
           fetch_default_header_feb_id_q <= ingress_feb_id_i[0];
           fetch_default_header_frame_ts_q <= ingress_frame_ts_i[0];
           fetch_default_header_running_ts_q <= ingress_frame_ts_i[0];
-          page_allocator_state <= PAGE_ALLOCATOR_RESOLVE_TAIL;
+          page_allocator_state <= PAGE_ALLOCATOR_SAMPLE_TAIL;
         end
         end
 
-      PAGE_ALLOCATOR_RESOLVE_TAIL: begin
+      PAGE_ALLOCATOR_SAMPLE_TAIL: begin
         for (int i = 0; i < N_LANE; i++) begin
           logic tail_ready_now_v;
-          logic tail_drop_now_v;
           logic seen_tail_matches_v;
-          logic shadow_tail_exact_v;
           ticket_fifo_addr_t tail_status_slot_v;
 
           seen_tail_matches_v =
@@ -941,17 +1083,21 @@ module ordered_priority_queue_monolithic_page_allocator #(
               page_allocator.ingress_tail_serial_seen[i],
               fetch_tail_target_serial_q[i]
             );
-          tail_status_slot_v = ticket_fifo_addr_t'(fetch_tail_target_serial_q[i]);
-          shadow_tail_exact_v =
-            ingress_tail_status_valid_q[i][tail_status_slot_v] &&
-            (ingress_tail_status_serial_q[i][tail_status_slot_v] == fetch_tail_target_serial_q[i]);
+          tail_status_slot_v = fetch_tail_status_slot_q[i];
           tail_ready_now_v = seen_tail_matches_v;
-          tail_drop_now_v = 1'b0;
-          if (shadow_tail_exact_v) begin
-            tail_drop_now_v = ingress_tail_status_drop_q[i][tail_status_slot_v];
-          end
           fetch_tail_ready_q[i] <= tail_ready_now_v;
-          fetch_tail_dropped_q[i] <= tail_drop_now_v;
+          fetch_tail_shadow_valid_q[i] <= ingress_tail_status_valid_q[i][tail_status_slot_v];
+          fetch_tail_shadow_drop_q[i] <= ingress_tail_status_drop_q[i][tail_status_slot_v];
+        end
+        page_allocator_state <= PAGE_ALLOCATOR_RESOLVE_TAIL;
+        end
+
+      PAGE_ALLOCATOR_RESOLVE_TAIL: begin
+        for (int i = 0; i < N_LANE; i++) begin
+          fetch_tail_dropped_q[i] <=
+            fetch_tail_shadow_valid_q[i] &&
+            (ingress_tail_status_wrap_rd_q[i] == fetch_tail_target_wrap_q[i]) &&
+            fetch_tail_shadow_drop_q[i];
         end
         page_allocator_state <= PAGE_ALLOCATOR_CLASSIFY_TICKET;
         end
@@ -1174,6 +1320,10 @@ module ordered_priority_queue_monolithic_page_allocator #(
         logic [N_LANE-1:0] lane_credit_valid_v;
         logic [N_LANE-1:0] lane_reactivate_v;
         logic [47:0] future_frame_ts_v;
+        page_ram_addr_t predicted_frame_len_v;
+        logic predicted_frame_spans_full_ring_v;
+        logic resident_predict_matches_v;
+        logic predrop_current_frame_v;
         logic rebase_future_frame_v;
         fetch_lane_actions_t lane_action_v;
 
@@ -1181,10 +1331,33 @@ module ordered_priority_queue_monolithic_page_allocator #(
         lane_credit_valid_v = '0;
         lane_reactivate_v = '0;
         future_frame_ts_v = page_allocator.frame_ts;
+        predicted_frame_len_v = resident_protect_len_i;
+        predicted_frame_spans_full_ring_v = resident_protect_full_ring_i;
+        resident_predict_matches_v =
+          resident_protect_valid_i &&
+          (packet_complete_frame_start_addr == resident_protect_addr_i);
+        if (resident_predict_matches_v) begin
+          predicted_frame_len_v =
+            frame_length_from_counts(packet_complete_shr_cnt, packet_complete_hit_cnt);
+          predicted_frame_spans_full_ring_v =
+            frame_length_spans_full_ring(packet_complete_shr_cnt, packet_complete_hit_cnt);
+        end
         if (fetch_future_frame_seen_q) begin
           future_frame_ts_v =
             fetch_ticket_raw_q[fetch_future_frame_lane_q][TICKET_FRAME_TS_HI:TICKET_FRAME_TS_LO];
         end
+        predrop_current_frame_v =
+          (page_allocator.frame_lane_active == '0) &&
+          fetch_all_present_tk_sop_q &&
+          fetch_any_pending_curr_sop_q &&
+          resident_protect_valid_i &&
+          !resident_protect_has_successor_i &&
+          (resident_protect_full_ring_i ||
+           predicted_frame_spans_full_ring_v ||
+           frame_lengths_exceed_ring_capacity(
+             resident_protect_len_i,
+             predicted_frame_len_v
+           ));
         rebase_future_frame_v =
           (page_allocator.frame_lane_active == '0) &&
           fetch_all_present_tk_sop_q &&
@@ -1195,6 +1368,27 @@ module ordered_priority_queue_monolithic_page_allocator #(
           (future_frame_ts_v > page_allocator.frame_ts);
         fetch_future_frame_ts_q <= future_frame_ts_v;
         fetch_rebase_future_frame_q <= rebase_future_frame_v;
+        fetch_predrop_current_frame_q <= predrop_current_frame_v;
+`ifndef SYNTHESIS
+        if (opq_trace_boundary_en &&
+            ($time >= opq_trace_after_ps) &&
+            fetch_start_new_frame_q) begin
+          $display(
+            "[opq_pa_decision] t=%0t start_frame_guard predrop=%0b resident_valid=%0b resident_len=%0d resident_full=%0b resident_has_successor=%0b predictor_match=%0b predicted_len=%0d predicted_full=%0b lanes_curr_sop=0x%0h tail_ready=0x%0h",
+            $time,
+            predrop_current_frame_v,
+            resident_protect_valid_i,
+            resident_protect_len_i,
+            resident_protect_full_ring_i,
+            resident_protect_has_successor_i,
+            resident_predict_matches_v,
+            predicted_frame_len_v,
+            predicted_frame_spans_full_ring_v,
+            fetch_lanes_with_curr_sop_q,
+            fetch_tail_ready_q
+          );
+        end
+`endif
 
         for (int i = 0; i < N_LANE; i++) begin
           lane_action_v[i] = FETCH_LANE_HOLD;
@@ -1227,6 +1421,22 @@ module ordered_priority_queue_monolithic_page_allocator #(
               lane_action_v[i] = FETCH_LANE_ADVANCE_ONLY;
               lane_credit_valid_v[i] = 1'b1;
               lane_reactivate_v[i] = 1'b1;
+            end
+          end else if (predrop_current_frame_v) begin
+            if (fetch_tk_curr_q[i] && fetch_tk_sop_q[i]) begin
+              lane_action_v[i] = FETCH_LANE_LATE_DROP;
+              lane_masked_v[i] = 1'b1;
+              lane_credit_valid_v[i] = 1'b1;
+            end else if (fetch_tk_future_q[i]) begin
+              lane_masked_v[i] = 1'b1;
+              lane_credit_valid_v[i] = 1'b0;
+            end else if (fetch_tk_past_q[i]) begin
+              lane_action_v[i] = FETCH_LANE_LATE_DROP;
+              lane_masked_v[i] = 1'b1;
+              lane_credit_valid_v[i] = 1'b1;
+            end else begin
+              lane_masked_v[i] = 1'b1;
+              lane_credit_valid_v[i] = 1'b0;
             end
           end else if (rebase_future_frame_v) begin
             lane_masked_v[i] = 1'b0;
@@ -1304,7 +1514,64 @@ module ordered_priority_queue_monolithic_page_allocator #(
         page_allocator.subheader_has_accepted_lane <= 1'b0;
         page_allocator.page_length <= '0;
 
-        if (fetch_join_absorb_only_q) begin
+        if (fetch_predrop_current_frame_q) begin
+`ifndef SYNTHESIS
+          if (opq_trace_boundary_en && ($time >= opq_trace_after_ps)) begin
+            $display(
+              "[opq_pa_decision] t=%0t predrop_current_frame frame_serial=0x%0h pending=0x%0h tk_sop=0x%0h tk_curr=0x%0h tk_future=0x%0h tk_past=0x%0h",
+              $time,
+              page_allocator.frame_serial,
+              fetch_pending_q,
+              fetch_tk_sop_q,
+              fetch_tk_curr_q,
+              fetch_tk_future_q,
+              fetch_tk_past_q
+            );
+          end
+`endif
+          for (int i = 0; i < N_LANE; i++) begin
+            page_allocator.ticket_credit_update[i] <= ticket_fifo_addr_t'(1);
+            page_allocator.ticket_credit_update_valid[i] <= fetch_lane_credit_valid_q[i];
+            page_allocator.lane_masked[i] <= 1'b1;
+
+            unique case (fetch_lane_action_q[i])
+              FETCH_LANE_HOLD: begin
+                page_allocator.ticket_rptr[i] <= page_allocator.ticket_rptr[i];
+              end
+              FETCH_LANE_ADVANCE_ONLY: begin
+                page_allocator.ticket_rptr[i] <= page_allocator.ticket_rptr[i] + ticket_fifo_addr_t'(1);
+              end
+              FETCH_LANE_LATE_DROP: begin
+                late_frame_drop_valid[i] <= 1'b1;
+                if (fetch_ticket_raw_q[i][TICKET_ALT_SOP_LOC]) begin
+                  late_frame_drop_hdr_cnt[i] <= 16'd1;
+                  late_frame_drop_shd_cnt[i] <= '0;
+                  late_frame_drop_hit_cnt[i] <= '0;
+                  late_frame_drop_serial[i] <= fetch_ticket_raw_q[i][TICKET_SERIAL_HI:TICKET_SERIAL_LO];
+                  late_frame_drop_ts[i] <= fetch_ticket_raw_q[i][TICKET_FRAME_TS_HI:TICKET_FRAME_TS_LO];
+                end else begin
+                  late_frame_drop_hdr_cnt[i] <= '0;
+                  late_frame_drop_shd_cnt[i] <= 16'd1;
+                  late_frame_drop_hit_cnt[i] <=
+                    {{(16-MAX_PKT_LENGTH_BITS){1'b0}}, fetch_ticket_q[i].block_length};
+                  late_frame_drop_serial[i] <= fetch_ticket_q[i].frame_serial;
+                  late_frame_drop_ts[i] <= fetch_ticket_q[i].ticket_ts;
+                end
+                late_frame_lane_credit_update[i] <= fetch_ticket_q[i].block_length;
+                late_frame_lane_credit_update_valid[i] <= 1'b1;
+                page_allocator.ticket[i] <= TICKET_DEFAULT;
+                page_allocator.ticket_rptr[i] <= page_allocator.ticket_rptr[i] + ticket_fifo_addr_t'(1);
+              end
+              default: begin
+                page_allocator.ticket_rptr[i] <= page_allocator.ticket_rptr[i];
+              end
+            endcase
+          end
+
+          page_allocator.frame_serial <= page_allocator.frame_serial + 1'b1;
+          page_allocator.alloc_page_flow <= '0;
+          page_allocator_state <= PAGE_ALLOCATOR_IDLE;
+        end else if (fetch_join_absorb_only_q) begin
           for (int i = 0; i < N_LANE; i++) begin
             page_allocator.ticket_credit_update[i] <= ticket_fifo_addr_t'(1);
             page_allocator.ticket_credit_update_valid[i] <= fetch_lane_credit_valid_q[i];
@@ -1651,7 +1918,6 @@ module ordered_priority_queue_monolithic_page_allocator #(
         page_allocator.running_ts[47:4] <= page_allocator.running_ts[47:4] + 1'b1;
         page_allocator.page_start_addr <= page_allocator.page_waddr +
           page_ram_addr_t'(page_allocator.page_length) + page_ram_addr_t'(SHD_SIZE);
-        page_allocator.frame_join_wait <= '0;
         page_allocator_state <= PAGE_ALLOCATOR_IDLE;
         end
 
@@ -1675,7 +1941,8 @@ module ordered_priority_queue_monolithic_page_allocator #(
 
     if ((page_allocator.frame_join_wait != '0) &&
         (page_allocator_state == PAGE_ALLOCATOR_IDLE) &&
-        (page_allocator.frame_lane_active != '0)) begin
+        (page_allocator.frame_lane_active != '0) &&
+        (page_allocator.frame_lane_active != '1)) begin
       page_allocator.frame_join_wait <= page_allocator.frame_join_wait - frame_join_wait_t'(1);
     end
 
@@ -1695,6 +1962,66 @@ module ordered_priority_queue_monolithic_page_allocator #(
       end
     end
 
+    idle_tk_serial_ref_d1_q <= page_allocator.frame_serial;
+    if (page_allocator.frame_lane_active != '0) begin
+      idle_tk_serial_ref_d1_q <= page_allocator.frame_serial_this;
+    end
+    idle_tk_frame_serial_this_d1_q <= page_allocator.frame_serial_this;
+    idle_tk_running_ts_d1_q <= page_allocator.running_ts;
+
+    for (int i = 0; i < N_LANE; i++) begin
+      logic pending_now_v;
+      logic tk_sop_now_v;
+      logic tk_curr_now_v;
+      logic tk_future_now_v;
+      logic tk_past_now_v;
+      logic tk_active_frame_now_v;
+
+      pending_now_v = (ingress_ticket_wptr[i] != page_allocator.ticket_rptr[i]);
+      idle_tk_pending_d1_q[i] <= pending_now_v;
+      idle_tk_sop_d1_q[i] <= pending_now_v && ticket_fifos_rd_data_i[i][TICKET_ALT_SOP_LOC];
+      idle_tk_ts_d1_q[i] <= ticket_fifos_rd_data_i[i][TICKET_TS_HI:TICKET_TS_LO];
+      if (ticket_fifos_rd_data_i[i][TICKET_ALT_SOP_LOC]) begin
+        idle_tk_serial_d1_q[i] <= ticket_fifos_rd_data_i[i][TICKET_SERIAL_HI:TICKET_SERIAL_LO];
+      end else begin
+        idle_tk_serial_d1_q[i] <= ticket_fifos_rd_data_i[i][TICKET_BODY_SERIAL_HI:TICKET_BODY_SERIAL_LO];
+      end
+
+      tk_sop_now_v = idle_tk_pending_d1_q[i] && idle_tk_sop_d1_q[i];
+      tk_curr_now_v = 1'b0;
+      tk_future_now_v = 1'b0;
+      tk_past_now_v = 1'b0;
+      tk_active_frame_now_v = 1'b0;
+
+      if (tk_sop_now_v) begin
+        tk_curr_now_v = (idle_tk_serial_d1_q[i] == idle_tk_serial_ref_d1_q);
+      end else begin
+        tk_active_frame_now_v = idle_tk_pending_d1_q[i] &&
+                                (idle_tk_serial_d1_q[i] == idle_tk_frame_serial_this_d1_q);
+      end
+
+      if (idle_tk_pending_d1_q[i]) begin
+        if (idle_tk_serial_d1_q[i] > idle_tk_serial_ref_d1_q) begin
+          tk_future_now_v = 1'b1;
+        end else if (idle_tk_serial_d1_q[i] < idle_tk_serial_ref_d1_q) begin
+          tk_past_now_v = 1'b1;
+        end else if (!idle_tk_sop_d1_q[i]) begin
+          if (idle_tk_ts_d1_q[i] > idle_tk_running_ts_d1_q) begin
+            tk_future_now_v = 1'b1;
+          end
+          if (idle_tk_ts_d1_q[i] < idle_tk_running_ts_d1_q) begin
+            tk_past_now_v = 1'b1;
+          end
+        end
+      end
+
+      idle_tk_sop_q[i] <= tk_sop_now_v;
+      idle_tk_curr_q[i] <= tk_curr_now_v;
+      idle_tk_future_q[i] <= tk_future_now_v;
+      idle_tk_past_q[i] <= tk_past_now_v;
+      idle_tk_active_frame_q[i] <= tk_active_frame_now_v;
+    end
+
     if (d_reset) begin
       page_allocator <= PAGE_ALLOCATOR_REG_RESET;
       page_allocator.reset_done <= 1'b0;
@@ -1702,6 +2029,11 @@ module ordered_priority_queue_monolithic_page_allocator #(
       fetch_pending_q <= '0;
       fetch_ticket_q <= '{default:TICKET_DEFAULT};
       fetch_ticket_raw_q <= '0;
+      idle_tk_sop_q <= '0;
+      idle_tk_curr_q <= '0;
+      idle_tk_future_q <= '0;
+      idle_tk_past_q <= '0;
+      idle_tk_active_frame_q <= '0;
       fetch_lane_masked_q <= '0;
       fetch_lane_credit_valid_q <= '0;
       fetch_lane_reactivate_q <= '0;
@@ -1712,6 +2044,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
       fetch_start_new_frame_q <= 1'b0;
       fetch_rebase_future_frame_q <= 1'b0;
       fetch_join_absorb_only_q <= 1'b0;
+      fetch_predrop_current_frame_q <= 1'b0;
       fetch_lanes_with_curr_sop_q <= '0;
       fetch_curr_sop_n_subh_q <= '0;
       fetch_curr_sop_n_hit_q <= '0;
@@ -1732,11 +2065,21 @@ module ordered_priority_queue_monolithic_page_allocator #(
       fetch_future_frame_lane_q <= '0;
       fetch_future_frame_ts_q <= '0;
       fetch_tail_target_serial_q <= '0;
+      fetch_tail_status_slot_q <= '0;
+      fetch_tail_target_wrap_q <= '0;
       fetch_tail_ready_q <= '0;
+      fetch_tail_shadow_valid_q <= '0;
+      fetch_tail_shadow_drop_q <= '0;
       fetch_tail_dropped_q <= '0;
       ingress_tail_status_valid_q <= '0;
       ingress_tail_status_drop_q <= '0;
-      ingress_tail_status_serial_q <= '0;
+      idle_tk_pending_d1_q <= '0;
+      idle_tk_sop_d1_q <= '0;
+      idle_tk_serial_d1_q <= '0;
+      idle_tk_ts_d1_q <= '0;
+      idle_tk_serial_ref_d1_q <= '0;
+      idle_tk_frame_serial_this_d1_q <= '0;
+      idle_tk_running_ts_d1_q <= '0;
       for (int i = 0; i < N_LANE; i++) begin
         fetch_lane_action_q[i] <= FETCH_LANE_HOLD;
       end
@@ -1806,16 +2149,14 @@ module ordered_priority_queue_monolithic_page_allocator #(
         (page_allocator.ingress_tail_ts_seen[g] == $past(ingress_tail_bypass_ts_i[g])) &&
         ingress_tail_status_valid_q[g][tail_status_slot($past(ingress_tail_bypass_serial_i[g]))] &&
         (ingress_tail_status_drop_q[g][tail_status_slot($past(ingress_tail_bypass_serial_i[g]))] ==
-          $past(ingress_tail_bypass_drop_i[g])) &&
-        (ingress_tail_status_serial_q[g][tail_status_slot($past(ingress_tail_bypass_serial_i[g]))] ==
-          $past(ingress_tail_bypass_serial_i[g]));
+          $past(ingress_tail_bypass_drop_i[g]));
     endproperty
     ap_tail_bypass_captures_shadow: assert property (p_tail_bypass_captures_shadow)
       else $error("OPQ_PAGE_ALLOCATOR tail bypass did not persist into the per-serial shadow state");
 
     property p_fetch_tail_ready_accepts_live_bypass;
       @(posedge d_clk) disable iff (d_reset || !formal_past_valid)
-        $past((page_allocator_state == PAGE_ALLOCATOR_RESOLVE_TAIL) &&
+        $past((page_allocator_state == PAGE_ALLOCATOR_SAMPLE_TAIL) &&
               page_allocator.ingress_tail_seen_valid[g] &&
               serial_reached_or_passed(
                 page_allocator.ingress_tail_serial_seen[g],
@@ -1829,12 +2170,9 @@ module ordered_priority_queue_monolithic_page_allocator #(
     property p_fetch_tail_drop_uses_shadow_exact_bypass;
       @(posedge d_clk) disable iff (d_reset || !formal_past_valid)
         $past((page_allocator_state == PAGE_ALLOCATOR_RESOLVE_TAIL) &&
-              ingress_tail_status_valid_q[g][tail_status_slot(fetch_tail_target_serial_q[g])] &&
-              (ingress_tail_status_serial_q[g][tail_status_slot(fetch_tail_target_serial_q[g])] ==
-                fetch_tail_target_serial_q[g]))
-        |-> fetch_tail_ready_q[g] &&
-            (fetch_tail_dropped_q[g] ==
-              $past(ingress_tail_status_drop_q[g][tail_status_slot(fetch_tail_target_serial_q[g])]));
+              fetch_tail_shadow_valid_q[g] &&
+              (ingress_tail_status_wrap_rd_q[g] == fetch_tail_target_wrap_q[g]))
+        |-> (fetch_tail_dropped_q[g] == $past(fetch_tail_shadow_drop_q[g]));
     endproperty
     ap_fetch_tail_drop_uses_shadow_exact_bypass: assert property (p_fetch_tail_drop_uses_shadow_exact_bypass)
       else $error("OPQ_PAGE_ALLOCATOR shadowed bypass state did not drive fetch_tail_dropped_q for an earlier packet");
@@ -1929,6 +2267,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
       ingress_tail_bypass_valid_i[g] && ingress_tail_bypass_drop_i[g]
       ##1 page_allocator.ingress_tail_seen_valid[g]
       ##[1:16] ((page_allocator_state == PAGE_ALLOCATOR_FETCH_TICKET) && all_lanes_fetch_ready)
+      ##1 (page_allocator_state == PAGE_ALLOCATOR_SAMPLE_TAIL)
       ##1 (page_allocator_state == PAGE_ALLOCATOR_RESOLVE_TAIL)
       ##1 fetch_tail_dropped_q[g]);
 
@@ -1941,7 +2280,8 @@ module ordered_priority_queue_monolithic_page_allocator #(
       (ticket_fifos_rd_data_i[g][TICKET_TS_HI:TICKET_TS_LO] == page_allocator.running_ts) &&
       (ticket_fifos_rd_data_i[g][TICKET_BODY_SERIAL_HI:TICKET_BODY_SERIAL_LO] ==
         page_allocator.frame_serial_this)
-      ##1 (page_allocator_state == PAGE_ALLOCATOR_RESOLVE_TAIL) && fetch_pending_q[g]
+      ##1 (page_allocator_state == PAGE_ALLOCATOR_SAMPLE_TAIL) && fetch_pending_q[g]
+      ##1 (page_allocator_state == PAGE_ALLOCATOR_RESOLVE_TAIL)
       ##1 (page_allocator_state == PAGE_ALLOCATOR_CLASSIFY_TICKET)
       ##1 fetch_pending_q[g] && !fetch_tk_past_q[g]);
 

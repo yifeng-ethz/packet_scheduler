@@ -468,6 +468,84 @@ def render_signoff_run(run: dict[str, Any], execution_mode: dict[str, Any] | Non
                 )
             )
 
+    checkpoints = cross.get("checkpoints") or []
+    out += [
+        "",
+        "## Checkpoint Ledgers",
+        "",
+    ]
+    if not checkpoints:
+        out.append(f"{base.PEND_EMOJI} no checkpoint ledger data recorded for this run.")
+    else:
+        max_rows = 12
+        shown = checkpoints[-max_rows:]
+        if len(checkpoints) > max_rows:
+            out.append(
+                f"{base.INFO_EMOJI} showing the last {len(shown)} of {len(checkpoints)} checkpoints; "
+                "the full checkpoint trace remains in `DV_REPORT.json` and the raw log."
+            )
+            out.append("")
+
+        lanes = sorted(
+            {
+                int(lane_row.get("lane", -1))
+                for checkpoint in shown
+                for lane_row in (checkpoint.get("lane_ledgers") or [])
+                if int(lane_row.get("lane", -1)) >= 0
+            }
+        )
+        header = "| checkpoint | aggregate | first_break |"
+        separator = "|---|---|---|"
+        for lane in lanes:
+            header += f" lane{lane} |"
+            separator += "---|"
+        header += " frame_table |"
+        separator += "---|"
+        out += [header, separator]
+        for checkpoint in shown:
+            aggregate = checkpoint.get("aggregate_hit_ledger") or {}
+            core = checkpoint.get("core_principles") or {}
+            frame_table = checkpoint.get("frame_table_ledger") or {}
+            lane_map = {
+                int(lane_row.get("lane", -1)): lane_row
+                for lane_row in (checkpoint.get("lane_ledgers") or [])
+                if int(lane_row.get("lane", -1)) >= 0
+            }
+            row = [
+                f"`{checkpoint.get('label', '?')}`",
+                "`a={accepted} d={dropped} v={delivered} u={unexplained}`".format(
+                    accepted=aggregate.get("accepted", "?"),
+                    dropped=aggregate.get("dropped", "?"),
+                    delivered=aggregate.get("delivered", "?"),
+                    unexplained=aggregate.get("unexplained", "?"),
+                ),
+                f"`{core.get('first_break', '?')}`",
+            ]
+            for lane in lanes:
+                lane_row = lane_map.get(lane) or {}
+                row.append(
+                    "`a={accepted} d={dropped} v={delivered} u={unexplained}`".format(
+                        accepted=lane_row.get("accepted", "-"),
+                        dropped=lane_row.get("dropped", "-"),
+                        delivered=lane_row.get("delivered", "-"),
+                        unexplained=lane_row.get("unexplained", "-"),
+                    )
+                )
+            row.append(
+                "`h={wr_hdr}/{rd_hdr}/{drop_hdr} s={wr_shd}/{rd_shd}/{drop_shd} i={wr_hit}/{rd_hit}/{drop_hit}`".format(
+                    wr_hdr=frame_table.get("wr_hdr", "?"),
+                    rd_hdr=frame_table.get("rd_hdr", "?"),
+                    drop_hdr=frame_table.get("drop_hdr", "?"),
+                    wr_shd=frame_table.get("wr_shd", "?"),
+                    rd_shd=frame_table.get("rd_shd", "?"),
+                    drop_shd=frame_table.get("drop_shd", "?"),
+                    wr_hit=frame_table.get("wr_hit", "?"),
+                    rd_hit=frame_table.get("rd_hit", "?"),
+                    drop_hit=frame_table.get("drop_hit", "?"),
+                )
+            )
+            out.append("| " + " | ".join(row) + " |")
+
     out += [
         "",
         "---",

@@ -134,6 +134,46 @@ class opq_prof_deep_whole_frame_skew_test extends opq_no_drop_test_base;
   endtask
 endclass
 
+class opq_prof_per_lane_half_frame_skew_sweep_test extends opq_no_drop_test_base;
+  `uvm_component_utils(opq_prof_per_lane_half_frame_skew_sweep_test)
+
+  function new(string name = "opq_prof_per_lane_half_frame_skew_sweep_test", uvm_component parent = null);
+    super.new(name, parent);
+  endfunction
+
+  virtual function time dwell_time();
+    return 1500us;
+  endfunction
+
+  virtual task run_main_sequence();
+    opq_per_lane_skew_sweep_virtual_sequence seq;
+    int unsigned subheaders_per_frame;
+
+    csr_clear_counters();
+    fork
+      begin
+        seq = opq_per_lane_skew_sweep_virtual_sequence::type_id::create("seq");
+        subheaders_per_frame = (OPQ_N_SHD >= 128) ? 128 : OPQ_N_SHD;
+        if (subheaders_per_frame < 32) begin
+          subheaders_per_frame = 32;
+        end
+        seq.frame_count_per_phase = 6;
+        seq.subheaders_per_frame = subheaders_per_frame;
+        seq.hit_period = 3;
+        seq.hit_count_when_active = 2;
+        seq.inter_frame_gap_cycles = OPQ_MIN_SOP_GAP_CYCLES;
+        seq.sweep_phase_count = 4;
+        seq.max_extra_gap_cycles = (OPQ_N_SHD * 16) / 2;
+        seq.start(env.vseqr);
+      end
+      begin
+        #14us;
+        poll_lane_credits(32, 12us);
+      end
+    join
+  endtask
+endclass
+
 class opq_prof_missing_empty_frame_test extends opq_base_test;
   `uvm_component_utils(opq_prof_missing_empty_frame_test)
 
