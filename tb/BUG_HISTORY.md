@@ -1027,7 +1027,7 @@ Historical formal note:
     it restores the targeted formal-like egress stress to its intended role as
     a clean no-drop/no-overlap hold regression
 - Commit:
-  - pending
+  - 309f1d4
 
 ### BUG-028-H: Lane hit ledger retired delivered beats against parser timestamps instead of canonical egress timestamps
 - First seen in:
