@@ -16,7 +16,7 @@ This page is the coverage summary only. Per-case incremental coverage lives unde
 | OPQ_N_LANE | `4` |
 | OPQ_N_SHD | `128` |
 | OPQ_TICKET_FIFO_DEPTH | `256` |
-| OPQ_PAGE_RAM_DEPTH | `65536` |
+| OPQ_PAGE_RAM_DEPTH | `512`, `65536` |
 | MODE | `MERGING` |
 | probe_only_exclusions |  |
 
@@ -47,22 +47,22 @@ This page is the coverage summary only. Per-case incremental coverage lives unde
 
 | status | metric | merged_pct | target |
 |:---:|---|---|---|
-| ⚠️ | stmt | 68.94 | 95.0 |
-| ⚠️ | branch | 58.40 | 90.0 |
-| ℹ️ | cond | 32.04 | - |
-| ℹ️ | expr | 49.74 | - |
-| ⚠️ | fsm_state | 69.84 | 95.0 |
-| ⚠️ | fsm_trans | 30.82 | 90.0 |
-| ⚠️ | toggle | 15.77 | 80.0 |
+| ⚠️ | stmt | 79.73 | 95.0 |
+| ⚠️ | branch | 76.31 | 90.0 |
+| ℹ️ | cond | 51.46 | - |
+| ℹ️ | expr | 64.02 | - |
+| ⚠️ | fsm_state | 93.65 | 95.0 |
+| ⚠️ | fsm_trans | 53.42 | 90.0 |
+| ⚠️ | toggle | 33.95 | 80.0 |
 
 ## Per-bucket merged totals
 
 | status | bucket | catalog_planned | promoted | evidenced | stmt | branch | cond | expr | fsm_state | fsm_trans | toggle |
 |:---:|---|---:|---:|---:|---|---|---|---|---|---|---|
-| ⚠️ | [`BASIC`](REPORT/buckets/BASIC.md) | 129 | 129 | 1 | 66.92 | 55.28 | 25.05 | 37.04 | 69.84 | 30.82 | 13.05 |
-| ⚠️ | [`EDGE`](REPORT/buckets/EDGE.md) | 129 | 129 | 1 | 66.92 | 55.28 | 25.05 | 37.04 | 69.84 | 30.82 | 13.06 |
-| ⚠️ | [`PROF`](REPORT/buckets/PROF.md) | 129 | 129 | 1 | 66.92 | 55.28 | 25.05 | 37.04 | 69.84 | 30.82 | 12.62 |
-| ⚠️ | [`ERROR`](REPORT/buckets/ERROR.md) | 129 | 129 | 1 | 46.27 | 30.85 | 8.16 | 17.99 | 28.57 | 4.79 | 3.27 |
+| ⚠️ | [`BASIC`](REPORT/buckets/BASIC.md) | 129 | 129 | 129 | 76.54 | 70.52 | 45.63 | 58.20 | 87.30 | 43.84 | 28.61 |
+| ⚠️ | [`EDGE`](REPORT/buckets/EDGE.md) | 129 | 129 | 129 | 77.91 | 71.90 | 47.57 | 61.90 | 87.30 | 43.84 | 29.70 |
+| ⚠️ | [`PROF`](REPORT/buckets/PROF.md) | 129 | 129 | 129 | 72.97 | 64.37 | 33.40 | 44.97 | 85.71 | 42.47 | 24.86 |
+| ⚠️ | [`ERROR`](REPORT/buckets/ERROR.md) | 129 | 129 | 129 | 72.13 | 64.28 | 37.09 | 56.08 | 76.19 | 41.10 | 19.94 |
 
 ## Isolated execution order and traceability
 

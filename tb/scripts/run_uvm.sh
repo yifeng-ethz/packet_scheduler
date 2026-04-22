@@ -64,6 +64,7 @@ mkdir -p "${LOG_DIR}" "${COV_DIR}"
 
 pass_count=0
 fail_count=0
+declare -A PREPARED_BUILD_KEYS=()
 
 has_nonbenign_tool_error() {
   local log_file="$1"
@@ -94,12 +95,14 @@ run_one() {
   local user_build_dir="${BUILD_DIR:-}"
   local build_root="${BUILD_ROOT:-${UVM_DIR}/build_runs}"
   local build_tag=""
+  local build_key=""
   local build_dir=""
+  local compile_target="compile"
   local -a make_args=(
     "-C" "${UVM_DIR}"
     "DUT_IMPL=${dut_impl}"
   )
-  local target="run"
+  local target="run_no_compile"
   local cov_saved=0
 
   if [[ "${test_name}" == +* || "${test_name}" == *=* ]]; then
@@ -142,18 +145,17 @@ run_one() {
   if [[ -n "${VSIM_PLUSARGS-}" || -n "${case_plusargs}" ]]; then
     make_args+=("VSIM_PLUSARGS=${case_plusargs} ${VSIM_PLUSARGS-}")
   fi
-  if [[ "${artifact_name}" == "opq_error_ftable_overflow_test" && -z "${OPQ_PAGE_RAM_DEPTH-}" ]]; then
-    page_ram_depth=512
-  fi
-  if [[ "${artifact_name}" == "X010" && -z "${OPQ_PAGE_RAM_DEPTH-}" ]]; then
+  if [[ "${uvm_test_name}" == "opq_error_ftable_overflow_test" && -z "${OPQ_PAGE_RAM_DEPTH-}" ]]; then
     page_ram_depth=512
   fi
   if [[ -z "${ticket_fifo_depth}" ]]; then
     ticket_fifo_depth="$(derive_ticket_fifo_depth "${n_shd}")"
   fi
-  build_tag="${artifact_name}_lane${OPQ_N_LANE:-2}_nshd${n_shd}_ticket${ticket_fifo_depth}_page${page_ram_depth}"
+  build_tag="dut${dut_impl}_lane${OPQ_N_LANE:-2}_nshd${n_shd}_ticket${ticket_fifo_depth}_page${page_ram_depth}_cov${COV_ENABLE:-0}"
+  build_key="${build_tag}"
   if [[ -n "${user_build_dir}" ]]; then
     build_dir="${user_build_dir}"
+    build_key="user:${build_dir}"
   else
     build_dir="${build_root}/${build_tag}"
   fi
@@ -163,7 +165,7 @@ run_one() {
   make_args+=("BUILD_DIR=${build_dir}")
   make_args+=("TEST=${uvm_test_name}")
   if [[ "${COV_ENABLE:-0}" == "1" ]]; then
-    target="run_cov"
+    target="run_cov_no_compile"
     make_args+=("COV=1")
     if [[ -n "${COV_CODE-}" ]]; then
       make_args+=("COV_CODE=${COV_CODE}")
@@ -176,9 +178,16 @@ run_one() {
   if {
     printf '[run_uvm] DUT_IMPL=%s TEST=%s ARTIFACT=%s OPQ_N_LANE=%s OPQ_N_SHD=%s OPQ_TICKET_FIFO_DEPTH=%s OPQ_PAGE_RAM_DEPTH=%s COV_ENABLE=%s VSIM_PLUSARGS=%s\n' \
       "${dut_impl}" "${uvm_test_name}" "${artifact_name}" "${OPQ_N_LANE:-2}" "${n_shd}" "${ticket_fifo_depth}" "${page_ram_depth}" "${COV_ENABLE:-0}" "${case_plusargs} ${VSIM_PLUSARGS:-}";
-    printf '[run_uvm] BUILD_DIR=%s\n' "${build_dir}";
+    printf '[run_uvm] BUILD_DIR=%s BUILD_KEY=%s TARGET=%s\n' "${build_dir}" "${build_key}" "${target}";
+    if [[ -z "${PREPARED_BUILD_KEYS[${build_key}]+x}" ]]; then
+      printf '[run_uvm] COMPILE_TARGET=%s\n' "${compile_target}";
+      make "${make_args[@]}" "${compile_target}";
+      PREPARED_BUILD_KEYS["${build_key}"]="${build_dir}"
+    else
+      printf '[run_uvm] REUSE_BUILD=1\n'
+    fi
     make "${make_args[@]}" "${target}";
-  } 2>&1 | tee "${log_file}"; then
+  } > >(tee "${log_file}") 2>&1; then
     if [[ "${COV_ENABLE:-0}" == "1" ]]; then
       if cov_src="$(resolve_cov_src)"; then
         cp -f "${cov_src}" "${COV_DIR}/${artifact_name}.ucdb"

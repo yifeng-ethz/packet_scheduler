@@ -169,6 +169,12 @@ def merge_ucdb(output: Path, inputs: list[Path]) -> Path:
     return output
 
 
+def merge_ucdb_incremental(output: Path, previous: Path | None, current: Path) -> Path:
+    if previous is None:
+        return current
+    return merge_ucdb(output, [previous, current])
+
+
 @lru_cache(maxsize=None)
 def extract_log_summary(log_path: Path | None) -> tuple[bool, bool, bool, dict]:
     if log_path is None or not log_path.is_file():
@@ -282,7 +288,13 @@ def build() -> dict:
     all_passed_ucdb_seen: set[Path] = set()
     all_passed_case_count = 0
     all_artifacts: list[dict] = []
-    global_merged_cov_before: dict | None = None
+    signoff_page_depths = sorted(
+        {
+            case_build_knobs(case)["OPQ_PAGE_RAM_DEPTH"]
+            for bucket_name in BUCKET_SPECS
+            for case in parse_bucket(bucket_name)
+        }
+    )
 
     for bucket_name in BUCKET_SPECS:
         catalog_rows = parse_bucket(bucket_name)
@@ -292,6 +304,7 @@ def build() -> dict:
         merge_trace: list[dict] = []
         evidenced_cases = 0
         bucket_merged_cov_before: dict | None = None
+        bucket_merged_ucdb_path: Path | None = None
 
         for step, catalog_case in enumerate(catalog_rows, start=1):
             case_id = catalog_case["case_id"]
@@ -366,9 +379,12 @@ def build() -> dict:
                 if ucdb_path not in bucket_ucdb_seen:
                     bucket_ucdb_seen.add(ucdb_path)
                     bucket_ucdbs_unique.append(ucdb_path)
-                    merged_after = code_cov_for_ucdb(
-                        merge_ucdb(WORK_DIR / f"{bucket_name.lower()}_{step}.ucdb", bucket_ucdbs_unique)
+                    bucket_merged_ucdb_path = merge_ucdb_incremental(
+                        WORK_DIR / f"{bucket_name.lower()}_{step}.ucdb",
+                        bucket_merged_ucdb_path,
+                        ucdb_path,
                     )
+                    merged_after = code_cov_for_ucdb(bucket_merged_ucdb_path)
                 else:
                     merged_after = bucket_merged_cov_before or standalone_cov
                 case["bucket_gain_by_case"] = cov_delta(merged_after, bucket_merged_cov_before)
@@ -391,9 +407,6 @@ def build() -> dict:
                 if ucdb_path not in all_passed_ucdb_seen:
                     all_passed_ucdb_seen.add(ucdb_path)
                     all_passed_ucdbs_unique.append(ucdb_path)
-                    global_merged_cov_before = code_cov_for_ucdb(
-                        merge_ucdb(WORK_DIR / f"global_{bucket_name.lower()}_{step}.ucdb", all_passed_ucdbs_unique)
-                    )
             else:
                 failed_cases.append(case_id)
 
@@ -402,9 +415,8 @@ def build() -> dict:
 
         merged_bucket_total = flatten_pct(bucket_merged_cov_before or {})
         bucket_functional_cov = {"pct": 0.0, "evidenced": evidenced_cases, "planned": len(catalog_rows)}
-        if bucket_ucdbs_unique:
-            merged_bucket_ucdb = merge_ucdb(WORK_DIR / f"{bucket_name.lower()}_merged.ucdb", bucket_ucdbs_unique)
-            bucket_functional_cov = functional_cov_for_ucdb(merged_bucket_ucdb)
+        if bucket_merged_ucdb_path is not None:
+            bucket_functional_cov = functional_cov_for_ucdb(bucket_merged_ucdb_path)
             bucket_functional_cov["evidenced"] = evidenced_cases
             bucket_functional_cov["planned"] = len(catalog_rows)
         bucket_payloads[bucket_name] = {
@@ -436,10 +448,11 @@ def build() -> dict:
 
     stage_report_artifacts(all_cases)
 
-    merged_total_cov = flatten_pct(global_merged_cov_before or {})
+    merged_total_cov = {}
     total_functional_cov = {"pct": 0.0, "evidenced": 0, "planned": len(all_cases)}
     if all_passed_ucdbs_unique:
         merged_total_ucdb = merge_ucdb(WORK_DIR / "all_buckets_merged.ucdb", all_passed_ucdbs_unique)
+        merged_total_cov = flatten_pct(code_cov_for_ucdb(merged_total_ucdb))
         total_functional_cov = functional_cov_for_ucdb(merged_total_ucdb)
         total_functional_cov["evidenced"] = all_passed_case_count
         total_functional_cov["planned"] = len(all_cases)
@@ -455,7 +468,7 @@ def build() -> dict:
             "OPQ_N_LANE": [SIGNOFF_N_LANE],
             "OPQ_N_SHD": [SIGNOFF_N_SHD],
             "OPQ_TICKET_FIFO_DEPTH": [int(os.environ.get("OPQ_TICKET_FIFO_DEPTH", str(derived_ticket_fifo_depth(SIGNOFF_N_SHD))))],
-            "OPQ_PAGE_RAM_DEPTH": [SIGNOFF_PAGE_RAM_DEPTH],
+            "OPQ_PAGE_RAM_DEPTH": signoff_page_depths,
             "MODE": ["MERGING"],
             "probe_only_exclusions": [],
         },

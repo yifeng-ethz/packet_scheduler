@@ -170,10 +170,6 @@ def runtime_test_name(case: dict) -> str:
         return "opq_prof_stress_test"
 
     if bucket == "ERROR":
-        if keyword_hit(text, "counter clear"):
-            return "opq_error_counter_clear_test"
-        if keyword_hit(text, "overflow", "overwrite"):
-            return "opq_error_ftable_overflow_test"
         if keyword_hit(text, "lane mask", "all-masked", "masked lane"):
             if keyword_hit(text, "single-hit", "one-hit"):
                 return "opq_error_lane_mask_single_hit_test"
@@ -182,12 +178,18 @@ def runtime_test_name(case: dict) -> str:
             if keyword_hit(text, "recovery", "clear the mask"):
                 return "opq_error_lane_mask_recovery_test"
             return "opq_error_lane_mask_test"
+        if keyword_hit(text, "counter clear"):
+            return "opq_error_counter_clear_test"
         if keyword_hit(text, "error[0]=hit_err", "hit_err"):
             return "opq_error_hit_mask_recovery_test"
         if keyword_hit(text, "error[1]=shd_err", "subheader"):
             return "opq_error_subheader_mask_recovery_test"
         if keyword_hit(text, "header-word", "beats 2-4 of the 4-beat header"):
             return "opq_error_header_word_mask_recovery_test"
+        if keyword_hit(text, "error[2]=hdr_err", "hdr_err", "preamble/header suppression", "full-frame mask"):
+            return "opq_error_header_mask_recovery_test"
+        if keyword_hit(text, "overflow", "overwrite"):
+            return "opq_error_ftable_overflow_test"
         return "opq_error_header_mask_recovery_test"
 
     raise KeyError(f"unsupported bucket {bucket}")

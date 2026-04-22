@@ -1,6 +1,6 @@
 # ⚠️ ERROR bucket
 
-**Catalog planned:** `129` &nbsp; **Promoted:** `129` &nbsp; **Evidenced:** `1` &nbsp; **Catalog backlog:** `0` &nbsp; **Status:** ⚠️
+**Catalog planned:** `129` &nbsp; **Promoted:** `129` &nbsp; **Evidenced:** `129` &nbsp; **Catalog backlog:** `0` &nbsp; **Status:** ⚠️
 
 ## Catalog Inventory
 
@@ -15,19 +15,147 @@
 
 | status | metric | merged_pct | target |
 |:---:|---|---|---|
-| ⚠️ | stmt | 46.27 | 95.0 |
-| ⚠️ | branch | 30.85 | 90.0 |
-| ℹ️ | cond | 8.16 | - |
-| ℹ️ | expr | 17.99 | - |
-| ⚠️ | fsm_state | 28.57 | 95.0 |
-| ⚠️ | fsm_trans | 4.79 | 90.0 |
-| ⚠️ | toggle | 3.27 | 80.0 |
+| ⚠️ | stmt | 72.13 | 95.0 |
+| ⚠️ | branch | 64.28 | 90.0 |
+| ℹ️ | cond | 37.09 | - |
+| ℹ️ | expr | 56.08 | - |
+| ⚠️ | fsm_state | 76.19 | 95.0 |
+| ⚠️ | fsm_trans | 41.10 | 90.0 |
+| ⚠️ | toggle | 19.94 | 80.0 |
 
 ## Ordered merge trace
 
 | status | step | report_case_id | legacy_test_name | merged_total | detail |
 |:---:|---:|---|---|---|---|
 | ✅ | 1 | `X001` | `opq_error_lane_mask_test` | stmt=46.27, branch=30.85, cond=8.16, expr=17.99, fsm_state=28.57, fsm_trans=4.79, toggle=3.27 | [case](../cases/X001.md) |
+| ✅ | 2 | `X002` | `opq_error_lane_mask_single_hit_test` | stmt=46.27, branch=30.85, cond=8.16, expr=17.99, fsm_state=28.57, fsm_trans=4.79, toggle=3.38 | [case](../cases/X002.md) |
+| ✅ | 3 | `X003` | `opq_error_lane_mask_burst_test` | stmt=46.27, branch=30.85, cond=8.16, expr=17.99, fsm_state=28.57, fsm_trans=4.79, toggle=4.52 | [case](../cases/X003.md) |
+| ✅ | 4 | `X004` | `opq_error_lane_mask_recovery_test` | stmt=68.94, branch=58.40, cond=32.04, expr=49.74, fsm_state=69.84, fsm_trans=30.82, toggle=15.16 | [case](../cases/X004.md) |
+| ✅ | 5 | `X005` | `opq_error_hit_mask_recovery_test` | stmt=69.01, branch=58.86, cond=32.62, expr=51.32, fsm_state=69.84, fsm_trans=30.82, toggle=16.01 | [case](../cases/X005.md) |
+| ✅ | 6 | `X006` | `opq_error_subheader_mask_recovery_test` | stmt=69.85, branch=60.70, cond=33.40, expr=51.32, fsm_state=73.02, fsm_trans=33.56, toggle=16.20 | [case](../cases/X006.md) |
+| ✅ | 7 | `X007` | `opq_error_header_mask_recovery_test` | stmt=70.57, branch=62.44, cond=35.15, expr=51.32, fsm_state=76.19, fsm_trans=36.99, toggle=16.25 | [case](../cases/X007.md) |
+| ✅ | 8 | `X008` | `opq_error_header_word_mask_recovery_test` | stmt=70.72, branch=62.81, cond=35.15, expr=52.38, fsm_state=76.19, fsm_trans=41.10, toggle=16.27 | [case](../cases/X008.md) |
+| ✅ | 9 | `X009` | `opq_error_counter_clear_test` | stmt=70.76, branch=62.90, cond=35.15, expr=52.38, fsm_state=76.19, fsm_trans=41.10, toggle=16.28 | [case](../cases/X009.md) |
+| ✅ | 10 | `X010` | `opq_error_ftable_overflow_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X010.md) |
+| ✅ | 11 | `X011` | `opq_error_hit_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X011.md) |
+| ✅ | 12 | `X012` | `opq_error_hit_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X012.md) |
+| ✅ | 13 | `X013` | `opq_error_hit_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X013.md) |
+| ✅ | 14 | `X014` | `opq_error_hit_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X014.md) |
+| ✅ | 15 | `X015` | `opq_error_hit_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X015.md) |
+| ✅ | 16 | `X016` | `opq_error_hit_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X016.md) |
+| ✅ | 17 | `X017` | `opq_error_hit_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X017.md) |
+| ✅ | 18 | `X018` | `opq_error_hit_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X018.md) |
+| ✅ | 19 | `X019` | `opq_error_subheader_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X019.md) |
+| ✅ | 20 | `X020` | `opq_error_subheader_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X020.md) |
+| ✅ | 21 | `X021` | `opq_error_subheader_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X021.md) |
+| ✅ | 22 | `X022` | `opq_error_subheader_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X022.md) |
+| ✅ | 23 | `X023` | `opq_error_subheader_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X023.md) |
+| ✅ | 24 | `X024` | `opq_error_subheader_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X024.md) |
+| ✅ | 25 | `X025` | `opq_error_subheader_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X025.md) |
+| ✅ | 26 | `X026` | `opq_error_subheader_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X026.md) |
+| ✅ | 27 | `X027` | `opq_error_subheader_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X027.md) |
+| ✅ | 28 | `X028` | `opq_error_hit_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X028.md) |
+| ✅ | 29 | `X029` | `opq_error_subheader_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X029.md) |
+| ✅ | 30 | `X030` | `opq_error_subheader_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X030.md) |
+| ✅ | 31 | `X031` | `opq_error_subheader_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X031.md) |
+| ✅ | 32 | `X032` | `opq_error_subheader_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X032.md) |
+| ✅ | 33 | `X033` | `opq_error_subheader_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X033.md) |
+| ✅ | 34 | `X034` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X034.md) |
+| ✅ | 35 | `X035` | `opq_error_subheader_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X035.md) |
+| ✅ | 36 | `X036` | `opq_error_hit_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X036.md) |
+| ✅ | 37 | `X037` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X037.md) |
+| ✅ | 38 | `X038` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X038.md) |
+| ✅ | 39 | `X039` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X039.md) |
+| ✅ | 40 | `X040` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X040.md) |
+| ✅ | 41 | `X041` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X041.md) |
+| ✅ | 42 | `X042` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X042.md) |
+| ✅ | 43 | `X043` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X043.md) |
+| ✅ | 44 | `X044` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X044.md) |
+| ✅ | 45 | `X045` | `opq_error_lane_mask_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X045.md) |
+| ✅ | 46 | `X046` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X046.md) |
+| ✅ | 47 | `X047` | `opq_error_lane_mask_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X047.md) |
+| ✅ | 48 | `X048` | `opq_error_lane_mask_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X048.md) |
+| ✅ | 49 | `X049` | `opq_error_lane_mask_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X049.md) |
+| ✅ | 50 | `X050` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X050.md) |
+| ✅ | 51 | `X051` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X051.md) |
+| ✅ | 52 | `X052` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X052.md) |
+| ✅ | 53 | `X053` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X053.md) |
+| ✅ | 54 | `X054` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X054.md) |
+| ✅ | 55 | `X055` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X055.md) |
+| ✅ | 56 | `X056` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X056.md) |
+| ✅ | 57 | `X057` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X057.md) |
+| ✅ | 58 | `X058` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X058.md) |
+| ✅ | 59 | `X059` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X059.md) |
+| ✅ | 60 | `X060` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X060.md) |
+| ✅ | 61 | `X061` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X061.md) |
+| ✅ | 62 | `X062` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X062.md) |
+| ✅ | 63 | `X063` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X063.md) |
+| ✅ | 64 | `X064` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X064.md) |
+| ✅ | 65 | `X065` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X065.md) |
+| ✅ | 66 | `X066` | `opq_error_ftable_overflow_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X066.md) |
+| ✅ | 67 | `X067` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X067.md) |
+| ✅ | 68 | `X068` | `opq_error_subheader_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X068.md) |
+| ✅ | 69 | `X069` | `opq_error_hit_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X069.md) |
+| ✅ | 70 | `X070` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X070.md) |
+| ✅ | 71 | `X071` | `opq_error_ftable_overflow_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X071.md) |
+| ✅ | 72 | `X072` | `opq_error_ftable_overflow_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X072.md) |
+| ✅ | 73 | `X073` | `opq_error_ftable_overflow_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X073.md) |
+| ✅ | 74 | `X074` | `opq_error_ftable_overflow_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X074.md) |
+| ✅ | 75 | `X075` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X075.md) |
+| ✅ | 76 | `X076` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X076.md) |
+| ✅ | 77 | `X077` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X077.md) |
+| ✅ | 78 | `X078` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X078.md) |
+| ✅ | 79 | `X079` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X079.md) |
+| ✅ | 80 | `X080` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X080.md) |
+| ✅ | 81 | `X081` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X081.md) |
+| ✅ | 82 | `X082` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X082.md) |
+| ✅ | 83 | `X083` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X083.md) |
+| ✅ | 84 | `X084` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X084.md) |
+| ✅ | 85 | `X085` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X085.md) |
+| ✅ | 86 | `X086` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X086.md) |
+| ✅ | 87 | `X087` | `opq_error_hit_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X087.md) |
+| ✅ | 88 | `X088` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X088.md) |
+| ✅ | 89 | `X089` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X089.md) |
+| ✅ | 90 | `X090` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X090.md) |
+| ✅ | 91 | `X091` | `opq_error_ftable_overflow_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X091.md) |
+| ✅ | 92 | `X092` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X092.md) |
+| ✅ | 93 | `X093` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X093.md) |
+| ✅ | 94 | `X094` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X094.md) |
+| ✅ | 95 | `X095` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X095.md) |
+| ✅ | 96 | `X096` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X096.md) |
+| ✅ | 97 | `X097` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X097.md) |
+| ✅ | 98 | `X098` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X098.md) |
+| ✅ | 99 | `X099` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X099.md) |
+| ✅ | 100 | `X100` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X100.md) |
+| ✅ | 101 | `X101` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X101.md) |
+| ✅ | 102 | `X102` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X102.md) |
+| ✅ | 103 | `X103` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X103.md) |
+| ✅ | 104 | `X104` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X104.md) |
+| ✅ | 105 | `X105` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X105.md) |
+| ✅ | 106 | `X106` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X106.md) |
+| ✅ | 107 | `X107` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X107.md) |
+| ✅ | 108 | `X108` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X108.md) |
+| ✅ | 109 | `X109` | `opq_error_subheader_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X109.md) |
+| ✅ | 110 | `X110` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X110.md) |
+| ✅ | 111 | `X111` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X111.md) |
+| ✅ | 112 | `X112` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X112.md) |
+| ✅ | 113 | `X113` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X113.md) |
+| ✅ | 114 | `X114` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X114.md) |
+| ✅ | 115 | `X115` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X115.md) |
+| ✅ | 116 | `X116` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X116.md) |
+| ✅ | 117 | `X117` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X117.md) |
+| ✅ | 118 | `X118` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X118.md) |
+| ✅ | 119 | `X119` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X119.md) |
+| ✅ | 120 | `X120` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X120.md) |
+| ✅ | 121 | `X121` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X121.md) |
+| ✅ | 122 | `X122` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X122.md) |
+| ✅ | 123 | `X123` | `opq_error_lane_mask_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X123.md) |
+| ✅ | 124 | `X124` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X124.md) |
+| ✅ | 125 | `X125` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X125.md) |
+| ✅ | 126 | `X126` | `opq_error_hit_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X126.md) |
+| ✅ | 127 | `X127` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X127.md) |
+| ✅ | 128 | `X128` | `opq_error_header_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X128.md) |
+| ✅ | 129 | `X129` | `opq_error_hit_mask_recovery_test` | stmt=72.13, branch=64.28, cond=37.09, expr=56.08, fsm_state=76.19, fsm_trans=41.10, toggle=19.94 | [case](../cases/X129.md) |
 
 ---
 _Back to [dashboard](../../DV_REPORT.md)_
