@@ -64,6 +64,28 @@ This page is the chief-architect dashboard. All per-case evidence lives under [`
 
 | status | run_id | kind | build | seq | txns | cross_pct |
 |:---:|---|---|---|---|---:|---:|
+| ✅ | [`opq_bucket_frame_native_sv_test`](REPORT/cross/opq_bucket_frame_native_sv_test.md) | bucket_frame | after | run_promoted_default_build_matrix | 644 | 78.14 |
+| ✅ | [`opq_all_buckets_frame_native_sv_test`](REPORT/cross/opq_all_buckets_frame_native_sv_test.md) | all_buckets_frame | after | run_promoted_default_build_matrix_plus_tail | 700 | 77.94 |
+| ✅ | [`opq_cross_bp_credit_test`](REPORT/cross/opq_cross_bp_credit_test.md) | cross | after | opq_cross_bp_credit_test | 12 | 64.03 |
+| ✅ | [`opq_cross_bp_predrop_boundary_test`](REPORT/cross/opq_cross_bp_predrop_boundary_test.md) | cross | after | opq_cross_bp_predrop_boundary_test | 104 | 63.34 |
+| ✅ | [`opq_cross_drr_allowance_test`](REPORT/cross/opq_cross_drr_allowance_test.md) | cross | after | opq_cross_drr_allowance_test | 16 | 56.65 |
+| ✅ | [`opq_cross_drr_bursty_frame2_boundary_test`](REPORT/cross/opq_cross_drr_bursty_frame2_boundary_test.md) | cross | after | opq_cross_drr_bursty_frame2_boundary_test | 4 | 58.66 |
+| ✅ | [`opq_cross_drr_bursty_frame3_repro_test`](REPORT/cross/opq_cross_drr_bursty_frame3_repro_test.md) | cross | after | opq_cross_drr_bursty_frame3_repro_test | 6 | 59.71 |
+| ✅ | [`opq_cross_drr_bursty_large_repro_test`](REPORT/cross/opq_cross_drr_bursty_large_repro_test.md) | cross | after | opq_cross_drr_bursty_large_repro_test | 12 | 60.51 |
+| ✅ | [`opq_cross_drr_bursty_random_test`](REPORT/cross/opq_cross_drr_bursty_random_test.md) | cross | after | opq_cross_drr_bursty_random_test | 24 | 60.58 |
+| ✅ | [`opq_cross_drr_bursty_repro_test`](REPORT/cross/opq_cross_drr_bursty_repro_test.md) | cross | after | opq_cross_drr_bursty_repro_test | 16 | 59.71 |
+| ✅ | [`opq_cross_drr_idle_lane_test`](REPORT/cross/opq_cross_drr_idle_lane_test.md) | cross | after | opq_cross_drr_idle_lane_test | 16 | 54.92 |
+| ✅ | [`opq_cross_drr_short_allowance_test`](REPORT/cross/opq_cross_drr_short_allowance_test.md) | cross | after | opq_cross_drr_short_allowance_test | 12 | 55.2 |
+| ✅ | [`opq_cross_drr_then_idle_lane_bp_repro_test`](REPORT/cross/opq_cross_drr_then_idle_lane_bp_repro_test.md) | cross | after | opq_cross_drr_then_idle_lane_bp_repro_test | 34 | 61.22 |
+| ✅ | [`opq_cross_drr_zero_allowance_test`](REPORT/cross/opq_cross_drr_zero_allowance_test.md) | cross | after | opq_cross_drr_zero_allowance_test | 16 | 55.01 |
+| ✅ | [`opq_cross_hit3_exact_183_190_repro_test`](REPORT/cross/opq_cross_hit3_exact_183_190_repro_test.md) | cross | after | opq_cross_hit3_exact_183_190_repro_test | 150 | 67.11 |
+| ✅ | [`opq_cross_hit3_lead_in_repro_test`](REPORT/cross/opq_cross_hit3_lead_in_repro_test.md) | cross | after | opq_cross_hit3_lead_in_repro_test | 138 | 66.44 |
+| ✅ | [`opq_cross_idle_lane_backpressure_test`](REPORT/cross/opq_cross_idle_lane_backpressure_test.md) | cross | after | opq_cross_idle_lane_backpressure_test | 24 | 59.91 |
+| ✅ | [`opq_cross_masked_drop_exact_102_117_repro_test`](REPORT/cross/opq_cross_masked_drop_exact_102_117_repro_test.md) | cross | after | opq_cross_masked_drop_exact_102_117_repro_test | 214 | 70.56 |
+| ✅ | [`opq_cross_mixed_bucket_random_soak_test`](REPORT/cross/opq_cross_mixed_bucket_random_soak_test.md) | cross | after | opq_cross_mixed_bucket_random_soak_test | 2026 | 72.41 |
+| ✅ | [`opq_cross_random_ready_overflow_step2_boundary_test`](REPORT/cross/opq_cross_random_ready_overflow_step2_boundary_test.md) | cross | after | opq_cross_random_ready_overflow_step2_boundary_test | 20 | 65.59 |
+| ✅ | [`opq_cross_single_hit_masked_then_sparse_repro_test`](REPORT/cross/opq_cross_single_hit_masked_then_sparse_repro_test.md) | cross | after | opq_cross_single_hit_masked_then_sparse_repro_test | 24 | 65.28 |
+| ✅ | [`opq_cross_sparse_single_lane_drr_credit_restore_repro_test`](REPORT/cross/opq_cross_sparse_single_lane_drr_credit_restore_repro_test.md) | cross | after | opq_cross_sparse_single_lane_drr_credit_restore_repro_test | 40 | 65.3 |
 
 ## Index
 

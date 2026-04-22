@@ -27,6 +27,25 @@ Author: Yifeng Wang (yifenwan@phys.ethz.ch)
   `doc/SIGNOFF.md`, `doc/CONFIG_SIGNOFF.md`, and `tb/BUG_HISTORY.md` to the
   current reporting model and release metadata.
 
+## 26.3.64.0422
+
+- **RTL / Native-SV Presenter Restart Closure**: fixed the monolithic basic
+  presenter so a replayed overlap request cannot rescan the metadata entry
+  that created it. When the queued overlap stop pointer has already caught up
+  to `meta_rptr`, the presenter now discards that stale self-request instead
+  of launching a self-overlap walk that can synthesize a zero-length head.
+- **Verification / Canonical Dashboard Refresh**: regenerated the canonical
+  `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256 DUT_IMPL=native_sv`
+  dashboard from current QuestaOne 2026 evidence. The generated report now
+  shows `516/516` isolated catalog cases evidenced, `0` failing cases,
+  `0` unimplemented cases, and `22/22` current signoff runs green. The
+  remaining warnings are structural coverage-target gaps rather than missing
+  testcase evidence.
+- **Documentation / Release Sync**: updated the master signoff note, config
+  matrix note, architecture note, TB README, and DV worklist so the author-
+  owned Markdown files match the regenerated `tb/DV_REPORT.md` state and the
+  current package release stamp.
+
 ## 26.3.56.0421
 
 - **RTL / Native-SV Allocator + Ingress Closure**: closed the current

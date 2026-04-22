@@ -166,10 +166,12 @@ class opq_cross_drr_idle_lane_test extends opq_base_test;
 
   virtual task run_main_sequence();
     opq_single_lane_virtual_sequence seq;
+    int unsigned active_lane;
 
     csr_clear_counters();
+    active_lane = (OPQ_N_LANE > 3) ? 2 : 0;
     seq = opq_single_lane_virtual_sequence::type_id::create("seq");
-    seq.active_lane = 0;
+    seq.active_lane = active_lane;
     seq.frame_count = 4;
     seq.subheaders_per_frame = 8;
     seq.hit_count = 8;
@@ -177,6 +179,8 @@ class opq_cross_drr_idle_lane_test extends opq_base_test;
   endtask
 
   virtual task run_post_sequence_checks();
+    int unsigned active_lane;
+    int unsigned idle_lane;
     int unsigned allowance_word;
     int unsigned quantum_word;
     int unsigned grant_cnt_word;
@@ -184,13 +188,16 @@ class opq_cross_drr_idle_lane_test extends opq_base_test;
     int unsigned defer_cnt_word;
 
     super.run_post_sequence_checks();
-    check_lane_no_drop_and_credit(0, 1'b0);
-    check_lane_no_drop_and_credit(1, 1'b0);
+    active_lane = (OPQ_N_LANE > 3) ? 2 : 0;
+    idle_lane = (OPQ_N_LANE > 3) ? 3 : 1;
+    for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+      check_lane_no_drop_and_credit(lane, 1'b0);
+    end
     check_frame_table_counts();
 
-    sample_lane_drr_snapshot(0, OPQ_DRR_DEFAULT_ALLOWANCE, 1'b1, 1'b0);
-    read_lane_drr_snapshot(1, allowance_word, quantum_word, grant_cnt_word, beat_cnt_word, defer_cnt_word);
-    env.coverage.sample_drr_snapshot(1, allowance_word, quantum_word, grant_cnt_word, beat_cnt_word, defer_cnt_word);
+    sample_lane_drr_snapshot(active_lane, OPQ_DRR_DEFAULT_ALLOWANCE, 1'b1, 1'b0);
+    read_lane_drr_snapshot(idle_lane, allowance_word, quantum_word, grant_cnt_word, beat_cnt_word, defer_cnt_word);
+    env.coverage.sample_drr_snapshot(idle_lane, allowance_word, quantum_word, grant_cnt_word, beat_cnt_word, defer_cnt_word);
 
     if (allowance_word !== OPQ_DRR_DEFAULT_ALLOWANCE) begin
       `uvm_error(get_type_name(), $sformatf(
@@ -233,11 +240,15 @@ class opq_cross_drr_zero_allowance_test extends opq_base_test;
 
   virtual task run_main_sequence();
     opq_single_lane_virtual_sequence seq;
+    int unsigned idle_lane;
+    int unsigned active_lane;
 
     csr_clear_counters();
-    csr_write_lane_drr_allowance(0, 0);
+    idle_lane = (OPQ_N_LANE > 3) ? 2 : 0;
+    active_lane = (OPQ_N_LANE > 3) ? 3 : 1;
+    csr_write_lane_drr_allowance(idle_lane, 0);
     seq = opq_single_lane_virtual_sequence::type_id::create("seq");
-    seq.active_lane = 1;
+    seq.active_lane = active_lane;
     seq.frame_count = 4;
     seq.subheaders_per_frame = 8;
     seq.hit_count = 8;
@@ -245,6 +256,8 @@ class opq_cross_drr_zero_allowance_test extends opq_base_test;
   endtask
 
   virtual task run_post_sequence_checks();
+    int unsigned idle_lane;
+    int unsigned active_lane;
     int unsigned allowance_word;
     int unsigned quantum_word;
     int unsigned grant_cnt_word;
@@ -252,12 +265,15 @@ class opq_cross_drr_zero_allowance_test extends opq_base_test;
     int unsigned defer_cnt_word;
 
     super.run_post_sequence_checks();
-    check_lane_no_drop_and_credit(0, 1'b0);
-    check_lane_no_drop_and_credit(1, 1'b0);
+    idle_lane = (OPQ_N_LANE > 3) ? 2 : 0;
+    active_lane = (OPQ_N_LANE > 3) ? 3 : 1;
+    for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+      check_lane_no_drop_and_credit(lane, 1'b0);
+    end
     check_frame_table_counts();
 
-    read_lane_drr_snapshot(0, allowance_word, quantum_word, grant_cnt_word, beat_cnt_word, defer_cnt_word);
-    env.coverage.sample_drr_snapshot(0, allowance_word, quantum_word, grant_cnt_word, beat_cnt_word, defer_cnt_word);
+    read_lane_drr_snapshot(idle_lane, allowance_word, quantum_word, grant_cnt_word, beat_cnt_word, defer_cnt_word);
+    env.coverage.sample_drr_snapshot(idle_lane, allowance_word, quantum_word, grant_cnt_word, beat_cnt_word, defer_cnt_word);
     if (allowance_word !== 0 || quantum_word !== 0) begin
       `uvm_error(get_type_name(), $sformatf(
         "Zero-allowance lane should report allowance=0 quantum=0, actual allowance=%0d quantum=%0d",
@@ -271,7 +287,7 @@ class opq_cross_drr_zero_allowance_test extends opq_base_test;
       ))
     end
 
-    sample_lane_drr_snapshot(1, OPQ_DRR_DEFAULT_ALLOWANCE, 1'b1, 1'b0);
+    sample_lane_drr_snapshot(active_lane, OPQ_DRR_DEFAULT_ALLOWANCE, 1'b1, 1'b0);
   endtask
 endclass
 
@@ -370,16 +386,27 @@ class opq_cross_idle_lane_backpressure_test extends opq_base_test;
   virtual task run_main_sequence();
     opq_single_lane_virtual_sequence seq;
     opq_bp_sequence bp_seq;
+    opq_bp_item startup_bp_item;
     opq_bp_item bp_item;
+    int unsigned active_lane;
 
     csr_clear_counters();
+    active_lane = (OPQ_N_LANE > 3) ? 2 : 0;
     seq = opq_single_lane_virtual_sequence::type_id::create("seq");
-    seq.active_lane = 0;
+    seq.active_lane = active_lane;
     seq.frame_count = 6;
     seq.subheaders_per_frame = 8;
     seq.hit_count = 8;
 
     bp_seq = opq_bp_sequence::type_id::create("bp_seq");
+    startup_bp_item = opq_bp_item::type_id::create("startup_bp_item");
+    startup_bp_item.mode = BP_ALWAYS_STALL;
+    startup_bp_item.trigger_mode = BP_TRIGGER_FIRST_VALID;
+    startup_bp_item.high_cycles = 1;
+    startup_bp_item.low_cycles = 24;
+    startup_bp_item.repeat_count = 1;
+    bp_seq.items.push_back(startup_bp_item);
+
     bp_item = opq_bp_item::type_id::create("bp_item");
     bp_item.mode = BP_PERIODIC_STALL;
     bp_item.high_cycles = 8;
@@ -390,7 +417,6 @@ class opq_cross_idle_lane_backpressure_test extends opq_base_test;
     fork
       seq.start(env.vseqr);
       begin
-        #2us;
         bp_seq.start(env.vseqr.egress_seqr);
       end
       begin
@@ -401,6 +427,8 @@ class opq_cross_idle_lane_backpressure_test extends opq_base_test;
   endtask
 
   virtual task run_post_sequence_checks();
+    int unsigned active_lane;
+    int unsigned idle_lane;
     int unsigned allowance_word;
     int unsigned quantum_word;
     int unsigned grant_cnt_word;
@@ -408,13 +436,16 @@ class opq_cross_idle_lane_backpressure_test extends opq_base_test;
     int unsigned defer_cnt_word;
 
     super.run_post_sequence_checks();
-    check_lane_no_drop_and_credit(0, 1'b0);
-    check_lane_no_drop_and_credit(1, 1'b0);
+    active_lane = (OPQ_N_LANE > 3) ? 2 : 0;
+    idle_lane = (OPQ_N_LANE > 3) ? 3 : 1;
+    for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+      check_lane_no_drop_and_credit(lane, 1'b0);
+    end
     check_frame_table_counts();
 
-    sample_lane_drr_snapshot(0, OPQ_DRR_DEFAULT_ALLOWANCE, 1'b1, 1'b0);
-    read_lane_drr_snapshot(1, allowance_word, quantum_word, grant_cnt_word, beat_cnt_word, defer_cnt_word);
-    env.coverage.sample_drr_snapshot(1, allowance_word, quantum_word, grant_cnt_word, beat_cnt_word, defer_cnt_word);
+    sample_lane_drr_snapshot(active_lane, OPQ_DRR_DEFAULT_ALLOWANCE, 1'b1, 1'b0);
+    read_lane_drr_snapshot(idle_lane, allowance_word, quantum_word, grant_cnt_word, beat_cnt_word, defer_cnt_word);
+    env.coverage.sample_drr_snapshot(idle_lane, allowance_word, quantum_word, grant_cnt_word, beat_cnt_word, defer_cnt_word);
 
     if (allowance_word !== OPQ_DRR_DEFAULT_ALLOWANCE) begin
       `uvm_error(get_type_name(), $sformatf(

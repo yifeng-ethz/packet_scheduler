@@ -85,7 +85,121 @@ _These rows are for continuous-frame sequential runs such as `bucket_frame` and
 
 | status | run_id | kind | build | case_count | stmt | branch | toggle | functional_cross_pct | txns |
 |:---:|---|---|---|---:|---|---|---|---:|---:|
+| ✅ | [`opq_bucket_frame_native_sv_test`](REPORT/cross/opq_bucket_frame_native_sv_test.md) | bucket_frame | after | 38 | 80.00 | 79.25 | 41.34 | 78.14 | 644 |
+| ✅ | [`opq_all_buckets_frame_native_sv_test`](REPORT/cross/opq_all_buckets_frame_native_sv_test.md) | all_buckets_frame | after | 40 | 80.00 | 79.25 | 41.39 | 77.94 | 700 |
+| ✅ | [`opq_cross_bp_credit_test`](REPORT/cross/opq_cross_bp_credit_test.md) | cross | after | 1 | 66.92 | 55.28 | 12.63 | 64.03 | 12 |
+| ✅ | [`opq_cross_bp_predrop_boundary_test`](REPORT/cross/opq_cross_bp_predrop_boundary_test.md) | cross | after | 1 | 70.11 | 58.95 | 19.72 | 63.34 | 104 |
+| ✅ | [`opq_cross_drr_allowance_test`](REPORT/cross/opq_cross_drr_allowance_test.md) | cross | after | 1 | 73.08 | 64.83 | 21.40 | 56.65 | 16 |
+| ✅ | [`opq_cross_drr_bursty_frame2_boundary_test`](REPORT/cross/opq_cross_drr_bursty_frame2_boundary_test.md) | cross | after | 1 | 71.37 | 60.97 | 14.40 | 58.66 | 4 |
+| ✅ | [`opq_cross_drr_bursty_frame3_repro_test`](REPORT/cross/opq_cross_drr_bursty_frame3_repro_test.md) | cross | after | 1 | 71.52 | 61.16 | 15.50 | 59.71 | 6 |
+| ✅ | [`opq_cross_drr_bursty_large_repro_test`](REPORT/cross/opq_cross_drr_bursty_large_repro_test.md) | cross | after | 1 | 71.48 | 60.79 | 16.35 | 60.51 | 12 |
+| ✅ | [`opq_cross_drr_bursty_random_test`](REPORT/cross/opq_cross_drr_bursty_random_test.md) | cross | after | 1 | 76.35 | 68.14 | 25.68 | 60.58 | 24 |
+| ✅ | [`opq_cross_drr_bursty_repro_test`](REPORT/cross/opq_cross_drr_bursty_repro_test.md) | cross | after | 1 | 71.52 | 61.16 | 16.92 | 59.71 | 16 |
+| ✅ | [`opq_cross_drr_idle_lane_test`](REPORT/cross/opq_cross_drr_idle_lane_test.md) | cross | after | 1 | 69.54 | 58.31 | 14.41 | 54.92 | 16 |
+| ✅ | [`opq_cross_drr_short_allowance_test`](REPORT/cross/opq_cross_drr_short_allowance_test.md) | cross | after | 1 | 73.08 | 64.74 | 21.49 | 55.2 | 12 |
+| ✅ | [`opq_cross_drr_then_idle_lane_bp_repro_test`](REPORT/cross/opq_cross_drr_then_idle_lane_bp_repro_test.md) | cross | after | 1 | 71.56 | 62.44 | 21.47 | 61.22 | 34 |
+| ✅ | [`opq_cross_drr_zero_allowance_test`](REPORT/cross/opq_cross_drr_zero_allowance_test.md) | cross | after | 1 | 69.77 | 58.77 | 14.56 | 55.01 | 16 |
+| ✅ | [`opq_cross_hit3_exact_183_190_repro_test`](REPORT/cross/opq_cross_hit3_exact_183_190_repro_test.md) | cross | after | 1 | 74.07 | 66.76 | 31.73 | 67.11 | 150 |
+| ✅ | [`opq_cross_hit3_lead_in_repro_test`](REPORT/cross/opq_cross_hit3_lead_in_repro_test.md) | cross | after | 1 | 74.11 | 66.85 | 30.76 | 66.44 | 138 |
+| ✅ | [`opq_cross_idle_lane_backpressure_test`](REPORT/cross/opq_cross_idle_lane_backpressure_test.md) | cross | after | 1 | 69.93 | 59.45 | 15.90 | 59.91 | 24 |
+| ✅ | [`opq_cross_masked_drop_exact_102_117_repro_test`](REPORT/cross/opq_cross_masked_drop_exact_102_117_repro_test.md) | cross | after | 1 | 75.44 | 68.69 | 31.91 | 70.56 | 214 |
+| ✅ | [`opq_cross_mixed_bucket_random_soak_test`](REPORT/cross/opq_cross_mixed_bucket_random_soak_test.md) | cross | after | 1 | 77.64 | 73.00 | 40.22 | 72.41 | 2026 |
+| ✅ | [`opq_cross_random_ready_overflow_step2_boundary_test`](REPORT/cross/opq_cross_random_ready_overflow_step2_boundary_test.md) | cross | after | 1 | 79.73 | 72.54 | 35.69 | 65.59 | 20 |
+| ✅ | [`opq_cross_single_hit_masked_then_sparse_repro_test`](REPORT/cross/opq_cross_single_hit_masked_then_sparse_repro_test.md) | cross | after | 1 | 74.18 | 66.21 | 21.46 | 65.28 | 24 |
+| ✅ | [`opq_cross_sparse_single_lane_drr_credit_restore_repro_test`](REPORT/cross/opq_cross_sparse_single_lane_drr_credit_restore_repro_test.md) | cross | after | 1 | 73.23 | 64.92 | 23.44 | 65.3 | 40 |
 
 ## Fixed baseline execution order
+
+### bucket_frame
+
+- bucket_order: `BASIC`, `EDGE`, `PROF`, `ERROR`, `CROSS`
+- named_steps:
+  `BASIC` -> `basic_seq` (basic smoke virtual sequence)
+  `BASIC` -> `ts_seq` (timestamp boundary virtual sequence)
+  `BASIC` -> `feb_seq` (FEB packet contract virtual sequence)
+  `BASIC` -> `shd_seq` (subheader shape virtual sequence)
+  `BASIC` -> `single_lane_seq` (single active lane 0 virtual sequence)
+  `BASIC` -> `single_lane_lane1_seq` (single active lane 1 virtual sequence)
+  `BASIC` -> `single_lane_dense_seq` (dense single-lane virtual sequence)
+  `EDGE` -> `bp_seq_6_4_24` (periodic stall backpressure sweep high=6 low=4 repeat=24)
+  `EDGE` -> `bp_seq_32_4_1` (always-ready backpressure sweep high=32 low=4 repeat=1)
+  `EDGE` -> `bp_seq_32_8_12` (periodic stall backpressure sweep high=32 low=8 repeat=12)
+  `EDGE` -> `bp_seq_4_12_24` (periodic stall backpressure sweep high=4 low=12 repeat=24)
+  `EDGE` -> `bp_seq_1_2048_1` (always-stall backpressure sweep high=1 low=2048 repeat=1)
+  `EDGE` -> `max_hits_seq` (max-hit virtual sequence)
+  `EDGE` -> `bp_seq_1_1_24` (periodic stall backpressure sweep high=1 low=1 repeat=24)
+  `EDGE` -> `bp_seq_1_1_96` (periodic stall backpressure sweep high=1 low=1 repeat=96)
+  `EDGE` -> `max_hits_bp_seq` (max-hit virtual sequence under periodic stall)
+  `PROF` -> `soak_seq` (baseline soak virtual sequence)
+  `PROF` -> `stress_seq` (lane-skew stress virtual sequence)
+  `PROF` -> `whole_frame_seq` (whole-frame skew virtual sequence)
+  `PROF` -> `sparse_seq` (missing-empty-frame virtual sequence)
+  `PROF` -> `long_soak_seq` (extended soak virtual sequence)
+  `PROF` -> `heavy_skew_seq` (heavy lane-skew stress virtual sequence)
+  `PROF` -> `deep_whole_frame_seq` (deep whole-frame skew virtual sequence)
+  `PROF` -> `asym_sparse_seq` (asymmetric missing-empty-frame virtual sequence)
+  `ERROR` -> `masked_drop_seq` (masked drop virtual sequence)
+  `ERROR` -> `single_hit_masked_drop_seq` (single-hit masked drop virtual sequence)
+  `ERROR` -> `burst_masked_drop_seq` (burst masked drop virtual sequence)
+  `ERROR` -> `masked_recovery` (masked drop recovery virtual sequence)
+  `ERROR` -> `hit_recovery_seq` (hit error recovery virtual sequence)
+  `ERROR` -> `shd_recovery_seq` (subheader error recovery virtual sequence)
+  `ERROR` -> `header_recovery_seq` (header error recovery virtual sequence)
+  `ERROR` -> `header_word_recovery_seq` (header-word error recovery virtual sequence)
+  `CROSS` -> `bp_credit_seq` (credit/backpressure cross sequence)
+  `CROSS` -> `drr_allow_seq` (DRR allowance saturation sequence)
+  `CROSS` -> `idle_lane_seq` (idle-lane DRR sequence)
+  `CROSS` -> `zero_allow_seq` (zero-allowance DRR sequence)
+  `CROSS` -> `drr_short_seq` (short-allowance DRR saturation sequence)
+  `CROSS` -> `idle_lane_bp_case_seq` (idle-lane backpressure cross case)
+- limitation: This native-SV frame baseline runs the promoted internal UVM sequence matrix from `opq_frame_signoff_tests.sv`, not the full canonical isolated case catalog.
+- limitation: The isolated B/E/P/X case ledger remains the authoritative per-case closure view; this run is continuous-frame carry-over evidence.
+
+### all_buckets_frame
+
+- bucket_order: `BASIC`, `EDGE`, `PROF`, `ERROR`, `CROSS`
+- named_steps:
+  `BASIC` -> `basic_seq` (basic smoke virtual sequence)
+  `BASIC` -> `ts_seq` (timestamp boundary virtual sequence)
+  `BASIC` -> `feb_seq` (FEB packet contract virtual sequence)
+  `BASIC` -> `shd_seq` (subheader shape virtual sequence)
+  `BASIC` -> `single_lane_seq` (single active lane 0 virtual sequence)
+  `BASIC` -> `single_lane_lane1_seq` (single active lane 1 virtual sequence)
+  `BASIC` -> `single_lane_dense_seq` (dense single-lane virtual sequence)
+  `EDGE` -> `bp_seq_6_4_24` (periodic stall backpressure sweep high=6 low=4 repeat=24)
+  `EDGE` -> `bp_seq_32_4_1` (always-ready backpressure sweep high=32 low=4 repeat=1)
+  `EDGE` -> `bp_seq_32_8_12` (periodic stall backpressure sweep high=32 low=8 repeat=12)
+  `EDGE` -> `bp_seq_4_12_24` (periodic stall backpressure sweep high=4 low=12 repeat=24)
+  `EDGE` -> `bp_seq_1_2048_1` (always-stall backpressure sweep high=1 low=2048 repeat=1)
+  `EDGE` -> `max_hits_seq` (max-hit virtual sequence)
+  `EDGE` -> `bp_seq_1_1_24` (periodic stall backpressure sweep high=1 low=1 repeat=24)
+  `EDGE` -> `bp_seq_1_1_96` (periodic stall backpressure sweep high=1 low=1 repeat=96)
+  `EDGE` -> `max_hits_bp_seq` (max-hit virtual sequence under periodic stall)
+  `PROF` -> `soak_seq` (baseline soak virtual sequence)
+  `PROF` -> `stress_seq` (lane-skew stress virtual sequence)
+  `PROF` -> `whole_frame_seq` (whole-frame skew virtual sequence)
+  `PROF` -> `sparse_seq` (missing-empty-frame virtual sequence)
+  `PROF` -> `long_soak_seq` (extended soak virtual sequence)
+  `PROF` -> `heavy_skew_seq` (heavy lane-skew stress virtual sequence)
+  `PROF` -> `deep_whole_frame_seq` (deep whole-frame skew virtual sequence)
+  `PROF` -> `asym_sparse_seq` (asymmetric missing-empty-frame virtual sequence)
+  `ERROR` -> `masked_drop_seq` (masked drop virtual sequence)
+  `ERROR` -> `single_hit_masked_drop_seq` (single-hit masked drop virtual sequence)
+  `ERROR` -> `burst_masked_drop_seq` (burst masked drop virtual sequence)
+  `ERROR` -> `masked_recovery` (masked drop recovery virtual sequence)
+  `ERROR` -> `hit_recovery_seq` (hit error recovery virtual sequence)
+  `ERROR` -> `shd_recovery_seq` (subheader error recovery virtual sequence)
+  `ERROR` -> `header_recovery_seq` (header error recovery virtual sequence)
+  `ERROR` -> `header_word_recovery_seq` (header-word error recovery virtual sequence)
+  `CROSS` -> `bp_credit_seq` (credit/backpressure cross sequence)
+  `CROSS` -> `drr_allow_seq` (DRR allowance saturation sequence)
+  `CROSS` -> `idle_lane_seq` (idle-lane DRR sequence)
+  `CROSS` -> `zero_allow_seq` (zero-allowance DRR sequence)
+  `CROSS` -> `drr_short_seq` (short-allowance DRR saturation sequence)
+  `CROSS` -> `idle_lane_bp_case_seq` (idle-lane backpressure cross case)
+  `PROF` -> `extra_prof_seq` (whole-frame skew tail after the promoted matrix)
+  `ERROR` -> `extra_err_seq` (subheader error recovery tail after the promoted matrix)
+- limitation: This native-SV frame baseline runs the promoted internal UVM sequence matrix from `opq_frame_signoff_tests.sv`, not the full canonical isolated case catalog.
+- limitation: The isolated B/E/P/X case ledger remains the authoritative per-case closure view; this run is continuous-frame carry-over evidence.
 
 _Regenerate with `python3 tb/scripts/dv_report_gen_local.py --tb tb`._

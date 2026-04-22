@@ -61,6 +61,7 @@ Historical formal note:
 | [BUG-027-R](#bug-027-r-masked-zero-hit-subheader-recovery-kept-tail-bypass-drop-asserted-through-the-trailer) | R | soft error | `n/a (localized formal-like ingress stress)` | fixed | `formal_ingress.sh` / `opq_formal_like_ingress_recovery_stress_test` on `2026-04-21` | `a813795` | A legal zero-hit subheader after a masked subheader no longer leaves the parser in `MASK_PKT`; trailer bypass now reports only the surviving local drop semantics and the refreshed ingress fallback suite is green on `2026-04-21`. |
 | [BUG-028-H](#bug-028-h-lane-hit-ledger-retired-delivered-beats-against-parser-timestamps-instead-of-canonical-egress-timestamps) | H | non-datapath-refactor | `n/a (4-lane supplemental rerun)` | fixed | `opq_cross_random_ready_overflow_step2_boundary_test` on `2026-04-21` @ `OPQ_N_LANE=4 OPQ_N_SHD=128` | `a813795` | The 4-lane no-restart ledger is clean again after the scoreboard started carrying both canonical delivery timestamps and parser/accounting timestamps per hit. |
 | [BUG-029-R](#bug-029-r-presenter-overlap-bookkeeping-can-strand-queued-metadata-in-idle-after-a-legal-trailer-retire) | R | hard stuck error | `1.227170 / 11.230042 ms` | fixed | `opq_cross_bp_predrop_boundary_test` on `2026-04-21` | `43336f8` | The presenter no longer strands the legal pre-drop supplemental run after slot `0x17`; queued metadata now advances through `WAIT_FOR_COMPLETE` even when overlap bookkeeping is still pending. |
+| [BUG-030-R](#bug-030-r-overlap-request-replay-can-self-drop-the-current-head-and-synthesize-a-zero-length-packet) | R | hard stuck error | `n/a (targeted backpressure stress)` | fixed | `opq_formal_like_egress_flush_backpressure_stress_test` on `2026-04-22` @ `OPQ_N_LANE=4 OPQ_N_SHD=128` | `pending` | The presenter now discards overlap requests that have already caught up to their own head slot, so the restart path no longer self-drops the live head or launches a zero-length packet after a legal trailer retire. |
 
 ## 2026-04-17
 
@@ -948,6 +949,85 @@ Historical formal note:
     separate limitation rather than being folded into this bug closure
 - Commit:
   - 43336f8
+
+### BUG-030-R: Overlap-request replay can self-drop the current head and synthesize a zero-length packet
+- First seen in:
+  - `packet_scheduler/tb/uvm`
+    `TEST=opq_formal_like_egress_flush_backpressure_stress_test DUT_IMPL=native_sv`
+    on `2026-04-22`
+  - localized trace anchor:
+    `+OPQ_NATIVE_TRACE_OWNERSHIP +OPQ_NATIVE_TRACE_EGRESS_WORDS`
+- Symptom:
+  - after the first legal trailer retired under the long flush window, the
+    next restart attempted to present `meta_rptr=0x4` with
+    `head_addr=0x0 head_len=0x0`
+  - the first accepted beat of that synthetic packet was
+    `data=0x0000000000 sop=0 retire=1`, which fired
+    `ap_first_visible_word_is_sop` and
+    `ap_retire_only_exposes_trailer`
+  - the same run ended with `opq_hit3_contract_sva` reporting an open frame,
+    and ownership tracing showed the queue continuing to accept metadata while
+    the presenter had already poisoned its restart state
+- Root cause:
+  - every queued frame behind a live head records an overlap request whose
+    `pending_overlap_stop_ptr_q` points at the frame's own metadata slot
+  - once that same slot later became the current head, the old request was
+    still replayed, so the presenter compared the request against the head
+    that created it and launched a self-overlap drop scan
+  - that self-scan advanced one slot past the valid queue, read unwritten
+    metadata at `meta_wptr`, and installed `head_meta_valid=1` with a
+    zero-length head, which immediately poisoned the next `present_start`
+- Fix status:
+  - state:
+    - fixed on the refreshed `2026-04-22` targeted native-SV reruns for the
+      `4-lane/128` preset
+  - mechanism:
+    - `ordered_priority_queue_monolithic_basic_presenter.sv` now discards a
+      queued overlap request when its stop pointer has already caught up to
+      `meta_rptr`, because that request no longer has any older metadata left
+      to scan
+    - localized assume/assert/cover style checks were added alongside the RTL:
+      the presenter now asserts that a self-caught overlap request may not
+      launch a scan or mutate the registered head, and a companion cover
+      reaches and clears that exact boundary
+  - before_fix_outcome:
+    - the localized failing window on `2026-04-22` showed:
+      - `evt=req_head slot=0x1`
+      - repeated `evt=scan_stop_keep` until
+        `head_ptr=0x4 head_addr=0x0 head_len=0x0`
+      - `evt=present_start meta_rptr=0x4 head_addr=0x0 head_len=0x0`
+      - `evt=accept ... data=0x0000000000 sop=0 retire=1`
+    - the same run fired the presenter packet-boundary assertions and ended
+      with an open egress frame
+  - after_fix_outcome:
+    - the focused repro
+      `opq_formal_like_egress_flush_backpressure_stress_test` is now green on
+      `2026-04-22` with:
+      - `UVM_ERROR : 0`
+      - no presenter assertions
+      - no `ft_drop_*` activity in the stress window
+      - no final open-frame contract failure
+    - a short related guard rerun on the same preset also stays green:
+      - `opq_edge_backpressure_test`
+      - `opq_edge_stuck_low_backpressure_test`
+      - `opq_cross_idle_lane_backpressure_test`
+      - `opq_formal_like_egress_flush_backpressure_stress_test`
+  - potential_hazard:
+    - this looks like a permanent local RTL fix for the replayed self-request
+      path because the repaired condition is tied to a precise queue-ownership
+      invariant rather than to timing of a specific testcase
+    - broader bucket/signoff reruns are still required before the dashboard is
+      promoted, because this entry only closes the localized restart poison
+      path and not the full report matrix
+  - Claude Opus 4.7 xhigh review decision:
+    - pending / not run in this turn
+- Runtime / coverage context:
+  - this fix closes the first concrete native-SV `4-lane/128` presenter
+    restart corruption found after the earlier legal-backpressure cleanup, and
+    it restores the targeted formal-like egress stress to its intended role as
+    a clean no-drop/no-overlap hold regression
+- Commit:
+  - pending
 
 ### BUG-028-H: Lane hit ledger retired delivered beats against parser timestamps instead of canonical egress timestamps
 - First seen in:

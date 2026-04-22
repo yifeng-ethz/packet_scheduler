@@ -1,7 +1,7 @@
 # ⚠️ Config Signoff — packet_scheduler ordered_priority_queue
 
 **DUT:** `ordered_priority_queue` &nbsp; **Date:** `2026-04-22` &nbsp;
-**Release:** `26.3.59.0422`
+**Release:** `26.3.64.0422`
 
 This page is the configuration-legality and evidence matrix for
 [`../script/ordered_priority_queue_hw.tcl`](../script/ordered_priority_queue_hw.tcl).
@@ -72,10 +72,10 @@ Formalized packet shape:
 | Identity | `IP_UID` | fixed packaged default | no | HDL-backed Mu3e UID. |
 | Identity | `VERSION_MAJOR` | fixed packaged default | no | `26`. |
 | Identity | `VERSION_MINOR` | fixed packaged default | no | `3`. |
-| Identity | `VERSION_PATCH` | fixed packaged default | no | `59`. |
-| Identity | `BUILD` | fixed packaged default | no | `0422`. |
-| Identity | `VERSION_DATE` | fixed packaged default | no | `20260422`. |
-| Identity | `VERSION_GIT` | fixed packaged default | no | `0xACA41A1D`. |
+| Identity | `VERSION_PATCH` | fixed packaged CSR META default | no | `29`; retained interface stamp packed into CSR META page 0 and not equal to the repo release suffix. |
+| Identity | `BUILD` | fixed packaged CSR META default | no | `0420`; retained 12-bit CSR build stamp. |
+| Identity | `VERSION_DATE` | fixed packaged CSR META default | no | `20260421`; CSR META page-1 date from the current hidden package defaults. |
+| Identity | `VERSION_GIT` | fixed packaged CSR META default | no | `0xACB54C7D`; retained 32-bit provenance stamp exposed through CSR META page 2. |
 | Identity | `INSTANCE_ID` | integrator override | yes | Only identity field left GUI-editable. |
 
 ## Configuration Matrix
@@ -171,10 +171,12 @@ future width axes remains tracked only by the generator script.
 
 - The active generated standalone dashboard is now the canonical current-scope
   `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256 DUT_IMPL=native_sv`
-  rerun slice.
-- Fresh anchor evidence currently exists for `B001`, `E001`, `P001`, and
-  `X001` in that active slice. The remaining canonical catalog rows are pending
-  rerun there and should render as pending evidence, not as current failures.
+  rerun slice, and it currently carries `516/516` isolated catalog cases with
+  `22/22` signoff runs green.
+- That current standalone dashboard is still not full package-space signoff:
+  the open gap is merged structural coverage targets plus later lane/width
+  expansion, not missing testcase implementation in the canonical 4-lane/128
+  slice.
 - Historical 2-lane closure, bounded `N_SHD=64`, and bounded 4-lane points
   remain useful planning evidence for the matrix, but they are not mixed into
   the active generated standalone dashboard unless rerun in the current scope.
@@ -205,7 +207,7 @@ future width axes remains tracked only by the generator script.
 - Requested future axes are preserved here as staged, visible non-claims:
   `INGRESS_DATA_WIDTH={64,128}`, matching `datak`, and DMA-packed
   `PAGE_RAM_RD_WIDTH={4x,8x,16x}` base widths with `empty`.
-- The honest packaged release for `26.3.59.0422` is therefore:
+- The honest packaged release for `26.3.64.0422` is therefore:
   `N_LANE={2,4,8,16}`, `MODE=MERGING`, `TRACK_HEADER=true`,
   `INGRESS_DATA_WIDTH=32`, `INGRESS_DATAK_WIDTH=4`,
   `N_SHD={64,128,256,512}`, `N_HIT={255,511,1023,2047}`,

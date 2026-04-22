@@ -41,6 +41,79 @@ METRIC_MAP = OrderedDict(
     ]
 )
 
+NATIVE_FRAME_BUCKET_STEPS = OrderedDict(
+    [
+        (
+            "BASIC",
+            [
+                {"legacy_step_name": "basic_seq", "description": "basic smoke virtual sequence"},
+                {"legacy_step_name": "ts_seq", "description": "timestamp boundary virtual sequence"},
+                {"legacy_step_name": "feb_seq", "description": "FEB packet contract virtual sequence"},
+                {"legacy_step_name": "shd_seq", "description": "subheader shape virtual sequence"},
+                {"legacy_step_name": "single_lane_seq", "description": "single active lane 0 virtual sequence"},
+                {"legacy_step_name": "single_lane_lane1_seq", "description": "single active lane 1 virtual sequence"},
+                {"legacy_step_name": "single_lane_dense_seq", "description": "dense single-lane virtual sequence"},
+            ],
+        ),
+        (
+            "EDGE",
+            [
+                {"legacy_step_name": "bp_seq_6_4_24", "description": "periodic stall backpressure sweep high=6 low=4 repeat=24"},
+                {"legacy_step_name": "bp_seq_32_4_1", "description": "always-ready backpressure sweep high=32 low=4 repeat=1"},
+                {"legacy_step_name": "bp_seq_32_8_12", "description": "periodic stall backpressure sweep high=32 low=8 repeat=12"},
+                {"legacy_step_name": "bp_seq_4_12_24", "description": "periodic stall backpressure sweep high=4 low=12 repeat=24"},
+                {"legacy_step_name": "bp_seq_1_2048_1", "description": "always-stall backpressure sweep high=1 low=2048 repeat=1"},
+                {"legacy_step_name": "max_hits_seq", "description": "max-hit virtual sequence"},
+                {"legacy_step_name": "bp_seq_1_1_24", "description": "periodic stall backpressure sweep high=1 low=1 repeat=24"},
+                {"legacy_step_name": "bp_seq_1_1_96", "description": "periodic stall backpressure sweep high=1 low=1 repeat=96"},
+                {"legacy_step_name": "max_hits_bp_seq", "description": "max-hit virtual sequence under periodic stall"},
+            ],
+        ),
+        (
+            "PROF",
+            [
+                {"legacy_step_name": "soak_seq", "description": "baseline soak virtual sequence"},
+                {"legacy_step_name": "stress_seq", "description": "lane-skew stress virtual sequence"},
+                {"legacy_step_name": "whole_frame_seq", "description": "whole-frame skew virtual sequence"},
+                {"legacy_step_name": "sparse_seq", "description": "missing-empty-frame virtual sequence"},
+                {"legacy_step_name": "long_soak_seq", "description": "extended soak virtual sequence"},
+                {"legacy_step_name": "heavy_skew_seq", "description": "heavy lane-skew stress virtual sequence"},
+                {"legacy_step_name": "deep_whole_frame_seq", "description": "deep whole-frame skew virtual sequence"},
+                {"legacy_step_name": "asym_sparse_seq", "description": "asymmetric missing-empty-frame virtual sequence"},
+            ],
+        ),
+        (
+            "ERROR",
+            [
+                {"legacy_step_name": "masked_drop_seq", "description": "masked drop virtual sequence"},
+                {"legacy_step_name": "single_hit_masked_drop_seq", "description": "single-hit masked drop virtual sequence"},
+                {"legacy_step_name": "burst_masked_drop_seq", "description": "burst masked drop virtual sequence"},
+                {"legacy_step_name": "masked_recovery", "description": "masked drop recovery virtual sequence"},
+                {"legacy_step_name": "hit_recovery_seq", "description": "hit error recovery virtual sequence"},
+                {"legacy_step_name": "shd_recovery_seq", "description": "subheader error recovery virtual sequence"},
+                {"legacy_step_name": "header_recovery_seq", "description": "header error recovery virtual sequence"},
+                {"legacy_step_name": "header_word_recovery_seq", "description": "header-word error recovery virtual sequence"},
+            ],
+        ),
+        (
+            "CROSS",
+            [
+                {"legacy_step_name": "bp_credit_seq", "description": "credit/backpressure cross sequence"},
+                {"legacy_step_name": "drr_allow_seq", "description": "DRR allowance saturation sequence"},
+                {"legacy_step_name": "idle_lane_seq", "description": "idle-lane DRR sequence"},
+                {"legacy_step_name": "zero_allow_seq", "description": "zero-allowance DRR sequence"},
+                {"legacy_step_name": "drr_short_seq", "description": "short-allowance DRR saturation sequence"},
+                {"legacy_step_name": "idle_lane_bp_case_seq", "description": "idle-lane backpressure cross case"},
+            ],
+        ),
+    ]
+)
+
+NATIVE_ALL_BUCKETS_EXTRA_STEPS = [
+    {"bucket": "PROF", "legacy_step_name": "extra_prof_seq", "description": "whole-frame skew tail after the promoted matrix"},
+    {"bucket": "ERROR", "legacy_step_name": "extra_err_seq", "description": "subheader error recovery tail after the promoted matrix"},
+]
+
 VCOVER = next(
     (
         candidate
@@ -135,6 +208,153 @@ def scale_cov_per_txn(cov: dict, txn_count: int) -> dict:
         metric: {"pct": round(values.get("pct", 0.0) / denom, 4)}
         for metric, values in cov.items()
     }
+
+
+def scope_matches_log_summary(log_summary: dict, page_ram_depth: int) -> bool:
+    return (
+        int(log_summary.get("cfg_n_lane", -1)) == SIGNOFF_N_LANE
+        and int(log_summary.get("cfg_n_shd", -1)) == SIGNOFF_N_SHD
+        and int(log_summary.get("cfg_ticket_fifo_depth", -1))
+        == int(os.environ.get("OPQ_TICKET_FIFO_DEPTH", str(derived_ticket_fifo_depth(SIGNOFF_N_SHD))))
+        and int(log_summary.get("cfg_page_ram_depth", -1)) == page_ram_depth
+        and str(log_summary.get("cfg_dut_impl", "")) == SIGNOFF_DUT_IMPL
+        and int(log_summary.get("cfg_cov_enable", 0)) == 1
+    )
+
+
+def fallback_cross_pct(log_summary: dict) -> float:
+    cg_keys = (
+        "cg_cfg",
+        "cg_frame",
+        "cg_subh",
+        "cg_bp",
+        "cg_csr",
+        "cg_credit",
+        "cg_drop",
+        "cg_drr",
+        "cg_ingress",
+        "cg_egress",
+    )
+    values = [float(log_summary[key]) for key in cg_keys if key in log_summary]
+    if not values:
+        return 0.0
+    return round(sum(values) / len(values), 2)
+
+
+def native_frame_named_steps(include_extra_tail: bool) -> list[dict]:
+    steps: list[dict] = []
+    for bucket, bucket_steps in NATIVE_FRAME_BUCKET_STEPS.items():
+        for step in bucket_steps:
+            steps.append(
+                {
+                    "bucket": bucket,
+                    "legacy_step_name": step["legacy_step_name"],
+                    "description": step["description"],
+                }
+            )
+    if include_extra_tail:
+        steps.extend(NATIVE_ALL_BUCKETS_EXTRA_STEPS)
+    return steps
+
+
+def native_frame_mode(run_id: str, include_extra_tail: bool) -> dict:
+    return {
+        "run_id": run_id,
+        "bucket_order": list(NATIVE_FRAME_BUCKET_STEPS.keys()),
+        "named_steps": native_frame_named_steps(include_extra_tail),
+        "limitations": [
+            "This native-SV frame baseline runs the promoted internal UVM sequence matrix from `opq_frame_signoff_tests.sv`, not the full canonical isolated case catalog.",
+            "The isolated B/E/P/X case ledger remains the authoritative per-case closure view; this run is continuous-frame carry-over evidence.",
+        ],
+    }
+
+
+def classify_signoff_test(test_name: str) -> dict | None:
+    if test_name == "opq_bucket_frame_native_sv_test":
+        return {
+            "run_id": test_name,
+            "kind": "bucket_frame",
+            "sequence_name": "run_promoted_default_build_matrix",
+            "case_count": len(native_frame_named_steps(False)),
+            "effort": "high",
+        }
+    if test_name == "opq_all_buckets_frame_native_sv_test":
+        return {
+            "run_id": test_name,
+            "kind": "all_buckets_frame",
+            "sequence_name": "run_promoted_default_build_matrix_plus_tail",
+            "case_count": len(native_frame_named_steps(True)),
+            "effort": "high",
+        }
+    if test_name.startswith("opq_cross_"):
+        return {
+            "run_id": test_name,
+            "kind": "cross",
+            "sequence_name": test_name,
+            "case_count": 1,
+            "effort": "high" if ("random" in test_name or "soak" in test_name) else "practical",
+        }
+    return None
+
+
+def build_signoff_run(test_name: str, log_summary: dict, ucdb_path: Path) -> dict | None:
+    meta = classify_signoff_test(test_name)
+    if meta is None:
+        return None
+
+    code_cov = flatten_pct(code_cov_for_ucdb(ucdb_path))
+    functional = functional_cov_for_ucdb(ucdb_path)
+    cross_pct = functional.get("pct", 0.0) or fallback_cross_pct(log_summary)
+    counter_failed = int(
+        int(log_summary.get("hit_missing", 0)) > 0 or int(log_summary.get("hit_ghost", 0)) > 0
+    )
+    return {
+        "run_id": meta["run_id"],
+        "kind": meta["kind"],
+        "bucket": None,
+        "build_tag": RTL_VARIANT,
+        "sequence_name": meta["sequence_name"],
+        "case_count": int(meta["case_count"]),
+        "effort": meta["effort"],
+        "code_coverage": code_cov,
+        "cross_summary": {
+            "pct": round(float(cross_pct), 2),
+            "txns": int(log_summary.get("observed_txn", 0)),
+            "counter_checks_passed": 0 if counter_failed else 1,
+            "counter_checks_failed": counter_failed,
+            "unexpected_outputs": 0,
+            "curve": "",
+        },
+    }
+
+
+def discover_signoff_runs() -> list[dict]:
+    runs: list[dict] = []
+    for log_path in sorted(SIM_LOG_DIR.glob("opq_*.log")):
+        if log_path.name.endswith(".launch.log"):
+            continue
+        test_name = log_path.stem
+        meta = classify_signoff_test(test_name)
+        if meta is None:
+            continue
+        ucdb_path = SIM_COV_DIR / f"{test_name}.ucdb"
+        if not ucdb_path.is_file():
+            continue
+        log_exists, engine_ok, pass_ok, log_summary = extract_log_summary(log_path)
+        if not (log_exists and engine_ok and pass_ok):
+            continue
+        page_depth = 65536
+        if test_name == "opq_error_ftable_overflow_test":
+            page_depth = 512
+        if not scope_matches_log_summary(log_summary, page_depth):
+            continue
+        run = build_signoff_run(test_name, log_summary, ucdb_path)
+        if run is not None:
+            runs.append(run)
+
+    order = {"bucket_frame": 0, "all_buckets_frame": 1, "cross": 2}
+    runs.sort(key=lambda run: (order.get(str(run.get("kind")), 9), str(run.get("run_id", ""))))
+    return runs
 
 
 def artifact_candidates(case: dict) -> list[str]:
@@ -313,13 +533,8 @@ def build() -> dict:
             ucdb_path, ucdb_artifact_name = resolve_ucdb_path(catalog_case)
             log_exists, engine_ok, pass_ok, log_summary = extract_log_summary(log_path)
             has_ucdb = ucdb_path is not None
-            scope_match = (
-                int(log_summary.get("cfg_n_lane", -1)) == SIGNOFF_N_LANE
-                and int(log_summary.get("cfg_n_shd", -1)) == SIGNOFF_N_SHD
-                and int(log_summary.get("cfg_ticket_fifo_depth", -1)) == int(os.environ.get("OPQ_TICKET_FIFO_DEPTH", str(derived_ticket_fifo_depth(SIGNOFF_N_SHD))))
-                and int(log_summary.get("cfg_page_ram_depth", -1)) == case_build_knobs(catalog_case)["OPQ_PAGE_RAM_DEPTH"]
-                and str(log_summary.get("cfg_dut_impl", "")) == SIGNOFF_DUT_IMPL
-                and int(log_summary.get("cfg_cov_enable", 0)) == 1
+            scope_match = scope_matches_log_summary(
+                log_summary, case_build_knobs(catalog_case)["OPQ_PAGE_RAM_DEPTH"]
             )
             implemented = log_exists and has_ucdb and scope_match
             evidence_state = "current_scope_evidenced"
@@ -457,6 +672,8 @@ def build() -> dict:
         total_functional_cov["evidenced"] = all_passed_case_count
         total_functional_cov["planned"] = len(all_cases)
 
+    signoff_runs = discover_signoff_runs()
+
     return {
         "report_title": "packet_scheduler ordered_priority_queue native_sv",
         "dut_name": "ordered_priority_queue_monolithic_sv",
@@ -516,6 +733,8 @@ def build() -> dict:
                     for bucket_name, bucket_payload in bucket_payloads.items()
                 },
             },
+            "bucket_frame": native_frame_mode("opq_bucket_frame_native_sv_test", False),
+            "all_buckets_frame": native_frame_mode("opq_all_buckets_frame_native_sv_test", True),
         },
         "cases": all_cases,
         "bucket_summary": bucket_summary,
@@ -531,7 +750,7 @@ def build() -> dict:
             "merged_total_code_coverage": merged_total_cov,
             "functional_coverage": total_functional_cov,
         },
-        "signoff_runs": [],
+        "signoff_runs": signoff_runs,
         "random_cases": [case for case in all_cases if case.get("method") == "R"],
     }
 

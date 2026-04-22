@@ -68,6 +68,7 @@ class opq_formal_like_egress_flush_backpressure_stress_test extends opq_base_tes
 
     bp_item = opq_bp_item::type_id::create("bp_item_flush_window");
     bp_item.mode = BP_ALWAYS_STALL;
+    bp_item.trigger_mode = BP_TRIGGER_FIRST_VALID;
     bp_item.high_cycles = 1;
     bp_item.low_cycles = 16_384;
     bp_item.repeat_count = 1;

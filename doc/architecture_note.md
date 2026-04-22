@@ -253,6 +253,18 @@ The current open debug picture is now narrower:
   `accepted=735 delivered=735 unexplained=0`, and `UVM_ERROR : 0`. The
   remaining work is therefore coverage expansion and testcase portability, not
   an active overwrite bug.
+- `BUG-030-R` is now also closed on the current tree. The presenter now drops
+  a queued overlap request once its stop pointer has already caught up to the
+  current `meta_rptr`, which removes the stale self-overlap replay that could
+  previously rescan the head that created the request, read unwritten metadata,
+  and synthesize a zero-length packet on restart. The targeted
+  `opq_formal_like_egress_flush_backpressure_stress_test` rerun on
+  `2026-04-22` is green again with `UVM_ERROR : 0`, no presenter assertions,
+  no final open-frame contract failure, and no new `ft_drop_*` activity in the
+  stress window. This narrows the current open work further: the presenter
+  restart poison path is no longer an active bug, and the remaining standalone
+  gap is coverage closure plus wider-scope portability rather than a known
+  packet-shape corruption repro.
 
 Those bugs should be judged against this note, not against an informal "avoid
 overflow" goal. Overflow is allowed. Silent or malformed overflow is not.

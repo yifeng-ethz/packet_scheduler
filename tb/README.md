@@ -45,10 +45,9 @@ Signoff evidence in this tree is required to come from `DUT_IMPL=native_sv`.
 - The active generated standalone dashboard is the canonical
   `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256 DUT_IMPL=native_sv`
   rerun slice on QuestaOne 2026.
-- Fresh current-scope evidence currently exists for the anchor cases
-  `B001`, `E001`, `P001`, and `X001`. The remaining canonical catalog rows are
-  pending rerun in that exact scope and should render as pending evidence,
-  not as fresh failures.
+- That current-scope dashboard is now fully populated: `516/516` isolated
+  catalog cases are evidenced, `failed_cases=0`, `unimplemented_cases=0`, and
+  `22/22` maintained signoff runs are green in the generated report tree.
 - Historical 2-lane closure, bounded matrix extensions, and supplemental
   long-run evidence remain useful and are tracked in `doc/SIGNOFF.md`,
   `doc/CONFIG_SIGNOFF.md`, and `tb/BUG_HISTORY.md`, but they are no longer
@@ -70,6 +69,11 @@ Signoff evidence in this tree is required to come from `DUT_IMPL=native_sv`.
   current-scope evidence only. Out-of-scope historical artifacts are preserved
   on disk for reference but are not credited into the active canonical report
   slice.
+- The remaining standalone gap is coverage closure rather than testcase
+  presence. The current merged isolated totals are
+  `stmt=79.73`, `branch=76.31`, `fsm_state=93.65`, `fsm_trans=53.42`, and
+  `toggle=33.95`, so signoff stays partial until those targets are either
+  closed or explicitly dispositioned.
 - The live `opq_basic_smoke_test` now passes on the active monolithic harness with scoreboard hit-integrity
   checks enabled: same hits in, same hits out, and the first merged subheader lands in the correct time slot.
 - The remaining signoff work is closure, not basic bring-up: lint disposition, coverage closure, more buckets from

@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_basic_presenter
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.63
+// Version : 26.3.64
 // Date    : 20260422
-// Change  : Register overwrite-scan metadata before issuing the next meta-table read so the presenter overlap compare no longer drives the RAM address cone in one cycle
+// Change  : Keep restart/head handoff packet-safe under backpressure by discarding self-caught overlap requests and preserving synchronous page-RAM startup data
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_basic_presenter #(
@@ -859,6 +859,8 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
   logic [PAGE_RAM_DATA_WIDTH-1:0] pipe_input_data;
   logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_rd_data_skid;
   logic page_ram_skid_valid;
+  logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_lookahead_data;
+  logic page_ram_lookahead_valid;
   logic [FRAME_LEN_WIDTH-1:0] new_frame_length_full;
   page_ram_addr_t new_frame_length;
   logic new_frame_oversize;
@@ -1004,8 +1006,9 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
 
     startup_prefetch_ok = pkt_accept_started || aso_egress_ready;
     advance_output_pipe =
-      aso_egress_ready ||
-      (!output_data_valid[OUTPUT_VISIBLE_STAGE] && startup_prefetch_ok);
+      !page_ram_prime_pending &&
+      (aso_egress_ready ||
+       (!output_data_valid[OUTPUT_VISIBLE_STAGE] && startup_prefetch_ok));
     launch_word_cnt = pkt_rd_word_cnt;
     if (output_data_valid[OUTPUT_VISIBLE_STAGE] && aso_egress_ready) begin
       launch_word_cnt = pkt_rd_word_cnt + PAGE_RAM_ADDR_ONE_CONST;
@@ -1167,6 +1170,8 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
       page_ram_prime_pending <= 1'b0;
       page_ram_rd_data_skid <= '0;
       page_ram_skid_valid <= 1'b0;
+      page_ram_lookahead_data <= '0;
+      page_ram_lookahead_valid <= 1'b0;
     end else begin
       if (meta_read_pending) begin
         if (!meta_read_armed) begin
@@ -1266,6 +1271,7 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
           pkt_accept_started <= 1'b0;
           page_ram_prime_pending <= 1'b0;
           page_ram_skid_valid <= 1'b0;
+          page_ram_lookahead_valid <= 1'b0;
           for (pipe_data_idx = 0; pipe_data_idx < EGRESS_DELAY; pipe_data_idx = pipe_data_idx + 1) begin
             output_data_pipe[pipe_data_idx] <= '0;
           end
@@ -1307,6 +1313,7 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
           pkt_accept_started <= 1'b0;
           page_ram_prime_pending <= 1'b0;
           page_ram_skid_valid <= 1'b0;
+          page_ram_lookahead_valid <= 1'b0;
           for (pipe_data_idx = 0; pipe_data_idx < EGRESS_DELAY; pipe_data_idx = pipe_data_idx + 1) begin
             output_data_pipe[pipe_data_idx] <= '0;
           end
@@ -1424,6 +1431,7 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
           pkt_accept_started <= 1'b0;
           page_ram_prime_pending <= 1'b0;
           page_ram_skid_valid <= 1'b0;
+          page_ram_lookahead_valid <= 1'b0;
           for (pipe_data_idx = 0; pipe_data_idx < EGRESS_DELAY; pipe_data_idx = pipe_data_idx + 1) begin
             output_data_pipe[pipe_data_idx] <= '0;
           end
@@ -1481,21 +1489,28 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
           pending_overlap_check_valid &&
           head_meta_valid &&
           !overwrite_head_accepted_or_accepting) begin
-        launch_head_overlaps_v = circular_range_overlaps(
-          pending_overlap_addr_q,
-          pending_overlap_len_q,
-          head_addr_q,
-          head_len_q
-        );
         pending_overlap_check_valid <= 1'b0;
-        if (launch_head_overlaps_v) begin
-          remaining_words_v = pending_overlap_len_q;
-          pending_overlap_launch_valid <= 1'b1;
-          pending_overlap_launch_addr_q <= pending_overlap_addr_q;
-          pending_overlap_launch_len_q <= pending_overlap_len_q;
-          pending_overlap_launch_stop_ptr_q <= pending_overlap_stop_ptr_q;
-          pending_overlap_launch_remaining_words_q <= remaining_words_v;
-          block_present_start_v = 1'b1;
+        // A queued overlap request only needs to scan metadata older than the
+        // frame that created it. Once that request's stop pointer has become
+        // the current head, the request has caught up to itself and must be
+        // discarded instead of launching a self-overlap scan that walks one
+        // slot past the valid queue.
+        if (pending_overlap_stop_ptr_q != meta_rptr) begin
+          launch_head_overlaps_v = circular_range_overlaps(
+            pending_overlap_addr_q,
+            pending_overlap_len_q,
+            head_addr_q,
+            head_len_q
+          );
+          if (launch_head_overlaps_v) begin
+            remaining_words_v = pending_overlap_len_q;
+            pending_overlap_launch_valid <= 1'b1;
+            pending_overlap_launch_addr_q <= pending_overlap_addr_q;
+            pending_overlap_launch_len_q <= pending_overlap_len_q;
+            pending_overlap_launch_stop_ptr_q <= pending_overlap_stop_ptr_q;
+            pending_overlap_launch_remaining_words_q <= remaining_words_v;
+            block_present_start_v = 1'b1;
+          end
         end
       end
 
@@ -1553,13 +1568,22 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
             output_data_valid <= '0;
             retire_pending <= 1'b0;
             pkt_accept_started <= 1'b0;
-            // The page RAM read data is registered. Always repoint q to the new
-            // packet head, then burn one quiet cycle so the first visible launch
-            // comes from the head word and not from a stale resident beat or a
-            // misaligned prefetched value.
-            page_ram_rptr <= head_addr_q;
-            page_ram_prime_pending <= 1'b1;
-            page_ram_skid_valid <= 1'b0;
+            // The page RAM read data is registered. In the common case we repoint
+            // q to the new packet head and burn one quiet prime cycle. If the
+            // previous packet exposed the next packet preamble on q while its own
+            // tail was draining, preserve that lookahead word and seed startup
+            // from a local hold register instead of letting q roll past it.
+            if (page_ram_lookahead_valid) begin
+              page_ram_rptr <= head_addr_q + PAGE_RAM_ADDR_ONE_CONST;
+              page_ram_prime_pending <= 1'b0;
+              page_ram_rd_data_skid <= page_ram_lookahead_data;
+              page_ram_skid_valid <= 1'b1;
+              page_ram_lookahead_valid <= 1'b0;
+            end else begin
+              page_ram_rptr <= head_addr_q;
+              page_ram_prime_pending <= 1'b1;
+              page_ram_skid_valid <= 1'b0;
+            end
             for (pipe_data_idx = 0; pipe_data_idx < EGRESS_DELAY; pipe_data_idx = pipe_data_idx + 1) begin
               output_data_pipe[pipe_data_idx] <= '0;
             end
@@ -1573,6 +1597,15 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
             // following cycle can consume that head and request the next word.
             page_ram_rptr <= page_ram_rptr + PAGE_RAM_ADDR_ONE_CONST;
             page_ram_prime_pending <= 1'b0;
+          end
+
+          if (!page_ram_lookahead_valid &&
+              (pkt_fetch_word_cnt == packet_length) &&
+              (meta_wptr != (meta_rptr + META_PTR_ONE_CONST)) &&
+              (page_ram_rd_data_i[35:32] == 4'b0001) &&
+              (page_ram_rd_data_i[7:0] == K285)) begin
+            page_ram_lookahead_data <= page_ram_rd_data_i;
+            page_ram_lookahead_valid <= 1'b1;
           end
 
           if (!advance_output_pipe &&
@@ -1617,6 +1650,7 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
             pkt_accept_started <= 1'b0;
             page_ram_prime_pending <= 1'b0;
             page_ram_skid_valid <= 1'b0;
+            page_ram_lookahead_valid <= 1'b0;
             for (pipe_data_idx = 0; pipe_data_idx < EGRESS_DELAY; pipe_data_idx = pipe_data_idx + 1) begin
               output_data_pipe[pipe_data_idx] <= '0;
             end
@@ -1688,6 +1722,7 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
           presenter_state <= FTABLE_PRESENTER_IDLE;
           pkt_accept_started <= 1'b0;
           page_ram_prime_pending <= 1'b0;
+          page_ram_lookahead_valid <= 1'b0;
         end
 
         default: begin
@@ -1730,6 +1765,18 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
   endproperty
   ap_startup_backpressure_captures_head: assert property (p_startup_backpressure_captures_head)
     else $error("OPQ_NATIVE_BASIC_PRESENTER lost the primed head word before the first launch under startup backpressure");
+
+  property p_tail_lookahead_preamble_is_buffered;
+    @(posedge d_clk) disable iff (d_reset)
+      (presenter_state == FTABLE_PRESENTER_PRESENTING) &&
+      (pkt_fetch_word_cnt == packet_length) &&
+      (meta_wptr != (meta_rptr + META_PTR_ONE_CONST)) &&
+      (page_ram_rd_data_i[35:32] == 4'b0001) &&
+      (page_ram_rd_data_i[7:0] == K285)
+      |=> page_ram_lookahead_valid;
+  endproperty
+  ap_tail_lookahead_preamble_is_buffered: assert property (p_tail_lookahead_preamble_is_buffered)
+    else $error("OPQ_NATIVE_BASIC_PRESENTER let a queued next-packet preamble roll off page_ram.q without buffering it for restart");
 
   property p_stalled_resident_word_is_preserved;
     @(posedge d_clk) disable iff (d_reset)
@@ -1780,6 +1827,22 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
   ap_scan_eval_stop_keeps_head_registered: assert property (p_scan_eval_stop_keeps_head_registered)
     else $error("OPQ_NATIVE_BASIC_PRESENTER scan-eval stop path did not keep the registered head metadata");
 
+  property p_self_overlap_request_is_discarded;
+    @(posedge d_clk) disable iff (d_reset)
+      pending_overlap_check_valid &&
+      head_meta_valid &&
+      !overwrite_head_accepted_or_accepting &&
+      (pending_overlap_stop_ptr_q == meta_rptr)
+      |=> !pending_overlap_launch_valid &&
+          !overwrite_scan_active &&
+          !overwrite_scan_process_head &&
+          head_meta_valid &&
+          (head_addr_q == $past(head_addr_q)) &&
+          (head_len_q == $past(head_len_q));
+  endproperty
+  ap_self_overlap_request_is_discarded: assert property (p_self_overlap_request_is_discarded)
+    else $error("OPQ_NATIVE_BASIC_PRESENTER launched or mutated head state for an overlap request that had already caught up to its own head slot");
+
 `ifndef SYNTHESIS
   cover property (@(posedge d_clk) disable iff (d_reset)
     presenter_state == FTABLE_PRESENTER_PRESENTING
@@ -1803,12 +1866,34 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
 
   cover property (@(posedge d_clk) disable iff (d_reset)
     (presenter_state == FTABLE_PRESENTER_PRESENTING) &&
+    (pkt_fetch_word_cnt == packet_length) &&
+    (meta_wptr != (meta_rptr + META_PTR_ONE_CONST)) &&
+    (page_ram_rd_data_i[35:32] == 4'b0001) &&
+    (page_ram_rd_data_i[7:0] == K285)
+    ##1 page_ram_lookahead_valid
+    ##[1:64] presenter_state == FTABLE_PRESENTER_WAIT_FOR_COMPLETE
+    ##[1:8] presenter_state == FTABLE_PRESENTER_PRESENTING && page_ram_skid_valid
+    ##[1:EGRESS_DELAY+4] aso_egress_valid && aso_egress_startofpacket && aso_egress_ready
+  );
+
+  cover property (@(posedge d_clk) disable iff (d_reset)
+    (presenter_state == FTABLE_PRESENTER_PRESENTING) &&
     !advance_output_pipe &&
     !page_ram_prime_pending &&
     !page_ram_skid_valid &&
     (pkt_fetch_word_cnt != packet_length)
     ##1 page_ram_skid_valid
     ##[1:EGRESS_DELAY+4] aso_egress_valid && aso_egress_ready
+  );
+
+  cover property (@(posedge d_clk) disable iff (d_reset)
+    pending_overlap_check_valid &&
+    head_meta_valid &&
+    !overwrite_head_accepted_or_accepting &&
+    (pending_overlap_stop_ptr_q == meta_rptr)
+    ##1 !pending_overlap_launch_valid &&
+        !overwrite_scan_active &&
+        !overwrite_scan_process_head
   );
 
   cover property (@(posedge d_clk) disable iff (d_reset)

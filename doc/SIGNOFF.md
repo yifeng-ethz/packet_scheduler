@@ -1,7 +1,7 @@
 # ⚠️ Signoff — packet_scheduler ordered_priority_queue
 
 **DUT:** `ordered_priority_queue` &nbsp; **Date:** `2026-04-22` &nbsp;
-**Release under check:** `26.3.59.0422` &nbsp; **Git base:** `local working tree`
+**Release under check:** `26.3.64.0422` &nbsp; **Git base:** `local working tree`
 
 This page is the master signoff dashboard. Detailed standalone synthesis
 evidence lives in [`../syn/SYN_REPORT.md`](../syn/SYN_REPORT.md); detailed DV
@@ -18,10 +18,10 @@ configuration legality and evidence matrix lives in
 | status | field | value |
 |:---:|---|---|
 | ⚠️ | overall_signoff | `partial` |
-| ⚠️ | config_matrix | `representative 2-lane and 4-lane measured; active generated dashboard is the canonical 4-lane/128 rerun slice` |
+| ⚠️ | config_matrix | `representative 2-lane and 4-lane measured; active generated dashboard is the canonical 4-lane/128 rerun slice and full package-space closure remains a later phase` |
 | ✅ | standalone_syn | `2-lane and 4-lane A10 standalone Quartus signoff both close at 275 MHz on 10AX115N2F45E1SG` |
-| ⚠️ | isolated_dv_closure | `4/516` canonical isolated cases freshly evidenced in the active `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256 DUT_IMPL=native_sv` slice; remaining cases are pending rerun in that scope |
-| ⚠️ | cross_bucket_signoff | `historical native-SV continuous-frame and long-soak evidence exists, but the active generated dashboard intentionally does not credit stale out-of-scope artifacts into the current 4-lane isolated slice` |
+| ⚠️ | isolated_dv_closure | `516/516` canonical isolated cases are evidenced in the active `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256 DUT_IMPL=native_sv` slice; the remaining standalone gap is structural coverage target closure, not missing testcase evidence |
+| ✅ | cross_bucket_signoff | `22/22` current signoff runs are green, including `bucket_frame`, `all_buckets_frame`, and the maintained supplemental cross/soak screens for the same native-SV scope |
 | ✅ | tb_int_longrun_matrix | `128/128` integrated matrix cases green |
 | ✅ | resource_model | `3,235 ALMs / 129 M20Ks at 2-lane and 5,297 ALMs / 141 M20Ks at 4-lane on the active standalone fits` |
 
@@ -29,9 +29,9 @@ configuration legality and evidence matrix lives in
 
 | status | area | result | source |
 |:---:|---|---|---|
-| ⚠️ | isolated DV closure | active generated standalone report is the canonical `4-lane/128/256/native_sv` rerun slice with fresh evidence for `B001`, `E001`, `P001`, and `X001`; the remaining catalog rows are pending rerun and should not be interpreted as fresh fails | [`../tb/DV_REPORT.md`](../tb/DV_REPORT.md) |
+| ⚠️ | isolated DV closure | active generated standalone report is the canonical `4-lane/128/256/native_sv` rerun slice and now carries `516/516` isolated catalog rows with `failed_cases=0`; the open standalone DV item is coverage-target closure (`stmt/branch/fsm_state/fsm_trans/toggle`) rather than missing logs or UCDBs | [`../tb/DV_REPORT.md`](../tb/DV_REPORT.md) |
 | ⚠️ | bounded parameter extension evidence | historical 2-lane closure, bounded `N_SHD=64`, and bounded 4-lane points remain documented planning evidence, but they are not mixed into the active generated standalone dashboard unless rerun in the current signoff scope | [`CONFIG_SIGNOFF.md`](CONFIG_SIGNOFF.md) |
-| ⚠️ | historical continuous-frame / soak evidence | native-SV continuous-frame runs, overflow shape screens, exact-window repros, and long mixed-soak evidence remain archived and useful, but they are tracked as supplemental evidence rather than as rows in the active canonical isolated matrix | [`../tb/BUG_HISTORY.md`](../tb/BUG_HISTORY.md), [`../tb/DV_REPORT_TODO.md`](../tb/DV_REPORT_TODO.md) |
+| ✅ | current continuous-frame / soak evidence | current-scope native-SV continuous-frame runs, overflow shape screens, exact-window repros, and the maintained mixed/DRR supplemental screens are linked directly from the active generated report; historical out-of-scope artifacts remain archived separately | [`../tb/DV_REPORT.md`](../tb/DV_REPORT.md), [`../tb/BUG_HISTORY.md`](../tb/BUG_HISTORY.md) |
 | ✅ | integrated long-run matrix | `128/128` long-run cases green; merged-frame contract evidence exists in `tb_int/` | [`../tb_int/DV_REPORT.md`](../tb_int/DV_REPORT.md) |
 | ✅ | bug ledgers | standalone and integrated bugs are both tracked in live ledgers | [`../tb/BUG_HISTORY.md`](../tb/BUG_HISTORY.md), [`../tb_int/BUG_HISTORY.md`](../tb_int/BUG_HISTORY.md) |
 
@@ -55,6 +55,7 @@ configuration legality and evidence matrix lives in
 | ✅ | Harness | FEB output can be captured into TLM transactions for OPQ and can still directly pin-drive OPQ for later `tb_int/` work |
 | ✅ | Native-SV no-restart signoff | default-build continuous-frame native-SV signoff is closed on the current baseline |
 | ✅ | Native-SV overflow accounting | focused half-saturation random-ready overflow screen now closes with `unexplained=0` after the late-frame ticket-tail accounting fix |
+| ✅ | Native-SV presenter restart safety | stale overlap replay can no longer self-scan the current head into a synthetic zero-length packet; the targeted flush-under-backpressure formal-like stress is green again on the 4-lane/128 preset |
 | ✅ | Native-SV mixed-soak long chain | exact-window reproducer, long random soak, and the full stretched seconds-soak rerun are all green after the allocator repairs and mixed ERROR pool restoration |
 | ✅ | Standalone synthesis | 2-lane stale compat collateral and the stale `d_clk` SDC target were repaired; both 2-lane and 4-lane standalone A10 signoff points are now green |
 
@@ -77,9 +78,14 @@ configuration legality and evidence matrix lives in
   standalone DV closure requirement.
 - The generated standalone `tb/` dashboard now follows a strict current-scope
   rule: only reruns matching the active `4-lane/128/256/native_sv` scope are
-  credited into `DV_REPORT.md` and `DV_COV.md`. Historical 2-lane evidence is
-  still valuable, but it stays historical until explicitly rerun in the active
-  scope.
+  credited into `DV_REPORT.md` and `DV_COV.md`. That current-scope matrix is
+  now fully populated at `516/516` isolated rows with `22/22` signoff runs
+  green. Historical 2-lane evidence is still valuable, but it stays historical
+  until explicitly rerun in the active scope.
+- The open standalone DV caveat is no longer missing-case evidence. It is the
+  generated coverage target gap visible in `DV_REPORT.md` / `DV_COV.md`
+  (`stmt=79.73`, `branch=76.31`, `fsm_state=93.65`, `fsm_trans=53.42`,
+  `toggle=33.95` on the current merged isolated baseline).
 - `legacy/` is now a compatibility symlink only. Canonical archived references
   should use `tb/legacy/`.
 - The active standalone 4-lane Arria 10 refresh resolves the RAM/CAM concern

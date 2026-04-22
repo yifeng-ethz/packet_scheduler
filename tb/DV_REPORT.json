@@ -608,6 +608,428 @@
           "X129"
         ]
       }
+    },
+    "bucket_frame": {
+      "run_id": "opq_bucket_frame_native_sv_test",
+      "bucket_order": [
+        "BASIC",
+        "EDGE",
+        "PROF",
+        "ERROR",
+        "CROSS"
+      ],
+      "named_steps": [
+        {
+          "bucket": "BASIC",
+          "legacy_step_name": "basic_seq",
+          "description": "basic smoke virtual sequence"
+        },
+        {
+          "bucket": "BASIC",
+          "legacy_step_name": "ts_seq",
+          "description": "timestamp boundary virtual sequence"
+        },
+        {
+          "bucket": "BASIC",
+          "legacy_step_name": "feb_seq",
+          "description": "FEB packet contract virtual sequence"
+        },
+        {
+          "bucket": "BASIC",
+          "legacy_step_name": "shd_seq",
+          "description": "subheader shape virtual sequence"
+        },
+        {
+          "bucket": "BASIC",
+          "legacy_step_name": "single_lane_seq",
+          "description": "single active lane 0 virtual sequence"
+        },
+        {
+          "bucket": "BASIC",
+          "legacy_step_name": "single_lane_lane1_seq",
+          "description": "single active lane 1 virtual sequence"
+        },
+        {
+          "bucket": "BASIC",
+          "legacy_step_name": "single_lane_dense_seq",
+          "description": "dense single-lane virtual sequence"
+        },
+        {
+          "bucket": "EDGE",
+          "legacy_step_name": "bp_seq_6_4_24",
+          "description": "periodic stall backpressure sweep high=6 low=4 repeat=24"
+        },
+        {
+          "bucket": "EDGE",
+          "legacy_step_name": "bp_seq_32_4_1",
+          "description": "always-ready backpressure sweep high=32 low=4 repeat=1"
+        },
+        {
+          "bucket": "EDGE",
+          "legacy_step_name": "bp_seq_32_8_12",
+          "description": "periodic stall backpressure sweep high=32 low=8 repeat=12"
+        },
+        {
+          "bucket": "EDGE",
+          "legacy_step_name": "bp_seq_4_12_24",
+          "description": "periodic stall backpressure sweep high=4 low=12 repeat=24"
+        },
+        {
+          "bucket": "EDGE",
+          "legacy_step_name": "bp_seq_1_2048_1",
+          "description": "always-stall backpressure sweep high=1 low=2048 repeat=1"
+        },
+        {
+          "bucket": "EDGE",
+          "legacy_step_name": "max_hits_seq",
+          "description": "max-hit virtual sequence"
+        },
+        {
+          "bucket": "EDGE",
+          "legacy_step_name": "bp_seq_1_1_24",
+          "description": "periodic stall backpressure sweep high=1 low=1 repeat=24"
+        },
+        {
+          "bucket": "EDGE",
+          "legacy_step_name": "bp_seq_1_1_96",
+          "description": "periodic stall backpressure sweep high=1 low=1 repeat=96"
+        },
+        {
+          "bucket": "EDGE",
+          "legacy_step_name": "max_hits_bp_seq",
+          "description": "max-hit virtual sequence under periodic stall"
+        },
+        {
+          "bucket": "PROF",
+          "legacy_step_name": "soak_seq",
+          "description": "baseline soak virtual sequence"
+        },
+        {
+          "bucket": "PROF",
+          "legacy_step_name": "stress_seq",
+          "description": "lane-skew stress virtual sequence"
+        },
+        {
+          "bucket": "PROF",
+          "legacy_step_name": "whole_frame_seq",
+          "description": "whole-frame skew virtual sequence"
+        },
+        {
+          "bucket": "PROF",
+          "legacy_step_name": "sparse_seq",
+          "description": "missing-empty-frame virtual sequence"
+        },
+        {
+          "bucket": "PROF",
+          "legacy_step_name": "long_soak_seq",
+          "description": "extended soak virtual sequence"
+        },
+        {
+          "bucket": "PROF",
+          "legacy_step_name": "heavy_skew_seq",
+          "description": "heavy lane-skew stress virtual sequence"
+        },
+        {
+          "bucket": "PROF",
+          "legacy_step_name": "deep_whole_frame_seq",
+          "description": "deep whole-frame skew virtual sequence"
+        },
+        {
+          "bucket": "PROF",
+          "legacy_step_name": "asym_sparse_seq",
+          "description": "asymmetric missing-empty-frame virtual sequence"
+        },
+        {
+          "bucket": "ERROR",
+          "legacy_step_name": "masked_drop_seq",
+          "description": "masked drop virtual sequence"
+        },
+        {
+          "bucket": "ERROR",
+          "legacy_step_name": "single_hit_masked_drop_seq",
+          "description": "single-hit masked drop virtual sequence"
+        },
+        {
+          "bucket": "ERROR",
+          "legacy_step_name": "burst_masked_drop_seq",
+          "description": "burst masked drop virtual sequence"
+        },
+        {
+          "bucket": "ERROR",
+          "legacy_step_name": "masked_recovery",
+          "description": "masked drop recovery virtual sequence"
+        },
+        {
+          "bucket": "ERROR",
+          "legacy_step_name": "hit_recovery_seq",
+          "description": "hit error recovery virtual sequence"
+        },
+        {
+          "bucket": "ERROR",
+          "legacy_step_name": "shd_recovery_seq",
+          "description": "subheader error recovery virtual sequence"
+        },
+        {
+          "bucket": "ERROR",
+          "legacy_step_name": "header_recovery_seq",
+          "description": "header error recovery virtual sequence"
+        },
+        {
+          "bucket": "ERROR",
+          "legacy_step_name": "header_word_recovery_seq",
+          "description": "header-word error recovery virtual sequence"
+        },
+        {
+          "bucket": "CROSS",
+          "legacy_step_name": "bp_credit_seq",
+          "description": "credit/backpressure cross sequence"
+        },
+        {
+          "bucket": "CROSS",
+          "legacy_step_name": "drr_allow_seq",
+          "description": "DRR allowance saturation sequence"
+        },
+        {
+          "bucket": "CROSS",
+          "legacy_step_name": "idle_lane_seq",
+          "description": "idle-lane DRR sequence"
+        },
+        {
+          "bucket": "CROSS",
+          "legacy_step_name": "zero_allow_seq",
+          "description": "zero-allowance DRR sequence"
+        },
+        {
+          "bucket": "CROSS",
+          "legacy_step_name": "drr_short_seq",
+          "description": "short-allowance DRR saturation sequence"
+        },
+        {
+          "bucket": "CROSS",
+          "legacy_step_name": "idle_lane_bp_case_seq",
+          "description": "idle-lane backpressure cross case"
+        }
+      ],
+      "limitations": [
+        "This native-SV frame baseline runs the promoted internal UVM sequence matrix from `opq_frame_signoff_tests.sv`, not the full canonical isolated case catalog.",
+        "The isolated B/E/P/X case ledger remains the authoritative per-case closure view; this run is continuous-frame carry-over evidence."
+      ]
+    },
+    "all_buckets_frame": {
+      "run_id": "opq_all_buckets_frame_native_sv_test",
+      "bucket_order": [
+        "BASIC",
+        "EDGE",
+        "PROF",
+        "ERROR",
+        "CROSS"
+      ],
+      "named_steps": [
+        {
+          "bucket": "BASIC",
+          "legacy_step_name": "basic_seq",
+          "description": "basic smoke virtual sequence"
+        },
+        {
+          "bucket": "BASIC",
+          "legacy_step_name": "ts_seq",
+          "description": "timestamp boundary virtual sequence"
+        },
+        {
+          "bucket": "BASIC",
+          "legacy_step_name": "feb_seq",
+          "description": "FEB packet contract virtual sequence"
+        },
+        {
+          "bucket": "BASIC",
+          "legacy_step_name": "shd_seq",
+          "description": "subheader shape virtual sequence"
+        },
+        {
+          "bucket": "BASIC",
+          "legacy_step_name": "single_lane_seq",
+          "description": "single active lane 0 virtual sequence"
+        },
+        {
+          "bucket": "BASIC",
+          "legacy_step_name": "single_lane_lane1_seq",
+          "description": "single active lane 1 virtual sequence"
+        },
+        {
+          "bucket": "BASIC",
+          "legacy_step_name": "single_lane_dense_seq",
+          "description": "dense single-lane virtual sequence"
+        },
+        {
+          "bucket": "EDGE",
+          "legacy_step_name": "bp_seq_6_4_24",
+          "description": "periodic stall backpressure sweep high=6 low=4 repeat=24"
+        },
+        {
+          "bucket": "EDGE",
+          "legacy_step_name": "bp_seq_32_4_1",
+          "description": "always-ready backpressure sweep high=32 low=4 repeat=1"
+        },
+        {
+          "bucket": "EDGE",
+          "legacy_step_name": "bp_seq_32_8_12",
+          "description": "periodic stall backpressure sweep high=32 low=8 repeat=12"
+        },
+        {
+          "bucket": "EDGE",
+          "legacy_step_name": "bp_seq_4_12_24",
+          "description": "periodic stall backpressure sweep high=4 low=12 repeat=24"
+        },
+        {
+          "bucket": "EDGE",
+          "legacy_step_name": "bp_seq_1_2048_1",
+          "description": "always-stall backpressure sweep high=1 low=2048 repeat=1"
+        },
+        {
+          "bucket": "EDGE",
+          "legacy_step_name": "max_hits_seq",
+          "description": "max-hit virtual sequence"
+        },
+        {
+          "bucket": "EDGE",
+          "legacy_step_name": "bp_seq_1_1_24",
+          "description": "periodic stall backpressure sweep high=1 low=1 repeat=24"
+        },
+        {
+          "bucket": "EDGE",
+          "legacy_step_name": "bp_seq_1_1_96",
+          "description": "periodic stall backpressure sweep high=1 low=1 repeat=96"
+        },
+        {
+          "bucket": "EDGE",
+          "legacy_step_name": "max_hits_bp_seq",
+          "description": "max-hit virtual sequence under periodic stall"
+        },
+        {
+          "bucket": "PROF",
+          "legacy_step_name": "soak_seq",
+          "description": "baseline soak virtual sequence"
+        },
+        {
+          "bucket": "PROF",
+          "legacy_step_name": "stress_seq",
+          "description": "lane-skew stress virtual sequence"
+        },
+        {
+          "bucket": "PROF",
+          "legacy_step_name": "whole_frame_seq",
+          "description": "whole-frame skew virtual sequence"
+        },
+        {
+          "bucket": "PROF",
+          "legacy_step_name": "sparse_seq",
+          "description": "missing-empty-frame virtual sequence"
+        },
+        {
+          "bucket": "PROF",
+          "legacy_step_name": "long_soak_seq",
+          "description": "extended soak virtual sequence"
+        },
+        {
+          "bucket": "PROF",
+          "legacy_step_name": "heavy_skew_seq",
+          "description": "heavy lane-skew stress virtual sequence"
+        },
+        {
+          "bucket": "PROF",
+          "legacy_step_name": "deep_whole_frame_seq",
+          "description": "deep whole-frame skew virtual sequence"
+        },
+        {
+          "bucket": "PROF",
+          "legacy_step_name": "asym_sparse_seq",
+          "description": "asymmetric missing-empty-frame virtual sequence"
+        },
+        {
+          "bucket": "ERROR",
+          "legacy_step_name": "masked_drop_seq",
+          "description": "masked drop virtual sequence"
+        },
+        {
+          "bucket": "ERROR",
+          "legacy_step_name": "single_hit_masked_drop_seq",
+          "description": "single-hit masked drop virtual sequence"
+        },
+        {
+          "bucket": "ERROR",
+          "legacy_step_name": "burst_masked_drop_seq",
+          "description": "burst masked drop virtual sequence"
+        },
+        {
+          "bucket": "ERROR",
+          "legacy_step_name": "masked_recovery",
+          "description": "masked drop recovery virtual sequence"
+        },
+        {
+          "bucket": "ERROR",
+          "legacy_step_name": "hit_recovery_seq",
+          "description": "hit error recovery virtual sequence"
+        },
+        {
+          "bucket": "ERROR",
+          "legacy_step_name": "shd_recovery_seq",
+          "description": "subheader error recovery virtual sequence"
+        },
+        {
+          "bucket": "ERROR",
+          "legacy_step_name": "header_recovery_seq",
+          "description": "header error recovery virtual sequence"
+        },
+        {
+          "bucket": "ERROR",
+          "legacy_step_name": "header_word_recovery_seq",
+          "description": "header-word error recovery virtual sequence"
+        },
+        {
+          "bucket": "CROSS",
+          "legacy_step_name": "bp_credit_seq",
+          "description": "credit/backpressure cross sequence"
+        },
+        {
+          "bucket": "CROSS",
+          "legacy_step_name": "drr_allow_seq",
+          "description": "DRR allowance saturation sequence"
+        },
+        {
+          "bucket": "CROSS",
+          "legacy_step_name": "idle_lane_seq",
+          "description": "idle-lane DRR sequence"
+        },
+        {
+          "bucket": "CROSS",
+          "legacy_step_name": "zero_allow_seq",
+          "description": "zero-allowance DRR sequence"
+        },
+        {
+          "bucket": "CROSS",
+          "legacy_step_name": "drr_short_seq",
+          "description": "short-allowance DRR saturation sequence"
+        },
+        {
+          "bucket": "CROSS",
+          "legacy_step_name": "idle_lane_bp_case_seq",
+          "description": "idle-lane backpressure cross case"
+        },
+        {
+          "bucket": "PROF",
+          "legacy_step_name": "extra_prof_seq",
+          "description": "whole-frame skew tail after the promoted matrix"
+        },
+        {
+          "bucket": "ERROR",
+          "legacy_step_name": "extra_err_seq",
+          "description": "subheader error recovery tail after the promoted matrix"
+        }
+      ],
+      "limitations": [
+        "This native-SV frame baseline runs the promoted internal UVM sequence matrix from `opq_frame_signoff_tests.sv`, not the full canonical isolated case catalog.",
+        "The isolated B/E/P/X case ledger remains the authoritative per-case closure view; this run is continuous-frame carry-over evidence."
+      ]
     }
   },
   "cases": [
@@ -207161,7 +207583,888 @@
       "planned": 516
     }
   },
-  "signoff_runs": [],
+  "signoff_runs": [
+    {
+      "run_id": "opq_bucket_frame_native_sv_test",
+      "kind": "bucket_frame",
+      "bucket": null,
+      "build_tag": "after",
+      "sequence_name": "run_promoted_default_build_matrix",
+      "case_count": 38,
+      "effort": "high",
+      "code_coverage": {
+        "branch": {
+          "pct": 79.25
+        },
+        "cond": {
+          "pct": 54.17
+        },
+        "expr": {
+          "pct": 70.9
+        },
+        "fsm_state": {
+          "pct": 100.0
+        },
+        "fsm_trans": {
+          "pct": 63.01
+        },
+        "stmt": {
+          "pct": 80.0
+        },
+        "toggle": {
+          "pct": 41.34
+        }
+      },
+      "cross_summary": {
+        "pct": 78.14,
+        "txns": 644,
+        "counter_checks_passed": 1,
+        "counter_checks_failed": 0,
+        "unexpected_outputs": 0,
+        "curve": ""
+      }
+    },
+    {
+      "run_id": "opq_all_buckets_frame_native_sv_test",
+      "kind": "all_buckets_frame",
+      "bucket": null,
+      "build_tag": "after",
+      "sequence_name": "run_promoted_default_build_matrix_plus_tail",
+      "case_count": 40,
+      "effort": "high",
+      "code_coverage": {
+        "branch": {
+          "pct": 79.25
+        },
+        "cond": {
+          "pct": 54.17
+        },
+        "expr": {
+          "pct": 70.9
+        },
+        "fsm_state": {
+          "pct": 100.0
+        },
+        "fsm_trans": {
+          "pct": 63.01
+        },
+        "stmt": {
+          "pct": 80.0
+        },
+        "toggle": {
+          "pct": 41.39
+        }
+      },
+      "cross_summary": {
+        "pct": 77.94,
+        "txns": 700,
+        "counter_checks_passed": 1,
+        "counter_checks_failed": 0,
+        "unexpected_outputs": 0,
+        "curve": ""
+      }
+    },
+    {
+      "run_id": "opq_cross_bp_credit_test",
+      "kind": "cross",
+      "bucket": null,
+      "build_tag": "after",
+      "sequence_name": "opq_cross_bp_credit_test",
+      "case_count": 1,
+      "effort": "practical",
+      "code_coverage": {
+        "branch": {
+          "pct": 55.28
+        },
+        "cond": {
+          "pct": 25.05
+        },
+        "expr": {
+          "pct": 37.04
+        },
+        "fsm_state": {
+          "pct": 69.84
+        },
+        "fsm_trans": {
+          "pct": 30.82
+        },
+        "stmt": {
+          "pct": 66.92
+        },
+        "toggle": {
+          "pct": 12.63
+        }
+      },
+      "cross_summary": {
+        "pct": 64.03,
+        "txns": 12,
+        "counter_checks_passed": 1,
+        "counter_checks_failed": 0,
+        "unexpected_outputs": 0,
+        "curve": ""
+      }
+    },
+    {
+      "run_id": "opq_cross_bp_predrop_boundary_test",
+      "kind": "cross",
+      "bucket": null,
+      "build_tag": "after",
+      "sequence_name": "opq_cross_bp_predrop_boundary_test",
+      "case_count": 1,
+      "effort": "practical",
+      "code_coverage": {
+        "branch": {
+          "pct": 58.95
+        },
+        "cond": {
+          "pct": 33.01
+        },
+        "expr": {
+          "pct": 44.44
+        },
+        "fsm_state": {
+          "pct": 71.43
+        },
+        "fsm_trans": {
+          "pct": 32.19
+        },
+        "stmt": {
+          "pct": 70.11
+        },
+        "toggle": {
+          "pct": 19.72
+        }
+      },
+      "cross_summary": {
+        "pct": 63.34,
+        "txns": 104,
+        "counter_checks_passed": 1,
+        "counter_checks_failed": 0,
+        "unexpected_outputs": 0,
+        "curve": ""
+      }
+    },
+    {
+      "run_id": "opq_cross_drr_allowance_test",
+      "kind": "cross",
+      "bucket": null,
+      "build_tag": "after",
+      "sequence_name": "opq_cross_drr_allowance_test",
+      "case_count": 1,
+      "effort": "practical",
+      "code_coverage": {
+        "branch": {
+          "pct": 64.83
+        },
+        "cond": {
+          "pct": 35.73
+        },
+        "expr": {
+          "pct": 48.15
+        },
+        "fsm_state": {
+          "pct": 87.3
+        },
+        "fsm_trans": {
+          "pct": 43.15
+        },
+        "stmt": {
+          "pct": 73.08
+        },
+        "toggle": {
+          "pct": 21.4
+        }
+      },
+      "cross_summary": {
+        "pct": 56.65,
+        "txns": 16,
+        "counter_checks_passed": 1,
+        "counter_checks_failed": 0,
+        "unexpected_outputs": 0,
+        "curve": ""
+      }
+    },
+    {
+      "run_id": "opq_cross_drr_bursty_frame2_boundary_test",
+      "kind": "cross",
+      "bucket": null,
+      "build_tag": "after",
+      "sequence_name": "opq_cross_drr_bursty_frame2_boundary_test",
+      "case_count": 1,
+      "effort": "practical",
+      "code_coverage": {
+        "branch": {
+          "pct": 60.97
+        },
+        "cond": {
+          "pct": 34.76
+        },
+        "expr": {
+          "pct": 43.92
+        },
+        "fsm_state": {
+          "pct": 71.43
+        },
+        "fsm_trans": {
+          "pct": 31.51
+        },
+        "stmt": {
+          "pct": 71.37
+        },
+        "toggle": {
+          "pct": 14.4
+        }
+      },
+      "cross_summary": {
+        "pct": 58.66,
+        "txns": 4,
+        "counter_checks_passed": 1,
+        "counter_checks_failed": 0,
+        "unexpected_outputs": 0,
+        "curve": ""
+      }
+    },
+    {
+      "run_id": "opq_cross_drr_bursty_frame3_repro_test",
+      "kind": "cross",
+      "bucket": null,
+      "build_tag": "after",
+      "sequence_name": "opq_cross_drr_bursty_frame3_repro_test",
+      "case_count": 1,
+      "effort": "practical",
+      "code_coverage": {
+        "branch": {
+          "pct": 61.16
+        },
+        "cond": {
+          "pct": 35.34
+        },
+        "expr": {
+          "pct": 43.92
+        },
+        "fsm_state": {
+          "pct": 71.43
+        },
+        "fsm_trans": {
+          "pct": 32.19
+        },
+        "stmt": {
+          "pct": 71.52
+        },
+        "toggle": {
+          "pct": 15.5
+        }
+      },
+      "cross_summary": {
+        "pct": 59.71,
+        "txns": 6,
+        "counter_checks_passed": 1,
+        "counter_checks_failed": 0,
+        "unexpected_outputs": 0,
+        "curve": ""
+      }
+    },
+    {
+      "run_id": "opq_cross_drr_bursty_large_repro_test",
+      "kind": "cross",
+      "bucket": null,
+      "build_tag": "after",
+      "sequence_name": "opq_cross_drr_bursty_large_repro_test",
+      "case_count": 1,
+      "effort": "practical",
+      "code_coverage": {
+        "branch": {
+          "pct": 60.79
+        },
+        "cond": {
+          "pct": 34.37
+        },
+        "expr": {
+          "pct": 42.33
+        },
+        "fsm_state": {
+          "pct": 71.43
+        },
+        "fsm_trans": {
+          "pct": 32.19
+        },
+        "stmt": {
+          "pct": 71.48
+        },
+        "toggle": {
+          "pct": 16.35
+        }
+      },
+      "cross_summary": {
+        "pct": 60.51,
+        "txns": 12,
+        "counter_checks_passed": 1,
+        "counter_checks_failed": 0,
+        "unexpected_outputs": 0,
+        "curve": ""
+      }
+    },
+    {
+      "run_id": "opq_cross_drr_bursty_random_test",
+      "kind": "cross",
+      "bucket": null,
+      "build_tag": "after",
+      "sequence_name": "opq_cross_drr_bursty_random_test",
+      "case_count": 1,
+      "effort": "high",
+      "code_coverage": {
+        "branch": {
+          "pct": 68.14
+        },
+        "cond": {
+          "pct": 41.55
+        },
+        "expr": {
+          "pct": 50.79
+        },
+        "fsm_state": {
+          "pct": 87.3
+        },
+        "fsm_trans": {
+          "pct": 43.15
+        },
+        "stmt": {
+          "pct": 76.35
+        },
+        "toggle": {
+          "pct": 25.68
+        }
+      },
+      "cross_summary": {
+        "pct": 60.58,
+        "txns": 24,
+        "counter_checks_passed": 1,
+        "counter_checks_failed": 0,
+        "unexpected_outputs": 0,
+        "curve": ""
+      }
+    },
+    {
+      "run_id": "opq_cross_drr_bursty_repro_test",
+      "kind": "cross",
+      "bucket": null,
+      "build_tag": "after",
+      "sequence_name": "opq_cross_drr_bursty_repro_test",
+      "case_count": 1,
+      "effort": "practical",
+      "code_coverage": {
+        "branch": {
+          "pct": 61.16
+        },
+        "cond": {
+          "pct": 35.34
+        },
+        "expr": {
+          "pct": 43.92
+        },
+        "fsm_state": {
+          "pct": 71.43
+        },
+        "fsm_trans": {
+          "pct": 32.19
+        },
+        "stmt": {
+          "pct": 71.52
+        },
+        "toggle": {
+          "pct": 16.92
+        }
+      },
+      "cross_summary": {
+        "pct": 59.71,
+        "txns": 16,
+        "counter_checks_passed": 1,
+        "counter_checks_failed": 0,
+        "unexpected_outputs": 0,
+        "curve": ""
+      }
+    },
+    {
+      "run_id": "opq_cross_drr_idle_lane_test",
+      "kind": "cross",
+      "bucket": null,
+      "build_tag": "after",
+      "sequence_name": "opq_cross_drr_idle_lane_test",
+      "case_count": 1,
+      "effort": "practical",
+      "code_coverage": {
+        "branch": {
+          "pct": 58.31
+        },
+        "cond": {
+          "pct": 27.57
+        },
+        "expr": {
+          "pct": 40.74
+        },
+        "fsm_state": {
+          "pct": 80.95
+        },
+        "fsm_trans": {
+          "pct": 37.67
+        },
+        "stmt": {
+          "pct": 69.54
+        },
+        "toggle": {
+          "pct": 14.41
+        }
+      },
+      "cross_summary": {
+        "pct": 54.92,
+        "txns": 16,
+        "counter_checks_passed": 1,
+        "counter_checks_failed": 0,
+        "unexpected_outputs": 0,
+        "curve": ""
+      }
+    },
+    {
+      "run_id": "opq_cross_drr_short_allowance_test",
+      "kind": "cross",
+      "bucket": null,
+      "build_tag": "after",
+      "sequence_name": "opq_cross_drr_short_allowance_test",
+      "case_count": 1,
+      "effort": "practical",
+      "code_coverage": {
+        "branch": {
+          "pct": 64.74
+        },
+        "cond": {
+          "pct": 35.73
+        },
+        "expr": {
+          "pct": 48.15
+        },
+        "fsm_state": {
+          "pct": 87.3
+        },
+        "fsm_trans": {
+          "pct": 43.15
+        },
+        "stmt": {
+          "pct": 73.08
+        },
+        "toggle": {
+          "pct": 21.49
+        }
+      },
+      "cross_summary": {
+        "pct": 55.2,
+        "txns": 12,
+        "counter_checks_passed": 1,
+        "counter_checks_failed": 0,
+        "unexpected_outputs": 0,
+        "curve": ""
+      }
+    },
+    {
+      "run_id": "opq_cross_drr_then_idle_lane_bp_repro_test",
+      "kind": "cross",
+      "bucket": null,
+      "build_tag": "after",
+      "sequence_name": "opq_cross_drr_then_idle_lane_bp_repro_test",
+      "case_count": 1,
+      "effort": "practical",
+      "code_coverage": {
+        "branch": {
+          "pct": 62.44
+        },
+        "cond": {
+          "pct": 32.82
+        },
+        "expr": {
+          "pct": 46.03
+        },
+        "fsm_state": {
+          "pct": 84.13
+        },
+        "fsm_trans": {
+          "pct": 40.41
+        },
+        "stmt": {
+          "pct": 71.56
+        },
+        "toggle": {
+          "pct": 21.47
+        }
+      },
+      "cross_summary": {
+        "pct": 61.22,
+        "txns": 34,
+        "counter_checks_passed": 1,
+        "counter_checks_failed": 0,
+        "unexpected_outputs": 0,
+        "curve": ""
+      }
+    },
+    {
+      "run_id": "opq_cross_drr_zero_allowance_test",
+      "kind": "cross",
+      "bucket": null,
+      "build_tag": "after",
+      "sequence_name": "opq_cross_drr_zero_allowance_test",
+      "case_count": 1,
+      "effort": "practical",
+      "code_coverage": {
+        "branch": {
+          "pct": 58.77
+        },
+        "cond": {
+          "pct": 27.77
+        },
+        "expr": {
+          "pct": 40.74
+        },
+        "fsm_state": {
+          "pct": 80.95
+        },
+        "fsm_trans": {
+          "pct": 37.67
+        },
+        "stmt": {
+          "pct": 69.77
+        },
+        "toggle": {
+          "pct": 14.56
+        }
+      },
+      "cross_summary": {
+        "pct": 55.01,
+        "txns": 16,
+        "counter_checks_passed": 1,
+        "counter_checks_failed": 0,
+        "unexpected_outputs": 0,
+        "curve": ""
+      }
+    },
+    {
+      "run_id": "opq_cross_hit3_exact_183_190_repro_test",
+      "kind": "cross",
+      "bucket": null,
+      "build_tag": "after",
+      "sequence_name": "opq_cross_hit3_exact_183_190_repro_test",
+      "case_count": 1,
+      "effort": "practical",
+      "code_coverage": {
+        "branch": {
+          "pct": 66.76
+        },
+        "cond": {
+          "pct": 37.09
+        },
+        "expr": {
+          "pct": 48.68
+        },
+        "fsm_state": {
+          "pct": 87.3
+        },
+        "fsm_trans": {
+          "pct": 43.84
+        },
+        "stmt": {
+          "pct": 74.07
+        },
+        "toggle": {
+          "pct": 31.73
+        }
+      },
+      "cross_summary": {
+        "pct": 67.11,
+        "txns": 150,
+        "counter_checks_passed": 1,
+        "counter_checks_failed": 0,
+        "unexpected_outputs": 0,
+        "curve": ""
+      }
+    },
+    {
+      "run_id": "opq_cross_hit3_lead_in_repro_test",
+      "kind": "cross",
+      "bucket": null,
+      "build_tag": "after",
+      "sequence_name": "opq_cross_hit3_lead_in_repro_test",
+      "case_count": 1,
+      "effort": "practical",
+      "code_coverage": {
+        "branch": {
+          "pct": 66.85
+        },
+        "cond": {
+          "pct": 37.48
+        },
+        "expr": {
+          "pct": 48.15
+        },
+        "fsm_state": {
+          "pct": 87.3
+        },
+        "fsm_trans": {
+          "pct": 43.84
+        },
+        "stmt": {
+          "pct": 74.11
+        },
+        "toggle": {
+          "pct": 30.76
+        }
+      },
+      "cross_summary": {
+        "pct": 66.44,
+        "txns": 138,
+        "counter_checks_passed": 1,
+        "counter_checks_failed": 0,
+        "unexpected_outputs": 0,
+        "curve": ""
+      }
+    },
+    {
+      "run_id": "opq_cross_idle_lane_backpressure_test",
+      "kind": "cross",
+      "bucket": null,
+      "build_tag": "after",
+      "sequence_name": "opq_cross_idle_lane_backpressure_test",
+      "case_count": 1,
+      "effort": "practical",
+      "code_coverage": {
+        "branch": {
+          "pct": 59.45
+        },
+        "cond": {
+          "pct": 28.79
+        },
+        "expr": {
+          "pct": 43.68
+        },
+        "fsm_state": {
+          "pct": 82.54
+        },
+        "fsm_trans": {
+          "pct": 39.04
+        },
+        "stmt": {
+          "pct": 69.93
+        },
+        "toggle": {
+          "pct": 15.9
+        }
+      },
+      "cross_summary": {
+        "pct": 59.91,
+        "txns": 24,
+        "counter_checks_passed": 1,
+        "counter_checks_failed": 0,
+        "unexpected_outputs": 0,
+        "curve": ""
+      }
+    },
+    {
+      "run_id": "opq_cross_masked_drop_exact_102_117_repro_test",
+      "kind": "cross",
+      "bucket": null,
+      "build_tag": "after",
+      "sequence_name": "opq_cross_masked_drop_exact_102_117_repro_test",
+      "case_count": 1,
+      "effort": "practical",
+      "code_coverage": {
+        "branch": {
+          "pct": 68.69
+        },
+        "cond": {
+          "pct": 42.33
+        },
+        "expr": {
+          "pct": 56.08
+        },
+        "fsm_state": {
+          "pct": 87.3
+        },
+        "fsm_trans": {
+          "pct": 43.84
+        },
+        "stmt": {
+          "pct": 75.44
+        },
+        "toggle": {
+          "pct": 31.91
+        }
+      },
+      "cross_summary": {
+        "pct": 70.56,
+        "txns": 214,
+        "counter_checks_passed": 1,
+        "counter_checks_failed": 0,
+        "unexpected_outputs": 0,
+        "curve": ""
+      }
+    },
+    {
+      "run_id": "opq_cross_mixed_bucket_random_soak_test",
+      "kind": "cross",
+      "bucket": null,
+      "build_tag": "after",
+      "sequence_name": "opq_cross_mixed_bucket_random_soak_test",
+      "case_count": 1,
+      "effort": "high",
+      "code_coverage": {
+        "branch": {
+          "pct": 73.0
+        },
+        "cond": {
+          "pct": 48.16
+        },
+        "expr": {
+          "pct": 67.2
+        },
+        "fsm_state": {
+          "pct": 90.48
+        },
+        "fsm_trans": {
+          "pct": 46.58
+        },
+        "stmt": {
+          "pct": 77.64
+        },
+        "toggle": {
+          "pct": 40.22
+        }
+      },
+      "cross_summary": {
+        "pct": 72.41,
+        "txns": 2026,
+        "counter_checks_passed": 1,
+        "counter_checks_failed": 0,
+        "unexpected_outputs": 0,
+        "curve": ""
+      }
+    },
+    {
+      "run_id": "opq_cross_random_ready_overflow_step2_boundary_test",
+      "kind": "cross",
+      "bucket": null,
+      "build_tag": "after",
+      "sequence_name": "opq_cross_random_ready_overflow_step2_boundary_test",
+      "case_count": 1,
+      "effort": "high",
+      "code_coverage": {
+        "branch": {
+          "pct": 72.54
+        },
+        "cond": {
+          "pct": 47.77
+        },
+        "expr": {
+          "pct": 66.67
+        },
+        "fsm_state": {
+          "pct": 93.65
+        },
+        "fsm_trans": {
+          "pct": 51.37
+        },
+        "stmt": {
+          "pct": 79.73
+        },
+        "toggle": {
+          "pct": 35.69
+        }
+      },
+      "cross_summary": {
+        "pct": 65.59,
+        "txns": 20,
+        "counter_checks_passed": 1,
+        "counter_checks_failed": 0,
+        "unexpected_outputs": 0,
+        "curve": ""
+      }
+    },
+    {
+      "run_id": "opq_cross_single_hit_masked_then_sparse_repro_test",
+      "kind": "cross",
+      "bucket": null,
+      "build_tag": "after",
+      "sequence_name": "opq_cross_single_hit_masked_then_sparse_repro_test",
+      "case_count": 1,
+      "effort": "practical",
+      "code_coverage": {
+        "branch": {
+          "pct": 66.21
+        },
+        "cond": {
+          "pct": 39.22
+        },
+        "expr": {
+          "pct": 54.5
+        },
+        "fsm_state": {
+          "pct": 84.13
+        },
+        "fsm_trans": {
+          "pct": 41.1
+        },
+        "stmt": {
+          "pct": 74.18
+        },
+        "toggle": {
+          "pct": 21.46
+        }
+      },
+      "cross_summary": {
+        "pct": 65.28,
+        "txns": 24,
+        "counter_checks_passed": 1,
+        "counter_checks_failed": 0,
+        "unexpected_outputs": 0,
+        "curve": ""
+      }
+    },
+    {
+      "run_id": "opq_cross_sparse_single_lane_drr_credit_restore_repro_test",
+      "kind": "cross",
+      "bucket": null,
+      "build_tag": "after",
+      "sequence_name": "opq_cross_sparse_single_lane_drr_credit_restore_repro_test",
+      "case_count": 1,
+      "effort": "practical",
+      "code_coverage": {
+        "branch": {
+          "pct": 64.92
+        },
+        "cond": {
+          "pct": 35.53
+        },
+        "expr": {
+          "pct": 44.44
+        },
+        "fsm_state": {
+          "pct": 85.71
+        },
+        "fsm_trans": {
+          "pct": 42.47
+        },
+        "stmt": {
+          "pct": 73.23
+        },
+        "toggle": {
+          "pct": 23.44
+        }
+      },
+      "cross_summary": {
+        "pct": 65.3,
+        "txns": 40,
+        "counter_checks_passed": 1,
+        "counter_checks_failed": 0,
+        "unexpected_outputs": 0,
+        "curve": ""
+      }
+    }
+  ],
   "random_cases": [
     {
       "bucket": "PROF",

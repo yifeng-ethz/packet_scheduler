@@ -33,10 +33,11 @@ Current toolchain migration note on 2026-04-21:
 - Those reruns remain useful supplemental evidence, but the active generated
   dashboard is now the canonical
   `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256 DUT_IMPL=native_sv`
-  slice and credits only current-scope reruns. Fresh anchor evidence currently
-  exists for `B001`, `E001`, `P001`, and `X001`; older stale
-  `sim_runs/logs/*.log` artifacts and pre-2026 FSE logs must not be counted as
-  current evidence.
+  slice and credits only current-scope reruns. That slice is now fully staged
+  into the generated dashboard with `516/516` isolated catalog rows evidenced
+  and `22/22` maintained signoff runs green; older stale `sim_runs/logs/*.log`
+  artifacts and pre-2026 FSE logs must still not be counted as current
+  evidence.
 
 Assumption frozen on 2026-04-17: the current harness must be upgraded into a
 full native-SV signoff harness. The VHDL path may remain as a debug/reference
@@ -59,18 +60,23 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       report tree.
 - [x] `DV_REPORT.md`, `DV_COV.md`, and `REPORT/` are generated from the JSON
       and reflect the native-SV DUT only.
-- [ ] Every canonical catalog case has isolated current-scope native-SV log and
+- [x] Every canonical catalog case has isolated current-scope native-SV log and
       UCDB evidence.
-      Status on `2026-04-22`: the active canonical dashboard has fresh
-      evidence for `4/516` cases (`B001`, `E001`, `P001`, `X001`); the
-      remaining rows are intentionally pending rerun rather than reported as
-      fresh failures.
+      Status on `2026-04-22`: the active canonical dashboard now carries
+      `516/516` evidenced rows with `failed_cases=0`,
+      `catalog_backlog_cases=0`, and `unimplemented_cases=0`.
 - [x] `bucket_frame` and `all_buckets_frame` baselines exist, are reproducible,
       and are linked from the report.
 - [x] `BUG_HISTORY.md` records every real DV-found bug with fix status and
       commit hash when fixed.
 - [x] Open probe-only failures are either fixed and promoted or explicitly
       excluded from signoff with justification.
+- [ ] Structural coverage targets are closed or dispositioned against the
+      current native-SV isolated merged baseline.
+      Status on `2026-04-22`: testcase implementation and evidence collection
+      are closed, but the active merged isolated report is still below target
+      on `stmt`, `branch`, `fsm_state`, `fsm_trans`, and `toggle`, so the
+      remaining work is coverage closure rather than report scaffolding.
 
 ## 1. Upgrade The Harness To Native-SV-Only Signoff
 

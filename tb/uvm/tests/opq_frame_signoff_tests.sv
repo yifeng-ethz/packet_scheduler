@@ -277,15 +277,28 @@ class opq_frame_signoff_base_test extends opq_base_test;
     int unsigned hit_count,
     int unsigned high_cycles = 8,
     int unsigned low_cycles = 8,
-    int unsigned repeat_count = 40
+    int unsigned repeat_count = 40,
+    bit immediate_bp_start = 1'b0,
+    int unsigned startup_stall_cycles = 0,
+    opq_bp_mode_e bp_mode = BP_PERIODIC_STALL
   );
     opq_bp_sequence bp_seq;
+    opq_bp_item startup_bp_item;
     opq_bp_item bp_item;
     opq_single_lane_virtual_sequence single_lane_seq;
 
     bp_seq = opq_bp_sequence::type_id::create({seq_name, "_bp_seq"});
+    if (startup_stall_cycles != 0) begin
+      startup_bp_item = opq_bp_item::type_id::create({seq_name, "_startup_bp_item"});
+      startup_bp_item.mode = BP_ALWAYS_STALL;
+      startup_bp_item.trigger_mode = BP_TRIGGER_FIRST_VALID;
+      startup_bp_item.high_cycles = 1;
+      startup_bp_item.low_cycles = startup_stall_cycles;
+      startup_bp_item.repeat_count = 1;
+      bp_seq.items.push_back(startup_bp_item);
+    end
     bp_item = opq_bp_item::type_id::create({seq_name, "_bp_item"});
-    bp_item.mode = BP_PERIODIC_STALL;
+    bp_item.mode = bp_mode;
     bp_item.high_cycles = high_cycles;
     bp_item.low_cycles = low_cycles;
     bp_item.repeat_count = repeat_count;
@@ -300,7 +313,9 @@ class opq_frame_signoff_base_test extends opq_base_test;
     fork
       single_lane_seq.start(env.vseqr);
       begin
-        #(inter_case_gap_time());
+        if (!immediate_bp_start) begin
+          #(inter_case_gap_time());
+        end
         bp_seq.start(env.vseqr.egress_seqr);
       end
     join
@@ -616,7 +631,19 @@ class opq_frame_signoff_base_test extends opq_base_test;
     drr_seq.hit_count_per_subheader = 24;
     run_vseq(drr_seq);
 
-    run_cross_idle_lane_bp_case("idle_lane_bp_case_seq", 0, 6, 8, 8);
+    run_cross_idle_lane_bp_case(
+      "idle_lane_bp_case_seq",
+      (OPQ_N_LANE > 3) ? 2 : 0,
+      6,
+      8,
+      8,
+      8,
+      8,
+      40,
+      1'b1,
+      24,
+      BP_PERIODIC_STALL
+    );
 
     csr_write_lane_drr_allowance(0, OPQ_DRR_DEFAULT_ALLOWANCE);
     csr_write_lane_drr_allowance(1, OPQ_DRR_DEFAULT_ALLOWANCE);
@@ -1044,7 +1071,7 @@ class opq_cross_mixed_bucket_random_soak_test extends opq_frame_signoff_base_tes
           $sformatf(
             "Mixed CROSS step %0d case=idle_lane_bp active_lane=%0d frames=%0d subheaders=%0d hits=%0d high=%0d low=%0d repeat=%0d",
             step_idx,
-            0,
+            (OPQ_N_LANE > 3) ? 3 : 0,
             6,
             8,
             8,
@@ -1054,7 +1081,19 @@ class opq_cross_mixed_bucket_random_soak_test extends opq_frame_signoff_base_tes
           ),
           UVM_LOW
         )
-        run_cross_idle_lane_bp_case($sformatf("mixed_idle_lane_bp_%0d", step_idx), 0, 6, 8, 8, 8, 8, 32);
+        run_cross_idle_lane_bp_case(
+          $sformatf("mixed_idle_lane_bp_%0d", step_idx),
+          (OPQ_N_LANE > 3) ? 3 : 0,
+          6,
+          8,
+          8,
+          8,
+          8,
+          32,
+          1'b1,
+          24,
+          BP_PERIODIC_STALL
+        );
       end
     endcase
   endtask

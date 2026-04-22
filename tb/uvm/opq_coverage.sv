@@ -100,11 +100,22 @@ class opq_coverage extends uvm_component;
     cross hit_cnt, shd_ts;
   endgroup
 
-  covergroup cg_bp with function sample(int mode_i, int high_cycles, int low_cycles, int repeat_count);
+  covergroup cg_bp with function sample(
+    int mode_i,
+    int trigger_mode_i,
+    int high_cycles,
+    int low_cycles,
+    int repeat_count
+  );
     coverpoint mode_i {
       bins mode_ready = {int'(BP_ALWAYS_READY)};
       bins mode_stall = {int'(BP_PERIODIC_STALL)};
       bins mode_stuck_low = {int'(BP_ALWAYS_STALL)};
+    }
+    coverpoint trigger_mode_i {
+      bins immediate = {int'(BP_TRIGGER_IMMEDIATE)};
+      bins on_valid = {int'(BP_TRIGGER_FIRST_VALID)};
+      bins on_sop = {int'(BP_TRIGGER_FIRST_SOP)};
     }
     coverpoint high_cycles {
       bins hi_one = {1};
@@ -124,6 +135,7 @@ class opq_coverage extends uvm_component;
       bins rep_many = {40};
     }
     cross mode_i, low_cycles;
+    cross mode_i, trigger_mode_i;
   endgroup
 
   covergroup cg_csr with function sample(bit is_write, int region, int lane, int word_idx);
@@ -340,7 +352,13 @@ class opq_coverage extends uvm_component;
   endfunction
 
   function void write_bp(opq_bp_item item);
-    cg_bp.sample(int'(item.mode), item.high_cycles, item.low_cycles, item.repeat_count);
+    cg_bp.sample(
+      int'(item.mode),
+      int'(item.trigger_mode),
+      item.high_cycles,
+      item.low_cycles,
+      item.repeat_count
+    );
   endfunction
 
   function automatic void sample_csr_access(bit is_write, bit [8:0] addr);

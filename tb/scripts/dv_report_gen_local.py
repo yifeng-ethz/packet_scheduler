@@ -364,6 +364,13 @@ def render_execution_mode(mode_name: str, mode: dict[str, Any], case_prefix: str
             out.append(
                 f"  `{step.get('bucket','?')}` -> {link_case(step.get('report_case_id','?'), case_prefix)} (`{step.get('legacy_test_name','?')}`)"
             )
+    named_steps = mode.get("named_steps") or []
+    if named_steps:
+        out.append("- named_steps:")
+        for step in named_steps:
+            out.append(
+                f"  `{step.get('bucket','?')}` -> `{step.get('legacy_step_name','?')}` ({step.get('description','')})"
+            )
     extra_tail = mode.get("extra_tail_steps") or []
     if extra_tail:
         for step in extra_tail:

@@ -78,6 +78,12 @@ package opq_pkg;
     BP_ALWAYS_STALL
   } opq_bp_mode_e;
 
+  typedef enum int {
+    BP_TRIGGER_IMMEDIATE,
+    BP_TRIGGER_FIRST_VALID,
+    BP_TRIGGER_FIRST_SOP
+  } opq_bp_trigger_e;
+
   function automatic bit [31:0] make_preamble(bit [5:0] dt_type, bit [15:0] feb_id);
     bit [31:0] data32;
     data32 = '0;
@@ -104,10 +110,7 @@ package opq_pkg;
     return frame_ts_hdr36(frame_ts)[35:4];
   endfunction
 
-  function automatic bit [31:0] make_frame_data_header1(
-    bit [47:0] frame_ts,
-    bit [15:0] pkg_cnt
-  );
+  function automatic bit [31:0] make_frame_data_header1(bit [47:0] frame_ts, bit [15:0] pkg_cnt);
     bit [31:0] data32;
     data32 = '0;
     data32[31:16] = frame_ts[15:0];
@@ -115,10 +118,7 @@ package opq_pkg;
     return data32;
   endfunction
 
-  function automatic bit [31:0] make_frame_debug_header0(
-    bit [15:0] subheader_cnt,
-    bit [15:0] hit_cnt
-  );
+  function automatic bit [31:0] make_frame_debug_header0(bit [15:0] subheader_cnt, bit [15:0] hit_cnt);
     bit [31:0] data32;
     data32 = '0;
     data32[30:16] = subheader_cnt[14:0];
@@ -272,12 +272,14 @@ package opq_pkg;
 
   class opq_bp_item extends uvm_sequence_item;
     rand opq_bp_mode_e mode;
+    rand opq_bp_trigger_e trigger_mode;
     rand int unsigned high_cycles;
     rand int unsigned low_cycles;
     rand int unsigned repeat_count;
 
     `uvm_object_utils_begin(opq_bp_item)
       `uvm_field_enum(opq_bp_mode_e, mode, UVM_DEFAULT)
+      `uvm_field_enum(opq_bp_trigger_e, trigger_mode, UVM_DEFAULT)
       `uvm_field_int(high_cycles, UVM_DEFAULT)
       `uvm_field_int(low_cycles, UVM_DEFAULT)
       `uvm_field_int(repeat_count, UVM_DEFAULT)
@@ -286,6 +288,7 @@ package opq_pkg;
     function new(string name = "opq_bp_item");
       super.new(name);
       mode = BP_ALWAYS_READY;
+      trigger_mode = BP_TRIGGER_IMMEDIATE;
       high_cycles = 1;
       low_cycles = 1;
       repeat_count = 1;

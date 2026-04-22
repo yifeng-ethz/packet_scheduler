@@ -24,6 +24,27 @@ class opq_egress_driver extends uvm_driver #(opq_bp_item);
     end
   endtask
 
+  task automatic wait_for_trigger(opq_bp_trigger_e trigger_mode);
+    case (trigger_mode)
+      BP_TRIGGER_IMMEDIATE: begin
+      end
+      BP_TRIGGER_FIRST_VALID: begin
+        while (!(vif.drv_cb.valid === 1'b1)) begin
+          vif.drv_cb.ready <= 1'b1;
+          @(vif.drv_cb);
+        end
+      end
+      BP_TRIGGER_FIRST_SOP: begin
+        while (!((vif.drv_cb.valid === 1'b1) && (vif.drv_cb.startofpacket === 1'b1))) begin
+          vif.drv_cb.ready <= 1'b1;
+          @(vif.drv_cb);
+        end
+      end
+      default: begin
+      end
+    endcase
+  endtask
+
   task automatic apply_item(opq_bp_item item);
     int unsigned repeats;
     int unsigned high_cycles;
@@ -32,6 +53,8 @@ class opq_egress_driver extends uvm_driver #(opq_bp_item);
     repeats = (item.repeat_count == 0) ? 1 : item.repeat_count;
     high_cycles = (item.high_cycles == 0) ? 1 : item.high_cycles;
     low_cycles = (item.low_cycles == 0) ? 1 : item.low_cycles;
+
+    wait_for_trigger(item.trigger_mode);
 
     case (item.mode)
       BP_ALWAYS_READY: wait_cycles(high_cycles * repeats, 1'b1);
