@@ -2,7 +2,9 @@
 
 This page is the coverage summary only. Per-case incremental coverage lives under
 [`REPORT/cases/`](REPORT/cases/); per-bucket ordered-merge traces live under
-[`REPORT/buckets/`](REPORT/buckets/).
+[`REPORT/buckets/`](REPORT/buckets/). Isolated per-case coverage and continuous-frame
+signoff-run coverage are tracked separately and must not be collapsed into one
+number.
 
 ## Legend
 
@@ -44,6 +46,7 @@ This page is the coverage summary only. Per-case incremental coverage lives unde
 ## Targets vs merged totals
 
 <!-- merged_pct = merge across all evidenced promoted isolated-mode UCDBs across all signoff buckets. -->
+<!-- Continuous-frame sequential-run coverage is reported separately in the signoff-run section below. -->
 
 | status | metric | merged_pct | target |
 |:---:|---|---|---|
@@ -56,6 +59,8 @@ This page is the coverage summary only. Per-case incremental coverage lives unde
 | ⚠️ | toggle | 33.95 | 80.0 |
 
 ## Per-bucket merged totals
+
+_These are ordered isolated merged totals, not continuous-frame sequential-run totals._
 
 | status | bucket | catalog_planned | promoted | evidenced | stmt | branch | cond | expr | fsm_state | fsm_trans | toggle |
 |:---:|---|---:|---:|---:|---|---|---|---|---|---|---|
@@ -74,6 +79,9 @@ This page is the coverage summary only. Per-case incremental coverage lives unde
 | ERROR | [`X001`](REPORT/cases/X001.md), [`X002`](REPORT/cases/X002.md), [`X003`](REPORT/cases/X003.md), [`X004`](REPORT/cases/X004.md), [`X005`](REPORT/cases/X005.md), [`X006`](REPORT/cases/X006.md), [`X007`](REPORT/cases/X007.md), [`X008`](REPORT/cases/X008.md), [`X009`](REPORT/cases/X009.md), [`X010`](REPORT/cases/X010.md), [`X011`](REPORT/cases/X011.md), [`X012`](REPORT/cases/X012.md), [`X013`](REPORT/cases/X013.md), [`X014`](REPORT/cases/X014.md), [`X015`](REPORT/cases/X015.md), [`X016`](REPORT/cases/X016.md), [`X017`](REPORT/cases/X017.md), [`X018`](REPORT/cases/X018.md), [`X019`](REPORT/cases/X019.md), [`X020`](REPORT/cases/X020.md), [`X021`](REPORT/cases/X021.md), [`X022`](REPORT/cases/X022.md), [`X023`](REPORT/cases/X023.md), [`X024`](REPORT/cases/X024.md), [`X025`](REPORT/cases/X025.md), [`X026`](REPORT/cases/X026.md), [`X027`](REPORT/cases/X027.md), [`X028`](REPORT/cases/X028.md), [`X029`](REPORT/cases/X029.md), [`X030`](REPORT/cases/X030.md), [`X031`](REPORT/cases/X031.md), [`X032`](REPORT/cases/X032.md), [`X033`](REPORT/cases/X033.md), [`X034`](REPORT/cases/X034.md), [`X035`](REPORT/cases/X035.md), [`X036`](REPORT/cases/X036.md), [`X037`](REPORT/cases/X037.md), [`X038`](REPORT/cases/X038.md), [`X039`](REPORT/cases/X039.md), [`X040`](REPORT/cases/X040.md), [`X041`](REPORT/cases/X041.md), [`X042`](REPORT/cases/X042.md), [`X043`](REPORT/cases/X043.md), [`X044`](REPORT/cases/X044.md), [`X045`](REPORT/cases/X045.md), [`X046`](REPORT/cases/X046.md), [`X047`](REPORT/cases/X047.md), [`X048`](REPORT/cases/X048.md), [`X049`](REPORT/cases/X049.md), [`X050`](REPORT/cases/X050.md), [`X051`](REPORT/cases/X051.md), [`X052`](REPORT/cases/X052.md), [`X053`](REPORT/cases/X053.md), [`X054`](REPORT/cases/X054.md), [`X055`](REPORT/cases/X055.md), [`X056`](REPORT/cases/X056.md), [`X057`](REPORT/cases/X057.md), [`X058`](REPORT/cases/X058.md), [`X059`](REPORT/cases/X059.md), [`X060`](REPORT/cases/X060.md), [`X061`](REPORT/cases/X061.md), [`X062`](REPORT/cases/X062.md), [`X063`](REPORT/cases/X063.md), [`X064`](REPORT/cases/X064.md), [`X065`](REPORT/cases/X065.md), [`X066`](REPORT/cases/X066.md), [`X067`](REPORT/cases/X067.md), [`X068`](REPORT/cases/X068.md), [`X069`](REPORT/cases/X069.md), [`X070`](REPORT/cases/X070.md), [`X071`](REPORT/cases/X071.md), [`X072`](REPORT/cases/X072.md), [`X073`](REPORT/cases/X073.md), [`X074`](REPORT/cases/X074.md), [`X075`](REPORT/cases/X075.md), [`X076`](REPORT/cases/X076.md), [`X077`](REPORT/cases/X077.md), [`X078`](REPORT/cases/X078.md), [`X079`](REPORT/cases/X079.md), [`X080`](REPORT/cases/X080.md), [`X081`](REPORT/cases/X081.md), [`X082`](REPORT/cases/X082.md), [`X083`](REPORT/cases/X083.md), [`X084`](REPORT/cases/X084.md), [`X085`](REPORT/cases/X085.md), [`X086`](REPORT/cases/X086.md), [`X087`](REPORT/cases/X087.md), [`X088`](REPORT/cases/X088.md), [`X089`](REPORT/cases/X089.md), [`X090`](REPORT/cases/X090.md), [`X091`](REPORT/cases/X091.md), [`X092`](REPORT/cases/X092.md), [`X093`](REPORT/cases/X093.md), [`X094`](REPORT/cases/X094.md), [`X095`](REPORT/cases/X095.md), [`X096`](REPORT/cases/X096.md), [`X097`](REPORT/cases/X097.md), [`X098`](REPORT/cases/X098.md), [`X099`](REPORT/cases/X099.md), [`X100`](REPORT/cases/X100.md), [`X101`](REPORT/cases/X101.md), [`X102`](REPORT/cases/X102.md), [`X103`](REPORT/cases/X103.md), [`X104`](REPORT/cases/X104.md), [`X105`](REPORT/cases/X105.md), [`X106`](REPORT/cases/X106.md), [`X107`](REPORT/cases/X107.md), [`X108`](REPORT/cases/X108.md), [`X109`](REPORT/cases/X109.md), [`X110`](REPORT/cases/X110.md), [`X111`](REPORT/cases/X111.md), [`X112`](REPORT/cases/X112.md), [`X113`](REPORT/cases/X113.md), [`X114`](REPORT/cases/X114.md), [`X115`](REPORT/cases/X115.md), [`X116`](REPORT/cases/X116.md), [`X117`](REPORT/cases/X117.md), [`X118`](REPORT/cases/X118.md), [`X119`](REPORT/cases/X119.md), [`X120`](REPORT/cases/X120.md), [`X121`](REPORT/cases/X121.md), [`X122`](REPORT/cases/X122.md), [`X123`](REPORT/cases/X123.md), [`X124`](REPORT/cases/X124.md), [`X125`](REPORT/cases/X125.md), [`X126`](REPORT/cases/X126.md), [`X127`](REPORT/cases/X127.md), [`X128`](REPORT/cases/X128.md), [`X129`](REPORT/cases/X129.md) | [`REPORT/buckets/ERROR.md`](REPORT/buckets/ERROR.md) |
 
 ## Signoff runs by build
+
+_These rows are for continuous-frame sequential runs such as `bucket_frame` and
+`all_buckets_frame`. They are separate from the isolated merged totals above._
 
 | status | run_id | kind | build | case_count | stmt | branch | toggle | functional_cross_pct | txns |
 |:---:|---|---|---|---:|---|---|---|---:|---:|

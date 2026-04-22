@@ -242,6 +242,11 @@ def render_case(case: dict[str, Any], tb_rel_log: str, tb_rel_ucdb: str) -> str:
         "",
         "## Coverage",
         "",
+        "Standalone coverage is taken from this case's own isolated UCDB. `bucket_gain` and",
+        "`bucket_merged_after` come from the ordered isolated merge for this bucket.",
+        "Continuous-frame `bucket_frame` / `all_buckets_frame` coverage, when present, is",
+        "reported separately under [`REPORT/cross/`](../cross/).",
+        "",
         "| metric | standalone | isolated_per_txn | bucket_gain | bucket_merged_after | bucket_gain_per_txn |",
         "|---|---|---|---|---|---|",
     ]
@@ -317,15 +322,19 @@ def render_bucket(bucket_name: str, bucket: dict[str, Any]) -> str:
         "",
         "## Ordered merge trace",
         "",
-        "| status | step | report_case_id | legacy_test_name | merged_total | detail |",
-        "|:---:|---:|---|---|---|---|",
+        "Each row keeps the isolated testcase vector separate from the ordered isolated",
+        "merge. The continuous-frame sequential runs are separate evidence and live under",
+        "[`REPORT/cross/`](../cross/).",
+        "",
+        "| status | step | report_case_id | legacy_test_name | standalone_case_cov | bucket_gain | ordered_isolated_merged_total | detail |",
+        "|:---:|---:|---|---|---|---|---|---|",
     ]
     cases_by_id = {display_case_id(case): case for case in bucket.get("cases", [])}
     for step in bucket.get("merge_trace") or []:
         cid = step.get("full_case_id", step.get("case_id", "?"))
         case = cases_by_id.get(cid, {})
         out.append(
-            f"| {base.case_status(case) if case else base.INFO_EMOJI} | {step.get('step','?')} | `{cid}` | `{step.get('legacy_test_name', legacy_case_name(case))}` | {base.fmt_cov(step.get('merged_total_after_case'))} | [case](../cases/{cid}.md) |"
+            f"| {base.case_status(case) if case else base.INFO_EMOJI} | {step.get('step','?')} | `{cid}` | `{step.get('legacy_test_name', legacy_case_name(case))}` | {base.fmt_cov(case.get('standalone_coverage'))} | {base.fmt_cov(case.get('bucket_gain_by_case'))} | {base.fmt_cov(step.get('merged_total_after_case'))} | [case](../cases/{cid}.md) |"
         )
 
     out += [
@@ -667,7 +676,9 @@ def render_covmd(data: dict[str, Any]) -> str:
         "",
         "This page is the coverage summary only. Per-case incremental coverage lives under",
         "[`REPORT/cases/`](REPORT/cases/); per-bucket ordered-merge traces live under",
-        "[`REPORT/buckets/`](REPORT/buckets/).",
+        "[`REPORT/buckets/`](REPORT/buckets/). Isolated per-case coverage and continuous-frame",
+        "signoff-run coverage are tracked separately and must not be collapsed into one",
+        "number.",
         "",
         "## Legend",
         "",
@@ -680,6 +691,7 @@ def render_covmd(data: dict[str, Any]) -> str:
         "## Targets vs merged totals",
         "",
         "<!-- merged_pct = merge across all evidenced promoted isolated-mode UCDBs across all signoff buckets. -->",
+        "<!-- Continuous-frame sequential-run coverage is reported separately in the signoff-run section below. -->",
         "",
         "| status | metric | merged_pct | target |",
         "|:---:|---|---|---|",
@@ -696,6 +708,8 @@ def render_covmd(data: dict[str, Any]) -> str:
     out += [
         "",
         "## Per-bucket merged totals",
+        "",
+        "_These are ordered isolated merged totals, not continuous-frame sequential-run totals._",
         "",
         "| status | bucket | catalog_planned | promoted | evidenced | stmt | branch | cond | expr | fsm_state | fsm_trans | toggle |",
         "|:---:|---|---:|---:|---:|---|---|---|---|---|---|---|",
@@ -732,6 +746,9 @@ def render_covmd(data: dict[str, Any]) -> str:
     out += [
         "",
         "## Signoff runs by build",
+        "",
+        "_These rows are for continuous-frame sequential runs such as `bucket_frame` and",
+        "`all_buckets_frame`. They are separate from the isolated merged totals above._",
         "",
         "| status | run_id | kind | build | case_count | stmt | branch | toggle | functional_cross_pct | txns |",
         "|:---:|---|---|---|---:|---|---|---|---:|---:|",
