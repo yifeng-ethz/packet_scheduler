@@ -1,8 +1,8 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_ingress_parser
-// Version : 26.3.56
+// Version : 26.3.59
 // Date    : 20260421
-// Change  : Carry the current frame serial on every non-SOP ticket so allocator drop/tail decisions stay frame-accurate across wrapped subheader timestamps
+// Change  : Keep localized cover checks visible to sim/formal while hiding them from Quartus synthesis parsing
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_ingress_parser #(
@@ -707,12 +707,14 @@ module ordered_priority_queue_monolithic_ingress_parser #(
   endproperty
   ap_credit_drop_carries_pkg_cnt: assert property (p_credit_drop_carries_pkg_cnt);
 
-  cover property (@(posedge d_clk) disable iff (d_reset)
+`ifndef SYNTHESIS
+  cp_subheader_ticket_carries_pkg_serial: cover property (@(posedge d_clk) disable iff (d_reset)
     ticket_we && !ticket_wdata[TICKET_ALT_SOP_LOC] &&
     (ticket_wdata[TICKET_BODY_SERIAL_HI:TICKET_BODY_SERIAL_LO] == $past(ingress_parser.pkg_cnt)));
 
-  cover property (@(posedge d_clk) disable iff (d_reset)
+  cp_credit_drop_carries_pkg_cnt: cover property (@(posedge d_clk) disable iff (d_reset)
     credit_drop_valid_o && (credit_drop_pkg_cnt_o == ingress_parser.pkg_cnt));
+`endif
 `endif
 
 `ifdef OPQ_ENABLE_NATIVE_FORMAL_INGRESS

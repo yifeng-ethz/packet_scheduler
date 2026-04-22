@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_basic_presenter
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.57
-// Date    : 20260421
-// Change  : Keep queued metadata progressing through WAIT even with overlap bookkeeping pending so the presenter cannot strand resident frames after a trailer retirement
+// Version : 26.3.63
+// Date    : 20260422
+// Change  : Register overwrite-scan metadata before issuing the next meta-table read so the presenter overlap compare no longer drives the RAM address cone in one cycle
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_basic_presenter #(
@@ -829,6 +829,15 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
   logic [31:0] overwrite_scan_hit_cnt;
   logic [N_LANE-1:0][MAX_SHR_CNT_BITS-1:0] overwrite_scan_lane_shd_cnt;
   logic [N_LANE-1:0][MAX_HIT_CNT_BITS-1:0] overwrite_scan_lane_hit_cnt;
+  logic scan_eval_valid_q;
+  meta_ptr_t scan_eval_next_ptr_q;
+  page_ram_addr_t scan_eval_addr_q;
+  page_ram_addr_t scan_eval_len_q;
+  logic [MAX_SHR_CNT_BITS-1:0] scan_eval_shd_q;
+  logic [MAX_HIT_CNT_BITS-1:0] scan_eval_hit_q;
+  logic [N_LANE-1:0][MAX_SHR_CNT_BITS-1:0] scan_eval_lane_shd_q;
+  logic [N_LANE-1:0][MAX_HIT_CNT_BITS-1:0] scan_eval_lane_hit_q;
+  logic scan_eval_overlaps_q;
   page_ram_addr_t page_ram_rptr;
   logic [EGRESS_DELAY-1:0] output_data_valid;
   logic [PAGE_RAM_DATA_WIDTH-1:0] output_data_pipe [EGRESS_DELAY-1:0];
@@ -1043,7 +1052,8 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
       pending_overlap_check_valid ||
       pending_overlap_launch_valid ||
       overwrite_scan_active ||
-      overwrite_scan_process_head;
+      overwrite_scan_process_head ||
+      scan_eval_valid_q;
     resident_backpressure_hold_o =
       ((!aso_egress_ready &&
         (((presenter_state != FTABLE_PRESENTER_IDLE) && (presenter_state != FTABLE_PRESENTER_RESET)) ||
@@ -1080,12 +1090,16 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
     ft_drop_hdr_cnt_o <= '0;
     ft_drop_shd_cnt_o <= '0;
     ft_drop_hit_cnt_o <= '0;
-    block_meta_head_fetch_v = overwrite_scan_active || overwrite_scan_process_head;
+    block_meta_head_fetch_v =
+      overwrite_scan_active ||
+      overwrite_scan_process_head ||
+      scan_eval_valid_q;
     block_present_start_v =
       overwrite_scan_active ||
       overwrite_scan_process_head ||
       pending_overlap_launch_valid ||
-      pending_overlap_check_valid;
+      pending_overlap_check_valid ||
+      scan_eval_valid_q;
     stage0_load_valid_v =
       page_ram_skid_valid ||
       (!page_ram_prime_pending && (pkt_fetch_word_cnt != packet_length));
@@ -1132,6 +1146,15 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
       overwrite_scan_hit_cnt <= '0;
       overwrite_scan_lane_shd_cnt <= '{default:'0};
       overwrite_scan_lane_hit_cnt <= '{default:'0};
+      scan_eval_valid_q <= 1'b0;
+      scan_eval_next_ptr_q <= '0;
+      scan_eval_addr_q <= '0;
+      scan_eval_len_q <= '0;
+      scan_eval_shd_q <= '0;
+      scan_eval_hit_q <= '0;
+      scan_eval_lane_shd_q <= '{default:'0};
+      scan_eval_lane_hit_q <= '{default:'0};
+      scan_eval_overlaps_q <= 1'b0;
       page_ram_rptr <= '0;
       output_data_valid <= '0;
       for (reset_pipe_idx = 0; reset_pipe_idx < EGRESS_DELAY; reset_pipe_idx = reset_pipe_idx + 1) begin
@@ -1196,101 +1219,113 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
                 scan_addr_v,
                 scan_len_v
               );
-
-              if (!scan_overlaps_v) begin
-                if ((overwrite_scan_hdr_cnt != 0) ||
-                    (overwrite_scan_shd_cnt != 0) ||
-                    (overwrite_scan_hit_cnt != 0)) begin
-                  ft_drop_valid_o <= 1'b1;
-                  ft_drop_hdr_cnt_o <= overwrite_scan_hdr_cnt;
-                  ft_drop_shd_cnt_o <= overwrite_scan_shd_cnt;
-                  ft_drop_hit_cnt_o <= overwrite_scan_hit_cnt;
-                  ft_drop_lane_shd_cnt_o <= overwrite_scan_lane_shd_cnt;
-                  ft_drop_lane_hit_cnt_o <= overwrite_scan_lane_hit_cnt;
-                end
-                meta_rptr <= overwrite_scan_next_ptr;
-                head_meta_valid <= 1'b1;
-                head_addr_q <= scan_addr_v;
-                head_len_q <= scan_len_v;
-                head_shd_cnt_q <= scan_shd_v;
-                head_hit_cnt_q <= scan_hit_v;
-                head_lane_shd_cnt_q <= scan_lane_shd_v;
-                head_lane_hit_cnt_q <= scan_lane_hit_v;
-                overwrite_scan_active <= 1'b0;
-                overwrite_scan_process_head <= 1'b0;
-                presenter_state <= FTABLE_PRESENTER_IDLE;
-                output_data_valid <= '0;
-                pkt_rd_word_cnt <= '0;
-                retire_pending <= 1'b0;
-                pkt_accept_started <= 1'b0;
-                page_ram_prime_pending <= 1'b0;
-                page_ram_skid_valid <= 1'b0;
-                for (pipe_data_idx = 0; pipe_data_idx < EGRESS_DELAY; pipe_data_idx = pipe_data_idx + 1) begin
-                  output_data_pipe[pipe_data_idx] <= '0;
-                end
-`ifndef SYNTHESIS
-                if ($test$plusargs("OPQ_NATIVE_TRACE_OWNERSHIP")) begin
-                  $display(
-                    "[opq_native_scan] t=%0t evt=scan_stop_keep head_ptr=0x%0h head_addr=0x%0h head_len=0x%0h drop_hdr=%0d drop_shd=%0d drop_hit=%0d",
-                    $time,
-                    overwrite_scan_next_ptr,
-                    scan_addr_v,
-                    scan_len_v,
-                    overwrite_scan_hdr_cnt,
-                    overwrite_scan_shd_cnt,
-                    overwrite_scan_hit_cnt
-                  );
-                end
-`endif
-              end else if (next_scan_ptr_v == overwrite_scan_stop_ptr) begin
-                ft_drop_valid_o <= 1'b1;
-                ft_drop_hdr_cnt_o <= overwrite_scan_hdr_cnt + 32'd1;
-                ft_drop_shd_cnt_o <= overwrite_scan_shd_cnt + extend32_shd(scan_shd_v);
-                ft_drop_hit_cnt_o <= overwrite_scan_hit_cnt + extend32_hit(scan_hit_v);
-                ft_drop_lane_shd_cnt_o <= overwrite_scan_lane_shd_cnt;
-                ft_drop_lane_hit_cnt_o <= overwrite_scan_lane_hit_cnt;
-                for (int lane_idx = 0; lane_idx < N_LANE; lane_idx++) begin
-                  ft_drop_lane_shd_cnt_o[lane_idx] <=
-                    overwrite_scan_lane_shd_cnt[lane_idx] + scan_lane_shd_v[lane_idx];
-                  ft_drop_lane_hit_cnt_o[lane_idx] <=
-                    overwrite_scan_lane_hit_cnt[lane_idx] + scan_lane_hit_v[lane_idx];
-                end
-                meta_rptr <= next_scan_ptr_v;
-                head_meta_valid <= 1'b0;
-                overwrite_scan_active <= 1'b0;
-                overwrite_scan_process_head <= 1'b0;
-                presenter_state <= FTABLE_PRESENTER_IDLE;
-                output_data_valid <= '0;
-                pkt_rd_word_cnt <= '0;
-                retire_pending <= 1'b0;
-                pkt_accept_started <= 1'b0;
-                page_ram_prime_pending <= 1'b0;
-                page_ram_skid_valid <= 1'b0;
-                for (pipe_data_idx = 0; pipe_data_idx < EGRESS_DELAY; pipe_data_idx = pipe_data_idx + 1) begin
-                  output_data_pipe[pipe_data_idx] <= '0;
-                end
-              end else begin
-                overwrite_scan_hdr_cnt <= overwrite_scan_hdr_cnt + 32'd1;
-                overwrite_scan_shd_cnt <= overwrite_scan_shd_cnt + extend32_shd(scan_shd_v);
-                overwrite_scan_hit_cnt <= overwrite_scan_hit_cnt + extend32_hit(scan_hit_v);
-                for (int lane_idx = 0; lane_idx < N_LANE; lane_idx++) begin
-                  overwrite_scan_lane_shd_cnt[lane_idx] <=
-                    overwrite_scan_lane_shd_cnt[lane_idx] + scan_lane_shd_v[lane_idx];
-                  overwrite_scan_lane_hit_cnt[lane_idx] <=
-                    overwrite_scan_lane_hit_cnt[lane_idx] + scan_lane_hit_v[lane_idx];
-                end
-                overwrite_scan_remaining_words <= overwrite_scan_remaining_words - scan_len_v;
-                overwrite_scan_next_ptr <= next_scan_ptr_v;
-                meta_rd_addr <= next_scan_ptr_v;
-                meta_read_pending <= 1'b1;
-                meta_read_armed <= 1'b0;
-                meta_read_owner <= META_READ_SCAN;
-              end
+              scan_eval_valid_q <= 1'b1;
+              scan_eval_next_ptr_q <= next_scan_ptr_v;
+              scan_eval_addr_q <= scan_addr_v;
+              scan_eval_len_q <= scan_len_v;
+              scan_eval_shd_q <= scan_shd_v;
+              scan_eval_hit_q <= scan_hit_v;
+              scan_eval_lane_shd_q <= scan_lane_shd_v;
+              scan_eval_lane_hit_q <= scan_lane_hit_v;
+              scan_eval_overlaps_q <= scan_overlaps_v;
             end
 
             default: begin
             end
           endcase
+        end
+      end
+
+      if (scan_eval_valid_q) begin
+        scan_eval_valid_q <= 1'b0;
+        if (!scan_eval_overlaps_q) begin
+          if ((overwrite_scan_hdr_cnt != 0) ||
+              (overwrite_scan_shd_cnt != 0) ||
+              (overwrite_scan_hit_cnt != 0)) begin
+            ft_drop_valid_o <= 1'b1;
+            ft_drop_hdr_cnt_o <= overwrite_scan_hdr_cnt;
+            ft_drop_shd_cnt_o <= overwrite_scan_shd_cnt;
+            ft_drop_hit_cnt_o <= overwrite_scan_hit_cnt;
+            ft_drop_lane_shd_cnt_o <= overwrite_scan_lane_shd_cnt;
+            ft_drop_lane_hit_cnt_o <= overwrite_scan_lane_hit_cnt;
+          end
+          meta_rptr <= overwrite_scan_next_ptr;
+          head_meta_valid <= 1'b1;
+          head_addr_q <= scan_eval_addr_q;
+          head_len_q <= scan_eval_len_q;
+          head_shd_cnt_q <= scan_eval_shd_q;
+          head_hit_cnt_q <= scan_eval_hit_q;
+          head_lane_shd_cnt_q <= scan_eval_lane_shd_q;
+          head_lane_hit_cnt_q <= scan_eval_lane_hit_q;
+          overwrite_scan_active <= 1'b0;
+          overwrite_scan_process_head <= 1'b0;
+          presenter_state <= FTABLE_PRESENTER_IDLE;
+          output_data_valid <= '0;
+          pkt_rd_word_cnt <= '0;
+          retire_pending <= 1'b0;
+          pkt_accept_started <= 1'b0;
+          page_ram_prime_pending <= 1'b0;
+          page_ram_skid_valid <= 1'b0;
+          for (pipe_data_idx = 0; pipe_data_idx < EGRESS_DELAY; pipe_data_idx = pipe_data_idx + 1) begin
+            output_data_pipe[pipe_data_idx] <= '0;
+          end
+`ifndef SYNTHESIS
+          if ($test$plusargs("OPQ_NATIVE_TRACE_OWNERSHIP")) begin
+            $display(
+              "[opq_native_scan] t=%0t evt=scan_stop_keep head_ptr=0x%0h head_addr=0x%0h head_len=0x%0h drop_hdr=%0d drop_shd=%0d drop_hit=%0d",
+              $time,
+              overwrite_scan_next_ptr,
+              scan_eval_addr_q,
+              scan_eval_len_q,
+              overwrite_scan_hdr_cnt,
+              overwrite_scan_shd_cnt,
+              overwrite_scan_hit_cnt
+            );
+          end
+`endif
+        end else if (scan_eval_next_ptr_q == overwrite_scan_stop_ptr) begin
+          ft_drop_valid_o <= 1'b1;
+          ft_drop_hdr_cnt_o <= overwrite_scan_hdr_cnt + 32'd1;
+          ft_drop_shd_cnt_o <= overwrite_scan_shd_cnt + extend32_shd(scan_eval_shd_q);
+          ft_drop_hit_cnt_o <= overwrite_scan_hit_cnt + extend32_hit(scan_eval_hit_q);
+          ft_drop_lane_shd_cnt_o <= overwrite_scan_lane_shd_cnt;
+          ft_drop_lane_hit_cnt_o <= overwrite_scan_lane_hit_cnt;
+          for (int lane_idx = 0; lane_idx < N_LANE; lane_idx++) begin
+            ft_drop_lane_shd_cnt_o[lane_idx] <=
+              overwrite_scan_lane_shd_cnt[lane_idx] + scan_eval_lane_shd_q[lane_idx];
+            ft_drop_lane_hit_cnt_o[lane_idx] <=
+              overwrite_scan_lane_hit_cnt[lane_idx] + scan_eval_lane_hit_q[lane_idx];
+          end
+          meta_rptr <= scan_eval_next_ptr_q;
+          head_meta_valid <= 1'b0;
+          overwrite_scan_active <= 1'b0;
+          overwrite_scan_process_head <= 1'b0;
+          presenter_state <= FTABLE_PRESENTER_IDLE;
+          output_data_valid <= '0;
+          pkt_rd_word_cnt <= '0;
+          retire_pending <= 1'b0;
+          pkt_accept_started <= 1'b0;
+          page_ram_prime_pending <= 1'b0;
+          page_ram_skid_valid <= 1'b0;
+          for (pipe_data_idx = 0; pipe_data_idx < EGRESS_DELAY; pipe_data_idx = pipe_data_idx + 1) begin
+            output_data_pipe[pipe_data_idx] <= '0;
+          end
+        end else begin
+          overwrite_scan_hdr_cnt <= overwrite_scan_hdr_cnt + 32'd1;
+          overwrite_scan_shd_cnt <= overwrite_scan_shd_cnt + extend32_shd(scan_eval_shd_q);
+          overwrite_scan_hit_cnt <= overwrite_scan_hit_cnt + extend32_hit(scan_eval_hit_q);
+          for (int lane_idx = 0; lane_idx < N_LANE; lane_idx++) begin
+            overwrite_scan_lane_shd_cnt[lane_idx] <=
+              overwrite_scan_lane_shd_cnt[lane_idx] + scan_eval_lane_shd_q[lane_idx];
+            overwrite_scan_lane_hit_cnt[lane_idx] <=
+              overwrite_scan_lane_hit_cnt[lane_idx] + scan_eval_lane_hit_q[lane_idx];
+          end
+          overwrite_scan_remaining_words <= overwrite_scan_remaining_words - scan_eval_len_q;
+          overwrite_scan_next_ptr <= scan_eval_next_ptr_q;
+          meta_rd_addr <= scan_eval_next_ptr_q;
+          meta_read_pending <= 1'b1;
+          meta_read_armed <= 1'b0;
+          meta_read_owner <= META_READ_SCAN;
         end
       end
 
@@ -1723,6 +1758,29 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
   ap_idle_with_queued_head_enters_wait: assert property (p_idle_with_queued_head_enters_wait)
     else $error("OPQ_NATIVE_BASIC_PRESENTER stranded queued metadata in IDLE instead of entering WAIT_FOR_COMPLETE");
 
+  property p_scan_eval_launches_followup_read;
+    @(posedge d_clk) disable iff (d_reset)
+      scan_eval_valid_q &&
+      scan_eval_overlaps_q &&
+      (scan_eval_next_ptr_q != overwrite_scan_stop_ptr)
+      |=> meta_read_pending &&
+          (meta_read_owner == META_READ_SCAN) &&
+          (meta_rd_addr == scan_eval_next_ptr_q);
+  endproperty
+  ap_scan_eval_launches_followup_read: assert property (p_scan_eval_launches_followup_read)
+    else $error("OPQ_NATIVE_BASIC_PRESENTER scan-eval stage did not launch the next overlap read from the registered pointer");
+
+  property p_scan_eval_stop_keeps_head_registered;
+    @(posedge d_clk) disable iff (d_reset)
+      scan_eval_valid_q && !scan_eval_overlaps_q
+      |=> head_meta_valid &&
+          (head_addr_q == $past(scan_eval_addr_q)) &&
+          (head_len_q == $past(scan_eval_len_q));
+  endproperty
+  ap_scan_eval_stop_keeps_head_registered: assert property (p_scan_eval_stop_keeps_head_registered)
+    else $error("OPQ_NATIVE_BASIC_PRESENTER scan-eval stop path did not keep the registered head metadata");
+
+`ifndef SYNTHESIS
   cover property (@(posedge d_clk) disable iff (d_reset)
     presenter_state == FTABLE_PRESENTER_PRESENTING
     ##[1:64] retire_pending
@@ -1759,6 +1817,16 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
     (pending_overlap_check_valid || pending_overlap_launch_valid || overwrite_scan_active || overwrite_scan_process_head)
     ##1 (presenter_state == FTABLE_PRESENTER_WAIT_FOR_COMPLETE)
   );
+
+  cover property (@(posedge d_clk) disable iff (d_reset)
+    scan_eval_valid_q &&
+    scan_eval_overlaps_q &&
+    (scan_eval_next_ptr_q != overwrite_scan_stop_ptr)
+    ##1 meta_read_pending &&
+        (meta_read_owner == META_READ_SCAN)
+  );
+
+`endif
 `endif
 
 endmodule

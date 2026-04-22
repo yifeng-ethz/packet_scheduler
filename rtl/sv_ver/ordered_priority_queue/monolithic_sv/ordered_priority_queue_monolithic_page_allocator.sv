@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_page_allocator
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.58
+// Version : 26.3.62
 // Date    : 20260421
-// Change  : Reactivate late current-frame SOP joins so inactive lanes cannot age same-frame body tickets into late drops
+// Change  : Move tail-flush ack into the prepare/write stage so the IDLE completion cone no longer drives eop_flush_ack timing
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_page_allocator #(
@@ -182,7 +182,9 @@ module ordered_priority_queue_monolithic_page_allocator #(
 
   typedef enum logic [3:0] {
     PAGE_ALLOCATOR_IDLE,
+    PAGE_ALLOCATOR_PREPARE_WRITE_TAIL,
     PAGE_ALLOCATOR_FETCH_TICKET,
+    PAGE_ALLOCATOR_RESOLVE_TAIL,
     PAGE_ALLOCATOR_CLASSIFY_TICKET,
     PAGE_ALLOCATOR_ACCUM_TICKET,
     PAGE_ALLOCATOR_SUMMARIZE_TICKET,
@@ -414,6 +416,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
   logic [FRAME_SERIAL_SIZE-1:0] fetch_future_frame_serial_q;
   logic [FUTURE_FRAME_LANE_WIDTH-1:0] fetch_future_frame_lane_q;
   logic [47:0] fetch_future_frame_ts_q;
+  logic [N_LANE-1:0][FRAME_SERIAL_SIZE-1:0] fetch_tail_target_serial_q;
   logic [N_LANE-1:0] fetch_tail_ready_q;
   logic [N_LANE-1:0] fetch_tail_dropped_q;
   logic [N_LANE-1:0][TICKET_FIFO_DEPTH-1:0] ingress_tail_status_valid_q;
@@ -741,6 +744,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
     page_waddr_o = page_allocator.page_waddr;
     fetch_ticket_active_o =
       (page_allocator_state == PAGE_ALLOCATOR_FETCH_TICKET) ||
+      (page_allocator_state == PAGE_ALLOCATOR_RESOLVE_TAIL) ||
       (page_allocator_state == PAGE_ALLOCATOR_CLASSIFY_TICKET) ||
       (page_allocator_state == PAGE_ALLOCATOR_ACCUM_TICKET) ||
       (page_allocator_state == PAGE_ALLOCATOR_SUMMARIZE_TICKET) ||
@@ -851,17 +855,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
               );
             end
 `endif
-          eop_flush_ack <= '1;
-          page_allocator.page_we <= 1'b1;
-          page_allocator.page_waddr <= page_allocator.frame_start_addr + page_ram_addr_t'(3);
-          page_allocator.frame_start_addr_last <= page_allocator.frame_start_addr;
-          page_allocator.frame_start_addr <= page_allocator.page_start_addr + page_ram_addr_t'(TRL_SIZE);
-          page_allocator.write_meta_flow <= WRITE_META_FLOW_WIDTH'(3);
-          page_allocator.write_trailer <= 1'b1;
-          page_allocator.tail_only_flush <= 1'b1;
-          page_allocator.frame_lane_active <= '0;
-          page_allocator.frame_lane_tail_seen <= '0;
-          page_allocator_state <= PAGE_ALLOCATOR_WRITE_TAIL;
+          page_allocator_state <= PAGE_ALLOCATOR_PREPARE_WRITE_TAIL;
         end else if (all_lanes_fetch_ready &&
                      any_pending_ticket &&
                      !active_frame_waiting_busy_lane &&
@@ -891,18 +885,26 @@ module ordered_priority_queue_monolithic_page_allocator #(
         end
         end
 
+      PAGE_ALLOCATOR_PREPARE_WRITE_TAIL: begin
+        eop_flush_ack <= '1;
+        page_allocator.page_we <= 1'b1;
+        page_allocator.page_waddr <= page_allocator.frame_start_addr + page_ram_addr_t'(3);
+        page_allocator.frame_start_addr_last <= page_allocator.frame_start_addr;
+        page_allocator.frame_start_addr <= page_allocator.page_start_addr + page_ram_addr_t'(TRL_SIZE);
+        page_allocator.write_meta_flow <= WRITE_META_FLOW_WIDTH'(3);
+        page_allocator.write_trailer <= 1'b1;
+        page_allocator.tail_only_flush <= 1'b1;
+        page_allocator.frame_lane_active <= '0;
+        page_allocator.frame_lane_tail_seen <= '0;
+        page_allocator_state <= PAGE_ALLOCATOR_WRITE_TAIL;
+        end
+
       PAGE_ALLOCATOR_FETCH_TICKET: begin
         if (!all_lanes_fetch_ready) begin
           page_allocator_state <= PAGE_ALLOCATOR_FETCH_TICKET;
         end else begin
           for (int i = 0; i < N_LANE; i++) begin
             logic [FRAME_SERIAL_SIZE-1:0] tail_target_serial_v;
-            logic tail_ready_now_v;
-            logic tail_drop_now_v;
-            logic live_tail_matches_v;
-            logic seen_tail_matches_v;
-            logic shadow_tail_exact_v;
-            ticket_fifo_addr_t tail_status_slot_v;
 
             fetch_pending_q[i] <= page_allocator_is_pending_ticket[i];
             fetch_ticket_q[i] <= page_allocator_if_read_ticket_ticket[i];
@@ -912,32 +914,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
             end else begin
               tail_target_serial_v = page_allocator_if_read_ticket_ticket[i].frame_serial;
             end
-            live_tail_matches_v =
-              ingress_tail_bypass_valid_i[i] &&
-              serial_reached_or_passed(
-                ingress_tail_bypass_serial_i[i],
-                tail_target_serial_v
-              );
-            seen_tail_matches_v =
-              page_allocator.ingress_tail_seen_valid[i] &&
-              serial_reached_or_passed(
-                page_allocator.ingress_tail_serial_seen[i],
-                tail_target_serial_v
-              );
-            tail_status_slot_v = ticket_fifo_addr_t'(tail_target_serial_v);
-            shadow_tail_exact_v =
-              ingress_tail_status_valid_q[i][tail_status_slot_v] &&
-              (ingress_tail_status_serial_q[i][tail_status_slot_v] == tail_target_serial_v);
-            tail_ready_now_v = live_tail_matches_v || seen_tail_matches_v;
-            tail_drop_now_v = 1'b0;
-            if (ingress_tail_bypass_valid_i[i] &&
-                (ingress_tail_bypass_serial_i[i] == tail_target_serial_v)) begin
-              tail_drop_now_v = ingress_tail_bypass_drop_i[i];
-            end else if (shadow_tail_exact_v) begin
-              tail_drop_now_v = ingress_tail_status_drop_q[i][tail_status_slot_v];
-            end
-            fetch_tail_ready_q[i] <= tail_ready_now_v;
-            fetch_tail_dropped_q[i] <= tail_drop_now_v;
+            fetch_tail_target_serial_q[i] <= tail_target_serial_v;
           end
           // Fallback header fields are only used when no current-frame SOP lane
           // is selected. Seed them from stable parser inputs here and let the
@@ -946,8 +923,37 @@ module ordered_priority_queue_monolithic_page_allocator #(
           fetch_default_header_feb_id_q <= ingress_feb_id_i[0];
           fetch_default_header_frame_ts_q <= ingress_frame_ts_i[0];
           fetch_default_header_running_ts_q <= ingress_frame_ts_i[0];
-          page_allocator_state <= PAGE_ALLOCATOR_CLASSIFY_TICKET;
+          page_allocator_state <= PAGE_ALLOCATOR_RESOLVE_TAIL;
         end
+        end
+
+      PAGE_ALLOCATOR_RESOLVE_TAIL: begin
+        for (int i = 0; i < N_LANE; i++) begin
+          logic tail_ready_now_v;
+          logic tail_drop_now_v;
+          logic seen_tail_matches_v;
+          logic shadow_tail_exact_v;
+          ticket_fifo_addr_t tail_status_slot_v;
+
+          seen_tail_matches_v =
+            page_allocator.ingress_tail_seen_valid[i] &&
+            serial_reached_or_passed(
+              page_allocator.ingress_tail_serial_seen[i],
+              fetch_tail_target_serial_q[i]
+            );
+          tail_status_slot_v = ticket_fifo_addr_t'(fetch_tail_target_serial_q[i]);
+          shadow_tail_exact_v =
+            ingress_tail_status_valid_q[i][tail_status_slot_v] &&
+            (ingress_tail_status_serial_q[i][tail_status_slot_v] == fetch_tail_target_serial_q[i]);
+          tail_ready_now_v = seen_tail_matches_v;
+          tail_drop_now_v = 1'b0;
+          if (shadow_tail_exact_v) begin
+            tail_drop_now_v = ingress_tail_status_drop_q[i][tail_status_slot_v];
+          end
+          fetch_tail_ready_q[i] <= tail_ready_now_v;
+          fetch_tail_dropped_q[i] <= tail_drop_now_v;
+        end
+        page_allocator_state <= PAGE_ALLOCATOR_CLASSIFY_TICKET;
         end
 
       PAGE_ALLOCATOR_CLASSIFY_TICKET: begin
@@ -1725,6 +1731,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
       fetch_future_frame_serial_q <= '0;
       fetch_future_frame_lane_q <= '0;
       fetch_future_frame_ts_q <= '0;
+      fetch_tail_target_serial_q <= '0;
       fetch_tail_ready_q <= '0;
       fetch_tail_dropped_q <= '0;
       ingress_tail_status_valid_q <= '0;
@@ -1764,6 +1771,22 @@ module ordered_priority_queue_monolithic_page_allocator #(
   endproperty
   ap_page_allocator_idle_fetch_requires_all_lanes: assert property (p_page_allocator_idle_fetch_requires_all_lanes);
 
+  property p_page_allocator_idle_tail_flush_is_staged;
+    @(posedge d_clk) disable iff (d_reset)
+      ((page_allocator_state == PAGE_ALLOCATOR_IDLE) &&
+       (page_allocator.frame_lane_active != '0) &&
+       all_active_lanes_tail_ready &&
+       !active_frame_pending_nonfuture_ticket &&
+       (page_allocator.frame_cnt != '0))
+      |=> (page_allocator_state == PAGE_ALLOCATOR_PREPARE_WRITE_TAIL)
+          ##1 ((page_allocator_state == PAGE_ALLOCATOR_WRITE_TAIL) &&
+               (eop_flush_ack != '0) &&
+               page_allocator.tail_only_flush &&
+               page_allocator.write_trailer &&
+               (page_allocator.frame_lane_active == '0));
+  endproperty
+  ap_page_allocator_idle_tail_flush_is_staged: assert property (p_page_allocator_idle_tail_flush_is_staged);
+
   property p_page_allocator_write_page_returns_idle;
     @(posedge d_clk) disable iff (d_reset)
       (page_allocator_state == PAGE_ALLOCATOR_WRITE_PAGE)
@@ -1792,49 +1815,26 @@ module ordered_priority_queue_monolithic_page_allocator #(
 
     property p_fetch_tail_ready_accepts_live_bypass;
       @(posedge d_clk) disable iff (d_reset || !formal_past_valid)
-        $past((page_allocator_state == PAGE_ALLOCATOR_FETCH_TICKET) &&
-              all_lanes_fetch_ready &&
-                ingress_tail_bypass_valid_i[g] &&
+        $past((page_allocator_state == PAGE_ALLOCATOR_RESOLVE_TAIL) &&
+              page_allocator.ingress_tail_seen_valid[g] &&
               serial_reached_or_passed(
-                ingress_tail_bypass_serial_i[g],
-                tail_target_serial_from_raw(ticket_fifos_rd_data_i[g])
+                page_allocator.ingress_tail_serial_seen[g],
+                fetch_tail_target_serial_q[g]
               ))
         |-> fetch_tail_ready_q[g];
     endproperty
     ap_fetch_tail_ready_accepts_live_bypass: assert property (p_fetch_tail_ready_accepts_live_bypass)
       else $error("OPQ_PAGE_ALLOCATOR live ingress tail bypass did not mark the target packet tail-ready");
 
-    property p_fetch_tail_drop_uses_live_exact_bypass;
-      @(posedge d_clk) disable iff (d_reset || !formal_past_valid)
-        $past((page_allocator_state == PAGE_ALLOCATOR_FETCH_TICKET) &&
-              all_lanes_fetch_ready &&
-              ingress_tail_bypass_valid_i[g] &&
-              (ingress_tail_bypass_serial_i[g] ==
-                tail_target_serial_from_raw(ticket_fifos_rd_data_i[g])))
-        |-> fetch_tail_ready_q[g] &&
-            (fetch_tail_dropped_q[g] == $past(ingress_tail_bypass_drop_i[g]));
-    endproperty
-    ap_fetch_tail_drop_uses_live_exact_bypass: assert property (p_fetch_tail_drop_uses_live_exact_bypass)
-      else $error("OPQ_PAGE_ALLOCATOR exact live bypass serial did not drive fetch_tail_dropped_q");
-
     property p_fetch_tail_drop_uses_shadow_exact_bypass;
       @(posedge d_clk) disable iff (d_reset || !formal_past_valid)
-        $past((page_allocator_state == PAGE_ALLOCATOR_FETCH_TICKET) &&
-              all_lanes_fetch_ready &&
-              !(ingress_tail_bypass_valid_i[g] &&
-                (ingress_tail_bypass_serial_i[g] ==
-                  tail_target_serial_from_raw(ticket_fifos_rd_data_i[g]))) &&
-              ingress_tail_status_valid_q[g][tail_status_slot(
-                tail_target_serial_from_raw(ticket_fifos_rd_data_i[g])
-              )] &&
-              (ingress_tail_status_serial_q[g][tail_status_slot(
-                tail_target_serial_from_raw(ticket_fifos_rd_data_i[g])
-              )] == tail_target_serial_from_raw(ticket_fifos_rd_data_i[g])))
+        $past((page_allocator_state == PAGE_ALLOCATOR_RESOLVE_TAIL) &&
+              ingress_tail_status_valid_q[g][tail_status_slot(fetch_tail_target_serial_q[g])] &&
+              (ingress_tail_status_serial_q[g][tail_status_slot(fetch_tail_target_serial_q[g])] ==
+                fetch_tail_target_serial_q[g]))
         |-> fetch_tail_ready_q[g] &&
             (fetch_tail_dropped_q[g] ==
-              $past(ingress_tail_status_drop_q[g][tail_status_slot(
-                tail_target_serial_from_raw(ticket_fifos_rd_data_i[g])
-              )]));
+              $past(ingress_tail_status_drop_q[g][tail_status_slot(fetch_tail_target_serial_q[g])]));
     endproperty
     ap_fetch_tail_drop_uses_shadow_exact_bypass: assert property (p_fetch_tail_drop_uses_shadow_exact_bypass)
       else $error("OPQ_PAGE_ALLOCATOR shadowed bypass state did not drive fetch_tail_dropped_q for an earlier packet");
@@ -1882,20 +1882,16 @@ module ordered_priority_queue_monolithic_page_allocator #(
 
     property p_fetch_active_frame_body_serial_is_not_past;
       @(posedge d_clk) disable iff (d_reset || !formal_past_valid)
-        $past((page_allocator_state == PAGE_ALLOCATOR_FETCH_TICKET) &&
-              all_lanes_fetch_ready &&
+        $past((page_allocator_state == PAGE_ALLOCATOR_CLASSIFY_TICKET) &&
               (page_allocator.frame_lane_active != '0) &&
-              page_allocator_is_pending_ticket[g] &&
-              !ticket_fifos_rd_data_i[g][TICKET_ALT_SOP_LOC] &&
-              (ticket_fifos_rd_data_i[g][TICKET_TS_HI:TICKET_TS_LO] == page_allocator.running_ts) &&
-              (ticket_fifos_rd_data_i[g][TICKET_BODY_SERIAL_HI:TICKET_BODY_SERIAL_LO] ==
-                page_allocator.frame_serial_this))
+              fetch_pending_q[g] &&
+              !fetch_ticket_raw_q[g][TICKET_ALT_SOP_LOC] &&
+              (fetch_ticket_q[g].ticket_ts == page_allocator.running_ts) &&
+              (fetch_ticket_q[g].frame_serial == page_allocator.frame_serial_this))
         |->
         fetch_pending_q[g] &&
-        ($past(ticket_fifos_rd_data_i[g][TICKET_BODY_SERIAL_HI:TICKET_BODY_SERIAL_LO]) ==
-          $past(page_allocator.frame_serial_this)) &&
-        ($past(ticket_fifos_rd_data_i[g][TICKET_TS_HI:TICKET_TS_LO]) ==
-          $past(page_allocator.running_ts)) &&
+        ($past(fetch_ticket_q[g].frame_serial) == $past(page_allocator.frame_serial_this)) &&
+        ($past(fetch_ticket_q[g].ticket_ts) == $past(page_allocator.running_ts)) &&
         !fetch_tk_past_q[g];
     endproperty
     ap_fetch_active_frame_body_serial_is_not_past: assert property (p_fetch_active_frame_body_serial_is_not_past)
@@ -1933,6 +1929,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
       ingress_tail_bypass_valid_i[g] && ingress_tail_bypass_drop_i[g]
       ##1 page_allocator.ingress_tail_seen_valid[g]
       ##[1:16] ((page_allocator_state == PAGE_ALLOCATOR_FETCH_TICKET) && all_lanes_fetch_ready)
+      ##1 (page_allocator_state == PAGE_ALLOCATOR_RESOLVE_TAIL)
       ##1 fetch_tail_dropped_q[g]);
 
     cp_active_frame_body_serial_window: cover property (@(posedge d_clk) disable iff (d_reset)
@@ -1944,6 +1941,8 @@ module ordered_priority_queue_monolithic_page_allocator #(
       (ticket_fifos_rd_data_i[g][TICKET_TS_HI:TICKET_TS_LO] == page_allocator.running_ts) &&
       (ticket_fifos_rd_data_i[g][TICKET_BODY_SERIAL_HI:TICKET_BODY_SERIAL_LO] ==
         page_allocator.frame_serial_this)
+      ##1 (page_allocator_state == PAGE_ALLOCATOR_RESOLVE_TAIL) && fetch_pending_q[g]
+      ##1 (page_allocator_state == PAGE_ALLOCATOR_CLASSIFY_TICKET)
       ##1 fetch_pending_q[g] && !fetch_tk_past_q[g]);
 
     cp_current_join_sop_window: cover property (@(posedge d_clk) disable iff (d_reset)
@@ -1968,13 +1967,25 @@ module ordered_priority_queue_monolithic_page_allocator #(
       ##1 active_frame_pending_nonfuture_ticket);
 `endif
 
-    cover property (@(posedge d_clk) disable iff (d_reset)
+`ifndef SYNTHESIS
+    cp_fetch_pending_serial_mismatch_window: cover property (@(posedge d_clk) disable iff (d_reset)
       (page_allocator_state == PAGE_ALLOCATOR_FETCH_TICKET) &&
       all_lanes_fetch_ready &&
       !ticket_fifos_rd_data_i[g][TICKET_ALT_SOP_LOC] &&
       (ticket_fifos_rd_data_i[g][TICKET_BODY_SERIAL_HI:TICKET_BODY_SERIAL_LO] !=
         page_allocator_ticket_serial_ref)
       ##1 fetch_pending_q[g]);
+
+    cp_idle_tail_flush_stage_window: cover property (@(posedge d_clk) disable iff (d_reset)
+      (page_allocator_state == PAGE_ALLOCATOR_IDLE) &&
+      (page_allocator.frame_lane_active != '0) &&
+      all_active_lanes_tail_ready &&
+      !active_frame_pending_nonfuture_ticket &&
+      (page_allocator.frame_cnt != '0)
+      ##1 (page_allocator_state == PAGE_ALLOCATOR_PREPARE_WRITE_TAIL)
+      ##1 ((page_allocator_state == PAGE_ALLOCATOR_WRITE_TAIL) &&
+           page_allocator.tail_only_flush));
+`endif
   end
 `endif
 
