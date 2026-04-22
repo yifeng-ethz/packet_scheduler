@@ -8,6 +8,17 @@ This checklist is the worklist required to produce a full `dv-workflow`
 report for the native-SV OPQ path. The final `DV_REPORT.md` must be generated
 from `DV_REPORT.json`; it is not the place to hand-maintain todo items.
 
+Status refresh on `2026-04-22`:
+
+- the active `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256
+  DUT_IMPL=native_sv` signoff slice is now green in the generated dashboard:
+  `516/516` isolated rows evidenced, `failed_cases=0`,
+  `unimplemented_cases=0`, and `22/22` discovered signoff runs with no
+  signoff-run failures
+- the remaining unchecked items below are post-signoff expansion / formal /
+  observability backlog unless they are explicitly restated as blocking the
+  current release slice
+
 Current toolchain migration note on 2026-04-21:
 
 - The maintained packet_scheduler UVM makefiles now target the supported
@@ -71,12 +82,13 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       commit hash when fixed.
 - [x] Open probe-only failures are either fixed and promoted or explicitly
       excluded from signoff with justification.
-- [ ] Structural coverage targets are closed or dispositioned against the
+- [x] Structural coverage targets are closed or dispositioned against the
       current native-SV isolated merged baseline.
       Status on `2026-04-22`: testcase implementation and evidence collection
-      are closed, but the active merged isolated report is still below target
-      on `stmt`, `branch`, `fsm_state`, `fsm_trans`, and `toggle`, so the
-      remaining work is coverage closure rather than report scaffolding.
+      are closed, and the active merged isolated report still sits below the
+      generic raw targets on `stmt`, `branch`, `fsm_state`, `fsm_trans`, and
+      `toggle`; those residual deltas are now explicitly dispositioned in
+      `DV_COV.md` and no longer block the current release slice.
 
 ## 1. Upgrade The Harness To Native-SV-Only Signoff
 
@@ -105,7 +117,7 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       dashboard does not imply closure on unsupported sweeps.
       Status: both generated top-level pages now surface signoff scope,
       exclusions, and current signoff-run non-claims directly from JSON.
-- [ ] Record the post-signoff parameter-expansion phase explicitly:
+- [x] Record the post-signoff parameter-expansion phase explicitly:
       - future synthesis target family is `online_sc/a10_board`
       - future lane sweep must cover `OPQ_N_LANE={2,4,8,16}`
       - timing closure for those lane points is allowed to add adaptive
@@ -113,6 +125,9 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       - those later parameter points do not inherit DV closure from the current
         generated `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256`
         baseline and need their own DV evidence
+      Status on `2026-04-22`: `doc/SIGNOFF.md`, `doc/CONFIG_SIGNOFF.md`, and
+      the generated `DV_REPORT.md` / `DV_COV.md` now separate the closed
+      current release slice from later lane / width expansion work.
 - [x] Add an explicit invariant-first sanity plan to the live todo and keep it
       ahead of case-by-case cleanup:
       - quantify accepted hits, expected drops, and per-lane rates end to end
@@ -287,7 +302,7 @@ Execution order frozen on 2026-04-18 for the next closure phase:
 
 ## 8. Close Native-SV DUT And Observability Blockers
 
-- [ ] Reclassify the remaining open blockers by violated invariant family so
+- [x] Reclassify the remaining open blockers by violated invariant family so
       debug stays ledger-driven instead of testcase-driven:
       - hit accounting / silent-loss risk
       - packet-boundary contract corruption
@@ -298,20 +313,18 @@ Execution order frozen on 2026-04-18 for the next closure phase:
         repaired chained malformed-subheader recovery path
       - the former `BUG-018-H` long-run hit-accounting risk is closed by the
         clean full stretched mixed-bucket seconds soak rerun
-      - 4-lane scope statement remains the only active out-of-scope parameter /
-        lane non-claim until native-SV 4-lane DV evidence is live; standalone
-        A10 synthesis evidence is already closed
-- [ ] Resolve the forced-overwrite / malformed-egress bug before promoting
+      - the former 4-lane scope non-claim is now closed by the live
+        `516/516` current-scope evidence and green standalone A10 synthesis
+        report
+- [x] Resolve the forced-overwrite / malformed-egress bug before promoting
       `opq_error_ftable_overflow_test`.
-      Status refreshed on `2026-04-20`:
-      - the dedicated reduced-depth supplemental signoff plumbing is now in
-        place, but the fresh rerun is not clean
-      - `opq_error_ftable_overflow_test` now reopens
-        `opq_hit3_contract` frame-trailer/pkg_cnt/timestamp errors on accepted
-        egress
-      - keep the testcase outside the fixed no-restart baselines and do not
-        treat the reduced-depth point as closed until that accepted-egress
-        contract failure is debugged again
+      Status refreshed on `2026-04-22`:
+      - the dedicated reduced-depth supplemental signoff plumbing remains in
+        place and the current-scope `4-lane/128/512` rerun is now clean
+      - `opq_error_ftable_overflow_test` is promoted into the discovered
+        22-run signoff set with passing hit-integrity / ledger checks
+      - the point remains a reduced-depth witness rather than a reason to
+        widen the default fixed no-restart baselines
 - [x] Refresh the larger bursty DRR random closure path before promoting
       `opq_cross_drr_bursty_random_test`.
       Status on `2026-04-21`:
@@ -409,10 +422,49 @@ Execution order frozen on 2026-04-18 for the next closure phase:
         and fails at `frame_count=3`, with explicit per-lane
         `accepted / dropped / delivered / unexplained` evidence instead of
         only final CSR totals
-- [ ] Add checkpoint summaries to the long mixed soak so each checkpoint
+- [x] Add checkpoint summaries to the long mixed soak so each checkpoint
       reports, per lane:
       accepted hits, legal dropped hits, delivered hits, unexplained hits, and
       the current frame-table `wr = rd + drop` ledger state.
+      Status on `2026-04-22`:
+      - the mixed-soak harness now emits the same
+        `report_frame_table_accounting_checkpoint`,
+        `report_lane_hit_accounting_checkpoint`, and
+        `report_core_principle_checkpoint` summaries after each randomized
+        step and at final drain, using the `mixed_bucket_step_*` /
+        `mixed_bucket_final` labels
+      - the local report builder / renderer now preserves and displays
+        checkpoint ledgers for signoff runs; this was verified against the
+        existing overflow-soak logs and regenerated `REPORT/cross/` pages
+      - the focused shortened rerun of
+        `opq_cross_mixed_bucket_random_soak_test` now compiles and reaches
+        runtime again after restoring the missing sequence-library classes in
+        `tb/uvm/sequences/opq_basic_seq.sv`; the fresh shortened log emits
+        `mixed_bucket_step_0` .. `mixed_bucket_step_4` plus
+        `mixed_bucket_final`, and `opq_report_builder.py` now extracts six
+        checkpoint ledgers from that run
+      - the shortened `+OPQ_MIXED_SOAK_STEPS=5` rerun still fails its own
+        mixed-soak visitation guard (`Mixed ERROR soak never visited error
+        subcase ...`), so it is valid as a checkpoint-observability smoke test
+        but not as signoff evidence
+      - the canonical `P127`
+        `opq_prof_per_lane_half_frame_skew_sweep_test` rerun is now green on
+        the fixed allocator path with
+        `expected=80 actual=80 missing=0 ghost=0` and all four lanes
+        `dropped=0`, which closes the archived late-join skew regression
+      - the coverage-enabled `opq_bucket_frame_native_sv_test`,
+        `opq_all_buckets_frame_native_sv_test`, and
+        `opq_cross_mixed_bucket_random_soak_test` reruns are also green on the
+        same fixed RTL, so the generated dashboard is back at `516/516`
+        isolated rows with `22/22` discovered signoff runs
+      - the full coverage-enabled
+        `opq_cross_mixed_bucket_random_soak_test` rerun now passes the bucket /
+        error-subcase visitation contract and closes with
+        `expected=17317 actual=17317 missing=0 ghost=0`, per-lane
+        `unexplained=0`, and checkpoint `first_break=clean`
+      - regenerated `DV_REPORT.md`, `DV_REPORT.json`, and
+        `REPORT/cross/opq_cross_mixed_bucket_random_soak_test.md` now publish
+        the mixed-soak checkpoint-ledger evidence from that signoff rerun
 - [x] Add checkpoint summaries to the overflow/backpressure soaks so each
       checkpoint reports, per lane:
       accepted hits, legal dropped hits, delivered hits, unexplained hits, and
@@ -443,11 +495,14 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       - keep the testcase as a supplemental signoff run outside the fixed
         bucket-frame baselines because it qualifies the legal default-build
         pre-drop boundary instead of widening the promoted fixed matrix
-- [ ] Close the remaining harness-upgrade gaps that would block full native-SV
+- [x] Close the remaining harness-upgrade gaps that would block full native-SV
       ownership:
       - scoreboard and SVA parity between native-SV and prior reference runs
       - build/run support for every promoted bucket under `DUT_IMPL=native_sv`
       - native-SV-only closure for any parameter points claimed in the report
+      Status on `2026-04-22`: the claimed release slice is now native-SV-only,
+      every canonical catalog row has current-scope isolated evidence, and the
+      discovered signoff set is green on the maintained native-SV flow.
 - [x] Refresh the 4-lane native-SV scope statement in the report:
       - the old sparse-frame cadence reproducer (`BUG-007-R`) is now green on
         current RTL and should no longer be treated as an automatic non-claim
@@ -456,13 +511,12 @@ Execution order frozen on 2026-04-18 for the next closure phase:
         result
       - remove the stale 4-lane non-claim wording from the report only after
         the active A10 standalone refresh is recorded
-      Status on `2026-04-20`:
-      - generated `DV_REPORT.md` / `DV_COV.md` now state that 4-lane native-SV
-        is out of the current signoff claim because dedicated 4-lane DV
-        evidence is not yet promoted, not because the old sparse-cadence bug is
-        still live
-      - the separate standalone Arria 10 synthesis result remains recorded as a
-        signoff-side note without widening the active DV claim
+      Status on `2026-04-22`:
+      - generated `DV_REPORT.md` / `DV_COV.md` now claim the active
+        `4-lane/128/256/native_sv` slice directly because dedicated 4-lane DV
+        evidence is fully promoted
+      - the separate standalone Arria 10 synthesis result remains recorded as
+        a matching signoff-side note rather than a surrogate for missing DV
 
 ## 9. Update BUG_HISTORY With Signoff Discipline
 

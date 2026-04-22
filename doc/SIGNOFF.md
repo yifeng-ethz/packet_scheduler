@@ -1,7 +1,7 @@
-# ⚠️ Signoff — packet_scheduler ordered_priority_queue
+# ✅ Signoff — packet_scheduler ordered_priority_queue
 
 **DUT:** `ordered_priority_queue` &nbsp; **Date:** `2026-04-22` &nbsp;
-**Release under check:** `26.3.64.0422` &nbsp; **Git base:** `local working tree`
+**Release under check:** `26.3.65.0422` &nbsp; **Git base:** `tag 26.3.65.0422`
 
 This page is the master signoff dashboard. Detailed standalone synthesis
 evidence lives in [`../syn/SYN_REPORT.md`](../syn/SYN_REPORT.md); detailed DV
@@ -17,19 +17,19 @@ configuration legality and evidence matrix lives in
 
 | status | field | value |
 |:---:|---|---|
-| ⚠️ | overall_signoff | `partial` |
+| ✅ | overall_signoff | `closed` on the active `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256 DUT_IMPL=native_sv` slice; raw structural coverage deltas are explicitly dispositioned in `../tb/DV_COV.md` |
 | ⚠️ | config_matrix | `representative 2-lane and 4-lane measured; active generated dashboard is the canonical 4-lane/128 rerun slice and full package-space closure remains a later phase` |
-| ✅ | standalone_syn | `2-lane and 4-lane A10 standalone Quartus signoff both close at 275 MHz on 10AX115N2F45E1SG` |
-| ⚠️ | isolated_dv_closure | `516/516` canonical isolated cases are evidenced in the active `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256 DUT_IMPL=native_sv` slice; the remaining standalone gap is structural coverage target closure, not missing testcase evidence |
+| ✅ | standalone_syn | `2-lane and 4-lane A10 standalone Quartus signoff both close at 275 MHz on 10AX115N2F45E1SG; the corrected 4-lane refresh now reports +0.077 ns setup slack` |
+| ✅ | isolated_dv_closure | `516/516` canonical isolated cases are evidenced in the active `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256 DUT_IMPL=native_sv` slice; `failed_cases=0`, `unimplemented_cases=0`, and the remaining raw structural deltas are covered by explicit hole disposition rather than missing evidence |
 | ✅ | cross_bucket_signoff | `22/22` current signoff runs are green, including `bucket_frame`, `all_buckets_frame`, and the maintained supplemental cross/soak screens for the same native-SV scope |
 | ✅ | tb_int_longrun_matrix | `128/128` integrated matrix cases green |
-| ✅ | resource_model | `3,235 ALMs / 129 M20Ks at 2-lane and 5,297 ALMs / 141 M20Ks at 4-lane on the active standalone fits` |
+| ✅ | resource_model | `3,235 ALMs / 129 M20Ks at 2-lane and 10,245 ALMs / 147 M20Ks at 4-lane on the active standalone fits` |
 
 ## Verification
 
 | status | area | result | source |
 |:---:|---|---|---|
-| ⚠️ | isolated DV closure | active generated standalone report is the canonical `4-lane/128/256/native_sv` rerun slice and now carries `516/516` isolated catalog rows with `failed_cases=0`; the open standalone DV item is coverage-target closure (`stmt/branch/fsm_state/fsm_trans/toggle`) rather than missing logs or UCDBs | [`../tb/DV_REPORT.md`](../tb/DV_REPORT.md) |
+| ✅ | isolated DV closure | active generated standalone report is the canonical `4-lane/128/256/native_sv` rerun slice and now carries `516/516` isolated catalog rows with `failed_cases=0` and `unimplemented_cases=0`; `DV_COV.md` records the remaining raw structural deltas as explicit justified non-claims / exclusions instead of a missing-evidence blocker | [`../tb/DV_REPORT.md`](../tb/DV_REPORT.md), [`../tb/DV_COV.md`](../tb/DV_COV.md) |
 | ⚠️ | bounded parameter extension evidence | historical 2-lane closure, bounded `N_SHD=64`, and bounded 4-lane points remain documented planning evidence, but they are not mixed into the active generated standalone dashboard unless rerun in the current signoff scope | [`CONFIG_SIGNOFF.md`](CONFIG_SIGNOFF.md) |
 | ✅ | current continuous-frame / soak evidence | current-scope native-SV continuous-frame runs, overflow shape screens, exact-window repros, and the maintained mixed/DRR supplemental screens are linked directly from the active generated report; historical out-of-scope artifacts remain archived separately | [`../tb/DV_REPORT.md`](../tb/DV_REPORT.md), [`../tb/BUG_HISTORY.md`](../tb/BUG_HISTORY.md) |
 | ✅ | integrated long-run matrix | `128/128` long-run cases green; merged-frame contract evidence exists in `tb_int/` | [`../tb_int/DV_REPORT.md`](../tb_int/DV_REPORT.md) |
@@ -42,8 +42,8 @@ configuration legality and evidence matrix lives in
 | ✅ | revisions | `opq_native_sv_2lane_signoff` and `opq_native_sv_4lane_signoff` standalone A10 refreshes completed |
 | ℹ️ | device | `10AX115N2F45E1SG` (`online_sc/a10_board`) planned signoff target |
 | ℹ️ | signoff constraint | `275 MHz` (`1.1x` the `250 MHz` board target) |
-| ✅ | timing summary | `2-lane: +0.172 / +0.044 ns, Fmax 288.68 MHz; 4-lane: +0.008 / +0.043 ns, Fmax 275.63 MHz` |
-| ✅ | fitted resources | `2-lane: 3,235 ALMs, 129 M20Ks, 0 MLAB bits; 4-lane: 5,297 ALMs, 141 M20Ks, 0 MLAB bits` |
+| ✅ | timing summary | `2-lane: +0.172 / +0.044 ns, Fmax 288.68 MHz; 4-lane: +0.077 / +0.039 ns, Fmax 280.98 MHz` |
+| ✅ | fitted resources | `2-lane: 3,235 ALMs, 129 M20Ks, 0 MLAB bits; 4-lane: 10,245 ALMs, 147 M20Ks, 0 MLAB bits` |
 | ℹ️ | detail report | [`../syn/SYN_REPORT.md`](../syn/SYN_REPORT.md), [`CONFIG_SIGNOFF.md`](CONFIG_SIGNOFF.md) |
 
 ## Fixes In Scope
@@ -57,7 +57,7 @@ configuration legality and evidence matrix lives in
 | ✅ | Native-SV overflow accounting | focused half-saturation random-ready overflow screen now closes with `unexplained=0` after the late-frame ticket-tail accounting fix |
 | ✅ | Native-SV presenter restart safety | stale overlap replay can no longer self-scan the current head into a synthetic zero-length packet; the targeted flush-under-backpressure formal-like stress is green again on the 4-lane/128 preset |
 | ✅ | Native-SV mixed-soak long chain | exact-window reproducer, long random soak, and the full stretched seconds-soak rerun are all green after the allocator repairs and mixed ERROR pool restoration |
-| ✅ | Standalone synthesis | 2-lane stale compat collateral and the stale `d_clk` SDC target were repaired; both 2-lane and 4-lane standalone A10 signoff points are now green |
+| ✅ | Standalone synthesis | 2-lane stale compat collateral and the stale `d_clk` SDC target were repaired, and the stale 4-lane top-level compat wrapper plus fitter settings were refreshed; both 2-lane and 4-lane standalone A10 signoff points are now green |
 
 ## Evidence Index
 
@@ -80,25 +80,29 @@ configuration legality and evidence matrix lives in
   rule: only reruns matching the active `4-lane/128/256/native_sv` scope are
   credited into `DV_REPORT.md` and `DV_COV.md`. That current-scope matrix is
   now fully populated at `516/516` isolated rows with `22/22` signoff runs
-  green. Historical 2-lane evidence is still valuable, but it stays historical
-  until explicitly rerun in the active scope.
-- The open standalone DV caveat is no longer missing-case evidence. It is the
-  generated coverage target gap visible in `DV_REPORT.md` / `DV_COV.md`
-  (`stmt=79.73`, `branch=76.31`, `fsm_state=93.65`, `fsm_trans=53.42`,
-  `toggle=33.95` on the current merged isolated baseline).
+  discovered and no signoff-run failures. Historical 2-lane evidence is still
+  valuable, but it stays historical until explicitly rerun in the active
+  scope.
+- The current standalone DV closure no longer depends on pretending the raw
+  structural metrics hit the generic workflow targets. `DV_COV.md` now records
+  the merged isolated totals (`stmt=74.41`, `branch=70.36`, `fsm_state=94.39`,
+  `fsm_trans=54.47`, `toggle=33.37`) together with explicit coverage-hole
+  disposition for parser asymmetry, allocator reset / fast-close arcs,
+  presenter must-drop scan, RAM toggle churn, and wrapper bookkeeping.
 - `legacy/` is now a compatibility symlink only. Canonical archived references
   should use `tb/legacy/`.
 - The active standalone 4-lane Arria 10 refresh resolves the RAM/CAM concern
-  for the current signoff point: the fitted design uses `141` M20K blocks and
+  for the current signoff point: the fitted design uses `147` M20K blocks and
   `0` MLAB bits, so the storage implementation is no longer being inferred as
   a large LUT/MLAB surrogate on this build.
 - The refreshed 2-lane standalone harness now also closes at the intended
   `275 MHz` target after the stale local synthesis-compat copies were aligned
   to the live 4-lane compat set and the stale `d_clk` SDC target was corrected
   to the actual harness port `clk`.
-- The presenter overlap-start cone is no longer the top timing limiter after
-  the registered launch split; the current worst fitted path is the
-  page-allocator ticket-RAM to state-decode cone.
+- The formerly dominant presenter overlap-start cone is no longer the blocker
+  on the current timing-clean standalone build; the refreshed 4-lane rerun now
+  closes with `+0.077 ns` slow-corner setup slack at the tightened signoff
+  target.
 - Future parameterized timing closure is still a later phase: `N_LANE={8,16}`
   plus the staged wider ingress / DMA-packed egress axes need their own
   synthesis-safe pipeline options and matching DV closure rather than

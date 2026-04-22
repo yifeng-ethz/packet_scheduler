@@ -6,10 +6,10 @@
 
 | status | field | value |
 |:---:|---|---|
-| ℹ️ | case_count | `40` |
+| ℹ️ | case_count | `41` |
 | ℹ️ | effort | `high` |
-| ℹ️ | txns | `700` |
-| ✅ | functional_cross_pct | `77.94` |
+| ℹ️ | txns | `820` |
+| ✅ | functional_cross_pct | `77.14` |
 | ✅ | counter_checks_failed | `0` |
 | ✅ | unexpected_outputs | `0` |
 
@@ -42,6 +42,7 @@
   `PROF` -> `long_soak_seq` (extended soak virtual sequence)
   `PROF` -> `heavy_skew_seq` (heavy lane-skew stress virtual sequence)
   `PROF` -> `deep_whole_frame_seq` (deep whole-frame skew virtual sequence)
+  `PROF` -> `per_lane_half_frame_skew_seq` (4-lane per-lane skew sweep up to half-frame cadence)
   `PROF` -> `asym_sparse_seq` (asymmetric missing-empty-frame virtual sequence)
   `ERROR` -> `masked_drop_seq` (masked drop virtual sequence)
   `ERROR` -> `single_hit_masked_drop_seq` (single-hit masked drop virtual sequence)
@@ -66,17 +67,21 @@
 
 | metric | pct |
 |---|---|
-| stmt | 80.00 |
-| branch | 79.25 |
-| cond | 54.17 |
-| expr | 70.90 |
+| stmt | 80.53 |
+| branch | 79.81 |
+| cond | 55.02 |
+| expr | 72.69 |
 | fsm_state | 100.00 |
-| fsm_trans | 63.01 |
-| toggle | 41.39 |
+| fsm_trans | 62.84 |
+| toggle | 42.48 |
 
 ## Transaction growth curve
 
 ❓ no curve data available for this run.
+
+## Checkpoint Ledgers
+
+❓ no checkpoint ledger data recorded for this run.
 
 ---
 _Back to [dashboard](../../DV_REPORT.md)_

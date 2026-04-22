@@ -21,17 +21,21 @@
 
 | metric | pct |
 |---|---|
-| stmt | 74.18 |
-| branch | 66.21 |
-| cond | 39.22 |
-| expr | 54.50 |
-| fsm_state | 84.13 |
-| fsm_trans | 41.10 |
-| toggle | 21.46 |
+| stmt | 72.80 |
+| branch | 65.81 |
+| cond | 38.49 |
+| expr | 53.24 |
+| fsm_state | 84.38 |
+| fsm_trans | 41.22 |
+| toggle | 21.34 |
 
 ## Transaction growth curve
 
 ❓ no curve data available for this run.
+
+## Checkpoint Ledgers
+
+❓ no checkpoint ledger data recorded for this run.
 
 ---
 _Back to [dashboard](../../DV_REPORT.md)_

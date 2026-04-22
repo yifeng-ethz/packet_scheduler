@@ -41,7 +41,14 @@ number.
 
 ## Coverage-Hole Disposition
 
-❓ no merged-UCDB hole classification recorded yet.
+| area | measured summary | disposition | evidence anchor | next action |
+|---|---|---|---|---|
+| ingress parser lane asymmetry | stmt=71.63, branch=66.98, cond=30.00, fsm_trans=45.83, toggle=36.89 (min across 6 instances) | justified_nonclaim: isolated merged coverage bottoms out at stmt=72.56, branch=67.92, fsm_trans=54.17, toggle=40.75 across the four lane-local parser instances; current-scope supplemental runs lift the parser family to stmt=83.26, branch=78.93, fsm_trans=62.50, toggle=53.67, so the residual deficit is the bounded 4-lane asymmetry / recovery axis rather than missing logs or broken UCDB plumbing | `DV_PLAN.md` 4-lane asymmetry notes; `DV_CROSS.md` CROSS-053 | Promote a dedicated 4-lane parser recovery / asymmetry sweep only if raw per-instance structural closure becomes a hard release gate. |
+| page allocator reset / fast-close arcs | stmt=78.20, branch=63.87, cond=31.61, fsm_trans=52.78, toggle=30.95 (min across 2 instances) | justified_nonclaim: the allocator improves from stmt=79.64, branch=68.05, fsm_trans=54.29, toggle=31.77 to stmt=79.64, branch=68.05, fsm_trans=54.29, toggle=46.85 once maintained signoff runs are merged, and the remaining FSM misses are dominated by active-state -> RESET fanout plus the WRITE_HEAD -> WRITE_TAIL empty-frame fast-close path rather than unexplained hit loss | `DV_ERROR.md` X081-X086; `DV_FORMAL.md` B23/B32 | Add a true mid-state reset / zero-hit fast-close stress only if raw allocator transition closure is promoted from a bounded non-claim to a release gate. |
+| presenter overwrite / must-drop scan | stmt=45.97, branch=52.07, cond=15.38, fsm_trans=50.00, toggle=23.55 (min across 2 instances) | justified_nonclaim: isolated presenter coverage remains low at stmt=46.88, branch=53.88, fsm_trans=50.00, toggle=24.92 because the overwrite-scan and must-drop logic is only forced by the named overflow witnesses; maintained signoff runs lift it to stmt=47.11, branch=53.88, fsm_trans=50.00, toggle=36.00 while hit-conservation screens stay clean, so the raw deficit maps to the explicit must-drop non-claim rather than a silent datapath failure | `DV_CROSS.md` CROSS-078/CROSS-079; `BUG_HISTORY.md` BUG-029-R/BUG-030-R | Keep `opq_cross_bp_mustdrop_witness_test` green and do not remove the non-claim until a default-build must-drop baseline is promoted into the published scope. |
+| block path reset-only arcs | stmt=88.82, branch=80.68, cond=56.86, fsm_trans=62.50, toggle=64.35 (min across 2 instances) | justified_exclusion: statement coverage is already 91.93 and signoff runs lift block-path toggle to 80.38; the remaining uncovered FSM transitions are the three ARBITER_* -> RESET arcs only | `DV_FORMAL.md` B23/B32 reset / flush invariants | Leave this as a reset-only exclusion unless mid-state hard reset becomes part of the release contract. |
+| RAM primitive toggle churn | stmt=71.43, branch=50.00, cond=0.00, toggle=18.18 (min across 26 instances) | justified_exclusion: ticket / lane / handle / page / meta RAM wrappers are already at 100% statement and branch coverage where those metrics exist; the residual miss is low-value deep-address / deep-data toggle churn in the bounded 4-lane/128 and 4-lane/512 evidence points | `CONFIG_SIGNOFF.md` bounded preset matrix; current `REPORT/cross/` runs | Treat this as low-value memory-toggle churn unless an explicit UNR / exclusion pass is added. |
+| wrapper-only toggle bookkeeping | stmt=77.88, branch=65.71, cond=39.33, toggle=18.40 (min across 6 instances) | justified_exclusion: top-level DUT and wrapper shells depress raw toggle through duplicated aggregation, probe, and bookkeeping nets without indicating missing testcase evidence in the core owner modules | `DV_REPORT.md` Signoff Runs; `doc/SIGNOFF.md` current-scope note | Do not spend testcase budget on wrapper toggles until owner-module functional gaps change. |
 
 ## Targets vs merged totals
 
@@ -50,13 +57,13 @@ number.
 
 | status | metric | merged_pct | target |
 |:---:|---|---|---|
-| ⚠️ | stmt | 79.73 | 95.0 |
-| ⚠️ | branch | 76.31 | 90.0 |
-| ℹ️ | cond | 51.46 | - |
-| ℹ️ | expr | 64.02 | - |
-| ⚠️ | fsm_state | 93.65 | 95.0 |
-| ⚠️ | fsm_trans | 53.42 | 90.0 |
-| ⚠️ | toggle | 33.95 | 80.0 |
+| ⚠️ | stmt | 74.41 | 95.0 |
+| ⚠️ | branch | 70.36 | 90.0 |
+| ℹ️ | cond | 41.62 | - |
+| ℹ️ | expr | 57.88 | - |
+| ⚠️ | fsm_state | 94.39 | 95.0 |
+| ⚠️ | fsm_trans | 54.47 | 90.0 |
+| ⚠️ | toggle | 33.52 | 80.0 |
 
 ## Per-bucket merged totals
 
@@ -64,10 +71,10 @@ _These are ordered isolated merged totals, not continuous-frame sequential-run t
 
 | status | bucket | catalog_planned | promoted | evidenced | stmt | branch | cond | expr | fsm_state | fsm_trans | toggle |
 |:---:|---|---:|---:|---:|---|---|---|---|---|---|---|
-| ⚠️ | [`BASIC`](REPORT/buckets/BASIC.md) | 129 | 129 | 129 | 76.54 | 70.52 | 45.63 | 58.20 | 87.30 | 43.84 | 28.61 |
-| ⚠️ | [`EDGE`](REPORT/buckets/EDGE.md) | 129 | 129 | 129 | 77.91 | 71.90 | 47.57 | 61.90 | 87.30 | 43.84 | 29.70 |
-| ⚠️ | [`PROF`](REPORT/buckets/PROF.md) | 129 | 129 | 129 | 72.97 | 64.37 | 33.40 | 44.97 | 85.71 | 42.47 | 24.86 |
-| ⚠️ | [`ERROR`](REPORT/buckets/ERROR.md) | 129 | 129 | 129 | 72.13 | 64.28 | 37.09 | 56.08 | 76.19 | 41.10 | 19.94 |
+| ⚠️ | [`BASIC`](REPORT/buckets/BASIC.md) | 129 | 129 | 129 | 71.93 | 64.94 | 36.18 | 49.18 | 86.92 | 43.09 | 23.41 |
+| ⚠️ | [`EDGE`](REPORT/buckets/EDGE.md) | 129 | 129 | 129 | 72.88 | 66.22 | 37.10 | 50.82 | 87.85 | 43.90 | 26.73 |
+| ⚠️ | [`PROF`](REPORT/buckets/PROF.md) | 129 | 129 | 129 | 70.52 | 62.97 | 31.35 | 45.11 | 86.92 | 43.09 | 25.47 |
+| ⚠️ | [`ERROR`](REPORT/buckets/ERROR.md) | 129 | 129 | 129 | 72.50 | 67.26 | 35.15 | 54.35 | 92.52 | 52.44 | 22.38 |
 
 ## Isolated execution order and traceability
 
@@ -85,28 +92,28 @@ _These rows are for continuous-frame sequential runs such as `bucket_frame` and
 
 | status | run_id | kind | build | case_count | stmt | branch | toggle | functional_cross_pct | txns |
 |:---:|---|---|---|---:|---|---|---|---:|---:|
-| ✅ | [`opq_bucket_frame_native_sv_test`](REPORT/cross/opq_bucket_frame_native_sv_test.md) | bucket_frame | after | 38 | 80.00 | 79.25 | 41.34 | 78.14 | 644 |
-| ✅ | [`opq_all_buckets_frame_native_sv_test`](REPORT/cross/opq_all_buckets_frame_native_sv_test.md) | all_buckets_frame | after | 40 | 80.00 | 79.25 | 41.39 | 77.94 | 700 |
-| ✅ | [`opq_cross_bp_credit_test`](REPORT/cross/opq_cross_bp_credit_test.md) | cross | after | 1 | 66.92 | 55.28 | 12.63 | 64.03 | 12 |
-| ✅ | [`opq_cross_bp_predrop_boundary_test`](REPORT/cross/opq_cross_bp_predrop_boundary_test.md) | cross | after | 1 | 70.11 | 58.95 | 19.72 | 63.34 | 104 |
-| ✅ | [`opq_cross_drr_allowance_test`](REPORT/cross/opq_cross_drr_allowance_test.md) | cross | after | 1 | 73.08 | 64.83 | 21.40 | 56.65 | 16 |
-| ✅ | [`opq_cross_drr_bursty_frame2_boundary_test`](REPORT/cross/opq_cross_drr_bursty_frame2_boundary_test.md) | cross | after | 1 | 71.37 | 60.97 | 14.40 | 58.66 | 4 |
-| ✅ | [`opq_cross_drr_bursty_frame3_repro_test`](REPORT/cross/opq_cross_drr_bursty_frame3_repro_test.md) | cross | after | 1 | 71.52 | 61.16 | 15.50 | 59.71 | 6 |
-| ✅ | [`opq_cross_drr_bursty_large_repro_test`](REPORT/cross/opq_cross_drr_bursty_large_repro_test.md) | cross | after | 1 | 71.48 | 60.79 | 16.35 | 60.51 | 12 |
-| ✅ | [`opq_cross_drr_bursty_random_test`](REPORT/cross/opq_cross_drr_bursty_random_test.md) | cross | after | 1 | 76.35 | 68.14 | 25.68 | 60.58 | 24 |
-| ✅ | [`opq_cross_drr_bursty_repro_test`](REPORT/cross/opq_cross_drr_bursty_repro_test.md) | cross | after | 1 | 71.52 | 61.16 | 16.92 | 59.71 | 16 |
-| ✅ | [`opq_cross_drr_idle_lane_test`](REPORT/cross/opq_cross_drr_idle_lane_test.md) | cross | after | 1 | 69.54 | 58.31 | 14.41 | 54.92 | 16 |
-| ✅ | [`opq_cross_drr_short_allowance_test`](REPORT/cross/opq_cross_drr_short_allowance_test.md) | cross | after | 1 | 73.08 | 64.74 | 21.49 | 55.2 | 12 |
-| ✅ | [`opq_cross_drr_then_idle_lane_bp_repro_test`](REPORT/cross/opq_cross_drr_then_idle_lane_bp_repro_test.md) | cross | after | 1 | 71.56 | 62.44 | 21.47 | 61.22 | 34 |
-| ✅ | [`opq_cross_drr_zero_allowance_test`](REPORT/cross/opq_cross_drr_zero_allowance_test.md) | cross | after | 1 | 69.77 | 58.77 | 14.56 | 55.01 | 16 |
-| ✅ | [`opq_cross_hit3_exact_183_190_repro_test`](REPORT/cross/opq_cross_hit3_exact_183_190_repro_test.md) | cross | after | 1 | 74.07 | 66.76 | 31.73 | 67.11 | 150 |
-| ✅ | [`opq_cross_hit3_lead_in_repro_test`](REPORT/cross/opq_cross_hit3_lead_in_repro_test.md) | cross | after | 1 | 74.11 | 66.85 | 30.76 | 66.44 | 138 |
-| ✅ | [`opq_cross_idle_lane_backpressure_test`](REPORT/cross/opq_cross_idle_lane_backpressure_test.md) | cross | after | 1 | 69.93 | 59.45 | 15.90 | 59.91 | 24 |
-| ✅ | [`opq_cross_masked_drop_exact_102_117_repro_test`](REPORT/cross/opq_cross_masked_drop_exact_102_117_repro_test.md) | cross | after | 1 | 75.44 | 68.69 | 31.91 | 70.56 | 214 |
-| ✅ | [`opq_cross_mixed_bucket_random_soak_test`](REPORT/cross/opq_cross_mixed_bucket_random_soak_test.md) | cross | after | 1 | 77.64 | 73.00 | 40.22 | 72.41 | 2026 |
-| ✅ | [`opq_cross_random_ready_overflow_step2_boundary_test`](REPORT/cross/opq_cross_random_ready_overflow_step2_boundary_test.md) | cross | after | 1 | 79.73 | 72.54 | 35.69 | 65.59 | 20 |
-| ✅ | [`opq_cross_single_hit_masked_then_sparse_repro_test`](REPORT/cross/opq_cross_single_hit_masked_then_sparse_repro_test.md) | cross | after | 1 | 74.18 | 66.21 | 21.46 | 65.28 | 24 |
-| ✅ | [`opq_cross_sparse_single_lane_drr_credit_restore_repro_test`](REPORT/cross/opq_cross_sparse_single_lane_drr_credit_restore_repro_test.md) | cross | after | 1 | 73.23 | 64.92 | 23.44 | 65.3 | 40 |
+| ✅ | [`opq_bucket_frame_native_sv_test`](REPORT/cross/opq_bucket_frame_native_sv_test.md) | bucket_frame | after | 39 | 80.53 | 79.81 | 41.77 | 77.34 | 764 |
+| ✅ | [`opq_all_buckets_frame_native_sv_test`](REPORT/cross/opq_all_buckets_frame_native_sv_test.md) | all_buckets_frame | after | 41 | 80.53 | 79.81 | 42.48 | 77.14 | 820 |
+| ✅ | [`opq_cross_bp_mustdrop_witness_test`](REPORT/cross/opq_cross_bp_mustdrop_witness_test.md) | cross | after | 1 | 77.46 | 67.01 | 30.06 | 65.74 | 52 |
+| ✅ | [`opq_cross_bp_predrop_boundary_test`](REPORT/cross/opq_cross_bp_predrop_boundary_test.md) | cross | after | 1 | 74.27 | 65.98 | 32.40 | 61.71 | 208 |
+| ✅ | [`opq_cross_drr_bursty_frame2_boundary_test`](REPORT/cross/opq_cross_drr_bursty_frame2_boundary_test.md) | cross | after | 1 | 74.27 | 67.61 | 21.72 | 59.27 | 8 |
+| ✅ | [`opq_cross_drr_bursty_frame3_repro_test`](REPORT/cross/opq_cross_drr_bursty_frame3_repro_test.md) | cross | after | 1 | 74.38 | 67.87 | 23.75 | 59.84 | 12 |
+| ✅ | [`opq_cross_drr_bursty_large_repro_test`](REPORT/cross/opq_cross_drr_bursty_large_repro_test.md) | cross | after | 1 | 76.06 | 68.38 | 25.46 | 60.64 | 24 |
+| ✅ | [`opq_cross_drr_bursty_random_test`](REPORT/cross/opq_cross_drr_bursty_random_test.md) | cross | after | 1 | 76.06 | 68.38 | 25.46 | 60.64 | 24 |
+| ✅ | [`opq_cross_drr_bursty_repro_test`](REPORT/cross/opq_cross_drr_bursty_repro_test.md) | cross | after | 1 | 74.41 | 68.13 | 26.14 | 59.84 | 32 |
+| ✅ | [`opq_cross_drr_then_idle_lane_bp_repro_test`](REPORT/cross/opq_cross_drr_then_idle_lane_bp_repro_test.md) | cross | after | 1 | 72.45 | 65.64 | 26.26 | 62.47 | 44 |
+| ✅ | [`opq_cross_hit3_exact_183_190_repro_test`](REPORT/cross/opq_cross_hit3_exact_183_190_repro_test.md) | cross | after | 1 | 73.75 | 67.70 | 35.85 | 66.65 | 166 |
+| ✅ | [`opq_cross_hit3_lead_in_repro_test`](REPORT/cross/opq_cross_hit3_lead_in_repro_test.md) | cross | after | 1 | 73.85 | 67.96 | 33.76 | 67.69 | 148 |
+| ✅ | [`opq_cross_idle_lane_backpressure_test`](REPORT/cross/opq_cross_idle_lane_backpressure_test.md) | cross | after | 1 | 69.02 | 59.11 | 15.96 | 59.91 | 24 |
+| ✅ | [`opq_cross_masked_drop_exact_102_117_repro_test`](REPORT/cross/opq_cross_masked_drop_exact_102_117_repro_test.md) | cross | after | 1 | 73.99 | 68.21 | 33.19 | 70.1 | 218 |
+| ✅ | [`opq_cross_mixed_bucket_random_soak_test`](REPORT/cross/opq_cross_mixed_bucket_random_soak_test.md) | cross | after | 1 | 77.31 | 74.66 | 42.96 | 72.87 | 2096 |
+| ✅ | [`opq_cross_random_ready_overflow_extensive_soak_test`](REPORT/cross/opq_cross_random_ready_overflow_extensive_soak_test.md) | cross | after | 1 | 84.35 | 75.52 | 40.42 | 66.77 | 76 |
+| ✅ | [`opq_cross_random_ready_overflow_step2_boundary_test`](REPORT/cross/opq_cross_random_ready_overflow_step2_boundary_test.md) | cross | after | 1 | 79.03 | 72.25 | 35.29 | 64.02 | 20 |
+| ✅ | [`opq_cross_single_hit_masked_then_sparse_repro_test`](REPORT/cross/opq_cross_single_hit_masked_then_sparse_repro_test.md) | cross | after | 1 | 72.80 | 65.81 | 21.34 | 65.28 | 24 |
+| ✅ | [`opq_cross_sparse_single_lane_drr_credit_restore_repro_test`](REPORT/cross/opq_cross_sparse_single_lane_drr_credit_restore_repro_test.md) | cross | after | 1 | 72.70 | 66.15 | 27.33 | 64.03 | 46 |
+| ⚠️ | [`opq_error_counter_clear_test`](REPORT/cross/opq_error_counter_clear_test.md) | cross | after | 1 | 45.99 | 30.50 | 3.18 | 38.24 | 4 |
+| ✅ | [`opq_error_ftable_overflow_test`](REPORT/cross/opq_error_ftable_overflow_test.md) | cross | after | 1 | 67.97 | 56.10 | 16.03 | 58.05 | 64 |
+| ✅ | [`opq_formal_like_egress_flush_backpressure_stress_test`](REPORT/cross/opq_formal_like_egress_flush_backpressure_stress_test.md) | cross | after | 1 | 67.83 | 56.19 | 16.23 | 60.47 | 80 |
 
 ## Fixed baseline execution order
 
@@ -137,6 +144,7 @@ _These rows are for continuous-frame sequential runs such as `bucket_frame` and
   `PROF` -> `long_soak_seq` (extended soak virtual sequence)
   `PROF` -> `heavy_skew_seq` (heavy lane-skew stress virtual sequence)
   `PROF` -> `deep_whole_frame_seq` (deep whole-frame skew virtual sequence)
+  `PROF` -> `per_lane_half_frame_skew_seq` (4-lane per-lane skew sweep up to half-frame cadence)
   `PROF` -> `asym_sparse_seq` (asymmetric missing-empty-frame virtual sequence)
   `ERROR` -> `masked_drop_seq` (masked drop virtual sequence)
   `ERROR` -> `single_hit_masked_drop_seq` (single-hit masked drop virtual sequence)
@@ -182,6 +190,7 @@ _These rows are for continuous-frame sequential runs such as `bucket_frame` and
   `PROF` -> `long_soak_seq` (extended soak virtual sequence)
   `PROF` -> `heavy_skew_seq` (heavy lane-skew stress virtual sequence)
   `PROF` -> `deep_whole_frame_seq` (deep whole-frame skew virtual sequence)
+  `PROF` -> `per_lane_half_frame_skew_seq` (4-lane per-lane skew sweep up to half-frame cadence)
   `PROF` -> `asym_sparse_seq` (asymmetric missing-empty-frame virtual sequence)
   `ERROR` -> `masked_drop_seq` (masked drop virtual sequence)
   `ERROR` -> `single_hit_masked_drop_seq` (single-hit masked drop virtual sequence)

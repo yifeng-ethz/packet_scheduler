@@ -1,4 +1,4 @@
-# ✅ DV Report — packet_scheduler/tb_int long-run matrix
+# ✅ DV Report — `packet_scheduler/tb_int long-run matrix`
 
 **DUT:** `packet_scheduler tb_int` &nbsp; **Date:** `2026-04-17` &nbsp;
 **RTL variant:** `longrun` &nbsp; **Seed:** `1`
@@ -7,7 +7,7 @@ This page is the chief-architect dashboard. All per-case evidence lives under [`
 
 ## Legend
 
-✅ pass / closed &middot; ⚠️ partial / below target &middot; ❌ failed / missing evidence &middot; ❓ pending &middot; ℹ️ informational
+✅ pass / closed &middot; ⚠️ partial / below target / known limitation &middot; ❌ failed / missing evidence &middot; ❓ pending &middot; ℹ️ informational
 
 ## Health
 
@@ -15,32 +15,47 @@ This page is the chief-architect dashboard. All per-case evidence lives under [`
 |:---:|---|---|
 | ✅ | failed_cases | `0` |
 | ✅ | signoff_runs_with_failures | `0` |
+| ⚠️ | catalog_backlog_cases | `128` |
 | ✅ | unimplemented_cases | `0` |
 | ✅ | stale_artifacts | `0` |
 
-## Bucket summary
+## Signoff Scope
+
+| field | claimed value |
+|---|---|
+| RTL_VARIANT | `longrun` |
+| probe_only_exclusions |  |
+
+## Non-Claims
+
+- none.
+
+## Bucket Summary
 
 <!-- status: overall per-bucket health; merged columns: bucket-local ordered-merge percentages. -->
 
-| status | bucket | planned | evidenced | merged (stmt/branch/cond/expr/fsm_state/fsm_trans/toggle) | functional |
-|:---:|---|---:|---:|---|---|
-| ✅ | [`B0`](REPORT/buckets/B0.md) | 16 | 16 | stmt=n/a, branch=n/a, cond=n/a, expr=n/a, fsm_state=n/a, fsm_trans=n/a, toggle=n/a | 100.0% (16/16) |
-| ✅ | [`B1`](REPORT/buckets/B1.md) | 16 | 16 | stmt=n/a, branch=n/a, cond=n/a, expr=n/a, fsm_state=n/a, fsm_trans=n/a, toggle=n/a | 100.0% (16/16) |
-| ✅ | [`B2`](REPORT/buckets/B2.md) | 16 | 16 | stmt=n/a, branch=n/a, cond=n/a, expr=n/a, fsm_state=n/a, fsm_trans=n/a, toggle=n/a | 100.0% (16/16) |
-| ✅ | [`B3`](REPORT/buckets/B3.md) | 16 | 16 | stmt=n/a, branch=n/a, cond=n/a, expr=n/a, fsm_state=n/a, fsm_trans=n/a, toggle=n/a | 100.0% (16/16) |
-| ✅ | [`B4`](REPORT/buckets/B4.md) | 16 | 16 | stmt=n/a, branch=n/a, cond=n/a, expr=n/a, fsm_state=n/a, fsm_trans=n/a, toggle=n/a | 100.0% (16/16) |
-| ✅ | [`B5`](REPORT/buckets/B5.md) | 16 | 16 | stmt=n/a, branch=n/a, cond=n/a, expr=n/a, fsm_state=n/a, fsm_trans=n/a, toggle=n/a | 100.0% (16/16) |
-| ✅ | [`B6`](REPORT/buckets/B6.md) | 16 | 16 | stmt=n/a, branch=n/a, cond=n/a, expr=n/a, fsm_state=n/a, fsm_trans=n/a, toggle=n/a | 100.0% (16/16) |
-| ✅ | [`B7`](REPORT/buckets/B7.md) | 16 | 16 | stmt=n/a, branch=n/a, cond=n/a, expr=n/a, fsm_state=n/a, fsm_trans=n/a, toggle=n/a | 100.0% (16/16) |
+| status | bucket | catalog_planned | promoted | evidenced | backlog | merged | promoted functional |
+|:---:|---|---:|---:|---:|---:|---|---|
+| ✅ | [`B0`](REPORT/buckets/B0.md) | 16 | 16 | 16 | 0 | stmt=n/a, branch=n/a, cond=n/a, expr=n/a, fsm_state=n/a, fsm_trans=n/a, toggle=n/a | 100.0% (16/16) |
+| ✅ | [`B1`](REPORT/buckets/B1.md) | 16 | 16 | 16 | 0 | stmt=n/a, branch=n/a, cond=n/a, expr=n/a, fsm_state=n/a, fsm_trans=n/a, toggle=n/a | 100.0% (16/16) |
+| ✅ | [`B2`](REPORT/buckets/B2.md) | 16 | 16 | 16 | 0 | stmt=n/a, branch=n/a, cond=n/a, expr=n/a, fsm_state=n/a, fsm_trans=n/a, toggle=n/a | 100.0% (16/16) |
+| ✅ | [`B3`](REPORT/buckets/B3.md) | 16 | 16 | 16 | 0 | stmt=n/a, branch=n/a, cond=n/a, expr=n/a, fsm_state=n/a, fsm_trans=n/a, toggle=n/a | 100.0% (16/16) |
+| ✅ | [`B4`](REPORT/buckets/B4.md) | 16 | 16 | 16 | 0 | stmt=n/a, branch=n/a, cond=n/a, expr=n/a, fsm_state=n/a, fsm_trans=n/a, toggle=n/a | 100.0% (16/16) |
+| ✅ | [`B5`](REPORT/buckets/B5.md) | 16 | 16 | 16 | 0 | stmt=n/a, branch=n/a, cond=n/a, expr=n/a, fsm_state=n/a, fsm_trans=n/a, toggle=n/a | 100.0% (16/16) |
+| ✅ | [`B6`](REPORT/buckets/B6.md) | 16 | 16 | 16 | 0 | stmt=n/a, branch=n/a, cond=n/a, expr=n/a, fsm_state=n/a, fsm_trans=n/a, toggle=n/a | 100.0% (16/16) |
+| ✅ | [`B7`](REPORT/buckets/B7.md) | 16 | 16 | 16 | 0 | stmt=n/a, branch=n/a, cond=n/a, expr=n/a, fsm_state=n/a, fsm_trans=n/a, toggle=n/a | 100.0% (16/16) |
 
 ## Totals
 
 | status | metric | pct | target |
 |:---:|---|---|---|
 
-- functional coverage: `100.0% (128/128)`
+- catalog_planned_cases: `128`
+- promoted_signoff_cases: `128`
+- evidenced_promoted_cases: `128`
+- promoted functional coverage: `100.0% (128/128)`
 
-## Cross / continuous-frame signoff
+## Signoff Runs
 
 <!-- one row per run; follow the run_id link for the full transaction-growth curve. -->
 
@@ -52,9 +67,8 @@ This page is the chief-architect dashboard. All per-case evidence lives under [`
 - [`REPORT/README.md`](REPORT/README.md) — reviewer entry point
 - [`REPORT/buckets/`](REPORT/buckets/) — ordered-merge trace per bucket
 - [`REPORT/cases/`](REPORT/cases/) — one page per case
-- [`REPORT/cross/`](REPORT/cross/) — one page per continuous-frame run
-- [`REPORT/txn_growth/`](REPORT/txn_growth/) — checkpoint UCDB curves for random cases
-- [`DV_COV.md`](DV_COV.md) — coverage targets vs. merged totals (summary)
+- [`REPORT/cross/`](REPORT/cross/) — one page per signoff run
+- [`DV_COV.md`](DV_COV.md) — coverage totals, ordering, and baseline scope
 - [`DV_REPORT.json`](DV_REPORT.json) — machine-readable source of truth
 
 _This dashboard is generated by `~/.codex/skills/dv-workflow/scripts/dv_report_gen.py`. Edits are overwritten; fix the JSON or the generator instead._

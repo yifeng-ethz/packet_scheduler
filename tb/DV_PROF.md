@@ -137,7 +137,7 @@
 | P124 | R | live UVM | none | long-simtime profile: `+TB_CLK_PERIOD_NS=1000000` with 256 frames | stretched simtime covers timing-insensitive corners; catches wall-time regression |
 | P125 | R | live UVM | none | long-simtime profile: `+TB_CLK_PERIOD_NS=250` with `opq_prof_stress_test` chained many times | extended run with chained traffic; catches long-chain regression |
 | P126 | R | planned (variant-only) | none | 4-lane variant profile: `OPQ_N_LANE=4` stress traffic across all lanes | 4-lane arbiter fairness verified; catches `OPQ_N_LANE=4` build regression |
-| P127 | R | planned (variant-only) | none | 4-lane variant profile: 4-lane whole-frame skew cadence | 4-lane cadence covered; catches `OPQ_N_LANE=4` cadence regression |
+| P127 | R | live UVM | `opq_prof_per_lane_half_frame_skew_sweep_test` | 4-lane variant profile: per-lane skew sweep with fixed spreads stepping from 0 to half of the frame time | all four lane ledgers close across the 0..half-frame sweep; 4-lane skew/cadence bins advance; catches delayed-lane ordering regression on the active 4-lane build |
 | P128 | R | planned (variant-only) | none | wider page-RAM variant: `OPQ_PAGE_RAM_DEPTH=131072` with deep residency | wider page-RAM exercised; catches page-RAM width regression |
 | P129 | R | planned (variant-only) | none | deeper ticket-FIFO variant: `OPQ_TICKET_FIFO_DEPTH=512` with high-frame-rate traffic | deeper ticket FIFO exercised; catches FIFO depth regression |
 

@@ -322,6 +322,7 @@ def build_report() -> dict:
         ]
         buckets[bucket_name] = {
             "planned_cases": len(cases),
+            "promoted_cases": len(cases),
             "evidenced_cases": evidenced,
             "merged_bucket_total": {},
             "merge_trace": merge_trace,
@@ -331,6 +332,7 @@ def build_report() -> dict:
             {
                 "bucket": bucket_name,
                 "planned_cases": len(cases),
+                "promoted_cases": len(cases),
                 "evidenced_cases": evidenced,
                 "merged_bucket_total": {},
                 "functional_coverage": functional_summary(cases),
@@ -355,6 +357,7 @@ def build_report() -> dict:
         "rtl_variant": RTL_VARIANT,
         "seed": SEED,
         "implementation_summary": {
+            "implemented_count": CASE_COUNT,
             "unimplemented_count": 0,
             "stale_artifact_without_engine_marker_count": 0,
         },

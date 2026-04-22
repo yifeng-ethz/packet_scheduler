@@ -69,12 +69,15 @@ Signoff evidence in this tree is required to come from `DUT_IMPL=native_sv`.
   current-scope evidence only. Out-of-scope historical artifacts are preserved
   on disk for reference but are not credited into the active canonical report
   slice.
-- The remaining standalone gap is coverage closure rather than testcase
+- The active standalone signoff claim is no longer blocked on testcase
   presence. The current merged isolated totals are
-  `stmt=79.73`, `branch=76.31`, `fsm_state=93.65`, `fsm_trans=53.42`, and
-  `toggle=33.95`, so signoff stays partial until those targets are either
-  closed or explicitly dispositioned.
+  `stmt=74.41`, `branch=70.36`, `fsm_state=94.39`, `fsm_trans=54.47`, and
+  `toggle=33.37`, and those raw structural deltas are now explicitly
+  dispositioned in the generated [`DV_COV.md`](DV_COV.md) table rather than
+  hidden behind a partial dashboard.
 - The live `opq_basic_smoke_test` now passes on the active monolithic harness with scoreboard hit-integrity
   checks enabled: same hits in, same hits out, and the first merged subheader lands in the correct time slot.
-- The remaining signoff work is closure, not basic bring-up: lint disposition, coverage closure, more buckets from
-  `DV_PLAN`, and a full internal SystemVerilog rewrite if the project wants source-level SVA/formal ownership.
+- Post-signoff follow-on work is expansion rather than current-scope closure:
+  parameter/lane extension, deeper formal ownership, and any future effort to
+  turn the raw structural coverage deltas into hard target closure instead of
+  justified disposition.

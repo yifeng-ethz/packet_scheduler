@@ -8,8 +8,8 @@
 |:---:|---|---|
 | ℹ️ | case_count | `1` |
 | ℹ️ | effort | `practical` |
-| ℹ️ | txns | `104` |
-| ✅ | functional_cross_pct | `63.34` |
+| ℹ️ | txns | `208` |
+| ✅ | functional_cross_pct | `61.71` |
 | ✅ | counter_checks_failed | `0` |
 | ✅ | unexpected_outputs | `0` |
 
@@ -21,17 +21,25 @@
 
 | metric | pct |
 |---|---|
-| stmt | 70.11 |
-| branch | 58.95 |
-| cond | 33.01 |
-| expr | 44.44 |
-| fsm_state | 71.43 |
-| fsm_trans | 32.19 |
-| toggle | 19.72 |
+| stmt | 74.27 |
+| branch | 65.98 |
+| cond | 39.03 |
+| expr | 53.70 |
+| fsm_state | 87.50 |
+| fsm_trans | 43.24 |
+| toggle | 32.40 |
 
 ## Transaction growth curve
 
 ❓ no curve data available for this run.
+
+## Checkpoint Ledgers
+
+| checkpoint | aggregate | first_break | lane0 | lane1 | lane2 | lane3 | frame_table |
+|---|---|---|---|---|---|---|---|
+| `bp_predrop_boundary_nodrop` | `a=1020 d=5124 v=1020 u=0` | `clean` | `a=264 d=1272 v=264 u=0` | `a=252 d=1284 v=252 u=0` | `a=252 d=1284 v=252 u=0` | `a=252 d=1284 v=252 u=0` | `h=4/4/0 s=88/88/0 i=1020/1020/0` |
+| `bp_predrop_boundary_pressure` | `a=13260 d=66612 v=13260 u=0` | `clean` | `a=3432 d=16536 v=3432 u=0` | `a=3276 d=16692 v=3276 u=0` | `a=3276 d=16692 v=3276 u=0` | `a=3276 d=16692 v=3276 u=0` | `h=52/52/0 s=1144/1144/0 i=13260/13260/0` |
+| `bp_predrop_boundary_final` | `a=13260 d=66612 v=13260 u=0` | `clean` | `a=3432 d=16536 v=3432 u=0` | `a=3276 d=16692 v=3276 u=0` | `a=3276 d=16692 v=3276 u=0` | `a=3276 d=16692 v=3276 u=0` | `h=52/52/0 s=1144/1144/0 i=13260/13260/0` |
 
 ---
 _Back to [dashboard](../../DV_REPORT.md)_

@@ -8,8 +8,8 @@
 |:---:|---|---|
 | ℹ️ | case_count | `1` |
 | ℹ️ | effort | `practical` |
-| ℹ️ | txns | `4` |
-| ✅ | functional_cross_pct | `58.66` |
+| ℹ️ | txns | `8` |
+| ✅ | functional_cross_pct | `59.27` |
 | ✅ | counter_checks_failed | `0` |
 | ✅ | unexpected_outputs | `0` |
 
@@ -21,17 +21,21 @@
 
 | metric | pct |
 |---|---|
-| stmt | 71.37 |
-| branch | 60.97 |
-| cond | 34.76 |
-| expr | 43.92 |
-| fsm_state | 71.43 |
-| fsm_trans | 31.51 |
-| toggle | 14.40 |
+| stmt | 74.27 |
+| branch | 67.61 |
+| cond | 41.01 |
+| expr | 52.31 |
+| fsm_state | 87.50 |
+| fsm_trans | 43.24 |
+| toggle | 21.72 |
 
 ## Transaction growth curve
 
 ❓ no curve data available for this run.
+
+## Checkpoint Ledgers
+
+❓ no checkpoint ledger data recorded for this run.
 
 ---
 _Back to [dashboard](../../DV_REPORT.md)_

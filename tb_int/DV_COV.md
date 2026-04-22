@@ -1,8 +1,12 @@
-# DV Coverage Summary — packet_scheduler/tb_int long-run matrix
+# DV Coverage Summary — `packet_scheduler/tb_int long-run matrix`
 
 This page is the coverage summary only. Per-case incremental coverage lives under
 [`REPORT/cases/`](REPORT/cases/); per-bucket ordered-merge traces live under
 [`REPORT/buckets/`](REPORT/buckets/).
+
+## Legend
+
+✅ pass / closed &middot; ⚠️ partial / below target &middot; ❌ failed / missing evidence &middot; ❓ pending &middot; ℹ️ informational
 
 ## Targets vs merged totals
 

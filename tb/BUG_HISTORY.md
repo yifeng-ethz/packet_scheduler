@@ -68,6 +68,7 @@ Historical formal note:
 | [BUG-028-H](#bug-028-h-lane-hit-ledger-retired-delivered-beats-against-parser-timestamps-instead-of-canonical-egress-timestamps) | H | non-datapath-refactor | `corner-only (4-lane supplemental rerun)` | fixed | `opq_cross_random_ready_overflow_step2_boundary_test` on `2026-04-21` @ `OPQ_N_LANE=4 OPQ_N_SHD=128` | `a813795` | The 4-lane no-restart ledger is clean again after the scoreboard started carrying both canonical delivery timestamps and parser/accounting timestamps per hit. |
 | [BUG-029-R](#bug-029-r-presenter-overlap-bookkeeping-can-strand-queued-metadata-in-idle-after-a-legal-trailer-retire) | R | hard stuck error | `corner-only (legal backpressure stress)` | fixed | `opq_cross_bp_predrop_boundary_test` on `2026-04-21` | `43336f8` | The presenter no longer strands the legal pre-drop supplemental run after slot `0x17`; queued metadata now advances through `WAIT_FOR_COMPLETE` even when overlap bookkeeping is still pending. |
 | [BUG-030-R](#bug-030-r-overlap-request-replay-can-self-drop-the-current-head-and-synthesize-a-zero-length-packet) | R | hard stuck error | `corner-only (targeted backpressure stress)` | fixed | `opq_formal_like_egress_flush_backpressure_stress_test` on `2026-04-22` @ `OPQ_N_LANE=4 OPQ_N_SHD=128` | `309f1d4` | The presenter now discards overlap requests that have already caught up to their own head slot, so the restart path no longer self-drops the live head or launches a zero-length packet after a legal trailer retire. |
+| [BUG-031-R](#bug-031-r-partially-joined-4-lane-frames-could-age-current-frame-body-tickets-into-post-drop) | R | soft error | `corner-only (4-lane half-frame skew sweep)` | fixed | `opq_prof_per_lane_half_frame_skew_sweep_test` / `P127` on `2026-04-22` @ `OPQ_N_LANE=4 OPQ_N_SHD=128` | `49d800f` | Partially joined frames no longer clear their join hold too early, so late lanes in the current frame keep their body tickets in-window instead of aging into `tk_past` and post-drop. |
 
 ## 2026-04-17
 
@@ -1124,6 +1125,70 @@ Historical formal note:
     for closure instead of falsely reopening clean datapath cases
 - Commit:
   - a813795
+
+## 2026-04-22
+
+### BUG-031-R: Partially joined 4-lane frames could age current-frame body tickets into post-drop
+- First seen in:
+  - canonical `P127`
+    `opq_prof_per_lane_half_frame_skew_sweep_test` on `2026-04-22`
+    at `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256`
+- Symptom:
+  - the archived `P127` failure reproduced exactly with
+    `expected=80 actual=66 missing=14 ghost=0`
+  - the failing window specifically dropped current-frame body traffic after
+    later lanes joined, with the reproduced per-lane signature
+    `lane2_drop_shd=0x480` and `lane3_drop_shd=0x580`
+  - the bug lost hits but did not poison later scoreboard drain, so it was a
+    packet-loss regression rather than a stuck-state regression
+- Root cause:
+  - the page allocator's late-join hold was too short and could also be
+    cleared during `PAGE_ALLOCATOR_WRITE_PAGE`, even while the active frame
+    was still missing lanes
+  - `running_ts` therefore kept advancing across a partially joined frame, so
+    a lane that joined later in the same frame could immediately see its own
+    current-frame body tickets classified into `tk_past` and the post-drop
+    path
+- Fix status:
+  - state:
+    - fixed on the refreshed `2026-04-22` isolated and signoff reruns
+  - mechanism:
+    - the allocator now sizes `FRAME_JOIN_WAIT_CYCLES` to the full frame
+      duration, keeps `frame_join_wait` alive across page writes, and applies
+      the join hold only while the active frame is still partially joined
+      (`frame_lane_active != '1`)
+  - before_fix_outcome:
+    - the recovered skew helper sequence reproduced the archived `P127`
+      failure exactly with `expected=80 actual=66 missing=14 ghost=0`
+    - lane2 and lane3 were the late-join victims in that reproduced window,
+      matching the archived `drop_shd` signature
+  - after_fix_outcome:
+    - the canonical coverage-enabled `P127` rerun on `2026-04-22` now closes
+      with `expected=80 actual=80 missing=0 ghost=0`, all four lanes
+      `dropped=0`, and `UVM_ERROR : 0`
+    - the coverage-enabled
+      `opq_bucket_frame_native_sv_test`,
+      `opq_all_buckets_frame_native_sv_test`, and
+      `opq_cross_mixed_bucket_random_soak_test` reruns are also green on the
+      same fixed RTL, with the mixed-soak ledger again ending
+      `expected=17317 actual=17317 missing=0 ghost=0`,
+      per-lane `unexplained=0`, and checkpoint `first_break=clean`
+  - potential_hazard:
+    - this looks like a durable fix for the current claimed late-join path,
+      because the repair is now covered by the isolated skew reproducer plus
+      the maintained continuous-frame carry-over reruns
+    - the claim is still bounded to the active native-SV `4-lane/128/256`
+      release slice rather than all future lane-count expansions
+  - Claude Opus 4.7 xhigh review decision:
+    - pending / not run in this turn
+- Runtime / coverage context:
+  - this bug was the last failing isolated catalog row in the active signoff
+    slice, so closing it restored the generated dashboard to `516/516`
+    evidenced cases with `failed_cases=0`
+  - the refreshed carry-over reruns also restore the generated signoff-run
+    table to `22/22` green runs for the claimed native-SV scope
+- Commit:
+  - `49d800f` `packet_scheduler: close skew and mixed-soak signoff gaps`
 
 ### BUG-026-R: Live-head overwrite protection suppresses unread-tail drop accounting
 - First seen in:
