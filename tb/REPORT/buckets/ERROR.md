@@ -1,39 +1,33 @@
 # ⚠️ ERROR bucket
 
-**Catalog planned:** `166` &nbsp; **Promoted:** `10` &nbsp; **Evidenced:** `7` &nbsp; **Catalog backlog:** `156` &nbsp; **Status:** ⚠️
+**Catalog planned:** `129` &nbsp; **Promoted:** `129` &nbsp; **Evidenced:** `1` &nbsp; **Catalog backlog:** `0` &nbsp; **Status:** ⚠️
 
 ## Catalog Inventory
 
-- source: [`legacy/tb/DV_ERROR.md`](../../legacy/tb/DV_ERROR.md)
-- summary: Archived directed ERROR catalog preserved in tb/legacy/tb/DV_ERROR.md.
+- source: [`DV_ERROR.md`](../../DV_ERROR.md)
+- summary: Canonical ERROR catalog from DV_ERROR.md.
 
 ## Ordered isolated baseline
 
-- execution order: [`CORNER_OPQ_401_error_lane_mask_test`](../cases/CORNER_OPQ_401_error_lane_mask_test.md), [`CORNER_OPQ_402_error_lane_mask_single_hit_test`](../cases/CORNER_OPQ_402_error_lane_mask_single_hit_test.md), [`CORNER_OPQ_403_error_lane_mask_burst_test`](../cases/CORNER_OPQ_403_error_lane_mask_burst_test.md), [`CORNER_OPQ_404_error_lane_mask_recovery_test`](../cases/CORNER_OPQ_404_error_lane_mask_recovery_test.md), [`CORNER_OPQ_405_error_hit_mask_recovery_test`](../cases/CORNER_OPQ_405_error_hit_mask_recovery_test.md), [`CORNER_OPQ_406_error_subheader_mask_recovery_test`](../cases/CORNER_OPQ_406_error_subheader_mask_recovery_test.md), [`CORNER_OPQ_407_error_header_mask_recovery_test`](../cases/CORNER_OPQ_407_error_header_mask_recovery_test.md), [`CORNER_OPQ_408_error_header_word_mask_recovery_test`](../cases/CORNER_OPQ_408_error_header_word_mask_recovery_test.md), [`CORNER_OPQ_409_error_counter_clear_test`](../cases/CORNER_OPQ_409_error_counter_clear_test.md), [`CORNER_OPQ_410_error_ftable_overflow_test`](../cases/CORNER_OPQ_410_error_ftable_overflow_test.md)
+- execution order: [`X001`](../cases/X001.md), [`X002`](../cases/X002.md), [`X003`](../cases/X003.md), [`X004`](../cases/X004.md), [`X005`](../cases/X005.md), [`X006`](../cases/X006.md), [`X007`](../cases/X007.md), [`X008`](../cases/X008.md), [`X009`](../cases/X009.md), [`X010`](../cases/X010.md), [`X011`](../cases/X011.md), [`X012`](../cases/X012.md), [`X013`](../cases/X013.md), [`X014`](../cases/X014.md), [`X015`](../cases/X015.md), [`X016`](../cases/X016.md), [`X017`](../cases/X017.md), [`X018`](../cases/X018.md), [`X019`](../cases/X019.md), [`X020`](../cases/X020.md), [`X021`](../cases/X021.md), [`X022`](../cases/X022.md), [`X023`](../cases/X023.md), [`X024`](../cases/X024.md), [`X025`](../cases/X025.md), [`X026`](../cases/X026.md), [`X027`](../cases/X027.md), [`X028`](../cases/X028.md), [`X029`](../cases/X029.md), [`X030`](../cases/X030.md), [`X031`](../cases/X031.md), [`X032`](../cases/X032.md), [`X033`](../cases/X033.md), [`X034`](../cases/X034.md), [`X035`](../cases/X035.md), [`X036`](../cases/X036.md), [`X037`](../cases/X037.md), [`X038`](../cases/X038.md), [`X039`](../cases/X039.md), [`X040`](../cases/X040.md), [`X041`](../cases/X041.md), [`X042`](../cases/X042.md), [`X043`](../cases/X043.md), [`X044`](../cases/X044.md), [`X045`](../cases/X045.md), [`X046`](../cases/X046.md), [`X047`](../cases/X047.md), [`X048`](../cases/X048.md), [`X049`](../cases/X049.md), [`X050`](../cases/X050.md), [`X051`](../cases/X051.md), [`X052`](../cases/X052.md), [`X053`](../cases/X053.md), [`X054`](../cases/X054.md), [`X055`](../cases/X055.md), [`X056`](../cases/X056.md), [`X057`](../cases/X057.md), [`X058`](../cases/X058.md), [`X059`](../cases/X059.md), [`X060`](../cases/X060.md), [`X061`](../cases/X061.md), [`X062`](../cases/X062.md), [`X063`](../cases/X063.md), [`X064`](../cases/X064.md), [`X065`](../cases/X065.md), [`X066`](../cases/X066.md), [`X067`](../cases/X067.md), [`X068`](../cases/X068.md), [`X069`](../cases/X069.md), [`X070`](../cases/X070.md), [`X071`](../cases/X071.md), [`X072`](../cases/X072.md), [`X073`](../cases/X073.md), [`X074`](../cases/X074.md), [`X075`](../cases/X075.md), [`X076`](../cases/X076.md), [`X077`](../cases/X077.md), [`X078`](../cases/X078.md), [`X079`](../cases/X079.md), [`X080`](../cases/X080.md), [`X081`](../cases/X081.md), [`X082`](../cases/X082.md), [`X083`](../cases/X083.md), [`X084`](../cases/X084.md), [`X085`](../cases/X085.md), [`X086`](../cases/X086.md), [`X087`](../cases/X087.md), [`X088`](../cases/X088.md), [`X089`](../cases/X089.md), [`X090`](../cases/X090.md), [`X091`](../cases/X091.md), [`X092`](../cases/X092.md), [`X093`](../cases/X093.md), [`X094`](../cases/X094.md), [`X095`](../cases/X095.md), [`X096`](../cases/X096.md), [`X097`](../cases/X097.md), [`X098`](../cases/X098.md), [`X099`](../cases/X099.md), [`X100`](../cases/X100.md), [`X101`](../cases/X101.md), [`X102`](../cases/X102.md), [`X103`](../cases/X103.md), [`X104`](../cases/X104.md), [`X105`](../cases/X105.md), [`X106`](../cases/X106.md), [`X107`](../cases/X107.md), [`X108`](../cases/X108.md), [`X109`](../cases/X109.md), [`X110`](../cases/X110.md), [`X111`](../cases/X111.md), [`X112`](../cases/X112.md), [`X113`](../cases/X113.md), [`X114`](../cases/X114.md), [`X115`](../cases/X115.md), [`X116`](../cases/X116.md), [`X117`](../cases/X117.md), [`X118`](../cases/X118.md), [`X119`](../cases/X119.md), [`X120`](../cases/X120.md), [`X121`](../cases/X121.md), [`X122`](../cases/X122.md), [`X123`](../cases/X123.md), [`X124`](../cases/X124.md), [`X125`](../cases/X125.md), [`X126`](../cases/X126.md), [`X127`](../cases/X127.md), [`X128`](../cases/X128.md), [`X129`](../cases/X129.md)
 
 ## Merged code coverage (this bucket)
 
 | status | metric | merged_pct | target |
 |:---:|---|---|---|
-| ⚠️ | stmt | 76.99 | 95.0 |
-| ⚠️ | branch | 71.86 | 90.0 |
-| ℹ️ | cond | 41.97 | - |
-| ℹ️ | expr | 60.28 | - |
-| ⚠️ | fsm_state | 90.91 | 95.0 |
-| ⚠️ | fsm_trans | 47.00 | 90.0 |
-| ⚠️ | toggle | 30.33 | 80.0 |
+| ⚠️ | stmt | 46.27 | 95.0 |
+| ⚠️ | branch | 30.85 | 90.0 |
+| ℹ️ | cond | 8.16 | - |
+| ℹ️ | expr | 17.99 | - |
+| ⚠️ | fsm_state | 28.57 | 95.0 |
+| ⚠️ | fsm_trans | 4.79 | 90.0 |
+| ⚠️ | toggle | 3.27 | 80.0 |
 
 ## Ordered merge trace
 
 | status | step | report_case_id | legacy_test_name | merged_total | detail |
 |:---:|---:|---|---|---|---|
-| ✅ | 1 | `CORNER_OPQ_401_error_lane_mask_test` | `opq_error_lane_mask_test` | stmt=45.53, branch=31.88, cond=7.77, expr=12.77, fsm_state=29.55, fsm_trans=5.00, toggle=3.03 | [case](../cases/CORNER_OPQ_401_error_lane_mask_test.md) |
-| ✅ | 2 | `CORNER_OPQ_402_error_lane_mask_single_hit_test` | `opq_error_lane_mask_single_hit_test` | stmt=45.53, branch=31.88, cond=7.77, expr=12.77, fsm_state=29.55, fsm_trans=5.00, toggle=3.15 | [case](../cases/CORNER_OPQ_402_error_lane_mask_single_hit_test.md) |
-| ✅ | 3 | `CORNER_OPQ_403_error_lane_mask_burst_test` | `opq_error_lane_mask_burst_test` | stmt=45.53, branch=31.88, cond=7.77, expr=12.77, fsm_state=29.55, fsm_trans=5.00, toggle=4.27 | [case](../cases/CORNER_OPQ_403_error_lane_mask_burst_test.md) |
-| ✅ | 4 | `CORNER_OPQ_404_error_lane_mask_recovery_test` | `opq_error_lane_mask_recovery_test` | stmt=73.93, branch=67.15, cond=37.82, expr=53.90, fsm_state=84.09, fsm_trans=41.00, toggle=22.48 | [case](../cases/CORNER_OPQ_404_error_lane_mask_recovery_test.md) |
-| ✅ | 6 | `CORNER_OPQ_406_error_subheader_mask_recovery_test` | `opq_error_subheader_mask_recovery_test` | stmt=75.19, branch=69.93, cond=39.38, expr=56.03, fsm_state=88.64, fsm_trans=45.00, toggle=23.49 | [case](../cases/CORNER_OPQ_406_error_subheader_mask_recovery_test.md) |
-| ✅ | 9 | `CORNER_OPQ_409_error_counter_clear_test` | `opq_error_counter_clear_test` | stmt=75.24, branch=70.05, cond=39.38, expr=56.03, fsm_state=88.64, fsm_trans=45.00, toggle=23.50 | [case](../cases/CORNER_OPQ_409_error_counter_clear_test.md) |
-| ✅ | 10 | `CORNER_OPQ_410_error_ftable_overflow_test` | `opq_error_ftable_overflow_test` | stmt=76.99, branch=71.86, cond=41.97, expr=60.28, fsm_state=90.91, fsm_trans=47.00, toggle=30.33 | [case](../cases/CORNER_OPQ_410_error_ftable_overflow_test.md) |
+| ✅ | 1 | `X001` | `opq_error_lane_mask_test` | stmt=46.27, branch=30.85, cond=8.16, expr=17.99, fsm_state=28.57, fsm_trans=4.79, toggle=3.27 | [case](../cases/X001.md) |
 
 ---
 _Back to [dashboard](../../DV_REPORT.md)_

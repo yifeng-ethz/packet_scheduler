@@ -20,7 +20,7 @@ source "${SCRIPT_DIR}/../../../scripts/questa_one_env.sh"
 usage() {
   cat <<'EOF'
 Usage:
-  run_uvm.sh [UVM_TESTNAME ...]
+  run_uvm.sh [UVM_TESTNAME|CANONICAL_CASE_ID ...]
 
 Environment:
   COV_ENABLE        1 to use `make run_cov`
@@ -82,6 +82,10 @@ has_nonbenign_tool_error() {
 
 run_one() {
   local test_name="$1"
+  local canonical_case_re='^[BEPX][0-9]{3}$'
+  local artifact_name="${test_name}"
+  local uvm_test_name="${test_name}"
+  local case_plusargs=""
   local log_file="${LOG_DIR}/${test_name}.log"
   local dut_impl="${DUT_IMPL:-native_sv}"
   local page_ram_depth="${OPQ_PAGE_RAM_DEPTH:-65536}"
@@ -93,7 +97,6 @@ run_one() {
   local build_dir=""
   local -a make_args=(
     "-C" "${UVM_DIR}"
-    "TEST=${test_name}"
     "DUT_IMPL=${dut_impl}"
   )
   local target="run"
@@ -105,10 +108,17 @@ run_one() {
     return
   fi
 
+  if [[ "${test_name}" =~ ${canonical_case_re} ]]; then
+    artifact_name="${test_name}"
+    uvm_test_name="$(python3 "${SCRIPT_DIR}/opq_catalog.py" --case-id "${artifact_name}" --field runtime_test)"
+    case_plusargs="+OPQ_CASE_ID=${artifact_name} $(python3 "${SCRIPT_DIR}/opq_catalog.py" --case-id "${artifact_name}" --field runtime_plusargs)"
+  fi
+  log_file="${LOG_DIR}/${artifact_name}.log"
+
   resolve_cov_src() {
     local -a candidates=(
-      "${build_dir}/opq_${test_name}.ucdb"
-      "${build_dir}/opq_opq_${test_name}.ucdb"
+      "${build_dir}/opq_${uvm_test_name}.ucdb"
+      "${build_dir}/opq_opq_${uvm_test_name}.ucdb"
     )
     local candidate
     for candidate in "${candidates[@]}"; do
@@ -129,16 +139,19 @@ run_one() {
   if [[ -n "${RUN_DO-}" ]]; then
     make_args+=("RUN_DO=${RUN_DO}")
   fi
-  if [[ -n "${VSIM_PLUSARGS-}" ]]; then
-    make_args+=("VSIM_PLUSARGS=${VSIM_PLUSARGS}")
+  if [[ -n "${VSIM_PLUSARGS-}" || -n "${case_plusargs}" ]]; then
+    make_args+=("VSIM_PLUSARGS=${case_plusargs} ${VSIM_PLUSARGS-}")
   fi
-  if [[ "${test_name}" == "opq_error_ftable_overflow_test" && -z "${OPQ_PAGE_RAM_DEPTH-}" ]]; then
+  if [[ "${artifact_name}" == "opq_error_ftable_overflow_test" && -z "${OPQ_PAGE_RAM_DEPTH-}" ]]; then
+    page_ram_depth=512
+  fi
+  if [[ "${artifact_name}" == "X010" && -z "${OPQ_PAGE_RAM_DEPTH-}" ]]; then
     page_ram_depth=512
   fi
   if [[ -z "${ticket_fifo_depth}" ]]; then
     ticket_fifo_depth="$(derive_ticket_fifo_depth "${n_shd}")"
   fi
-  build_tag="${test_name}_lane${OPQ_N_LANE:-2}_nshd${n_shd}_ticket${ticket_fifo_depth}_page${page_ram_depth}"
+  build_tag="${artifact_name}_lane${OPQ_N_LANE:-2}_nshd${n_shd}_ticket${ticket_fifo_depth}_page${page_ram_depth}"
   if [[ -n "${user_build_dir}" ]]; then
     build_dir="${user_build_dir}"
   else
@@ -148,6 +161,7 @@ run_one() {
   make_args+=("OPQ_N_SHD=${n_shd}")
   make_args+=("OPQ_TICKET_FIFO_DEPTH=${ticket_fifo_depth}")
   make_args+=("BUILD_DIR=${build_dir}")
+  make_args+=("TEST=${uvm_test_name}")
   if [[ "${COV_ENABLE:-0}" == "1" ]]; then
     target="run_cov"
     make_args+=("COV=1")
@@ -157,17 +171,17 @@ run_one() {
   fi
 
   printf '%s\n' "----------------------------------------------------------------"
-  printf 'Running %s\n' "${test_name}"
+  printf 'Running %s\n' "${artifact_name}"
 
   if {
-    printf '[run_uvm] DUT_IMPL=%s TEST=%s OPQ_N_LANE=%s OPQ_N_SHD=%s OPQ_TICKET_FIFO_DEPTH=%s OPQ_PAGE_RAM_DEPTH=%s COV_ENABLE=%s VSIM_PLUSARGS=%s\n' \
-      "${dut_impl}" "${test_name}" "${OPQ_N_LANE:-2}" "${n_shd}" "${ticket_fifo_depth}" "${page_ram_depth}" "${COV_ENABLE:-0}" "${VSIM_PLUSARGS:-}";
+    printf '[run_uvm] DUT_IMPL=%s TEST=%s ARTIFACT=%s OPQ_N_LANE=%s OPQ_N_SHD=%s OPQ_TICKET_FIFO_DEPTH=%s OPQ_PAGE_RAM_DEPTH=%s COV_ENABLE=%s VSIM_PLUSARGS=%s\n' \
+      "${dut_impl}" "${uvm_test_name}" "${artifact_name}" "${OPQ_N_LANE:-2}" "${n_shd}" "${ticket_fifo_depth}" "${page_ram_depth}" "${COV_ENABLE:-0}" "${case_plusargs} ${VSIM_PLUSARGS:-}";
     printf '[run_uvm] BUILD_DIR=%s\n' "${build_dir}";
     make "${make_args[@]}" "${target}";
   } 2>&1 | tee "${log_file}"; then
     if [[ "${COV_ENABLE:-0}" == "1" ]]; then
       if cov_src="$(resolve_cov_src)"; then
-        cp -f "${cov_src}" "${COV_DIR}/${test_name}.ucdb"
+        cp -f "${cov_src}" "${COV_DIR}/${artifact_name}.ucdb"
         cov_saved=1
       fi
     fi
@@ -177,21 +191,21 @@ run_one() {
       "${log_file}" \
       || has_nonbenign_tool_error "${log_file}"; then
       if [[ "${COV_ENABLE:-0}" == "1" && "${cov_saved}" -eq 0 ]]; then
-        echo "[WARN] ${test_name} (coverage database missing on failing run)"
+        echo "[WARN] ${artifact_name} (coverage database missing on failing run)"
       fi
-      echo "[FAIL] ${test_name}"
+      echo "[FAIL] ${artifact_name}"
       fail_count=$((fail_count + 1))
       return
     fi
     if [[ "${COV_ENABLE:-0}" == "1" && "${cov_saved}" -eq 0 ]]; then
-        echo "[FAIL] ${test_name} (coverage database missing)"
+        echo "[FAIL] ${artifact_name} (coverage database missing)"
         fail_count=$((fail_count + 1))
         return
     fi
-    echo "[PASS] ${test_name}"
+    echo "[PASS] ${artifact_name}"
     pass_count=$((pass_count + 1))
   else
-    echo "[FAIL] ${test_name}"
+    echo "[FAIL] ${artifact_name}"
     fail_count=$((fail_count + 1))
   fi
 }

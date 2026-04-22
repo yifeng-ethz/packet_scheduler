@@ -3,6 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DUT_IMPL="${DUT_IMPL:-native_sv}"
+RUN_SET="${RUN_SET:-canonical}"
 
 if [[ "${DUT_IMPL}" != "native_sv" ]]; then
   echo "run_error.sh only supports DUT_IMPL=native_sv (got ${DUT_IMPL})" >&2
@@ -10,16 +11,21 @@ if [[ "${DUT_IMPL}" != "native_sv" ]]; then
 fi
 
 if [[ "$#" -eq 0 ]]; then
-  set -- \
-    opq_error_lane_mask_test \
-    opq_error_lane_mask_single_hit_test \
-    opq_error_lane_mask_burst_test \
-    opq_error_lane_mask_recovery_test \
-    opq_error_hit_mask_recovery_test \
-    opq_error_subheader_mask_recovery_test \
-    opq_error_header_mask_recovery_test \
-    opq_error_header_word_mask_recovery_test \
-    opq_error_counter_clear_test
+  if [[ "${RUN_SET}" == "promoted" ]]; then
+    set -- \
+      opq_error_lane_mask_test \
+      opq_error_lane_mask_single_hit_test \
+      opq_error_lane_mask_burst_test \
+      opq_error_lane_mask_recovery_test \
+      opq_error_hit_mask_recovery_test \
+      opq_error_subheader_mask_recovery_test \
+      opq_error_header_mask_recovery_test \
+      opq_error_header_word_mask_recovery_test \
+      opq_error_counter_clear_test
+  else
+    mapfile -t CASE_IDS < <(python3 "${SCRIPT_DIR}/opq_catalog.py" --bucket ERROR --ids)
+    set -- "${CASE_IDS[@]}"
+  fi
 fi
 
 DUT_IMPL="${DUT_IMPL}" "${SCRIPT_DIR}/run_uvm.sh" "$@"
