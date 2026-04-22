@@ -184,6 +184,10 @@ Historical formal note:
   - OPQ still supports the explicit ingress lane-mask CSR, but the focused
     unmasked sparse-cadence testcase is now green and no longer forces a hard
     4-lane non-claim by itself
+- Root cause:
+  - stale late-drop / allocator credit state, not a permanent sparse-cadence
+    merge rule violation, was poisoning later 4-lane sparse-frame progress and
+    making the old cadence-only failure look structural
 - Fix status:
   - fixed in focused native-SV rerun on `2026-04-19`
 - Runtime / coverage context:
@@ -266,6 +270,10 @@ Historical formal note:
 - Root cause status:
   - fixed on `2026-04-19`
   - the mixed ERROR pool now genuinely re-exercises `subheader_error_recovery`, and the repaired allocator/presenter state no longer corrupts chained no-restart framing after predecessor traffic
+- Root cause:
+  - chained predecessor traffic left allocator/presenter state inconsistent for
+    the next malformed-subheader recovery sequence, so an isolated-clean ERROR
+    case could still misframe when composed in the mixed no-restart soak
 - Runtime / coverage context:
   - `opq_cross_mixed_bucket_random_soak_test` now passes with the malformed-subheader recovery case back in the active mixed ERROR pool
   - encounter study on `2026-04-19`:
@@ -334,6 +342,10 @@ Historical formal note:
     beat was held under `valid && !ready`, the returned RAM word could
     advance underneath the held output state and the resumed packet
     could skip or duplicate words
+- Root cause:
+  - synchronous page-RAM read data was not skidded across held
+    `valid && !ready`, so the presenter could advance the underlying RAM word
+    while Avalon-ST still required the old beat to remain stable
 - Fix:
   - add a read-data skid in
     `ordered_priority_queue_monolithic_basic_presenter.sv` so a RAM
@@ -381,6 +393,10 @@ Historical formal note:
     one phase too early and treated debug-credit buses as exact proof
     anchors even though same-cycle return/write behavior can legitimately
     make those observability signals ambiguous under SBY sampling
+- Root cause:
+  - the OSS ingress harness opened its accounting window too early and used
+    phase-ambiguous debug-credit observability as proof truth, creating
+    artificial over-return / write mismatches that were not DUT bugs
 - Fix:
   - freeze harness credit accounting until a real post-reset tracking
     window is active
@@ -424,6 +440,10 @@ Historical formal note:
     native-SV path, but the `OPQ_OSS_FORMAL` branch now isolates a
     feed-forward oversize-only drop subset so the OSS backend can reach
     the egress hold proof
+- Root cause:
+  - the original OSS presenter subset included an overwrite scan shape that
+    lowered into a logic loop in Yosys SMT2, blocking the intended hold proof
+    before the backend could reason about the real contract
 - Residual non-claim:
   - the unread-overwrite scan itself is still not proven in the OSS path;
     the pass only covers the live presenter hold-under-backpressure subset
@@ -452,6 +472,11 @@ Historical formal note:
   - fixed for the current OSS mover subset
   - the remaining proof-clean arbiter/debug view is now sufficient for
     the ownership/invariant slice the mover wrapper runs today
+- Root cause:
+  - the historical OSS mover harness exposed an arbiter/debug view whose reset
+    and ownership shaping was not aligned with the proof slice, so the backend
+    reached false arbiter-invariant failures before the intended ownership
+    contract could close
 - Residual non-claim:
   - this pass does not claim full end-to-end frame-table/presenter proof;
     it closes the current OSS block-path subset only
@@ -483,6 +508,10 @@ Historical formal note:
 - Root cause status:
   - fixed on `2026-04-19`
   - the remaining long-chain failure was closed by the allocator state repairs (`BUG-020-R` and `BUG-022-R`) plus the mixed ERROR pool restore that puts malformed-subheader recovery back into the stretched run
+- Root cause:
+  - the long mixed-soak underrun was not a standalone scoreboard hole anymore;
+    it was the first visible symptom of deeper allocator state corruption in
+    the exact chained window later closed by `BUG-020-R` and `BUG-022-R`
 - Runtime / coverage context:
   - the exact deterministic reproducer `opq_cross_hit3_exact_183_190_repro_test` passes cleanly on current RTL
   - encounter study on `2026-04-19`:

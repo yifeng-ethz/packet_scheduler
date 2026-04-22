@@ -1,13 +1,18 @@
 # ✅ SYN Report — packet_scheduler ordered_priority_queue
 
 **Measured revisions:** `opq_native_sv_2lane_signoff`, `opq_native_sv_4lane_signoff` &nbsp;
-**Date:** `2026-04-20` &nbsp; **Device:** `10AX115N2F45E1SG` (`online_sc/a10_board`) &nbsp;
+**Date:** `2026-04-22` &nbsp; **Device:** `10AX115N2F45E1SG` (`online_sc/a10_board`) &nbsp;
 **Quartus:** `18.1 Standard`
 
 This file is the detailed standalone synthesis and timing report for the active
 `packet_scheduler` standalone signoff harness. The master signoff dashboard is
 [`../doc/SIGNOFF.md`](../doc/SIGNOFF.md). The grouped configuration matrix is
 [`../doc/CONFIG_SIGNOFF.md`](../doc/CONFIG_SIGNOFF.md).
+
+The measured numbers below remain the active standalone synthesis evidence as
+of `2026-04-22`; the DV dashboard was refreshed independently onto the
+canonical `4-lane/128/256/native_sv` rerun slice without changing these
+Quartus fit results.
 
 ## Build Intent
 

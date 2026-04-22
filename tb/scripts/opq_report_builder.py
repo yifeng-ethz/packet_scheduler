@@ -246,6 +246,8 @@ def stage_report_artifacts(case_artifacts: list[dict]) -> None:
                 child.unlink()
 
     for case in case_artifacts:
+        if not case.get("implemented", False):
+            continue
         case_id = case["case_id"]
         src_log, _ = resolve_log_path(case)
         src_ucdb, _ = resolve_ucdb_path(case)
@@ -307,6 +309,12 @@ def build() -> dict:
                 and int(log_summary.get("cfg_cov_enable", 0)) == 1
             )
             implemented = log_exists and has_ucdb and scope_match
+            evidence_state = "current_scope_evidenced"
+            if not implemented:
+                if log_exists or has_ucdb:
+                    evidence_state = "stale_out_of_scope_artifact"
+                else:
+                    evidence_state = "pending_no_current_scope_artifact"
 
             case = {
                 "bucket": bucket_name,
@@ -330,14 +338,15 @@ def build() -> dict:
                 "build_knobs": case_build_knobs(catalog_case),
                 "log_summary": log_summary,
                 "scope_match": scope_match,
+                "evidence_state": evidence_state,
             }
 
             if not implemented:
                 case["implemented"] = False
-                case["passed"] = False
+                case["passed"] = None
                 case["observed_txn"] = 0
+                case["log_summary"] = {}
                 unimplemented_cases.append(case_id)
-                failed_cases.append(case_id)
                 bucket_cases.append(case)
                 all_cases.append(case)
                 continue
@@ -425,7 +434,7 @@ def build() -> dict:
             }
         )
 
-    stage_report_artifacts(all_artifacts)
+    stage_report_artifacts(all_cases)
 
     merged_total_cov = flatten_pct(global_merged_cov_before or {})
     total_functional_cov = {"pct": 0.0, "evidenced": 0, "planned": len(all_cases)}

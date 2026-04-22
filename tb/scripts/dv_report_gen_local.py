@@ -227,6 +227,7 @@ def render_case(case: dict[str, Any], tb_rel_log: str, tb_rel_ucdb: str) -> str:
         "|:---:|---|---|",
         f"| {st} | report_case_id | `{cid}` |",
         f"| {base.INFO_EMOJI} | legacy_test_name | `{legacy_case_name(case)}` |",
+        f"| {base.INFO_EMOJI} | evidence_state | `{case.get('evidence_state', 'unknown')}` |",
         f"| {base.INFO_EMOJI} | observed_txn | `{obs}` |",
         f"| {base.INFO_EMOJI} | implementation_mode | `{impl_mode}` |",
         f"| {base.INFO_EMOJI} | log | {format_artifact_ref(tb_rel_log)} |",

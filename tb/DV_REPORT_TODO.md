@@ -2,7 +2,7 @@
 
 **Target report:** `packet_scheduler/tb/DV_REPORT.md`  
 **Target DUT:** `packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic.sv` via `DUT_IMPL=native_sv`  
-**Date:** 2026-04-20
+**Date:** 2026-04-22
 
 This checklist is the worklist required to produce a full `dv-workflow`
 report for the native-SV OPQ path. The final `DV_REPORT.md` must be generated
@@ -30,9 +30,13 @@ Current toolchain migration note on 2026-04-21:
   counter-clear, reduced-depth overflow, and the legal pre-drop boundary all
   rerun coherently; there is no longer a red supplemental signoff run in this
   maintained default-build set.
-- The generated dashboard has been refreshed from those reruns. Do not treat
-  older stale `sim_runs/logs/*.log` artifacts or pre-2026 FSE logs as current
-  evidence.
+- Those reruns remain useful supplemental evidence, but the active generated
+  dashboard is now the canonical
+  `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256 DUT_IMPL=native_sv`
+  slice and credits only current-scope reruns. Fresh anchor evidence currently
+  exists for `B001`, `E001`, `P001`, and `X001`; older stale
+  `sim_runs/logs/*.log` artifacts and pre-2026 FSE logs must not be counted as
+  current evidence.
 
 Assumption frozen on 2026-04-17: the current harness must be upgraded into a
 full native-SV signoff harness. The VHDL path may remain as a debug/reference
@@ -55,7 +59,12 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       report tree.
 - [x] `DV_REPORT.md`, `DV_COV.md`, and `REPORT/` are generated from the JSON
       and reflect the native-SV DUT only.
-- [x] Every promoted case has isolated native-SV log and UCDB evidence.
+- [ ] Every canonical catalog case has isolated current-scope native-SV log and
+      UCDB evidence.
+      Status on `2026-04-22`: the active canonical dashboard has fresh
+      evidence for `4/516` cases (`B001`, `E001`, `P001`, `X001`); the
+      remaining rows are intentionally pending rerun rather than reported as
+      fresh failures.
 - [x] `bucket_frame` and `all_buckets_frame` baselines exist, are reproducible,
       and are linked from the report.
 - [x] `BUG_HISTORY.md` records every real DV-found bug with fix status and
@@ -78,12 +87,14 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       - `packet_scheduler/tb/DV_PLAN.md`
       - `packet_scheduler/tb/DV_HARNESS.md`
       - `packet_scheduler/tb/README.md`
-- [x] Freeze the promoted scope that this report will claim:
-      - lane count: `OPQ_N_LANE=2` only
-      - `N_SHD`: `128 / 256 / 512`
+- [x] Freeze the active generated scope that this report will claim:
+      - lane count: `OPQ_N_LANE=4`
+      - `N_SHD`: `128`
+      - `OPQ_TICKET_FIFO_DEPTH`: `256`
       - `MODE`: `MERGING` only
-      - probe-only exclusions that remain outside signoff:
-        `opq_cross_drr_bursty_random_test`
+      - `DUT_IMPL`: `native_sv`
+      - probe-only exclusions remain outside the isolated generated matrix and
+        must be tracked separately in supplemental notes / bug history
 - [x] Write the explicit non-claims in `DV_REPORT.json` / `DV_COV.md` so the
       dashboard does not imply closure on unsupported sweeps.
       Status: both generated top-level pages now surface signoff scope,
@@ -94,7 +105,8 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       - timing closure for those lane points is allowed to add adaptive
         pipeline insertion and/or FSM repartitioning at the real critical cones
       - those later parameter points do not inherit DV closure from the current
-        promoted `OPQ_N_LANE=2` baseline and need their own DV evidence
+        generated `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256`
+        baseline and need their own DV evidence
 - [x] Add an explicit invariant-first sanity plan to the live todo and keep it
       ahead of case-by-case cleanup:
       - quantify accepted hits, expected drops, and per-lane rates end to end

@@ -3,7 +3,7 @@
 **DUT:** `packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic.sv`  
 **Packaging:** `packet_scheduler/script/ordered_priority_queue_hw.tcl`  
 **Author:** Yifeng Wang (yifenwan@phys.ethz.ch)  
-**Date:** 2026-04-20
+**Date:** 2026-04-22
 **Status:** Active current-tree plan for the native monolithic SystemVerilog DUT and the live `packet_scheduler/tb/uvm` harness. The legacy monolithic VHDL image remains a behavioral reference only and does not count as signoff evidence.
 
 ---
@@ -89,18 +89,20 @@ current implementation scope is intentionally narrower than the archived plan:
 
 - DUT implementation under signoff is the native monolithic SystemVerilog core
 - mixed-language UVM harness in `packet_scheduler/tb/uvm`
-- active lane count in the current harness is `OPQ_N_LANE=2`
-- 4-lane native-SV execution exists for debug/integration work, but it remains
-  explicitly out of signoff scope until dedicated 4-lane DV evidence is
-  promoted; the old sparse-frame cadence bug family is green in focused reruns
-  and no longer drives the non-claim by itself
-- build-time sweep knobs that already work today:
+- active generated standalone dashboard slice is
+  `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256 DUT_IMPL=native_sv`
+- historical 2-lane closure, bounded `N_SHD` extensions, and other supplemental
+  native-SV points remain useful evidence, but they are tracked outside the
+  active generated dashboard unless rerun in that exact current scope
+- build-time sweep knobs that already work today and remain planned expansion
+  axes:
   - `OPQ_N_SHD = 128 / 256 / 512`
   - derived or explicit `OPQ_TICKET_FIFO_DEPTH`
   - reduced `OPQ_PAGE_RAM_DEPTH` for overflow forcing
 
 The following compile / elaboration-time sweep is part of signoff intent and
-must remain in the plan:
+must remain in the plan, even though the current generated dashboard is frozen
+to the canonical `4-lane/128/256` rerun slice:
 
 - randomize `N_SHD` across `128 / 256 / 512` at build time
 - derive a safe `TICKET_FIFO_DEPTH` from `N_SHD`

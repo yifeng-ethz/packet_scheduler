@@ -42,14 +42,18 @@ Signoff evidence in this tree is required to come from `DUT_IMPL=native_sv`.
 - The exhaustive parameter-space tracer behind that matrix is
   `packet_scheduler/tb/scripts/gen_config_signoff_matrix.py`.
 - `packet_scheduler/doc/VERIFICATION_SIGNOFF.md` is preserved as the older long-form narrative note.
-- Native-SV signoff scope is currently the 2-lane harness plus the
-  `N_SHD=128/256/512` sweep; 4-lane native-SV remains a non-claim until
-  dedicated 4-lane DV evidence is promoted. The old sparse-frame cadence bug
-  family is green in focused reruns and no longer drives that non-claim by
-  itself.
-- The additional `N_SHD=64` 2-lane basic trio and the bounded 4-lane smoke
-  rerun from `2026-04-20` are documented in `CONFIG_SIGNOFF.md`; they are not
-  yet promoted into the generated DV dashboard.
+- The active generated standalone dashboard is the canonical
+  `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256 DUT_IMPL=native_sv`
+  rerun slice on QuestaOne 2026.
+- Fresh current-scope evidence currently exists for the anchor cases
+  `B001`, `E001`, `P001`, and `X001`. The remaining canonical catalog rows are
+  pending rerun in that exact scope and should render as pending evidence,
+  not as fresh failures.
+- Historical 2-lane closure, bounded matrix extensions, and supplemental
+  long-run evidence remain useful and are tracked in `doc/SIGNOFF.md`,
+  `doc/CONFIG_SIGNOFF.md`, and `tb/BUG_HISTORY.md`, but they are no longer
+  backfilled into the active generated dashboard unless rerun in the current
+  `4-lane/128/256/native_sv` scope.
 - The probe runner carries the currently useful non-promoted screens,
   including the bursty DRR large-random stress and the long-runtime mixed-bucket
   seconds soak. The reduced-depth overwrite shape-check remains tracked under
@@ -60,16 +64,12 @@ Signoff evidence in this tree is required to come from `DUT_IMPL=native_sv`.
   `/data1/questaone_sim/questasim`, with `LM_LICENSE_FILE`,
   `MGLS_LICENSE_FILE`, and `SALT_LICENSE_SERVER` all set to
   `8161@lic-mentor.ethz.ch`.
-- Validation note on `2026-04-21`: the supported QuestaOne 2026 reruns are now
-  refreshed on the maintained native-SV flow. `scripts/run_all.sh` and
-  `scripts/run_cov_closure.sh` complete cleanly, and the generated
-  [`DV_REPORT.md`](DV_REPORT.md) / [`DV_COV.md`](DV_COV.md) bundle has been
-  rebuilt from current evidence. The former
-  `opq_cross_bp_predrop_boundary_test` supplemental failure is now closed on
-  the maintained tree; the legal pre-drop boundary and the legal two-step
-  overflow boundary are both green again on the supported 2026 toolchain,
-  while the default-build must-drop hybrid remains an explicit separate
-  non-claim rather than the active blocker for this README note.
+- Validation note on `2026-04-22`: the supported QuestaOne 2026 reruns are
+  refreshed on the maintained native-SV flow, and the generated
+  [`DV_REPORT.md`](DV_REPORT.md) / [`DV_COV.md`](DV_COV.md) bundle now reports
+  current-scope evidence only. Out-of-scope historical artifacts are preserved
+  on disk for reference but are not credited into the active canonical report
+  slice.
 - The live `opq_basic_smoke_test` now passes on the active monolithic harness with scoreboard hit-integrity
   checks enabled: same hits in, same hits out, and the first merged subheader lands in the correct time slot.
 - The remaining signoff work is closure, not basic bring-up: lint disposition, coverage closure, more buckets from

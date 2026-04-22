@@ -1,7 +1,7 @@
 # ⚠️ Config Signoff — packet_scheduler ordered_priority_queue
 
-**DUT:** `ordered_priority_queue` &nbsp; **Date:** `2026-04-20` &nbsp;
-**Release:** `26.3.29.0420`
+**DUT:** `ordered_priority_queue` &nbsp; **Date:** `2026-04-22` &nbsp;
+**Release:** `26.3.59.0422`
 
 This page is the configuration-legality and evidence matrix for
 [`../script/ordered_priority_queue_hw.tcl`](../script/ordered_priority_queue_hw.tcl).
@@ -72,9 +72,9 @@ Formalized packet shape:
 | Identity | `IP_UID` | fixed packaged default | no | HDL-backed Mu3e UID. |
 | Identity | `VERSION_MAJOR` | fixed packaged default | no | `26`. |
 | Identity | `VERSION_MINOR` | fixed packaged default | no | `3`. |
-| Identity | `VERSION_PATCH` | fixed packaged default | no | `29`. |
-| Identity | `BUILD` | fixed packaged default | no | `0420`. |
-| Identity | `VERSION_DATE` | fixed packaged default | no | `20260420`. |
+| Identity | `VERSION_PATCH` | fixed packaged default | no | `59`. |
+| Identity | `BUILD` | fixed packaged default | no | `0422`. |
+| Identity | `VERSION_DATE` | fixed packaged default | no | `20260422`. |
 | Identity | `VERSION_GIT` | fixed packaged default | no | `0xACA41A1D`. |
 | Identity | `INSTANCE_ID` | integrator override | yes | Only identity field left GUI-editable. |
 
@@ -111,7 +111,11 @@ fixed `36`/`40`-bit assumptions in the ingress parser and basic presenter path.
 
 ### Full-Space Closure Accounting
 
-These counts are the current release snapshot from the generator script.
+These counts are the current release snapshot from the generator script. They
+describe representative package-space accounting and historical measured points;
+they are not the same thing as the active generated standalone `tb/` dashboard,
+which now credits only the canonical current-scope `4-lane/128/256/native_sv`
+reruns.
 
 | metric | count | note |
 |---|---:|---|
@@ -165,10 +169,15 @@ future width axes remains tracked only by the generator script.
 
 ## Evidence Notes
 
-- Active promoted 2-lane DV claim remains anchored in
-  [`../tb/DV_REPORT.md`](../tb/DV_REPORT.md) and
-  [`../tb/DV_COV.md`](../tb/DV_COV.md):
-  `OPQ_N_LANE=2`, `MODE=MERGING`, `OPQ_N_SHD={128,256,512}`.
+- The active generated standalone dashboard is now the canonical current-scope
+  `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256 DUT_IMPL=native_sv`
+  rerun slice.
+- Fresh anchor evidence currently exists for `B001`, `E001`, `P001`, and
+  `X001` in that active slice. The remaining canonical catalog rows are pending
+  rerun there and should render as pending evidence, not as current failures.
+- Historical 2-lane closure, bounded `N_SHD=64`, and bounded 4-lane points
+  remain useful planning evidence for the matrix, but they are not mixed into
+  the active generated standalone dashboard unless rerun in the current scope.
 - Additional bounded 2-lane `N_SHD=64` evidence was run locally on
   `2026-04-20` with
   `OPQ_N_SHD=64 OPQ_TICKET_FIFO_DEPTH=256 bash tb/scripts/run_uvm.sh opq_basic_smoke_test opq_basic_ts_boundary_test opq_edge_max_hits_test`
@@ -196,7 +205,7 @@ future width axes remains tracked only by the generator script.
 - Requested future axes are preserved here as staged, visible non-claims:
   `INGRESS_DATA_WIDTH={64,128}`, matching `datak`, and DMA-packed
   `PAGE_RAM_RD_WIDTH={4x,8x,16x}` base widths with `empty`.
-- The honest packaged release for `26.3.29.0420` is therefore:
+- The honest packaged release for `26.3.59.0422` is therefore:
   `N_LANE={2,4,8,16}`, `MODE=MERGING`, `TRACK_HEADER=true`,
   `INGRESS_DATA_WIDTH=32`, `INGRESS_DATAK_WIDTH=4`,
   `N_SHD={64,128,256,512}`, `N_HIT={255,511,1023,2047}`,

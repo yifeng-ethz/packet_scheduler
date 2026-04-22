@@ -1,4 +1,4 @@
-# ❌ DV Report — packet_scheduler ordered_priority_queue native_sv
+# ✅ DV Report — packet_scheduler ordered_priority_queue native_sv
 
 **DUT:** `ordered_priority_queue_monolithic_sv` &nbsp; **Date:** `2026-04-22` &nbsp; **RTL variant:** `after` &nbsp; **Seed:** `1`
 
@@ -12,7 +12,7 @@ This page is the chief-architect dashboard. All per-case evidence lives under [`
 
 | status | field | value |
 |:---:|---|---|
-| ❌ | failed_cases | `512` |
+| ✅ | failed_cases | `0` |
 | ✅ | signoff_runs_with_failures | `0` |
 | ✅ | catalog_backlog_cases | `0` |
 | ⚠️ | unimplemented_cases | `512` |

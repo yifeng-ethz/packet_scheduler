@@ -9,6 +9,24 @@ Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 > `qverify` / `znformal` with simulation stress fallback only when the
 > Siemens formal binaries are not present on the host.
 
+## 26.3.59.0422
+
+- **Verification / Canonical 4-Lane Dashboard**: refreshed the generated
+  standalone dashboard so the active claim is the canonical
+  `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256 DUT_IMPL=native_sv`
+  rerun slice on QuestaOne 2026.
+- **Verification / Pending vs Failing**: fixed the report builder so
+  unevidenced canonical rows render as pending instead of being counted as
+  fresh failures. Only current-scope reruns are now staged into
+  `tb/uvm/logs/`, `tb/uvm/cov_after/`, `tb/DV_REPORT.md`, and `tb/DV_COV.md`.
+- **Verification / Current Scope Evidence**: the active slice now carries fresh
+  anchor evidence for `B001`, `E001`, `P001`, and `X001`, while stale
+  historical 2-lane artifacts remain archived but are no longer credited into
+  the current generated totals.
+- **Documentation / Consistency Refresh**: synchronized `tb/README.md`,
+  `doc/SIGNOFF.md`, `doc/CONFIG_SIGNOFF.md`, and `tb/BUG_HISTORY.md` to the
+  current reporting model and release metadata.
+
 ## 26.3.56.0421
 
 - **RTL / Native-SV Allocator + Ingress Closure**: closed the current
