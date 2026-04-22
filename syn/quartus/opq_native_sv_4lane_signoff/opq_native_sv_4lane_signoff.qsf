@@ -25,6 +25,8 @@ set_global_assignment -name OPTIMIZATION_TECHNIQUE SPEED
 set_global_assignment -name ROUTER_TIMING_OPTIMIZATION_LEVEL MAXIMUM
 set_global_assignment -name PLACEMENT_EFFORT_MULTIPLIER 4.0
 set_global_assignment -name FITTER_EFFORT "STANDARD FIT"
+set_global_assignment -name ADVANCED_PHYSICAL_SYNTHESIS ON
+set_global_assignment -name FINAL_PLACEMENT_OPTIMIZATION ALWAYS
 
 set_instance_assignment -name MUX_RESTRUCTURE OFF -to "*"
 

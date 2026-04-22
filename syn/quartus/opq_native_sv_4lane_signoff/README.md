@@ -25,12 +25,15 @@ quartus_sta opq_native_sv_4lane_signoff -c opq_native_sv_4lane_signoff
 
 Compatibility layer:
 
-- `src_compat/` carries synthesis-only copies of the parser-sensitive native-SV
-  files from the matching checked-in `rtl/` tree.
-- Those copies only rewrite inline `for (genvar ...)` loops into Quartus 18.1
-  compatible `genvar` plus `generate` form.
-- Functional fixes belong in `rtl/`; this layer exists only to keep the
-  standalone signoff compile auditable on the Quartus 18.1 synthesis path.
+- `src_compat/` carries synthesis-only copies or harness-local compatibility
+  variants of the parser-sensitive native-SV files from the matching checked-in
+  `rtl/` tree.
+- Those copies primarily preserve Quartus 18.1 compatibility for inline
+  `for (genvar ...)` loops, and in a few cases retain harness-local observe
+  taps or explicit RAM wrappers that the standalone synthesis flow needs.
+- Functional fixes still belong in `rtl/`; when the live wrapper or datapath
+  contract changes, the affected `src_compat/` copy must be re-aligned before
+  trusting a standalone signoff rerun.
 
 Current closure scope:
 

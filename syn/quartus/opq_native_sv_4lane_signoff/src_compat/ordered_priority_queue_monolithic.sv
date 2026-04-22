@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_sv
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.28-syn
-// Date    : 20260419
-// Change  : Quartus synthesis compatibility copy aligned to the live packet-complete, late-drop, and allocator-activity plumbing
+// Version : 26.3.56-syn
+// Date    : 20260422
+// Change  : Quartus synthesis compatibility copy aligned to the live resident-protect and per-packet lane-count handoff plumbing while preserving the standalone synth-observe taps
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_sv #(
@@ -31,7 +31,8 @@ module ordered_priority_queue_monolithic_sv #(
   parameter int unsigned DEBUG_LV = 1,
   parameter int unsigned MAX_PKT_LENGTH = HIT_SIZE * N_HIT,
   parameter int unsigned MAX_PKT_LENGTH_BITS = (MAX_PKT_LENGTH <= 1) ? 1 : $clog2(MAX_PKT_LENGTH),
-  parameter int unsigned TICKET_FIFO_DATA_WIDTH_A = 48 + $clog2(LANE_FIFO_DEPTH) + MAX_PKT_LENGTH_BITS + 2,
+  parameter int unsigned TICKET_FIFO_DATA_WIDTH_A =
+    48 + $clog2(LANE_FIFO_DEPTH) + MAX_PKT_LENGTH_BITS + FRAME_SERIAL_SIZE + 2,
   parameter int unsigned TICKET_FIFO_DATA_WIDTH_B =
     FRAME_SERIAL_SIZE + FRAME_SUBH_CNT_SIZE + FRAME_HIT_CNT_SIZE + 6 + 16 + 48 + 2,
   parameter int unsigned TICKET_FIFO_DATA_WIDTH =
@@ -140,10 +141,12 @@ module ordered_priority_queue_monolithic_sv #(
   logic [2:0] write_meta_flow_d1_dbg;
   logic [PAGE_RAM_ADDR_WIDTH-1:0] frame_start_addr_dbg;
   logic [PAGE_RAM_ADDR_WIDTH-1:0] packet_complete_frame_start_addr_dbg;
-  logic [$clog2(N_SHD * N_LANE):0] frame_shr_cnt_this_dbg;
-  logic [15:0] frame_hit_cnt_this_dbg;
   logic [$clog2(N_SHD * N_LANE):0] packet_complete_shr_cnt_dbg;
   logic [15:0] packet_complete_hit_cnt_dbg;
+  logic [N_LANE-1:0][$clog2(N_SHD * N_LANE):0] packet_complete_lane_shd_cnt_dbg;
+  logic [N_LANE-1:0][15:0] packet_complete_lane_hit_cnt_dbg;
+  logic [$clog2(N_SHD * N_LANE):0] frame_shr_cnt_this_dbg;
+  logic [15:0] frame_hit_cnt_this_dbg;
   logic [N_LANE-1:0][$clog2(N_SHD * N_LANE):0] frame_lane_shd_cnt_this_dbg;
   logic [N_LANE-1:0][15:0] frame_lane_hit_cnt_this_dbg;
   logic page_we_dbg;
@@ -155,6 +158,11 @@ module ordered_priority_queue_monolithic_sv #(
   logic [PAGE_RAM_ADDR_WIDTH-1:0] page_ram_rd_addr_dbg;
   logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_rd_data_dbg;
   logic presenter_resident_hold_dbg;
+  logic presenter_resident_head_valid_dbg;
+  logic [PAGE_RAM_ADDR_WIDTH-1:0] presenter_resident_head_addr_dbg;
+  logic [PAGE_RAM_ADDR_WIDTH-1:0] presenter_resident_head_len_dbg;
+  logic presenter_resident_head_full_ring_dbg;
+  logic presenter_resident_head_has_successor_dbg;
   logic payload_commit_idle_dbg;
   logic packet_complete_pulse_dbg;
   logic [1:0] packet_complete_presenter_delay_dbg;
@@ -163,14 +171,25 @@ module ordered_priority_queue_monolithic_sv #(
   logic [PAGE_RAM_ADDR_WIDTH-1:0] packet_complete_addr_presenter_dbg;
   logic [$clog2(N_SHD * N_LANE):0] packet_complete_shr_cnt_presenter_delay_dbg [1:0];
   logic [15:0] packet_complete_hit_cnt_presenter_delay_dbg [1:0];
+  logic [N_LANE-1:0][$clog2(N_SHD * N_LANE):0] packet_complete_lane_shd_cnt_presenter_delay_dbg [1:0];
+  logic [N_LANE-1:0][15:0] packet_complete_lane_hit_cnt_presenter_delay_dbg [1:0];
   logic [$clog2(N_SHD * N_LANE):0] packet_complete_shr_cnt_presenter_new_frame_dbg;
   logic [15:0] packet_complete_hit_cnt_presenter_new_frame_dbg;
+  logic [N_LANE-1:0][$clog2(N_SHD * N_LANE):0] packet_complete_lane_shd_cnt_presenter_dbg;
+  logic [N_LANE-1:0][15:0] packet_complete_lane_hit_cnt_presenter_dbg;
   logic [$clog2(N_SHD * N_LANE):0] packet_complete_shr_cnt_presenter_dbg;
   logic [15:0] packet_complete_hit_cnt_presenter_dbg;
   logic ft_drop_valid_dbg;
   logic [31:0] ft_drop_hdr_cnt_dbg;
   logic [31:0] ft_drop_shd_cnt_dbg;
   logic [31:0] ft_drop_hit_cnt_dbg;
+  logic [N_LANE-1:0][$clog2(N_SHD * N_LANE):0] ft_drop_lane_shd_cnt_dbg;
+  logic [N_LANE-1:0][15:0] ft_drop_lane_hit_cnt_dbg;
+  logic allocator_resident_protect_valid_dbg;
+  logic [PAGE_RAM_ADDR_WIDTH-1:0] allocator_resident_protect_addr_dbg;
+  logic [PAGE_RAM_ADDR_WIDTH-1:0] allocator_resident_protect_len_dbg;
+  logic allocator_resident_protect_full_ring_dbg;
+  logic allocator_resident_protect_has_successor_dbg;
 
   always_comb begin : proc_lane_credit_update_mux
     for (int i = 0; i < N_LANE; i++) begin
@@ -343,8 +362,15 @@ module ordered_priority_queue_monolithic_sv #(
     .packet_complete_frame_start_addr_o(packet_complete_frame_start_addr_dbg),
     .packet_complete_shr_cnt_o(packet_complete_shr_cnt_dbg),
     .packet_complete_hit_cnt_o(packet_complete_hit_cnt_dbg),
+    .packet_complete_lane_shd_cnt_o(packet_complete_lane_shd_cnt_dbg),
+    .packet_complete_lane_hit_cnt_o(packet_complete_lane_hit_cnt_dbg),
     .packet_complete_pulse_o(packet_complete_pulse_dbg),
     .resident_backpressure_hold_i(presenter_resident_hold_dbg),
+    .resident_protect_valid_i(allocator_resident_protect_valid_dbg),
+    .resident_protect_addr_i(allocator_resident_protect_addr_dbg),
+    .resident_protect_len_i(allocator_resident_protect_len_dbg),
+    .resident_protect_full_ring_i(allocator_resident_protect_full_ring_dbg),
+    .resident_protect_has_successor_i(allocator_resident_protect_has_successor_dbg),
     .d_clk(d_clk),
     .d_reset(d_reset)
   );
@@ -400,13 +426,17 @@ module ordered_priority_queue_monolithic_sv #(
 
   always_ff @(posedge d_clk) begin : proc_presenter_packet_complete_delay
     if (d_reset) begin
-      packet_complete_addr_presenter_delay_dbg[0] <= '0;
-      packet_complete_shr_cnt_presenter_delay_dbg[0] <= '0;
-      packet_complete_hit_cnt_presenter_delay_dbg[0] <= '0;
       packet_complete_presenter_delay_dbg <= '0;
+      packet_complete_addr_presenter_delay_dbg[0] <= '0;
       packet_complete_addr_presenter_delay_dbg[1] <= '0;
+      packet_complete_shr_cnt_presenter_delay_dbg[0] <= '0;
       packet_complete_shr_cnt_presenter_delay_dbg[1] <= '0;
+      packet_complete_hit_cnt_presenter_delay_dbg[0] <= '0;
       packet_complete_hit_cnt_presenter_delay_dbg[1] <= '0;
+      packet_complete_lane_shd_cnt_presenter_delay_dbg[0] <= '{default:'0};
+      packet_complete_lane_shd_cnt_presenter_delay_dbg[1] <= '{default:'0};
+      packet_complete_lane_hit_cnt_presenter_delay_dbg[0] <= '{default:'0};
+      packet_complete_lane_hit_cnt_presenter_delay_dbg[1] <= '{default:'0};
     end else begin
       packet_complete_presenter_delay_dbg[0] <= packet_complete_pulse_dbg;
       packet_complete_presenter_delay_dbg[1] <= packet_complete_presenter_delay_dbg[0];
@@ -414,11 +444,17 @@ module ordered_priority_queue_monolithic_sv #(
         packet_complete_addr_presenter_delay_dbg[0] <= packet_complete_frame_start_addr_dbg;
         packet_complete_shr_cnt_presenter_delay_dbg[0] <= packet_complete_shr_cnt_dbg;
         packet_complete_hit_cnt_presenter_delay_dbg[0] <= packet_complete_hit_cnt_dbg;
+        packet_complete_lane_shd_cnt_presenter_delay_dbg[0] <= packet_complete_lane_shd_cnt_dbg;
+        packet_complete_lane_hit_cnt_presenter_delay_dbg[0] <= packet_complete_lane_hit_cnt_dbg;
       end
       if (packet_complete_presenter_delay_dbg[0]) begin
         packet_complete_addr_presenter_delay_dbg[1] <= packet_complete_addr_presenter_delay_dbg[0];
         packet_complete_shr_cnt_presenter_delay_dbg[1] <= packet_complete_shr_cnt_presenter_delay_dbg[0];
         packet_complete_hit_cnt_presenter_delay_dbg[1] <= packet_complete_hit_cnt_presenter_delay_dbg[0];
+        packet_complete_lane_shd_cnt_presenter_delay_dbg[1] <=
+          packet_complete_lane_shd_cnt_presenter_delay_dbg[0];
+        packet_complete_lane_hit_cnt_presenter_delay_dbg[1] <=
+          packet_complete_lane_hit_cnt_presenter_delay_dbg[0];
       end
     end
   end
@@ -427,8 +463,18 @@ module ordered_priority_queue_monolithic_sv #(
   assign packet_complete_addr_presenter_dbg = packet_complete_addr_presenter_delay_dbg[1];
   assign packet_complete_shr_cnt_presenter_new_frame_dbg = packet_complete_shr_cnt_presenter_delay_dbg[1];
   assign packet_complete_hit_cnt_presenter_new_frame_dbg = packet_complete_hit_cnt_presenter_delay_dbg[1];
+  assign packet_complete_lane_shd_cnt_presenter_dbg = packet_complete_lane_shd_cnt_presenter_delay_dbg[1];
+  assign packet_complete_lane_hit_cnt_presenter_dbg = packet_complete_lane_hit_cnt_presenter_delay_dbg[1];
   assign packet_complete_shr_cnt_presenter_dbg = packet_complete_shr_cnt_presenter_delay_dbg[1];
   assign packet_complete_hit_cnt_presenter_dbg = packet_complete_hit_cnt_presenter_delay_dbg[1];
+
+  always_comb begin : proc_allocator_resident_protect
+    allocator_resident_protect_valid_dbg = presenter_resident_head_valid_dbg;
+    allocator_resident_protect_addr_dbg = presenter_resident_head_addr_dbg;
+    allocator_resident_protect_len_dbg = presenter_resident_head_len_dbg;
+    allocator_resident_protect_full_ring_dbg = presenter_resident_head_full_ring_dbg;
+    allocator_resident_protect_has_successor_dbg = presenter_resident_head_has_successor_dbg;
+  end
 
   ordered_priority_queue_monolithic_basic_presenter #(
     .N_LANE(N_LANE),
@@ -443,19 +489,26 @@ module ordered_priority_queue_monolithic_sv #(
     .new_frame_raw_addr_i(packet_complete_addr_presenter_dbg),
     .frame_shr_cnt_this_i(packet_complete_shr_cnt_presenter_new_frame_dbg),
     .frame_hit_cnt_this_i(packet_complete_hit_cnt_presenter_new_frame_dbg),
-    .frame_lane_shd_cnt_this_i(frame_lane_shd_cnt_this_dbg),
-    .frame_lane_hit_cnt_this_i(frame_lane_hit_cnt_this_dbg),
+    .frame_lane_shd_cnt_this_i(packet_complete_lane_shd_cnt_presenter_dbg),
+    .frame_lane_hit_cnt_this_i(packet_complete_lane_hit_cnt_presenter_dbg),
     .packet_complete_i(packet_complete_presenter_dbg),
     .packet_complete_shr_cnt_i(packet_complete_shr_cnt_presenter_dbg),
     .packet_complete_hit_cnt_i(packet_complete_hit_cnt_presenter_dbg),
     .payload_commit_idle_i(payload_commit_idle_dbg),
-    .resident_backpressure_hold_o(presenter_resident_hold_dbg),
     .page_ram_rd_addr_o(page_ram_rd_addr_dbg),
     .page_ram_rd_data_i(page_ram_rd_data_dbg),
+    .resident_backpressure_hold_o(presenter_resident_hold_dbg),
+    .resident_head_valid_o(presenter_resident_head_valid_dbg),
+    .resident_head_addr_o(presenter_resident_head_addr_dbg),
+    .resident_head_len_o(presenter_resident_head_len_dbg),
+    .resident_head_full_ring_o(presenter_resident_head_full_ring_dbg),
+    .resident_head_has_successor_o(presenter_resident_head_has_successor_dbg),
     .ft_drop_valid_o(ft_drop_valid_dbg),
     .ft_drop_hdr_cnt_o(ft_drop_hdr_cnt_dbg),
     .ft_drop_shd_cnt_o(ft_drop_shd_cnt_dbg),
     .ft_drop_hit_cnt_o(ft_drop_hit_cnt_dbg),
+    .ft_drop_lane_shd_cnt_o(ft_drop_lane_shd_cnt_dbg),
+    .ft_drop_lane_hit_cnt_o(ft_drop_lane_hit_cnt_dbg),
     .aso_egress_data(aso_egress_data),
     .aso_egress_valid(aso_egress_valid),
     .aso_egress_ready(aso_egress_ready),

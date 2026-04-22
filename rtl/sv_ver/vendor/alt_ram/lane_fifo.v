@@ -15,38 +15,37 @@ module lane_fifo
 	// Quartus 18.1 does not infer the deep lane FIFOs into block RAM reliably on
 	// the standalone Arria 10 signoff path, so use an explicit simple dual-port
 	// altsyncram for synthesis.
-	altsyncram lane_fifo_ram (
-		.address_a (write_addr),
-		.address_b (read_addr),
-		.clock0    (clk),
-		.data_a    (data),
-		.q_b       (ram_q),
-		.wren_a    (we)
-	);
+		altsyncram #(
+			.address_reg_b("CLOCK0"),
+			.clock_enable_input_a("BYPASS"),
+			.clock_enable_input_b("BYPASS"),
+			.clock_enable_output_b("BYPASS"),
+			.indata_reg_b("CLOCK0"),
+			.intended_device_family("Arria 10"),
+			.lpm_type("altsyncram"),
+			.numwords_a(DEPTH),
+			.numwords_b(DEPTH),
+			.operation_mode("DUAL_PORT"),
+			.outdata_aclr_b("NONE"),
+			.outdata_reg_b("UNREGISTERED"),
+			.power_up_uninitialized("FALSE"),
+			.ram_block_type("M20K"),
+			.read_during_write_mode_mixed_ports("OLD_DATA"),
+			.width_a(DATA_WIDTH),
+			.width_b(DATA_WIDTH),
+			.width_byteena_a(1),
+			.widthad_a(ADDR_WIDTH),
+			.widthad_b(ADDR_WIDTH)
+		) lane_fifo_ram (
+			.address_a (write_addr),
+			.address_b (read_addr),
+			.clock0    (clk),
+			.data_a    (data),
+			.q_b       (ram_q),
+			.wren_a    (we)
+		);
 
-	defparam
-		lane_fifo_ram.address_reg_b = "CLOCK0",
-		lane_fifo_ram.clock_enable_input_a = "BYPASS",
-		lane_fifo_ram.clock_enable_input_b = "BYPASS",
-		lane_fifo_ram.clock_enable_output_b = "BYPASS",
-		lane_fifo_ram.indata_reg_b = "CLOCK0",
-		lane_fifo_ram.intended_device_family = "Arria 10",
-		lane_fifo_ram.lpm_type = "altsyncram",
-		lane_fifo_ram.numwords_a = DEPTH,
-		lane_fifo_ram.numwords_b = DEPTH,
-		lane_fifo_ram.operation_mode = "DUAL_PORT",
-		lane_fifo_ram.outdata_aclr_b = "NONE",
-		lane_fifo_ram.outdata_reg_b = "UNREGISTERED",
-		lane_fifo_ram.power_up_uninitialized = "FALSE",
-		lane_fifo_ram.ram_block_type = "M20K",
-		lane_fifo_ram.read_during_write_mode_mixed_ports = "OLD_DATA",
-		lane_fifo_ram.width_a = DATA_WIDTH,
-		lane_fifo_ram.width_b = DATA_WIDTH,
-		lane_fifo_ram.width_byteena_a = 1,
-		lane_fifo_ram.widthad_a = ADDR_WIDTH,
-		lane_fifo_ram.widthad_b = ADDR_WIDTH;
-
-	assign q = (we && (read_addr == write_addr)) ? data : ram_q;
+		assign q = (we && (read_addr == write_addr)) ? data : ram_q;
 `else
 	reg [(DATA_WIDTH-1):0] q_reg;
 	assign q = q_reg;

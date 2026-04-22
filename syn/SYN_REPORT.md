@@ -9,10 +9,11 @@ This file is the detailed standalone synthesis and timing report for the active
 [`../doc/SIGNOFF.md`](../doc/SIGNOFF.md). The grouped configuration matrix is
 [`../doc/CONFIG_SIGNOFF.md`](../doc/CONFIG_SIGNOFF.md).
 
-The measured numbers below remain the active standalone synthesis evidence as
-of `2026-04-22`; the DV dashboard was refreshed independently onto the
-canonical `4-lane/128/256/native_sv` rerun slice without changing these
-Quartus fit results.
+The measured numbers below are the active standalone synthesis evidence as of
+`2026-04-22`. The current 4-lane point was refreshed after re-aligning the
+stale local compatibility wrapper to the live resident-protect and per-packet
+lane-count handoff plumbing, then rerunning the standalone A10 fit on that
+corrected baseline.
 
 ## Build Intent
 
@@ -54,17 +55,17 @@ Signoff target:
 | status | revision | lane point | setup WNS (ns) | hold WNS (ns) | Fmax | ALMs | registers | M20Ks | MLAB bits |
 |:---:|---|---:|---:|---:|---:|---:|---:|---:|---:|
 | ✅ | `opq_native_sv_2lane_signoff` | `2` | `+0.172` | `+0.044` | `288.68 MHz` | `3,235` | `3,132` | `129` | `0` |
-| ✅ | `opq_native_sv_4lane_signoff` | `4` | `+0.008` | `+0.043` | `275.63 MHz` | `5,297` | `4,855` | `141` | `0` |
+| ✅ | `opq_native_sv_4lane_signoff` | `4` | `+0.077` | `+0.039` | `280.98 MHz` | `10,245` | `10,353` | `147` | `0` |
 
 Key conclusions:
 
 - standalone lane-2 timing closes at the `275 MHz` signoff target on the live
   `10AX115N2F45E1SG` harness with comfortable positive slack
 - standalone lane-4 timing closes at the `275 MHz` signoff target on the live
-  `10AX115N2F45E1SG` harness
-- the registered overlap-launch split moves the presenter's former long
-  combinational selector path off the top slot; the worst fitted path is now in
-  page-allocator ticket-RAM to state-decode logic
+  `10AX115N2F45E1SG` harness with the corrected compatibility wrapper and
+  additional fitter physical-optimization settings enabled
+- the active 4-lane standalone point is now comfortably past the tightened
+  `275 MHz` margin gate instead of only barely meeting it
 - lane-scaled timing closure for `N_LANE={8,16}` remains a later phase and will
   require adaptive pipeline controls plus its own DV evidence
 
@@ -72,12 +73,12 @@ Key conclusions:
 
 | item | 2-lane | 4-lane |
 |---|---:|---:|
-| Logic utilization | `3,235 ALMs / 427,200 (<1%)` | `5,297 ALMs / 427,200 (1%)` |
-| Registers | `3,132` | `4,855` |
+| Logic utilization | `3,235 ALMs / 427,200 (<1%)` | `10,245 ALMs / 427,200 (2%)` |
+| Registers | `3,132` | `10,353` |
 | Pins | `0 physical, 18 virtual` | `0 physical, 18 virtual` |
-| Block memory bits | `2,098,560 / 55,562,240 (4%)` | `2,280,192 / 55,562,240 (4%)` |
-| RAM blocks | `129 / 2,713 (5%)` | `141 / 2,713 (5%)` |
-| M20K blocks | `129 / 2,713 (5%)` | `141 / 2,713 (5%)` |
+| Block memory bits | `2,098,560 / 55,562,240 (4%)` | `2,316,672 / 55,562,240 (4%)` |
+| RAM blocks | `129 / 2,713 (5%)` | `147 / 2,713 (5%)` |
+| M20K blocks | `129 / 2,713 (5%)` | `147 / 2,713 (5%)` |
 | MLAB memory bits | `0` | `0` |
 | DSP blocks | `0 / 1,518` | `0 / 1,518` |
 | PLLs | `0 / 112` | `0 / 112` |
@@ -86,11 +87,11 @@ Key conclusions:
 
 | module | 2-lane elapsed / CPU | 4-lane elapsed / CPU |
 |---|---|---|
-| Analysis & Synthesis | `00:00:23 / 00:00:40` | `00:00:33 / 00:00:50` |
-| Fitter | `00:02:58 / 00:13:23` | `00:03:15 / 00:16:15` |
-| Assembler | `00:00:46 / 00:00:46` | `00:00:46 / 00:00:47` |
-| Timing Analyzer | `00:00:09 / 00:00:26` | `00:00:06 / 00:00:10` |
-| Total | `00:04:16 / 00:15:15` | `00:04:45 / 00:18:04` |
+| Analysis & Synthesis | `00:00:23 / 00:00:40` | `00:01:01 / 00:01:20` |
+| Fitter | `00:02:58 / 00:13:23` | `00:04:20 / 00:24:47` |
+| Assembler | `00:00:46 / 00:00:46` | `00:00:48 / 00:00:48` |
+| Timing Analyzer | `00:00:09 / 00:00:26` | `00:00:12 / 00:00:53` |
+| Total | `00:04:16 / 00:15:15` | `00:06:21 / 00:27:48` |
 
 ## Constraint Caveats
 
@@ -106,6 +107,11 @@ Key conclusions:
 - the M20K mapping has been checked explicitly in both the fit report and the
   instantiated RAM parameters; the current lane-4 build does not spill storage
   into MLAB
+- the refreshed 4-lane harness needed one additional collateral repair before
+  the numbers became trustworthy:
+  - stale `src_compat/ordered_priority_queue_monolithic.sv` had drifted from
+    the live wrapper's resident-protect and per-packet lane-count handoff
+    plumbing and was re-aligned before the final timing-clean rerun
 - the refreshed 2-lane harness needed two collateral repairs before it could
   become a trustworthy signoff point:
   - stale `src_compat/` local copies were aligned to the live 4-lane synthesis
@@ -134,7 +140,8 @@ Key conclusions:
 
 The refreshed standalone Arria 10 harnesses under
 `syn/quartus/opq_native_sv_{2,4}lane_signoff/` both close the `275 MHz` target.
-The new 2-lane point closes with `+0.172 ns` slow-corner setup slack and
-`3,235` ALMs; the 4-lane point closes with `+0.008 ns` slow-corner setup slack
-and `5,297` ALMs. Both measured points keep all fitted memory on `M20K` blocks
-with `0` MLAB memory bits.
+The 2-lane point closes with `+0.172 ns` slow-corner setup slack and `3,235`
+ALMs; the corrected 4-lane point closes with `+0.077 ns` slow-corner setup
+slack, `+0.039 ns` hold slack, `280.98 MHz` slow-corner Fmax, and `10,245`
+ALMs. Both measured points keep all fitted memory on `M20K` blocks with `0`
+MLAB memory bits.

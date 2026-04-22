@@ -1,16 +1,16 @@
-Fitter Status : Successful - Wed Apr 22 01:01:32 2026
+Fitter Status : Successful - Wed Apr 22 20:02:47 2026
 Quartus Prime Version : 18.1.0 Build 625 09/12/2018 SJ Standard Edition
 Revision Name : opq_native_sv_4lane_signoff
 Top-level Entity Name : opq_native_sv_4lane_signoff_top
 Family : Arria 10
 Device : 10AX115N2F45E1SG
 Timing Models : Final
-Logic utilization (in ALMs) : 26,339 / 427,200 ( 6 % )
-Total registers : 42302
+Logic utilization (in ALMs) : 10,245 / 427,200 ( 2 % )
+Total registers : 10353
 Total pins : 0 / 992 ( 0 % )
 Total virtual pins : 18
-Total block memory bits : 2,288,512 / 55,562,240 ( 4 % )
-Total RAM Blocks : 142 / 2,713 ( 5 % )
+Total block memory bits : 2,316,672 / 55,562,240 ( 4 % )
+Total RAM Blocks : 147 / 2,713 ( 5 % )
 Total DSP Blocks : 0 / 1,518 ( 0 % )
 Total HSSI RX channels : 0 / 48 ( 0 % )
 Total HSSI TX channels : 0 / 48 ( 0 % )

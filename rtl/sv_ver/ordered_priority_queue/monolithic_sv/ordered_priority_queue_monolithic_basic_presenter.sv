@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_basic_presenter
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.64
+// Version : 26.3.67
 // Date    : 20260422
-// Change  : Keep restart/head handoff packet-safe under backpressure by discarding self-caught overlap requests and preserving synchronous page-RAM startup data
+// Change  : Keep restart/head handoff packet-safe under backpressure by discarding self-caught overlap requests, staging page-RAM lookahead capture off the BRAM output timing cone, and registering both overwrite-head and launch-head overlap decisions so the overlap math no longer feeds the launch/request enables directly
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_basic_presenter #(
@@ -36,6 +36,11 @@ module ordered_priority_queue_monolithic_basic_presenter #(
   output logic [PAGE_RAM_ADDR_WIDTH-1:0]                  page_ram_rd_addr_o,
   input  logic [PAGE_RAM_DATA_WIDTH-1:0]                  page_ram_rd_data_i,
   output logic                                            resident_backpressure_hold_o,
+  output logic                                            resident_head_valid_o,
+  output logic [PAGE_RAM_ADDR_WIDTH-1:0]                  resident_head_addr_o,
+  output logic [PAGE_RAM_ADDR_WIDTH-1:0]                  resident_head_len_o,
+  output logic                                            resident_head_full_ring_o,
+  output logic                                            resident_head_has_successor_o,
   output logic                                            ft_drop_valid_o,
   output logic [31:0]                                     ft_drop_hdr_cnt_o,
   output logic [31:0]                                     ft_drop_shd_cnt_o,
@@ -82,6 +87,11 @@ module ordered_priority_queue_monolithic_basic_presenter #(
     .page_ram_rd_addr_o(page_ram_rd_addr_o),
     .page_ram_rd_data_i(page_ram_rd_data_i),
     .resident_backpressure_hold_o(resident_backpressure_hold_o),
+    .resident_head_valid_o(resident_head_valid_o),
+    .resident_head_addr_o(resident_head_addr_o),
+    .resident_head_len_o(resident_head_len_o),
+    .resident_head_full_ring_o(resident_head_full_ring_o),
+    .resident_head_has_successor_o(resident_head_has_successor_o),
     .ft_drop_valid_o(ft_drop_valid_o),
     .ft_drop_hdr_cnt_o(ft_drop_hdr_cnt_o),
     .ft_drop_shd_cnt_o(ft_drop_shd_cnt_o),
@@ -183,6 +193,21 @@ module ordered_priority_queue_monolithic_basic_presenter #(
     end
   endfunction
 
+  function automatic logic frame_length_spans_full_ring(
+    input logic [MAX_SHR_CNT_BITS-1:0] shd_cnt,
+    input logic [MAX_HIT_CNT_BITS-1:0] hit_cnt
+  );
+    int unsigned shd_words_v;
+    int unsigned hit_words_v;
+    int unsigned frame_len_words_v;
+    begin
+      shd_words_v = int'(shd_cnt) * SHD_SIZE;
+      hit_words_v = int'(hit_cnt) * HIT_SIZE;
+      frame_len_words_v = shd_words_v + hit_words_v + HDR_SIZE + TRL_SIZE;
+      frame_length_spans_full_ring = (frame_len_words_v >= PAGE_RAM_DEPTH);
+    end
+  endfunction
+
   function automatic logic [31:0] extend32_shd(
     input logic [MAX_SHR_CNT_BITS-1:0] shd_cnt
   );
@@ -268,10 +293,7 @@ module ordered_priority_queue_monolithic_basic_presenter #(
       launch_word_cnt = pkt_rd_word_cnt + PAGE_RAM_ADDR_ONE_CONST;
     end
 
-    pipe_input_data = page_ram_rd_data_i;
-    if (page_ram_skid_valid) begin
-      pipe_input_data = page_ram_rd_data_skid;
-    end
+    pipe_input_data = page_ram_rd_data_skid;
 
     launch_data = output_data;
     if (advance_output_pipe) begin
@@ -302,6 +324,20 @@ module ordered_priority_queue_monolithic_basic_presenter #(
        is_new_pkt_complete ||
        (|output_data_valid) ||
        page_ram_skid_valid);
+    resident_head_valid_o = is_new_pkt_head;
+    resident_head_addr_o = '0;
+    resident_head_len_o = '0;
+    resident_head_full_ring_o = 1'b0;
+    resident_head_has_successor_o = 1'b0;
+    if (is_new_pkt_head) begin
+      resident_head_addr_o = meta_addr[meta_rptr];
+      resident_head_len_o = packet_length;
+      resident_head_full_ring_o = frame_length_spans_full_ring(
+        meta_shd_cnt[meta_rptr],
+        meta_hit_cnt[meta_rptr]
+      );
+      resident_head_has_successor_o = (meta_wptr != (meta_rptr + META_PTR_ONE_CONST));
+    end
   end
 
 `ifdef OPQ_OSS_FORMAL
@@ -740,6 +776,11 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
   output logic [PAGE_RAM_ADDR_WIDTH-1:0]                  page_ram_rd_addr_o,
   input  logic [PAGE_RAM_DATA_WIDTH-1:0]                  page_ram_rd_data_i,
   output logic                                            resident_backpressure_hold_o,
+  output logic                                            resident_head_valid_o,
+  output logic [PAGE_RAM_ADDR_WIDTH-1:0]                  resident_head_addr_o,
+  output logic [PAGE_RAM_ADDR_WIDTH-1:0]                  resident_head_len_o,
+  output logic                                            resident_head_full_ring_o,
+  output logic                                            resident_head_has_successor_o,
   output logic                                            ft_drop_valid_o,
   output logic [31:0]                                     ft_drop_hdr_cnt_o,
   output logic [31:0]                                     ft_drop_shd_cnt_o,
@@ -813,6 +854,12 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
   page_ram_addr_t pending_overlap_launch_len_q;
   meta_ptr_t pending_overlap_launch_stop_ptr_q;
   logic [FRAME_LEN_WIDTH-1:0] pending_overlap_launch_remaining_words_q;
+  logic pending_overlap_head_eval_valid_q;
+  logic pending_overlap_head_eval_overlaps_q;
+  page_ram_addr_t pending_overlap_head_eval_addr_q;
+  page_ram_addr_t pending_overlap_head_eval_len_q;
+  meta_ptr_t pending_overlap_head_eval_stop_ptr_q;
+  logic [FRAME_LEN_WIDTH-1:0] pending_overlap_head_eval_remaining_words_q;
   logic [OVERLAP_REQ_PTR_WIDTH-1:0] overlap_req_wptr;
   logic [OVERLAP_REQ_PTR_WIDTH-1:0] overlap_req_rptr;
   logic [OVERLAP_REQ_COUNT_WIDTH-1:0] overlap_req_count;
@@ -838,6 +885,15 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
   logic [N_LANE-1:0][MAX_SHR_CNT_BITS-1:0] scan_eval_lane_shd_q;
   logic [N_LANE-1:0][MAX_HIT_CNT_BITS-1:0] scan_eval_lane_hit_q;
   logic scan_eval_overlaps_q;
+  logic overwrite_head_eval_valid_q;
+  meta_ptr_t overwrite_head_eval_next_ptr_q;
+  page_ram_addr_t overwrite_head_eval_len_q;
+  logic [MAX_SHR_CNT_BITS-1:0] overwrite_head_eval_shd_q;
+  logic [MAX_HIT_CNT_BITS-1:0] overwrite_head_eval_hit_q;
+  logic [N_LANE-1:0][MAX_SHR_CNT_BITS-1:0] overwrite_head_eval_lane_shd_q;
+  logic [N_LANE-1:0][MAX_HIT_CNT_BITS-1:0] overwrite_head_eval_lane_hit_q;
+  logic overwrite_head_eval_overlaps_q;
+  logic overwrite_head_eval_last_q;
   page_ram_addr_t page_ram_rptr;
   logic [EGRESS_DELAY-1:0] output_data_valid;
   logic [PAGE_RAM_DATA_WIDTH-1:0] output_data_pipe [EGRESS_DELAY-1:0];
@@ -860,7 +916,11 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
   logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_rd_data_skid;
   logic page_ram_skid_valid;
   logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_lookahead_data;
+  page_ram_addr_t page_ram_lookahead_addr;
   logic page_ram_lookahead_valid;
+  logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_lookahead_pending_data;
+  page_ram_addr_t page_ram_lookahead_pending_addr;
+  logic page_ram_lookahead_pending_valid;
   logic [FRAME_LEN_WIDTH-1:0] new_frame_length_full;
   page_ram_addr_t new_frame_length;
   logic new_frame_oversize;
@@ -923,6 +983,21 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
       shd_ext = shd_cnt;
       hit_ext = hit_cnt;
       frame_length_from_counts = (shd_ext * SHD_SIZE) + (hit_ext * HIT_SIZE) + HDR_SIZE + TRL_SIZE;
+    end
+  endfunction
+
+  function automatic logic frame_length_spans_full_ring(
+    input logic [MAX_SHR_CNT_BITS-1:0] shd_cnt,
+    input logic [MAX_HIT_CNT_BITS-1:0] hit_cnt
+  );
+    int unsigned shd_words_v;
+    int unsigned hit_words_v;
+    int unsigned frame_len_words_v;
+    begin
+      shd_words_v = int'(shd_cnt) * SHD_SIZE;
+      hit_words_v = int'(hit_cnt) * HIT_SIZE;
+      frame_len_words_v = shd_words_v + hit_words_v + HDR_SIZE + TRL_SIZE;
+      frame_length_spans_full_ring = (frame_len_words_v >= PAGE_RAM_DEPTH);
     end
   endfunction
 
@@ -1053,7 +1128,9 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
     overlap_request_pending =
       (overlap_req_count != '0) ||
       pending_overlap_check_valid ||
+      pending_overlap_head_eval_valid_q ||
       pending_overlap_launch_valid ||
+      overwrite_head_eval_valid_q ||
       overwrite_scan_active ||
       overwrite_scan_process_head ||
       scan_eval_valid_q;
@@ -1066,6 +1143,17 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
          (|output_data_valid) ||
          page_ram_skid_valid)) ||
        overlap_request_pending);
+    resident_head_valid_o = head_meta_valid && !overwrite_head_accepted_or_accepting;
+    resident_head_addr_o = '0;
+    resident_head_len_o = '0;
+    resident_head_full_ring_o = 1'b0;
+    resident_head_has_successor_o = 1'b0;
+    if (resident_head_valid_o) begin
+      resident_head_addr_o = head_addr_q;
+      resident_head_len_o = head_len_q;
+      resident_head_full_ring_o = frame_length_spans_full_ring(head_shd_cnt_q, head_hit_cnt_q);
+      resident_head_has_successor_o = (meta_wptr != (meta_rptr + META_PTR_ONE_CONST));
+    end
   end
 
   always_ff @(posedge d_clk) begin
@@ -1094,12 +1182,15 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
     ft_drop_shd_cnt_o <= '0;
     ft_drop_hit_cnt_o <= '0;
     block_meta_head_fetch_v =
+      overwrite_head_eval_valid_q ||
       overwrite_scan_active ||
       overwrite_scan_process_head ||
       scan_eval_valid_q;
     block_present_start_v =
+      overwrite_head_eval_valid_q ||
       overwrite_scan_active ||
       overwrite_scan_process_head ||
+      pending_overlap_head_eval_valid_q ||
       pending_overlap_launch_valid ||
       pending_overlap_check_valid ||
       scan_eval_valid_q;
@@ -1136,6 +1227,12 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
       pending_overlap_launch_len_q <= '0;
       pending_overlap_launch_stop_ptr_q <= '0;
       pending_overlap_launch_remaining_words_q <= '0;
+      pending_overlap_head_eval_valid_q <= 1'b0;
+      pending_overlap_head_eval_overlaps_q <= 1'b0;
+      pending_overlap_head_eval_addr_q <= '0;
+      pending_overlap_head_eval_len_q <= '0;
+      pending_overlap_head_eval_stop_ptr_q <= '0;
+      pending_overlap_head_eval_remaining_words_q <= '0;
       overlap_req_wptr <= '0;
       overlap_req_rptr <= '0;
       overlap_req_count <= '0;
@@ -1158,6 +1255,15 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
       scan_eval_lane_shd_q <= '{default:'0};
       scan_eval_lane_hit_q <= '{default:'0};
       scan_eval_overlaps_q <= 1'b0;
+      overwrite_head_eval_valid_q <= 1'b0;
+      overwrite_head_eval_next_ptr_q <= '0;
+      overwrite_head_eval_len_q <= '0;
+      overwrite_head_eval_shd_q <= '0;
+      overwrite_head_eval_hit_q <= '0;
+      overwrite_head_eval_lane_shd_q <= '{default:'0};
+      overwrite_head_eval_lane_hit_q <= '{default:'0};
+      overwrite_head_eval_overlaps_q <= 1'b0;
+      overwrite_head_eval_last_q <= 1'b0;
       page_ram_rptr <= '0;
       output_data_valid <= '0;
       for (reset_pipe_idx = 0; reset_pipe_idx < EGRESS_DELAY; reset_pipe_idx = reset_pipe_idx + 1) begin
@@ -1171,8 +1277,23 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
       page_ram_rd_data_skid <= '0;
       page_ram_skid_valid <= 1'b0;
       page_ram_lookahead_data <= '0;
+      page_ram_lookahead_addr <= '0;
       page_ram_lookahead_valid <= 1'b0;
+      page_ram_lookahead_pending_data <= '0;
+      page_ram_lookahead_pending_addr <= '0;
+      page_ram_lookahead_pending_valid <= 1'b0;
     end else begin
+      if (page_ram_lookahead_pending_valid) begin
+        page_ram_lookahead_pending_valid <= 1'b0;
+        if (!page_ram_lookahead_valid &&
+            (page_ram_lookahead_pending_data[35:32] == 4'b0001) &&
+            (page_ram_lookahead_pending_data[7:0] == K285)) begin
+          page_ram_lookahead_data <= page_ram_lookahead_pending_data;
+          page_ram_lookahead_addr <= page_ram_lookahead_pending_addr;
+          page_ram_lookahead_valid <= 1'b1;
+        end
+      end
+
       if (meta_read_pending) begin
         if (!meta_read_armed) begin
           meta_read_armed <= 1'b1;
@@ -1272,6 +1393,7 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
           page_ram_prime_pending <= 1'b0;
           page_ram_skid_valid <= 1'b0;
           page_ram_lookahead_valid <= 1'b0;
+          page_ram_lookahead_pending_valid <= 1'b0;
           for (pipe_data_idx = 0; pipe_data_idx < EGRESS_DELAY; pipe_data_idx = pipe_data_idx + 1) begin
             output_data_pipe[pipe_data_idx] <= '0;
           end
@@ -1314,6 +1436,7 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
           page_ram_prime_pending <= 1'b0;
           page_ram_skid_valid <= 1'b0;
           page_ram_lookahead_valid <= 1'b0;
+          page_ram_lookahead_pending_valid <= 1'b0;
           for (pipe_data_idx = 0; pipe_data_idx < EGRESS_DELAY; pipe_data_idx = pipe_data_idx + 1) begin
             output_data_pipe[pipe_data_idx] <= '0;
           end
@@ -1404,26 +1527,38 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
           head_addr_q,
           head_len_q
         );
-        if (!head_overlaps_v) begin
+        overwrite_scan_process_head <= 1'b0;
+        overwrite_head_eval_valid_q <= 1'b1;
+        overwrite_head_eval_next_ptr_q <= next_scan_ptr_v;
+        overwrite_head_eval_len_q <= head_len_q;
+        overwrite_head_eval_shd_q <= head_shd_cnt_q;
+        overwrite_head_eval_hit_q <= head_hit_cnt_q;
+        overwrite_head_eval_lane_shd_q <= head_lane_shd_cnt_q;
+        overwrite_head_eval_lane_hit_q <= head_lane_hit_cnt_q;
+        overwrite_head_eval_overlaps_q <= head_overlaps_v;
+        overwrite_head_eval_last_q <= (next_scan_ptr_v == overwrite_scan_stop_ptr);
+      end
+
+      if (overwrite_head_eval_valid_q) begin
+        overwrite_head_eval_valid_q <= 1'b0;
+        if (!overwrite_head_eval_overlaps_q) begin
           overwrite_scan_active <= 1'b0;
-          overwrite_scan_process_head <= 1'b0;
-        end else if (next_scan_ptr_v == overwrite_scan_stop_ptr) begin
+        end else if (overwrite_head_eval_last_q) begin
           ft_drop_valid_o <= 1'b1;
           ft_drop_hdr_cnt_o <= overwrite_scan_hdr_cnt + 32'd1;
-          ft_drop_shd_cnt_o <= overwrite_scan_shd_cnt + extend32_shd(head_shd_cnt_q);
-          ft_drop_hit_cnt_o <= overwrite_scan_hit_cnt + extend32_hit(head_hit_cnt_q);
+          ft_drop_shd_cnt_o <= overwrite_scan_shd_cnt + extend32_shd(overwrite_head_eval_shd_q);
+          ft_drop_hit_cnt_o <= overwrite_scan_hit_cnt + extend32_hit(overwrite_head_eval_hit_q);
           ft_drop_lane_shd_cnt_o <= overwrite_scan_lane_shd_cnt;
           ft_drop_lane_hit_cnt_o <= overwrite_scan_lane_hit_cnt;
           for (int lane_idx = 0; lane_idx < N_LANE; lane_idx++) begin
             ft_drop_lane_shd_cnt_o[lane_idx] <=
-              overwrite_scan_lane_shd_cnt[lane_idx] + head_lane_shd_cnt_q[lane_idx];
+              overwrite_scan_lane_shd_cnt[lane_idx] + overwrite_head_eval_lane_shd_q[lane_idx];
             ft_drop_lane_hit_cnt_o[lane_idx] <=
-              overwrite_scan_lane_hit_cnt[lane_idx] + head_lane_hit_cnt_q[lane_idx];
+              overwrite_scan_lane_hit_cnt[lane_idx] + overwrite_head_eval_lane_hit_q[lane_idx];
           end
-          meta_rptr <= next_scan_ptr_v;
+          meta_rptr <= overwrite_head_eval_next_ptr_q;
           head_meta_valid <= 1'b0;
           overwrite_scan_active <= 1'b0;
-          overwrite_scan_process_head <= 1'b0;
           presenter_state <= FTABLE_PRESENTER_IDLE;
           output_data_valid <= '0;
           pkt_rd_word_cnt <= '0;
@@ -1432,23 +1567,24 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
           page_ram_prime_pending <= 1'b0;
           page_ram_skid_valid <= 1'b0;
           page_ram_lookahead_valid <= 1'b0;
+          page_ram_lookahead_pending_valid <= 1'b0;
           for (pipe_data_idx = 0; pipe_data_idx < EGRESS_DELAY; pipe_data_idx = pipe_data_idx + 1) begin
             output_data_pipe[pipe_data_idx] <= '0;
           end
         end else begin
           overwrite_scan_hdr_cnt <= overwrite_scan_hdr_cnt + 32'd1;
-          overwrite_scan_shd_cnt <= overwrite_scan_shd_cnt + extend32_shd(head_shd_cnt_q);
-          overwrite_scan_hit_cnt <= overwrite_scan_hit_cnt + extend32_hit(head_hit_cnt_q);
+          overwrite_scan_shd_cnt <= overwrite_scan_shd_cnt + extend32_shd(overwrite_head_eval_shd_q);
+          overwrite_scan_hit_cnt <= overwrite_scan_hit_cnt + extend32_hit(overwrite_head_eval_hit_q);
           for (int lane_idx = 0; lane_idx < N_LANE; lane_idx++) begin
             overwrite_scan_lane_shd_cnt[lane_idx] <=
-              overwrite_scan_lane_shd_cnt[lane_idx] + head_lane_shd_cnt_q[lane_idx];
+              overwrite_scan_lane_shd_cnt[lane_idx] + overwrite_head_eval_lane_shd_q[lane_idx];
             overwrite_scan_lane_hit_cnt[lane_idx] <=
-              overwrite_scan_lane_hit_cnt[lane_idx] + head_lane_hit_cnt_q[lane_idx];
+              overwrite_scan_lane_hit_cnt[lane_idx] + overwrite_head_eval_lane_hit_q[lane_idx];
           end
-          overwrite_scan_remaining_words <= overwrite_scan_remaining_words - head_len_q;
-          overwrite_scan_next_ptr <= next_scan_ptr_v;
-          overwrite_scan_process_head <= 1'b0;
-          meta_rd_addr <= next_scan_ptr_v;
+          overwrite_scan_remaining_words <=
+            overwrite_scan_remaining_words - overwrite_head_eval_len_q;
+          overwrite_scan_next_ptr <= overwrite_head_eval_next_ptr_q;
+          meta_rd_addr <= overwrite_head_eval_next_ptr_q;
           meta_read_pending <= 1'b1;
           meta_read_armed <= 1'b0;
           meta_read_owner <= META_READ_SCAN;
@@ -1470,8 +1606,21 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
         block_present_start_v = 1'b1;
       end
 
+      if (pending_overlap_head_eval_valid_q) begin
+        pending_overlap_head_eval_valid_q <= 1'b0;
+        if (pending_overlap_head_eval_overlaps_q) begin
+          pending_overlap_launch_valid <= 1'b1;
+          pending_overlap_launch_addr_q <= pending_overlap_head_eval_addr_q;
+          pending_overlap_launch_len_q <= pending_overlap_head_eval_len_q;
+          pending_overlap_launch_stop_ptr_q <= pending_overlap_head_eval_stop_ptr_q;
+          pending_overlap_launch_remaining_words_q <= pending_overlap_head_eval_remaining_words_q;
+          block_present_start_v = 1'b1;
+        end
+      end
+
       if (!pending_overlap_check_valid &&
           !pending_overlap_launch_valid &&
+          !pending_overlap_head_eval_valid_q &&
           !overwrite_scan_active &&
           !overwrite_scan_process_head &&
           (overlap_req_count != '0)) begin
@@ -1485,6 +1634,7 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
       end
 
       if (!overwrite_scan_active &&
+          !pending_overlap_head_eval_valid_q &&
           !pending_overlap_launch_valid &&
           pending_overlap_check_valid &&
           head_meta_valid &&
@@ -1502,15 +1652,14 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
             head_addr_q,
             head_len_q
           );
-          if (launch_head_overlaps_v) begin
-            remaining_words_v = pending_overlap_len_q;
-            pending_overlap_launch_valid <= 1'b1;
-            pending_overlap_launch_addr_q <= pending_overlap_addr_q;
-            pending_overlap_launch_len_q <= pending_overlap_len_q;
-            pending_overlap_launch_stop_ptr_q <= pending_overlap_stop_ptr_q;
-            pending_overlap_launch_remaining_words_q <= remaining_words_v;
-            block_present_start_v = 1'b1;
-          end
+          remaining_words_v = pending_overlap_len_q;
+          pending_overlap_head_eval_valid_q <= 1'b1;
+          pending_overlap_head_eval_overlaps_q <= launch_head_overlaps_v;
+          pending_overlap_head_eval_addr_q <= pending_overlap_addr_q;
+          pending_overlap_head_eval_len_q <= pending_overlap_len_q;
+          pending_overlap_head_eval_stop_ptr_q <= pending_overlap_stop_ptr_q;
+          pending_overlap_head_eval_remaining_words_q <= remaining_words_v;
+          block_present_start_v = 1'b1;
         end
       end
 
@@ -1573,16 +1722,27 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
             // previous packet exposed the next packet preamble on q while its own
             // tail was draining, preserve that lookahead word and seed startup
             // from a local hold register instead of letting q roll past it.
-            if (page_ram_lookahead_valid) begin
+            if ((page_ram_lookahead_valid && (page_ram_lookahead_addr == head_addr_q)) ||
+                (page_ram_lookahead_pending_valid &&
+                 (page_ram_lookahead_pending_addr == head_addr_q) &&
+                 (page_ram_lookahead_pending_data[35:32] == 4'b0001) &&
+                 (page_ram_lookahead_pending_data[7:0] == K285))) begin
               page_ram_rptr <= head_addr_q + PAGE_RAM_ADDR_ONE_CONST;
               page_ram_prime_pending <= 1'b0;
-              page_ram_rd_data_skid <= page_ram_lookahead_data;
+              if (page_ram_lookahead_valid && (page_ram_lookahead_addr == head_addr_q)) begin
+                page_ram_rd_data_skid <= page_ram_lookahead_data;
+              end else begin
+                page_ram_rd_data_skid <= page_ram_lookahead_pending_data;
+              end
               page_ram_skid_valid <= 1'b1;
               page_ram_lookahead_valid <= 1'b0;
+              page_ram_lookahead_pending_valid <= 1'b0;
             end else begin
               page_ram_rptr <= head_addr_q;
               page_ram_prime_pending <= 1'b1;
               page_ram_skid_valid <= 1'b0;
+              page_ram_lookahead_valid <= 1'b0;
+              page_ram_lookahead_pending_valid <= 1'b0;
             end
             for (pipe_data_idx = 0; pipe_data_idx < EGRESS_DELAY; pipe_data_idx = pipe_data_idx + 1) begin
               output_data_pipe[pipe_data_idx] <= '0;
@@ -1600,12 +1760,12 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
           end
 
           if (!page_ram_lookahead_valid &&
+              !page_ram_lookahead_pending_valid &&
               (pkt_fetch_word_cnt == packet_length) &&
-              (meta_wptr != (meta_rptr + META_PTR_ONE_CONST)) &&
-              (page_ram_rd_data_i[35:32] == 4'b0001) &&
-              (page_ram_rd_data_i[7:0] == K285)) begin
-            page_ram_lookahead_data <= page_ram_rd_data_i;
-            page_ram_lookahead_valid <= 1'b1;
+              (meta_wptr != (meta_rptr + META_PTR_ONE_CONST))) begin
+            page_ram_lookahead_pending_data <= page_ram_rd_data_i;
+            page_ram_lookahead_pending_addr <= page_ram_rptr;
+            page_ram_lookahead_pending_valid <= 1'b1;
           end
 
           if (!advance_output_pipe &&
@@ -1651,6 +1811,7 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
             page_ram_prime_pending <= 1'b0;
             page_ram_skid_valid <= 1'b0;
             page_ram_lookahead_valid <= 1'b0;
+            page_ram_lookahead_pending_valid <= 1'b0;
             for (pipe_data_idx = 0; pipe_data_idx < EGRESS_DELAY; pipe_data_idx = pipe_data_idx + 1) begin
               output_data_pipe[pipe_data_idx] <= '0;
             end
@@ -1723,6 +1884,7 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
           pkt_accept_started <= 1'b0;
           page_ram_prime_pending <= 1'b0;
           page_ram_lookahead_valid <= 1'b0;
+          page_ram_lookahead_pending_valid <= 1'b0;
         end
 
         default: begin
@@ -1773,7 +1935,7 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
       (meta_wptr != (meta_rptr + META_PTR_ONE_CONST)) &&
       (page_ram_rd_data_i[35:32] == 4'b0001) &&
       (page_ram_rd_data_i[7:0] == K285)
-      |=> page_ram_lookahead_valid;
+      |=> (page_ram_lookahead_valid || page_ram_lookahead_pending_valid);
   endproperty
   ap_tail_lookahead_preamble_is_buffered: assert property (p_tail_lookahead_preamble_is_buffered)
     else $error("OPQ_NATIVE_BASIC_PRESENTER let a queued next-packet preamble roll off page_ram.q without buffering it for restart");
@@ -1870,7 +2032,7 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
     (meta_wptr != (meta_rptr + META_PTR_ONE_CONST)) &&
     (page_ram_rd_data_i[35:32] == 4'b0001) &&
     (page_ram_rd_data_i[7:0] == K285)
-    ##1 page_ram_lookahead_valid
+    ##1 (page_ram_lookahead_valid || page_ram_lookahead_pending_valid)
     ##[1:64] presenter_state == FTABLE_PRESENTER_WAIT_FOR_COMPLETE
     ##[1:8] presenter_state == FTABLE_PRESENTER_PRESENTING && page_ram_skid_valid
     ##[1:EGRESS_DELAY+4] aso_egress_valid && aso_egress_startofpacket && aso_egress_ready

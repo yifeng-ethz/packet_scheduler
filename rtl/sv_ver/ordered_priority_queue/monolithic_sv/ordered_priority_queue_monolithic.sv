@@ -150,6 +150,11 @@ module ordered_priority_queue_monolithic_sv #(
   logic [PAGE_RAM_ADDR_WIDTH-1:0] page_ram_rd_addr_dbg;
   logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_rd_data_dbg;
   logic presenter_resident_hold_dbg;
+  logic presenter_resident_head_valid_dbg;
+  logic [PAGE_RAM_ADDR_WIDTH-1:0] presenter_resident_head_addr_dbg;
+  logic [PAGE_RAM_ADDR_WIDTH-1:0] presenter_resident_head_len_dbg;
+  logic presenter_resident_head_full_ring_dbg;
+  logic presenter_resident_head_has_successor_dbg;
   logic payload_commit_idle_dbg;
   logic packet_complete_pulse_dbg;
   logic [1:0] packet_complete_presenter_delay_dbg;
@@ -172,6 +177,11 @@ module ordered_priority_queue_monolithic_sv #(
   logic [31:0] ft_drop_hit_cnt_dbg;
   logic [N_LANE-1:0][$clog2(N_SHD * N_LANE):0] ft_drop_lane_shd_cnt_dbg;
   logic [N_LANE-1:0][15:0] ft_drop_lane_hit_cnt_dbg;
+  logic allocator_resident_protect_valid_dbg;
+  logic [PAGE_RAM_ADDR_WIDTH-1:0] allocator_resident_protect_addr_dbg;
+  logic [PAGE_RAM_ADDR_WIDTH-1:0] allocator_resident_protect_len_dbg;
+  logic allocator_resident_protect_full_ring_dbg;
+  logic allocator_resident_protect_has_successor_dbg;
 
   always_comb begin : proc_lane_credit_update_mux
     for (int i = 0; i < N_LANE; i++) begin
@@ -345,6 +355,11 @@ module ordered_priority_queue_monolithic_sv #(
     .packet_complete_lane_hit_cnt_o(packet_complete_lane_hit_cnt_dbg),
     .packet_complete_pulse_o(packet_complete_pulse_dbg),
     .resident_backpressure_hold_i(presenter_resident_hold_dbg),
+    .resident_protect_valid_i(allocator_resident_protect_valid_dbg),
+    .resident_protect_addr_i(allocator_resident_protect_addr_dbg),
+    .resident_protect_len_i(allocator_resident_protect_len_dbg),
+    .resident_protect_full_ring_i(allocator_resident_protect_full_ring_dbg),
+    .resident_protect_has_successor_i(allocator_resident_protect_has_successor_dbg),
     .d_clk(d_clk),
     .d_reset(d_reset)
   );
@@ -442,6 +457,14 @@ module ordered_priority_queue_monolithic_sv #(
   assign packet_complete_shr_cnt_presenter_dbg = packet_complete_shr_cnt_presenter_delay_dbg[1];
   assign packet_complete_hit_cnt_presenter_dbg = packet_complete_hit_cnt_presenter_delay_dbg[1];
 
+  always_comb begin : proc_allocator_resident_protect
+    allocator_resident_protect_valid_dbg = presenter_resident_head_valid_dbg;
+    allocator_resident_protect_addr_dbg = presenter_resident_head_addr_dbg;
+    allocator_resident_protect_len_dbg = presenter_resident_head_len_dbg;
+    allocator_resident_protect_full_ring_dbg = presenter_resident_head_full_ring_dbg;
+    allocator_resident_protect_has_successor_dbg = presenter_resident_head_has_successor_dbg;
+  end
+
 // synthesis translate_off
 `ifndef SYNTHESIS
   always_ff @(posedge d_clk) begin : proc_native_trace
@@ -496,7 +519,7 @@ module ordered_priority_queue_monolithic_sv #(
         (!trace_after_ps_valid_v || ($time >= trace_after_ps_v))) begin
       if (write_head_active_dbg && (write_meta_flow_dbg == 3'd0)) begin
         $display(
-          "[opq_native_owner] t=%0t evt=claim frame_serial_this=0x%0h next_frame_serial=0x%0h frame_start=0x%0h shd_this=%0d hit_this=%0d lane_active=0x%0h ingress_eop=0x%0h ingress_busy=0x%0h",
+          "[opq_native_owner] t=%0t evt=claim frame_serial_this=0x%0h next_frame_serial=0x%0h frame_start=0x%0h shd_this=%0d hit_this=%0d lane_active=0x%0h ingress_eop=0x%0h ingress_busy=0x%0h resident_valid=%0b resident_addr=0x%0h resident_len=0x%0h resident_full=%0b resident_has_successor=%0b",
           $time,
           page_allocator_i.page_allocator.frame_serial_this,
           page_allocator_i.page_allocator.frame_serial,
@@ -505,7 +528,12 @@ module ordered_priority_queue_monolithic_sv #(
           frame_hit_cnt_this_dbg,
           page_allocator_i.page_allocator.frame_lane_active,
           ingress_alert_eop_dbg,
-          ingress_parser_busy_dbg
+          ingress_parser_busy_dbg,
+          allocator_resident_protect_valid_dbg,
+          allocator_resident_protect_addr_dbg,
+          allocator_resident_protect_len_dbg,
+          allocator_resident_protect_full_ring_dbg,
+          allocator_resident_protect_has_successor_dbg
         );
       end
       if (packet_complete_pulse_dbg) begin
@@ -576,6 +604,11 @@ module ordered_priority_queue_monolithic_sv #(
     .page_ram_rd_addr_o(page_ram_rd_addr_dbg),
     .page_ram_rd_data_i(page_ram_rd_data_dbg),
     .resident_backpressure_hold_o(presenter_resident_hold_dbg),
+    .resident_head_valid_o(presenter_resident_head_valid_dbg),
+    .resident_head_addr_o(presenter_resident_head_addr_dbg),
+    .resident_head_len_o(presenter_resident_head_len_dbg),
+    .resident_head_full_ring_o(presenter_resident_head_full_ring_dbg),
+    .resident_head_has_successor_o(presenter_resident_head_has_successor_dbg),
     .ft_drop_valid_o(ft_drop_valid_dbg),
     .ft_drop_hdr_cnt_o(ft_drop_hdr_cnt_dbg),
     .ft_drop_shd_cnt_o(ft_drop_shd_cnt_dbg),
