@@ -47,7 +47,7 @@ Signoff evidence in this tree is required to come from `DUT_IMPL=native_sv`.
   rerun slice on QuestaOne 2026.
 - That current-scope dashboard is now fully populated: `516/516` isolated
   catalog cases are evidenced, `failed_cases=0`, `unimplemented_cases=0`, and
-  `22/22` maintained signoff runs are green in the generated report tree.
+  `8/8` maintained signoff runs are green in the generated report tree.
 - Historical 2-lane closure, bounded matrix extensions, and supplemental
   long-run evidence remain useful and are tracked in `doc/SIGNOFF.md`,
   `doc/CONFIG_SIGNOFF.md`, and `tb/BUG_HISTORY.md`, but they are no longer
@@ -63,7 +63,7 @@ Signoff evidence in this tree is required to come from `DUT_IMPL=native_sv`.
   `/data1/questaone_sim/questasim`, with `LM_LICENSE_FILE`,
   `MGLS_LICENSE_FILE`, and `SALT_LICENSE_SERVER` all set to
   `8161@lic-mentor.ethz.ch`.
-- Validation note on `2026-04-22`: the supported QuestaOne 2026 reruns are
+- Validation note on `2026-04-23`: the supported QuestaOne 2026 reruns are
   refreshed on the maintained native-SV flow, and the generated
   [`DV_REPORT.md`](DV_REPORT.md) / [`DV_COV.md`](DV_COV.md) bundle now reports
   current-scope evidence only. Out-of-scope historical artifacts are preserved

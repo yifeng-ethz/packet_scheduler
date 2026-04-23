@@ -21,9 +21,9 @@
 
 | metric | pct |
 |---|---|
-| stmt | 45.99 |
+| stmt | 46.01 |
 | branch | 30.50 |
-| cond | 7.55 |
+| cond | 7.54 |
 | expr | 15.74 |
 | fsm_state | 28.12 |
 | fsm_trans | 4.73 |

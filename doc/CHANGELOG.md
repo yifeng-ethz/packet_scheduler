@@ -9,6 +9,24 @@ Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 > `qverify` / `znformal` with simulation stress fallback only when the
 > Siemens formal binaries are not present on the host.
 
+## 26.3.66.0423
+
+- **RTL / Native-SV Allocator Retirement Closure**: fixed the active-frame
+  tail-retirement gate so a registered future body ticket no longer keeps the
+  current frame alive indefinitely. This closes the overflow-step2 boundary
+  timeout where the allocator stayed live with `frame_lane_active=0xf`,
+  `frame_lane_tail_seen=0xf`, and only future tickets pending.
+- **Verification / Maintained Signoff Refresh**: reran the maintained
+  `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256 DUT_IMPL=native_sv`
+  frame-signoff suite on QuestaOne 2026. The refreshed generated dashboard
+  remains `516/516` isolated cases green and now reflects the maintained
+  current-scope `8/8` signoff-run set with no signoff-run failures.
+- **Tooling / Report Hygiene**: folded the local support fixes needed for the
+  refreshed closure batch: README ASCII-art alignment, `_hw.tcl` version sync,
+  `tb/legacy/tb/lint/lint_opq.py` path recovery after the `tb/legacy/` move,
+  the safe `run_param.sh` ticket-depth sweep behavior, and regenerated
+  `tb/DV_REPORT.*` plus `tb/REPORT/` from the live evidence set.
+
 ## 26.3.59.0422
 
 - **Verification / Canonical 4-Lane Dashboard**: refreshed the generated

@@ -1314,6 +1314,8 @@ begin
 
     gen_page_ram_addr_width_warn : if PAGE_RAM_ADDR_WIDTH /= 16 generate
     begin
+        -- @name            proc_page_ram_addr_width_warn
+        -- @brief           Emit a startup warning when the generated PAGE_RAM address width deviates from the default packaged point.
         proc_page_ram_addr_width_warn : process
         begin
             report "PAGE RAM ADDR NON-DEFAULT (16 bits)" severity warning;
@@ -3607,6 +3609,8 @@ begin
     -- ────────────────────────────────────────────────
     -- Runtime CSR / software counters
     -- ────────────────────────────────────────────────
+    -- @name            proc_csr
+    -- @brief           Maintain the software-visible CSR window, meta pages, lane masks, and packet/drop counters.
     proc_csr : process (i_clk)
         variable offset_v      : natural;
         variable lane_v        : natural;

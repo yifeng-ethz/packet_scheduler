@@ -827,11 +827,12 @@ module ordered_priority_queue_monolithic_page_allocator #(
           page_allocator_is_pending_ticket[i] &&
           (!page_allocator_is_pending_ticket_lane[i] ||
            !page_allocator_ticket_q_valid[i] ||
-           !idle_tk_sop_q[i] ||
            !idle_tk_future_q[i])) begin
         // The tail-retire path now consumes the registered IDLE decode
-        // snapshot. Any newly arrived or still-unstable ticket therefore
+        // snapshot. Any newly arrived or not-yet-future ticket therefore
         // blocks retirement until the snapshot has a confirmed class.
+        // A body ticket that is already classified as future belongs to the
+        // next frame and must not keep the current frame alive indefinitely.
         active_frame_pending_nonfuture_ticket = 1'b1;
       end
       if ((page_allocator.frame_lane_active != '0) &&

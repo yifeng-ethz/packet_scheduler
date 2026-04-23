@@ -6,7 +6,7 @@ lane, merges lane-local packet streams into shared page storage, and emits a
 single ordered Avalon-ST egress stream with explicit per-lane and frame-table
 drop accounting.
 
-**Version:** 26.3.65.0422
+**Version:** 26.3.66.0423
 **Module name:** `ordered_priority_queue`
 **Platform Designer group:** Mu3e Data Plane / Modules
 
@@ -45,7 +45,7 @@ single-symbol egress contract. The active release closure is the
 
 ```text
 +----------------------------------------------------------------------------------------+
-| ingress_0 .. ingress_N-1 --> [ingress parser / lane FIFO / ticket FIFO] --+           |
+| ingress_0 .. ingress_N-1 --> [ingress parser / lane FIFO / ticket FIFO] --+            |
 |                                                                            |           |
 |                                                                            v           |
 |                                           [page allocator / block mover / DRR arbiter] |
@@ -208,8 +208,8 @@ DRR statistics.
 |    |- Delivered Profile -- packaged contract summary                           |
 |    `- Versioning -- UID, VERSION_*, DATE, GIT, INSTANCE_ID                     |
 |                                                                                |
-|  [Interfaces Tab] -- clock/reset, per-lane ingress, egress, csr               |
-|  [Register Map Tab] -- CSR window, META, CTRL, STATUS, CAP, FT, lane region   |
+|  [Interfaces Tab] -- clock/reset, per-lane ingress, egress, csr                |
+|  [Register Map Tab] -- CSR window, META, CTRL, STATUS, CAP, FT, lane region    |
 |                                                                                |
 +--------------------------------------------------------------------------------+
 ```

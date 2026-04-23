@@ -1,7 +1,7 @@
 # ⚠️ Config Signoff — packet_scheduler ordered_priority_queue
 
-**DUT:** `ordered_priority_queue` &nbsp; **Date:** `2026-04-22` &nbsp;
-**Release:** `26.3.65.0422`
+**DUT:** `ordered_priority_queue` &nbsp; **Date:** `2026-04-23` &nbsp;
+**Release:** `26.3.66.0423`
 
 This page is the configuration-legality and evidence matrix for
 [`../script/ordered_priority_queue_hw.tcl`](../script/ordered_priority_queue_hw.tcl).
@@ -172,7 +172,7 @@ future width axes remains tracked only by the generator script.
 - The active generated standalone dashboard is now the canonical current-scope
   `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256 DUT_IMPL=native_sv`
   rerun slice, and it currently carries `516/516` isolated catalog cases with
-  `22/22` discovered signoff runs and no signoff-run failures.
+  `8/8` maintained signoff runs and no signoff-run failures.
 - That current standalone dashboard is still not full package-space signoff:
   later lane/width expansion remains future work, but the active 4-lane/128
   slice is no longer blocked on missing testcase implementation. The remaining
@@ -208,7 +208,7 @@ future width axes remains tracked only by the generator script.
 - Requested future axes are preserved here as staged, visible non-claims:
   `INGRESS_DATA_WIDTH={64,128}`, matching `datak`, and DMA-packed
   `PAGE_RAM_RD_WIDTH={4x,8x,16x}` base widths with `empty`.
-- The honest packaged release for `26.3.65.0422` is therefore:
+- The honest packaged release for `26.3.66.0423` is therefore:
   `N_LANE={2,4,8,16}`, `MODE=MERGING`, `TRACK_HEADER=true`,
   `INGRESS_DATA_WIDTH=32`, `INGRESS_DATAK_WIDTH=4`,
   `N_SHD={64,128,256,512}`, `N_HIT={255,511,1023,2047}`,

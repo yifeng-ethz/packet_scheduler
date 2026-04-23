@@ -2,18 +2,18 @@
 
 **Target report:** `packet_scheduler/tb/DV_REPORT.md`  
 **Target DUT:** `packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic.sv` via `DUT_IMPL=native_sv`  
-**Date:** 2026-04-22
+**Date:** 2026-04-23
 
 This checklist is the worklist required to produce a full `dv-workflow`
 report for the native-SV OPQ path. The final `DV_REPORT.md` must be generated
 from `DV_REPORT.json`; it is not the place to hand-maintain todo items.
 
-Status refresh on `2026-04-22`:
+Status refresh on `2026-04-23`:
 
 - the active `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256
   DUT_IMPL=native_sv` signoff slice is now green in the generated dashboard:
   `516/516` isolated rows evidenced, `failed_cases=0`,
-  `unimplemented_cases=0`, and `22/22` discovered signoff runs with no
+  `unimplemented_cases=0`, and `8/8` discovered signoff runs with no
   signoff-run failures
 - the remaining unchecked items below are post-signoff expansion / formal /
   observability backlog unless they are explicitly restated as blocking the
@@ -46,7 +46,7 @@ Current toolchain migration note on 2026-04-21:
   `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256 DUT_IMPL=native_sv`
   slice and credits only current-scope reruns. That slice is now fully staged
   into the generated dashboard with `516/516` isolated catalog rows evidenced
-  and `22/22` maintained signoff runs green; older stale `sim_runs/logs/*.log`
+  and `8/8` maintained signoff runs green; older stale `sim_runs/logs/*.log`
   artifacts and pre-2026 FSE logs must still not be counted as current
   evidence.
 
@@ -456,7 +456,7 @@ Execution order frozen on 2026-04-18 for the next closure phase:
         `opq_all_buckets_frame_native_sv_test`, and
         `opq_cross_mixed_bucket_random_soak_test` reruns are also green on the
         same fixed RTL, so the generated dashboard is back at `516/516`
-        isolated rows with `22/22` discovered signoff runs
+        isolated rows with `8/8` discovered signoff runs
       - the full coverage-enabled
         `opq_cross_mixed_bucket_random_soak_test` rerun now passes the bucket /
         error-subcase visitation contract and closes with

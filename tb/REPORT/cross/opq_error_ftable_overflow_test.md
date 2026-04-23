@@ -9,7 +9,7 @@
 | ℹ️ | case_count | `1` |
 | ℹ️ | effort | `practical` |
 | ℹ️ | txns | `64` |
-| ✅ | functional_cross_pct | `58.05` |
+| ✅ | functional_cross_pct | `59.95` |
 | ✅ | counter_checks_failed | `0` |
 | ✅ | unexpected_outputs | `0` |
 
@@ -21,13 +21,13 @@
 
 | metric | pct |
 |---|---|
-| stmt | 67.97 |
-| branch | 56.10 |
-| cond | 27.52 |
-| expr | 42.13 |
+| stmt | 69.19 |
+| branch | 56.96 |
+| cond | 28.55 |
+| expr | 43.52 |
 | fsm_state | 70.31 |
 | fsm_trans | 31.08 |
-| toggle | 16.03 |
+| toggle | 16.93 |
 
 ## Transaction growth curve
 
@@ -37,7 +37,7 @@
 
 | checkpoint | aggregate | first_break | lane0 | lane1 | lane2 | lane3 | frame_table |
 |---|---|---|---|---|---|---|---|
-| `forced_overflow_final` | `a=44 d=0 v=44 u=0` | `clean` | `a=22 d=0 v=22 u=0` | `a=22 d=0 v=22 u=0` | `a=0 d=0 v=0 u=0` | `a=0 d=0 v=0 u=0` | `h=32/32/0 s=11/11/0 i=44/44/0` |
+| `forced_overflow_final` | `a=40 d=4 v=40 u=0` | `clean` | `a=20 d=2 v=20 u=0` | `a=20 d=2 v=20 u=0` | `a=0 d=0 v=0 u=0` | `a=0 d=0 v=0 u=0` | `h=32/32/0 s=10/10/0 i=40/40/0` |
 
 ---
 _Back to [dashboard](../../DV_REPORT.md)_

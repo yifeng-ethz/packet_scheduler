@@ -29,10 +29,11 @@ def _is_text_ext(path: Path) -> bool:
 
 
 def _iter_targets(opq_split_dir: Path) -> list[Path]:
-    # lint_opq.py lives under packet_scheduler/legacy/tb/lint/.
-    # repo_root/.../mu3e-ip-cores
-    repo_root = opq_split_dir.parents[3]
-    pkt_sched = repo_root / "packet_scheduler"
+    # lint_opq.py now lives under packet_scheduler/tb/legacy/tb/lint/.
+    pkt_sched = next((p for p in (opq_split_dir, *opq_split_dir.parents) if p.name == "packet_scheduler"), None)
+    if pkt_sched is None:
+        return []
+    repo_root = pkt_sched.parent
     uvm_root_dir = repo_root / "uvm_order_priority_queue"
 
     roots = [

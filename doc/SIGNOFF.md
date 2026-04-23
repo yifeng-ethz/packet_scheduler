@@ -1,7 +1,7 @@
 # ✅ Signoff — packet_scheduler ordered_priority_queue
 
-**DUT:** `ordered_priority_queue` &nbsp; **Date:** `2026-04-22` &nbsp;
-**Release under check:** `26.3.65.0422` &nbsp; **Git base:** `tag 26.3.65.0422`
+**DUT:** `ordered_priority_queue` &nbsp; **Date:** `2026-04-23` &nbsp;
+**Release under check:** `26.3.66.0423` &nbsp; **Git base:** `post-26.3.65.0422 local signoff batch`
 
 This page is the master signoff dashboard. Detailed standalone synthesis
 evidence lives in [`../syn/SYN_REPORT.md`](../syn/SYN_REPORT.md); detailed DV
@@ -21,7 +21,7 @@ configuration legality and evidence matrix lives in
 | ⚠️ | config_matrix | `representative 2-lane and 4-lane measured; active generated dashboard is the canonical 4-lane/128 rerun slice and full package-space closure remains a later phase` |
 | ✅ | standalone_syn | `2-lane and 4-lane A10 standalone Quartus signoff both close at 275 MHz on 10AX115N2F45E1SG; the corrected 4-lane refresh now reports +0.077 ns setup slack` |
 | ✅ | isolated_dv_closure | `516/516` canonical isolated cases are evidenced in the active `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256 DUT_IMPL=native_sv` slice; `failed_cases=0`, `unimplemented_cases=0`, and the remaining raw structural deltas are covered by explicit hole disposition rather than missing evidence |
-| ✅ | cross_bucket_signoff | `22/22` current signoff runs are green, including `bucket_frame`, `all_buckets_frame`, and the maintained supplemental cross/soak screens for the same native-SV scope |
+| ✅ | cross_bucket_signoff | `8/8` current maintained signoff runs are green for the active native-SV scope: `bucket_frame`, `all_buckets_frame`, mixed-bucket random soak, DRR frame2 boundary, BP pre-drop boundary, overflow step2 boundary, counter-clear, and reduced-depth frame-table overflow |
 | ✅ | tb_int_longrun_matrix | `128/128` integrated matrix cases green |
 | ✅ | resource_model | `3,235 ALMs / 129 M20Ks at 2-lane and 10,245 ALMs / 147 M20Ks at 4-lane on the active standalone fits` |
 
@@ -79,10 +79,10 @@ configuration legality and evidence matrix lives in
 - The generated standalone `tb/` dashboard now follows a strict current-scope
   rule: only reruns matching the active `4-lane/128/256/native_sv` scope are
   credited into `DV_REPORT.md` and `DV_COV.md`. That current-scope matrix is
-  now fully populated at `516/516` isolated rows with `22/22` signoff runs
-  discovered and no signoff-run failures. Historical 2-lane evidence is still
-  valuable, but it stays historical until explicitly rerun in the active
-  scope.
+  now fully populated at `516/516` isolated rows with `8/8` maintained
+  signoff runs discovered and no signoff-run failures. Historical 2-lane
+  evidence is still valuable, but it stays historical until explicitly rerun
+  in the active scope.
 - The current standalone DV closure no longer depends on pretending the raw
   structural metrics hit the generic workflow targets. `DV_COV.md` now records
   the merged isolated totals (`stmt=74.41`, `branch=70.36`, `fsm_state=94.39`,

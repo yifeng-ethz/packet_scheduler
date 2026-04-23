@@ -69,6 +69,7 @@ Historical formal note:
 | [BUG-029-R](#bug-029-r-presenter-overlap-bookkeeping-can-strand-queued-metadata-in-idle-after-a-legal-trailer-retire) | R | hard stuck error | `corner-only (legal backpressure stress)` | fixed | `opq_cross_bp_predrop_boundary_test` on `2026-04-21` | `43336f8` | The presenter no longer strands the legal pre-drop supplemental run after slot `0x17`; queued metadata now advances through `WAIT_FOR_COMPLETE` even when overlap bookkeeping is still pending. |
 | [BUG-030-R](#bug-030-r-overlap-request-replay-can-self-drop-the-current-head-and-synthesize-a-zero-length-packet) | R | hard stuck error | `corner-only (targeted backpressure stress)` | fixed | `opq_formal_like_egress_flush_backpressure_stress_test` on `2026-04-22` @ `OPQ_N_LANE=4 OPQ_N_SHD=128` | `309f1d4` | The presenter now discards overlap requests that have already caught up to their own head slot, so the restart path no longer self-drops the live head or launches a zero-length packet after a legal trailer retire. |
 | [BUG-031-R](#bug-031-r-partially-joined-4-lane-frames-could-age-current-frame-body-tickets-into-post-drop) | R | soft error | `corner-only (4-lane half-frame skew sweep)` | fixed | `opq_prof_per_lane_half_frame_skew_sweep_test` / `P127` on `2026-04-22` @ `OPQ_N_LANE=4 OPQ_N_SHD=128` | `49d800f` | Partially joined frames no longer clear their join hold too early, so late lanes in the current frame keep their body tickets in-window instead of aging into `tk_past` and post-drop. |
+| [BUG-032-R](#bug-032-r-active-frame-tail-retire-could-treat-future-body-tickets-as-live-frame-blockers-and-spin-forever) | R | hard stuck error | `corner-only (overflow random-ready)` | fixed | `opq_cross_random_ready_overflow_step2_boundary_test` on `2026-04-23` @ `OPQ_N_LANE=4 OPQ_N_SHD=128` | `PENDING_HASH_SYNC` | The allocator no longer holds a tail-ready active frame open just because an active-lane body ticket has already advanced into the next frame and is classified `future`. |
 
 ## 2026-04-17
 
@@ -1189,6 +1190,80 @@ Historical formal note:
     table to `22/22` green runs for the claimed native-SV scope
 - Commit:
   - `49d800f` `packet_scheduler: close skew and mixed-soak signoff gaps`
+
+## 2026-04-23
+
+### BUG-032-R: Active-frame tail-retire could treat future body tickets as live-frame blockers and spin forever
+- First seen in:
+  - maintained `opq_cross_random_ready_overflow_step2_boundary_test` on
+    `2026-04-23` at
+    `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256`
+- Symptom:
+  - the step-0 checkpoint was clean, but the step-1 overflow window later
+    timed out with a stale active frame and a broken ownership ledger
+  - the failure signature split cleanly into frame-table and credit residue:
+    final frame-table counters stopped at `wr_hdr/shd/hit=4/12/900`,
+    `rd_hdr/shd/hit=3/10/664`, while the scoreboard ended with
+    `accepted=4776 delivered=664 unexplained=4112`
+  - visual trace debug showed the presenter already idle while the allocator
+    kept cycling with `frame_lane_active=0xf`, `frame_lane_tail_seen=0xf`,
+    and only future tickets left in the registered IDLE decode
+- Root cause:
+  - `ordered_priority_queue_monolithic_page_allocator.sv` still let the
+    active-frame retirement gate treat any active pending body ticket as
+    `active_frame_pending_nonfuture_ticket`, even when the registered snapshot
+    had already classified that ticket as `future`
+  - the current frame therefore could not flush its tail, so the allocator
+    kept spinning on a stale active frame instead of retiring it and letting
+    the next-frame tickets rebase normally
+- Fix status:
+  - state:
+    - fixed on the refreshed `2026-04-23` maintained signoff reruns
+  - mechanism:
+    - the active-frame tail-retirement guard now blocks only on unstable or
+      not-yet-future active tickets
+    - an active-lane body ticket that is already classified `future` is now
+      treated as next-frame traffic and no longer keeps the current frame
+      alive indefinitely
+  - before_fix_outcome:
+    - the maintained overflow-step2 boundary testcase timed out after the
+      first clean checkpoint and reproduced a stale-frame ownership failure
+      with `accepted=4776 delivered=664 unexplained=4112`
+    - the late debug slice showed the presenter idle, the frame-table counters
+      flat, and the allocator still toggling with `frame_lane_active=0xf`
+      despite only future tickets remaining
+  - after_fix_outcome:
+    - the refreshed
+      `opq_cross_random_ready_overflow_step2_boundary_test` rerun on
+      `2026-04-23` now exits with final
+      `accepted=1150 delivered=1150 unexplained=0`,
+      `first_break=clean`, and
+      `wr_hdr/shd/hit=5/14/1150 = rd_hdr/shd/hit`
+    - the maintained
+      `opq_cross_mixed_bucket_random_soak_test` rerun on the same RTL also
+      stays clean through its final checkpoint and scoreboard summary with
+      `expected=10723 actual=10723 missing=0 ghost=0`,
+      per-lane `unexplained=0`, and
+      `mixed_bucket_final core_principles first_break=clean`
+    - the full maintained frame-signoff set is green again in the refreshed
+      generated dashboard, which now reports `8/8` maintained signoff runs
+      with `signoff_runs_with_failures=0`
+  - potential_hazard:
+    - this looks durable for the current `4-lane/128/256/native_sv` closure
+      slice because the fix is covered by the original failing maintained
+      testcase plus the longer mixed-bucket soak
+    - future wider-lane or wider-width package points still need their own
+      reruns instead of inheriting this claim automatically
+  - Claude Opus 4.7 xhigh review decision:
+    - pending / not run in this turn
+- Runtime / coverage context:
+  - this bug was the remaining maintained signoff blocker after the earlier
+    join-hold and presenter fixes were already green
+  - closing it restored the maintained frame-signoff batch to a clean current
+    dashboard and kept the refreshed local lint / doc checks usable as part of
+    the same closure evidence bundle
+- Commit:
+  - `PENDING_HASH_SYNC` `packet_scheduler: fold local signoff cleanup and fix overflow retirement stall`
 
 ### BUG-026-R: Live-head overwrite protection suppresses unread-tail drop accounting
 - First seen in:

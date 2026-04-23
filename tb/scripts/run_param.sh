@@ -45,7 +45,13 @@ done
 
 for n_shd in "${N_SHD_SWEEP[@]}"; do
   echo "== OPQ_N_SHD=${n_shd} =="
-  OPQ_N_SHD="${n_shd}" DUT_IMPL="${DUT_IMPL}" "${SCRIPT_DIR}/run_uvm.sh" "${TESTS[@]}"
+  # Each N_SHD sweep point must use the matching safe ticket FIFO depth rather
+  # than inheriting the caller's closure-point depth (for example 256 from the
+  # 4x128 signoff slice), otherwise larger sweep points like N_SHD=512 are run
+  # with an intentionally undersized ticket FIFO and fail for the wrong reason.
+  env -u OPQ_TICKET_FIFO_DEPTH \
+    OPQ_N_SHD="${n_shd}" DUT_IMPL="${DUT_IMPL}" \
+    "${SCRIPT_DIR}/run_uvm.sh" "${TESTS[@]}"
 
   for test_name in "${TESTS[@]}"; do
     if [[ -f "${LOG_DIR}/${test_name}.log" ]]; then
