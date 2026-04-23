@@ -69,7 +69,7 @@ Historical formal note:
 | [BUG-029-R](#bug-029-r-presenter-overlap-bookkeeping-can-strand-queued-metadata-in-idle-after-a-legal-trailer-retire) | R | hard stuck error | `corner-only (legal backpressure stress)` | fixed | `opq_cross_bp_predrop_boundary_test` on `2026-04-21` | `43336f8` | The presenter no longer strands the legal pre-drop supplemental run after slot `0x17`; queued metadata now advances through `WAIT_FOR_COMPLETE` even when overlap bookkeeping is still pending. |
 | [BUG-030-R](#bug-030-r-overlap-request-replay-can-self-drop-the-current-head-and-synthesize-a-zero-length-packet) | R | hard stuck error | `corner-only (targeted backpressure stress)` | fixed | `opq_formal_like_egress_flush_backpressure_stress_test` on `2026-04-22` @ `OPQ_N_LANE=4 OPQ_N_SHD=128` | `309f1d4` | The presenter now discards overlap requests that have already caught up to their own head slot, so the restart path no longer self-drops the live head or launches a zero-length packet after a legal trailer retire. |
 | [BUG-031-R](#bug-031-r-partially-joined-4-lane-frames-could-age-current-frame-body-tickets-into-post-drop) | R | soft error | `corner-only (4-lane half-frame skew sweep)` | fixed | `opq_prof_per_lane_half_frame_skew_sweep_test` / `P127` on `2026-04-22` @ `OPQ_N_LANE=4 OPQ_N_SHD=128` | `49d800f` | Partially joined frames no longer clear their join hold too early, so late lanes in the current frame keep their body tickets in-window instead of aging into `tk_past` and post-drop. |
-| [BUG-032-R](#bug-032-r-active-frame-tail-retire-could-treat-future-body-tickets-as-live-frame-blockers-and-spin-forever) | R | hard stuck error | `corner-only (overflow random-ready)` | fixed | `opq_cross_random_ready_overflow_step2_boundary_test` on `2026-04-23` @ `OPQ_N_LANE=4 OPQ_N_SHD=128` | `PENDING_HASH_SYNC` | The allocator no longer holds a tail-ready active frame open just because an active-lane body ticket has already advanced into the next frame and is classified `future`. |
+| [BUG-032-R](#bug-032-r-active-frame-tail-retire-could-treat-future-body-tickets-as-live-frame-blockers-and-spin-forever) | R | hard stuck error | `corner-only (overflow random-ready)` | fixed | `opq_cross_random_ready_overflow_step2_boundary_test` on `2026-04-23` @ `OPQ_N_LANE=4 OPQ_N_SHD=128` | `bf760d4` | The allocator no longer holds a tail-ready active frame open just because an active-lane body ticket has already advanced into the next frame and is classified `future`. |
 
 ## 2026-04-17
 
@@ -1263,7 +1263,7 @@ Historical formal note:
     dashboard and kept the refreshed local lint / doc checks usable as part of
     the same closure evidence bundle
 - Commit:
-  - `PENDING_HASH_SYNC` `packet_scheduler: fold local signoff cleanup and fix overflow retirement stall`
+  - `bf760d4` `packet_scheduler: fold local signoff cleanup and fix overflow retirement stall`
 
 ### BUG-026-R: Live-head overwrite protection suppresses unread-tail drop accounting
 - First seen in:
