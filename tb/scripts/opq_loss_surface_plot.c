@@ -157,9 +157,26 @@ static const char *output_format_from_path(const char *path) {
   return "PNG";
 }
 
+static void init_loss_palette(void) {
+  float red[256];
+  float green[256];
+  float blue[256];
+  int idx;
+
+  for (idx = 0; idx < 256; idx++) {
+    float t = (float) idx / 255.0f;
+
+    red[idx] = 0.98f - 0.84f * t;
+    green[idx] = 0.98f - 0.86f * t;
+    blue[idx] = 0.99f - 0.81f * t;
+  }
+  myvlt(red, green, blue, 256);
+}
+
 static void render_plot(const opq_loss_grid_t *grid, const char *output_path) {
   int level_count = 12;
   float levels[12];
+  float ref_levels[3];
   float xmin = grid->x[0];
   float xmax = grid->x[grid->nx - 1];
   float ymin = grid->y[0];
@@ -179,6 +196,8 @@ static void render_plot(const opq_loss_grid_t *grid, const char *output_path) {
   double xorigin = align_up(gxmin, xstep);
   double yorigin = align_up(gymin, ystep);
   double zorigin = align_up(zmin, zstep);
+  const float ref_fracs[3] = {0.35f, 0.50f, 0.65f};
+  char ref_caption[160];
   int level_idx;
 
   if (zspan <= 0.0f) {
@@ -188,6 +207,12 @@ static void render_plot(const opq_loss_grid_t *grid, const char *output_path) {
   for (level_idx = 0; level_idx < level_count; level_idx++) {
     levels[level_idx] = zmin + ((float) (level_idx + 1) * zspan / (float) level_count);
   }
+  for (level_idx = 0; level_idx < 3; level_idx++) {
+    ref_levels[level_idx] = zmin + ref_fracs[level_idx] * zspan;
+  }
+  snprintf(ref_caption, sizeof(ref_caption),
+           "ref contours: dot %.3f, dash %.3f, solid %.3f",
+           ref_levels[0], ref_levels[1], ref_levels[2]);
 
   metafl(output_format_from_path(output_path));
   setfil(output_path);
@@ -197,11 +222,12 @@ static void render_plot(const opq_loss_grid_t *grid, const char *output_path) {
   disini();
   pagera();
   complx();
-  setvlt("temp");
+  init_loss_palette();
 
-  titlin("OPQ-Inspired Loss Surface", 1);
-  titlin("x: B=(SCV-1)/(SCV+1),  y: offered rate / lane rho", 3);
-  titlin("B=-1 periodic, B=0 Poisson, B=+1 bursty", 4);
+  titlin("OPQ 4-lane loss contour", 1);
+  titlin("x: B=(SCV-1)/(SCV+1),  y: offered rate / lane rho", 2);
+  titlin("B=-1 periodic, B=0 Poisson, B=+1 bursty", 3);
+  titlin(ref_caption, 4);
 
   name("burstiness B", "x");
   name("rate / lane rho", "y");
@@ -218,11 +244,17 @@ static void render_plot(const opq_loss_grid_t *grid, const char *output_path) {
   zscale(zmin, zmax);
   conshd(grid->x, grid->nx, grid->y, grid->ny, grid->z, levels, level_count);
 
-  setrgb(0.20f, 0.20f, 0.20f);
   labels("none", "contur");
-  for (level_idx = 1; level_idx < level_count; level_idx += 2) {
-    contur(grid->x, grid->nx, grid->y, grid->ny, grid->z, levels[level_idx]);
-  }
+  linwid(7);
+  setrgb(0.08f, 0.08f, 0.08f);
+  dotl();
+  contur(grid->x, grid->nx, grid->y, grid->ny, grid->z, ref_levels[0]);
+  dashm();
+  contur(grid->x, grid->nx, grid->y, grid->ny, grid->z, ref_levels[1]);
+  solid();
+  contur(grid->x, grid->nx, grid->y, grid->ny, grid->z, ref_levels[2]);
+  linwid(1);
+  solid();
 
   color("fore");
   height(32);
