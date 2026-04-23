@@ -1,0 +1,10 @@
+void swgscl(int ip, double xval) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "swgscl_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, swgscl, ip, xval);
+}

@@ -1,0 +1,10 @@
+void trfrot(double xang, int nx, int ny) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "trfrot_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, trfrot, xang, nx, ny);
+}

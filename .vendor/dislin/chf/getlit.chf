@@ -1,0 +1,12 @@
+int getlit(double xp, double yp, double zp, double xn, double yn, double zn) {
+    void *fptr;
+    int retval;
+
+    fptr = dlsym(_Chdislin_handle, "getlit_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return -1;
+    }
+    dlrunfun(fptr, &retval, getlit, xp, yp, zp, xn, yn, zn);
+    return retval;
+}

@@ -1,0 +1,10 @@
+void barclr(int ic1, int ic2, int ic3) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "barclr_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, barclr, ic1, ic2, ic3);
+}

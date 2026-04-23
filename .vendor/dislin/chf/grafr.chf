@@ -1,0 +1,10 @@
+void grafr(double *xray, int n, double *yray, int m) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "grafr_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, grafr, xray, n, yray, m);
+}

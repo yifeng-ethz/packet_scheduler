@@ -1,0 +1,10 @@
+void getran(int *nca, int *nce) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "getran_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, getran, nca, nce);
+}

@@ -1,0 +1,12 @@
+int polclp(double *xray, double *yray, int n, double *xout, double *yout, int nmax, double xv, char *cedge) {
+    void *fptr;
+    int retval;
+
+    fptr = dlsym(_Chdislin_handle, "polclp_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return -1;
+    }
+    dlrunfun(fptr, &retval, polclp, xray, yray, n, xout, yout, nmax, xv, cedge);
+    return retval;
+}

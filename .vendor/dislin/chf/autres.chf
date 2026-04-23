@@ -1,0 +1,10 @@
+void autres(int ixdim, int iydim) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "autres_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, autres, ixdim, iydim);
+}

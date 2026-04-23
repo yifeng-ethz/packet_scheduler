@@ -1,0 +1,12 @@
+int nlnumb(double x, int ndig) {
+    void *fptr;
+    int retval;
+
+    fptr = dlsym(_Chdislin_handle, "nlnumb_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return -1;
+    }
+    dlrunfun(fptr, &retval, nlnumb, x, ndig);
+    return retval;
+}

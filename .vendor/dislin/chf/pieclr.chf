@@ -1,0 +1,10 @@
+void pieclr(int *ic1, int *ic2, int n) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "pieclr_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, pieclr, ic1, ic2, n);
+}

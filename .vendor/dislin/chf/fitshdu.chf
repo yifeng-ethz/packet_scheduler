@@ -1,0 +1,12 @@
+int fitshdu(int n) {
+    void *fptr;
+    int retval;
+
+    fptr = dlsym(_Chdislin_handle, "fitshdu_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return -1;
+    }
+    dlrunfun(fptr, &retval, fitshdu, n);
+    return retval;
+}

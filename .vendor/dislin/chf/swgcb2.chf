@@ -1,0 +1,10 @@
+void swgcb2(int id, void (*funptr)(int, int , int)) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "swgcb2_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, swgcb2, id, funptr);
+}

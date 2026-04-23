@@ -1,0 +1,10 @@
+void quad3d(double xm, double ym, double zm, double xl, double yl, double zl) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "quad3d_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, quad3d, xm, ym, zm, xl, yl, zl);
+}

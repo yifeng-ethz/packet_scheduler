@@ -1,0 +1,10 @@
+void paghdr(char *cstr1, char *cstr2, int iopt, int idir) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "paghdr_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, paghdr, cstr1, cstr2, iopt, idir);
+}

@@ -1,0 +1,10 @@
+void gaxpar(double a1, double a2, char *copt, char *cax, double *a, double *b, double *org, double *stp, int *ndig) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "gaxpar_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, gaxpar, a1, a2, copt, cax, a, b, org, stp, ndig);
+}

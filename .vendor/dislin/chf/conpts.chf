@@ -1,0 +1,10 @@
+void conpts(double *xray, int n, double *yray, int m, double *zmat, double zlev, double *xpts, double *ypts, int maxpts, int *nray, int maxray, int *nlins) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "conpts_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, conpts, xray, n, yray, m, zmat, zlev, xpts, ypts, maxpts, nray, maxray, nlins);
+}

@@ -1,0 +1,12 @@
+char * getdsp() {
+    void *fptr;
+    char *retval;
+
+    fptr = dlsym(_Chdislin_handle, "getdsp_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return NULL;
+    }
+    dlrunfun(fptr, &retval, getdsp);
+    return retval;
+}

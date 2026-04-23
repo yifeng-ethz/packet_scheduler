@@ -1,0 +1,10 @@
+void setres3d(double xl, double yl, double zl) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "setres3d_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, setres3d, xl, yl, zl);
+}

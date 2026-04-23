@@ -1,0 +1,10 @@
+void sector(int nx, int ny, int nr1, int nr2, double a, double b, int ncol) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "sector_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, sector, nx, ny, nr1, nr2, a, b, ncol);
+}

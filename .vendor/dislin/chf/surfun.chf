@@ -1,0 +1,11 @@
+void surfun(double (*funptr)(double,double), int ixp, double xdel,  
+    int iyp, double ydel) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "surfun_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, surfun, funptr, ixp, xdel, iyp, ydel);
+}

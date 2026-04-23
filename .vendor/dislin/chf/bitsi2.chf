@@ -1,0 +1,12 @@
+short bitsi2(int nbits, short mher, int iher, short mhin, int ihin) {
+    void *fptr;
+    short retval;
+
+    fptr = dlsym(_Chdislin_handle, "bitsi2_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return -1;
+    }
+    dlrunfun(fptr, &retval, bitsi2, nbits, mher, iher, mhin, ihin);
+    return retval;
+}

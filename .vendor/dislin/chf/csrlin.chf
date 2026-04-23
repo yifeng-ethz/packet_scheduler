@@ -1,0 +1,10 @@
+void csrlin(int *ix1, int *iy1, int *ix2, int *iy2) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "csrlin_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, csrlin, ix1, iy1, ix2, iy2);
+}

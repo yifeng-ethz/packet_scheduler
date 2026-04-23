@@ -1,0 +1,10 @@
+void labl3d(char *copt) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "labl3d_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, labl3d, copt);
+}

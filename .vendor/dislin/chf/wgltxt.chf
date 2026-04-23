@@ -1,0 +1,12 @@
+int wgltxt(int ip, char *clab, char *ctext, int iper) {
+    void *fptr;
+    int retval;
+
+    fptr = dlsym(_Chdislin_handle, "wgltxt_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return -1;
+    }
+    dlrunfun(fptr, &retval, wgltxt, ip, clab, ctext, iper);
+    return retval;
+}

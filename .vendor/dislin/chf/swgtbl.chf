@@ -1,0 +1,10 @@
+void swgtbl(int id, double *xray, int nray, int ndig, int idx, char *copt) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "swgtbl_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, swgtbl, id, xray, nray, ndig, idx, copt);
+}

@@ -1,0 +1,10 @@
+void stmpts3d(double *xv, double *yv, double *zv, int nx, int ny, int nz, double *xp, double *yp, double *zp, double x0, double y0, double z0, double *xray, double *yray, double *zray, int nmax, int *n) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "stmpts3d_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, stmpts3d, xv, yv, zv, nx, ny, nz, xp, yp, zp, x0, y0, z0, xray, yray, zray, nmax, n);
+}

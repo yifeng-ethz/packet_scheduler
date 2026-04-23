@@ -1,0 +1,10 @@
+void gwgsiz(int i1, int *i2, int *i3) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "gwgsiz_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, gwgsiz, i1, i2, i3);
+}

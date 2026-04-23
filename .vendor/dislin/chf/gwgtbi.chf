@@ -1,0 +1,12 @@
+int gwgtbi(int id, int i, int j) {
+    void *fptr;
+    int retval;
+
+    fptr = dlsym(_Chdislin_handle, "gwgtbi_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return -1;
+    }
+    dlrunfun(fptr, &retval, gwgtbi, id, i, j);
+    return retval;
+}

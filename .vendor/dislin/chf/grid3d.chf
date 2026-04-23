@@ -1,0 +1,10 @@
+void grid3d(int ixgrid, int iygrid, char *copt) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "grid3d_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, grid3d, ixgrid, iygrid, copt);
+}

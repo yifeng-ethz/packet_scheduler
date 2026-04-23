@@ -1,0 +1,10 @@
+void qplcrv(double *xray, double *yray, int n, char *copt) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "qplcrv_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, qplcrv, xray, yray, n, copt);
+}

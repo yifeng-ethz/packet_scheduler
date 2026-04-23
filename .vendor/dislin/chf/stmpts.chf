@@ -1,0 +1,10 @@
+void stmpts(double *xv, double *yv, int nx, int ny, double *xp, double *yp, double x0, double y0, double *xray, double *yray, int nmax, int *n) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "stmpts_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, stmpts, xv, yv, nx, ny, xp, yp, x0, y0, xray, yray, nmax, n);
+}

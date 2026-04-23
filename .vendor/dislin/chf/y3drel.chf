@@ -1,0 +1,12 @@
+double y3drel(double x, double y, double z) {
+    void *fptr;
+    double retval;
+
+    fptr = dlsym(_Chdislin_handle, "y3drel_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return -1;
+    }
+    dlrunfun(fptr, &retval, y3drel, x, y, z);
+    return retval;
+}

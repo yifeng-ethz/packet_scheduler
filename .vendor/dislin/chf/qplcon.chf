@@ -1,0 +1,10 @@
+void qplcon(double *zmat, int n, int m, int nlv) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "qplcon_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, qplcon, zmat, n, m, nlv);
+}

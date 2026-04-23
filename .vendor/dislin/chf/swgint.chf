@@ -1,0 +1,10 @@
+void swgint(int ip, int iv) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "swgint_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, swgint, ip, iv);
+}

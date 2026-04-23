@@ -1,0 +1,10 @@
+void vclp3d(double x1, double x2) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "vclp3d_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, vclp3d, x1, x2);
+}

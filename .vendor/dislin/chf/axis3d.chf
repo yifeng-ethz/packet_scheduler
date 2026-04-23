@@ -1,0 +1,10 @@
+void axis3d(double x3, double y3, double z3) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "axis3d_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, axis3d, x3, y3, z3);
+}

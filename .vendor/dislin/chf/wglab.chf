@@ -1,0 +1,12 @@
+int wglab(int ip, char *cstr) {
+    void *fptr;
+    int retval;
+
+    fptr = dlsym(_Chdislin_handle, "wglab_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return -1;
+    }
+    dlrunfun(fptr, &retval, wglab, ip, cstr);
+    return retval;
+}

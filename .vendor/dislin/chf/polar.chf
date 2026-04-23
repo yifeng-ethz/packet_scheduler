@@ -1,0 +1,10 @@
+void polar(double xe, double xorg, double xstp, double yorg, double ystp) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "polar_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, polar, xe, xorg, xstp, yorg, ystp);
+}

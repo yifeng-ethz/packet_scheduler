@@ -1,0 +1,12 @@
+int winid() {
+    void *fptr;
+    int retval;
+
+    fptr = dlsym(_Chdislin_handle, "winid_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return -1;
+    }
+    dlrunfun(fptr, &retval, winid);
+    return retval;
+}

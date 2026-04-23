@@ -1,0 +1,10 @@
+void smxalf(char *calph, char *c1, char *c2, int n) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "smxalf_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, smxalf, calph, c1, c2, n);
+}

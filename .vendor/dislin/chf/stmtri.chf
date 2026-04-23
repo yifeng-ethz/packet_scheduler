@@ -1,0 +1,12 @@
+void stmtri(double *xv, double *yv, double *xp, double *yp, int n, int *i1ray,
+int *i2ray, int *i3ray, int ntri, double *xs, double *ys, int nray) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "stmtri_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, stmtri, xv, yv, xp, yp, n, i1ray, i2ray, i3ray,
+ntri, xs, ys, nray);
+}

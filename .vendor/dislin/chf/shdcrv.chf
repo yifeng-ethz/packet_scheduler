@@ -1,0 +1,10 @@
+void shdcrv(double *x1ray, double *y1ray, int n1, double *x2ray, double *y2ray, int n2) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "shdcrv_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, shdcrv, x1ray, y1ray, n1, x2ray, y2ray, n2);
+}

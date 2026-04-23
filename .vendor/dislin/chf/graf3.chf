@@ -1,0 +1,10 @@
+void graf3(double xa, double xe, double xorg, double xstp, double ya, double ye, double yorg, double ystp, double za, double ze, double zorg, double zstp) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "graf3_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, graf3, xa, xe, xorg, xstp, ya, ye, yorg, ystp, za, ze, zorg, zstp);
+}

@@ -1,0 +1,10 @@
+void trfmat(double *zmat, int nx, int ny, double *zmat2, int nx2, int ny2) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "trfmat_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, trfmat, zmat, nx, ny, zmat2, nx2, ny2);
+}

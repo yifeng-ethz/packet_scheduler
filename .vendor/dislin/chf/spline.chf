@@ -1,0 +1,10 @@
+void spline(double *xray, double *yray, int n, double *xsray, double *ysray, int *nspl) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "spline_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, spline, xray, yray, n, xsray, ysray, nspl);
+}

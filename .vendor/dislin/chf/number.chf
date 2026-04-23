@@ -1,0 +1,10 @@
+void number(double x, int ndig, int nx, int ny) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "number_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, number, x, ndig, nx, ny);
+}

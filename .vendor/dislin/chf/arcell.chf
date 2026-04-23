@@ -1,0 +1,10 @@
+void arcell(int nx, int ny, int na, int nb, double a, double b, double t) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "arcell_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, arcell, nx, ny, na, nb, a, b, t);
+}

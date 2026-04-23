@@ -1,0 +1,10 @@
+void xaxis(double xa, double xe, double xorg, double xstp, int nl, char *cstr, int it, int nx, int ny) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "xaxis_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, xaxis, xa, xe, xorg, xstp, nl, cstr, it, nx, ny);
+}

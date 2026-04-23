@@ -1,0 +1,10 @@
+void tr3scl(double x, double y, double z) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "tr3scl_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, tr3scl, x, y, z);
+}

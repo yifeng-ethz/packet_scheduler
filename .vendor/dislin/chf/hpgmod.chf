@@ -1,0 +1,10 @@
+void hpgmod(char *cmod, char *ckey) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "hpgmod_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, hpgmod, cmod, ckey);
+}

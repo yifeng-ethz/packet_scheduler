@@ -1,0 +1,10 @@
+void mysymb(double *xray, double *yray, int n, int isym, int iflag) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "mysymb_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, mysymb, xray, yray, n, isym, iflag);
+}

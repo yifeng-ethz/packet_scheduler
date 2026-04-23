@@ -1,0 +1,10 @@
+void curve(double *xray, double *yray, int n) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "curve_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, curve, xray, yray, n);
+}

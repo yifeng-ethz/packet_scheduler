@@ -118,7 +118,7 @@ class opq_ingress_driver extends uvm_driver #(opq_frame_item);
     drive_word(make_frame_data_header1(tr.frame_ts, tr.pkg_cnt), 4'b0000, 1'b0, 1'b0, tr.data_header1_error_bits, tr.channel);
     drive_word(make_frame_debug_header0(tr.frame_subh_count_bits(), tr.frame_hit_count_bits()),
       4'b0000, 1'b0, 1'b0, tr.debug_header0_error_bits, tr.channel);
-    drive_word(make_frame_debug_header1(tr.frame_ts), 4'b0000, 1'b0, 1'b0, tr.debug_header1_error_bits, tr.channel);
+    drive_word(make_frame_debug_header1(tr.ingress_debug_ts), 4'b0000, 1'b0, 1'b0, tr.debug_header1_error_bits, tr.channel);
 
     foreach (tr.subheaders[i]) begin
       bit [7:0] hit_cnt;

@@ -1,0 +1,12 @@
+int wgpimg(int ip, char *clab, unsigned char *iray, int nw, int nh) {
+    void *fptr;
+    int retval;
+
+    fptr = dlsym(_Chdislin_handle, "wgpimg_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, &retval, wgpimg, ip, clab, iray, nw, nh);
+    return retval;
+}

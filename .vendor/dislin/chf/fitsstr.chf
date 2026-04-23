@@ -1,0 +1,10 @@
+void fitsstr(char *ckey, char *cval, int nmx) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "fitsstr_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return -1;
+    }
+    dlrunfun(fptr, NULL, fitsstr, ckey, cval, nmx);
+}

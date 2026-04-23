@@ -1,0 +1,10 @@
+void vfoc3d(double x, double y, double z, char *cview) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "vfoc3d_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, vfoc3d, x, y, z, cview);
+}

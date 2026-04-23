@@ -1,0 +1,10 @@
+void view3d(double xvu, double yvu, double zvu, char *cvu) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "view3d_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, view3d, xvu, yvu, zvu, cvu);
+}

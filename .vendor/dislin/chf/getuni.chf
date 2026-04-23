@@ -1,0 +1,12 @@
+void * getuni() {
+    void *fptr;
+    void *retval;
+
+    fptr = dlsym(_Chdislin_handle, "getuni_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return NULL;
+    }
+    dlrunfun(fptr, &retval, getuni);
+    return retval;
+}

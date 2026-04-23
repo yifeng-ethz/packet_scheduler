@@ -1,0 +1,10 @@
+void curvx3(double *xray, double y, double *zray, int n) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "curvx3_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, curvx3, xray, y, zray, n);
+}

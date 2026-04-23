@@ -1,0 +1,10 @@
+void stream(double *xv, double *yv, int nx, int ny, double *xp, double *yp, double *xs, double *ys, int n) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "stream_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, stream, xv, yv, nx, ny, xp, yp, xs, ys, n);
+}

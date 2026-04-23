@@ -1,0 +1,10 @@
+void x11mod(char *copt) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "x11mod_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, x11mod, copt);
+}

@@ -1,0 +1,10 @@
+void plat3d(double xm, double ym, double zm, double xl, char *copt) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "plat3d_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, plat3d, xm, ym, zm, xl, copt);
+}

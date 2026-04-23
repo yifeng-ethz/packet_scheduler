@@ -1,0 +1,10 @@
+void conshd(double *xray, int n, double *yray, int m, double *zmat, double *zlev, int nlev) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "conshd_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, conshd, xray, n, yray, m, zmat, zlev, nlev);
+}

@@ -1,0 +1,10 @@
+void rlarc(double xm, double ym, double xa, double xb, double a, double b, double t) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "rlarc_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, rlarc, xm, ym, xa, xb, a, b, t);
+}

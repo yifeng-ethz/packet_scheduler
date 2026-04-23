@@ -1,0 +1,10 @@
+void rpixls(unsigned char *iray, int ix, int iy, int nw, int nh) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "rpixls_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, rpixls, iray, ix, iy, nw, nh);
+}

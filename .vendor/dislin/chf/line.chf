@@ -1,0 +1,10 @@
+void line(int nx, int ny, int nu, int nv) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "line_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, line, nx, ny, nu, nv);
+}

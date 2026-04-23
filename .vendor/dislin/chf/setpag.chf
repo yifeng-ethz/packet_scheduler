@@ -1,0 +1,10 @@
+void setpag(char *cpag) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "setpag_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, setpag, cpag);
+}

@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 // IP Name   : opq_basic_seq
 // Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
-// Revision  : 0.3 - keep inactive DRR lanes on realistic empty-frame cadence
+// Revision  : 0.4 - carry virtual FEB ingress-debug timing through absolute lane skew
 // Description:
 //   UVM virtual sequences for the active OPQ regression buckets.
 //------------------------------------------------------------------------------
@@ -114,6 +114,7 @@ class opq_virtual_sequence_base extends uvm_sequence #(uvm_sequence_item);
       continuous_lane_seen[lane_id] = 1'b1;
       continuous_next_pkg_cnt_base[lane_id] = tr.pkg_cnt + 16'd1;
     end
+    tr.ingress_debug_ts = default_ingress_debug_ts(tr.frame_ts);
     return tr;
   endfunction
 
@@ -364,6 +365,10 @@ class opq_virtual_sequence_base extends uvm_sequence #(uvm_sequence_item);
           lane_frames[lane][slot_idx].use_absolute_launch = 1'b1;
           lane_frames[lane][slot_idx].launch_cycle = launch_cycle_v;
           lane_frames[lane][slot_idx].frame_slot_id = slot_idx;
+          lane_frames[lane][slot_idx].ingress_debug_ts = add_debug_ts_offset(
+            default_ingress_debug_ts(lane_frames[lane][slot_idx].frame_ts),
+            slot_offset_cycles
+          );
           if (slot_end_cycle > next_slot_base_cycle) begin
             next_slot_base_cycle = slot_end_cycle;
           end

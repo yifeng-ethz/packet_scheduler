@@ -1,0 +1,10 @@
+void rpixel(int ix, int iy, int *iclr) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "rpixel_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, rpixel, ix, iy, iclr);
+}

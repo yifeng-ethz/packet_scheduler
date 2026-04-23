@@ -1,0 +1,10 @@
+void rel3pt(double x, double y, double z, double *xp, double *yp) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "rel3pt_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, rel3pt, x, y, z, xp, yp);
+}

@@ -1,0 +1,10 @@
+void bezier(double *xray, double *yray, int nray, double *x, double *y, int n) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "bezier_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, bezier, xray, yray, nray, x, y, n);
+}

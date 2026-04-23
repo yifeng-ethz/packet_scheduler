@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 // IP Name   : opq_pkg
 // Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
-// Revision  : 0.2 - expose ticket FIFO depth in the active UVM configuration model
+// Revision  : 0.3 - model ingress debug timestamps as virtual FEB dispatch time
 // Description:
 //   Shared UVM types, helpers, and packet-format builders for the OPQ harness.
 //------------------------------------------------------------------------------
@@ -45,6 +45,7 @@ package opq_pkg;
   localparam int OPQ_POST_RESET_SETTLE_CYCLES = 4;
   localparam int OPQ_ABSOLUTE_LAUNCH_GUARD_CYCLES = 64;
   localparam int OPQ_FRAME_HDR_AUX_WORDS = 4;
+  localparam int OPQ_VIRTUAL_FEB_HEADER_LATENCY_CYCLES = 4096;
 
   localparam bit [7:0] K285 = 8'hBC;
   localparam bit [7:0] K284 = 8'h9C;
@@ -126,11 +127,25 @@ package opq_pkg;
     return data32;
   endfunction
 
-  function automatic bit [31:0] make_frame_debug_header1(bit [47:0] frame_ts);
+  function automatic bit [31:0] make_frame_debug_header1(bit [30:0] debug_ts);
     bit [31:0] data32;
     data32 = '0;
-    data32[30:0] = frame_ts[30:0];
+    data32[30:0] = debug_ts;
     return data32;
+  endfunction
+
+  function automatic bit [30:0] add_debug_ts_offset(
+    bit [30:0] base_ts,
+    bit [63:0] extra_cycles
+  );
+    bit [31:0] sum_v;
+
+    sum_v = {1'b0, base_ts} + {1'b0, extra_cycles[30:0]};
+    return sum_v[30:0];
+  endfunction
+
+  function automatic bit [30:0] default_ingress_debug_ts(bit [47:0] frame_ts);
+    return add_debug_ts_offset(frame_ts[30:0], OPQ_VIRTUAL_FEB_HEADER_LATENCY_CYCLES);
   endfunction
 
   function automatic bit [31:0] make_trailer();
@@ -188,6 +203,7 @@ package opq_pkg;
     rand bit [5:0] dt_type;
     rand bit [15:0] feb_id;
     rand int unsigned pre_gap_cycles;
+    bit [30:0] ingress_debug_ts;
     bit use_absolute_launch;
     bit [63:0] launch_cycle;
     int unsigned frame_slot_id;
@@ -212,6 +228,7 @@ package opq_pkg;
       `uvm_field_int(dt_type, UVM_DEFAULT)
       `uvm_field_int(feb_id, UVM_DEFAULT)
       `uvm_field_int(pre_gap_cycles, UVM_DEFAULT)
+      `uvm_field_int(ingress_debug_ts, UVM_DEFAULT)
       `uvm_field_int(use_absolute_launch, UVM_DEFAULT)
       `uvm_field_int(launch_cycle, UVM_DEFAULT)
       `uvm_field_int(frame_slot_id, UVM_DEFAULT)
@@ -231,6 +248,7 @@ package opq_pkg;
       dt_type = 6'b000001;
       feb_id = 16'h0001;
       pre_gap_cycles = 0;
+      ingress_debug_ts = '0;
       use_absolute_launch = 1'b0;
       launch_cycle = '0;
       frame_slot_id = '0;

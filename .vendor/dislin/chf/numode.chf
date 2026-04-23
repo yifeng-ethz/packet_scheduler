@@ -1,0 +1,10 @@
+void numode(char *cdec, char *cgrp, char *cpos, char *cfix) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "numode_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, numode, cdec, cgrp, cpos, cfix);
+}

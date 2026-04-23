@@ -1,0 +1,10 @@
+void pos3pt(double x, double y, double z, double *xp, double *yp, double *zp) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "pos3pt_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, pos3pt, x, y, z, xp, yp, zp);
+}

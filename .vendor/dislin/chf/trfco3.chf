@@ -1,0 +1,10 @@
+void trfco3(double *xray, double *yray, double *zray, int n, char *cfrom, char *cto) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "trfco3_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, trfco3, xray, yray, zray, n, cfrom, cto);
+}

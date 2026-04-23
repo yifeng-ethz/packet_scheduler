@@ -1,0 +1,10 @@
+void ypolar(double ya, double ye, double yor, double ystp, char *cstr, int ndist) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "ypolar_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, ypolar, ya, ye, yor, ystp, cstr, ndist);
+}

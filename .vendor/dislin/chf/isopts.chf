@@ -1,0 +1,10 @@
+void isopts(double *xray, int nx, double *yray, int ny, double *zray, int nz, double *wmat, double wlev, double *xtri, double *ytri, double *ztri, int nmax, int *ntri) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "isopts_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, isopts, xray, nx, yray, ny, zray, nz, wmat, wlev, xtri, ytri, ztri, nmax, ntri);
+}

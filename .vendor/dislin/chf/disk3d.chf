@@ -1,0 +1,10 @@
+void disk3d(double xm, double ym, double zm, double r1, double r2, int nsk1, int nsk2) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "disk3d_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, disk3d, xm, ym, zm, r1, r2, nsk1, nsk2);
+}

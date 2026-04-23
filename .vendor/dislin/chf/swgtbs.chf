@@ -1,0 +1,10 @@
+void swgtbs(int id, char *cstr, int irow, int icol, char *copt) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "swgtbs_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, swgtbs, id, cstr, irow, icol, copt);
+}

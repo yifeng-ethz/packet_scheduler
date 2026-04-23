@@ -1,0 +1,12 @@
+int wgcmd(int ip, char *clab, char *cmd) {
+    void *fptr;
+    int retval;
+
+    fptr = dlsym(_Chdislin_handle, "wgcmd_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return -1;
+    }
+    dlrunfun(fptr, &retval, wgcmd, ip, clab, cmd);
+    return retval;
+}

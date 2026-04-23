@@ -1,0 +1,10 @@
+void rlnumb(double x, int ndig, double xp, double yp) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "rlnumb_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, rlnumb, x, ndig, xp, yp);
+}

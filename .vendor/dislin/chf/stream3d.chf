@@ -1,0 +1,10 @@
+void stream3d(double *xv, double *yv, double *zv, int nx, int ny, int nz, double *xp, double *yp, double *zp, double *xs, double *ys, double *zs, int n) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "stream3d_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, stream3d, xv, yv, zv, nx, ny, nz, xp, yp, zp, xs, ys, zs, n);
+}

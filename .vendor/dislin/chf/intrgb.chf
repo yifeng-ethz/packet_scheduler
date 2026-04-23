@@ -1,0 +1,12 @@
+int intrgb(double xr, double xg, double xb) {
+    void *fptr;
+    int retval;
+
+    fptr = dlsym(_Chdislin_handle, "intrgb_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return -1;
+    }
+    dlrunfun(fptr, &retval, intrgb, xr, xg, xb);
+    return retval;
+}

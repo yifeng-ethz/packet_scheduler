@@ -1,0 +1,426 @@
+[
+  {
+    "test": "opq_bucket_frame_native_sv_test",
+    "log_path": "packet_scheduler/tb/sim_runs_math_residency/logs/opq_bucket_frame_native_sv_test.log",
+    "pass": true,
+    "uvm_error_count": 0,
+    "lanes": {
+      "0": {
+        "proxy_cycles": {
+          "samples": 225,
+          "min": 0,
+          "p05": 0.0,
+          "p50": 16.0,
+          "p95": 176.0,
+          "max": 176,
+          "mean": 69.04888888888888
+        },
+        "debug_delta_cycles": {
+          "samples": 225,
+          "min": -4096,
+          "p05": -4096.0,
+          "p50": -4080.0,
+          "p95": -3920.0,
+          "max": -3920,
+          "mean": -4026.951111111111
+        }
+      },
+      "1": {
+        "proxy_cycles": {
+          "samples": 235,
+          "min": 0,
+          "p05": 0.0,
+          "p50": 16.0,
+          "p95": 176.0,
+          "max": 176,
+          "mean": 66.2468085106383
+        },
+        "debug_delta_cycles": {
+          "samples": 235,
+          "min": -4437,
+          "p05": -4291.8,
+          "p50": -4080.0,
+          "p95": -3952.0,
+          "max": -3952,
+          "mean": -4065.531914893617
+        }
+      },
+      "2": {
+        "proxy_cycles": {
+          "samples": 136,
+          "min": 0,
+          "p05": 0.0,
+          "p50": 144.0,
+          "p95": 176.0,
+          "max": 176,
+          "mean": 107.41176470588235
+        },
+        "debug_delta_cycles": {
+          "samples": 136,
+          "min": -4778,
+          "p05": -4608.0,
+          "p50": -3992.0,
+          "p95": -3964.0,
+          "max": -3952,
+          "mean": -4090.1617647058824
+        }
+      },
+      "3": {
+        "proxy_cycles": {
+          "samples": 140,
+          "min": 0,
+          "p05": 0.0,
+          "p50": 128.0,
+          "p95": 176.0,
+          "max": 176,
+          "mean": 105.02857142857142
+        },
+        "debug_delta_cycles": {
+          "samples": 140,
+          "min": -5120,
+          "p05": -4864.0,
+          "p50": -4016.0,
+          "p95": -3967.2000000000003,
+          "max": -3952,
+          "mean": -4141.828571428571
+        }
+      }
+    },
+    "all_lanes": {
+      "samples": 736,
+      "min": 0,
+      "p05": 0.0,
+      "p50": 64.0,
+      "p95": 176.0,
+      "max": 176,
+      "mean": 82.08695652173913
+    },
+    "all_lanes_debug_delta": {
+      "samples": 736,
+      "min": -5120,
+      "p05": -4437.0,
+      "p50": -4032.0,
+      "p95": -3920.0,
+      "max": -3920,
+      "mean": -4072.8016304347825
+    }
+  },
+  {
+    "test": "opq_cross_drr_bursty_frame2_boundary_test",
+    "log_path": "packet_scheduler/tb/sim_runs_math_residency/logs/opq_cross_drr_bursty_frame2_boundary_test.log",
+    "pass": true,
+    "uvm_error_count": 0,
+    "lanes": {
+      "0": {
+        "proxy_cycles": {
+          "samples": 2,
+          "min": 16,
+          "p05": 25.6,
+          "p50": 112.0,
+          "p95": 198.39999999999998,
+          "max": 208,
+          "mean": 112.0
+        },
+        "debug_delta_cycles": {
+          "samples": 2,
+          "min": -4080,
+          "p05": -4070.4,
+          "p50": -3984.0,
+          "p95": -3897.6,
+          "max": -3888,
+          "mean": -3984.0
+        }
+      },
+      "1": {
+        "proxy_cycles": {
+          "samples": 2,
+          "min": 16,
+          "p05": 25.6,
+          "p50": 112.0,
+          "p95": 198.39999999999998,
+          "max": 208,
+          "mean": 112.0
+        },
+        "debug_delta_cycles": {
+          "samples": 2,
+          "min": -4080,
+          "p05": -4070.4,
+          "p50": -3984.0,
+          "p95": -3897.6,
+          "max": -3888,
+          "mean": -3984.0
+        }
+      },
+      "2": {
+        "proxy_cycles": {
+          "samples": 2,
+          "min": 16,
+          "p05": 25.6,
+          "p50": 112.0,
+          "p95": 198.39999999999998,
+          "max": 208,
+          "mean": 112.0
+        },
+        "debug_delta_cycles": {
+          "samples": 2,
+          "min": -4080,
+          "p05": -4070.4,
+          "p50": -3984.0,
+          "p95": -3897.6,
+          "max": -3888,
+          "mean": -3984.0
+        }
+      },
+      "3": {
+        "proxy_cycles": {
+          "samples": 2,
+          "min": 16,
+          "p05": 25.6,
+          "p50": 112.0,
+          "p95": 198.39999999999998,
+          "max": 208,
+          "mean": 112.0
+        },
+        "debug_delta_cycles": {
+          "samples": 2,
+          "min": -4080,
+          "p05": -4070.4,
+          "p50": -3984.0,
+          "p95": -3897.6,
+          "max": -3888,
+          "mean": -3984.0
+        }
+      }
+    },
+    "all_lanes": {
+      "samples": 8,
+      "min": 16,
+      "p05": 16.0,
+      "p50": 112.0,
+      "p95": 208.0,
+      "max": 208,
+      "mean": 112.0
+    },
+    "all_lanes_debug_delta": {
+      "samples": 8,
+      "min": -4080,
+      "p05": -4080.0,
+      "p50": -3984.0,
+      "p95": -3888.0,
+      "max": -3888,
+      "mean": -3984.0
+    }
+  },
+  {
+    "test": "opq_cross_mixed_bucket_random_soak_test",
+    "log_path": "packet_scheduler/tb/sim_runs_math_residency/logs/opq_cross_mixed_bucket_random_soak_test.log",
+    "pass": true,
+    "uvm_error_count": 0,
+    "lanes": {
+      "0": {
+        "proxy_cycles": {
+          "samples": 597,
+          "min": 0,
+          "p05": 0.0,
+          "p50": 16.0,
+          "p95": 176.0,
+          "max": 176,
+          "mean": 72.41541038525963
+        },
+        "debug_delta_cycles": {
+          "samples": 597,
+          "min": -4096,
+          "p05": -4096.0,
+          "p50": -4080.0,
+          "p95": -3920.0,
+          "max": -3920,
+          "mean": -4023.5845896147403
+        }
+      },
+      "1": {
+        "proxy_cycles": {
+          "samples": 617,
+          "min": 0,
+          "p05": 0.0,
+          "p50": 16.0,
+          "p95": 176.0,
+          "max": 176,
+          "mean": 70.32739059967585
+        },
+        "debug_delta_cycles": {
+          "samples": 617,
+          "min": -4128,
+          "p05": -4096.0,
+          "p50": -4080.0,
+          "p95": -3952.0,
+          "max": -3952,
+          "mean": -4035.7860615883305
+        }
+      },
+      "2": {
+        "proxy_cycles": {
+          "samples": 392,
+          "min": 0,
+          "p05": 16.0,
+          "p50": 80.0,
+          "p95": 176.0,
+          "max": 176,
+          "mean": 103.51020408163265
+        },
+        "debug_delta_cycles": {
+          "samples": 392,
+          "min": -4096,
+          "p05": -4080.0,
+          "p50": -4016.0,
+          "p95": -3984.0,
+          "max": -3952,
+          "mean": -4021.061224489796
+        }
+      },
+      "3": {
+        "proxy_cycles": {
+          "samples": 402,
+          "min": 0,
+          "p05": 16.0,
+          "p50": 80.0,
+          "p95": 176.0,
+          "max": 176,
+          "mean": 101.33333333333333
+        },
+        "debug_delta_cycles": {
+          "samples": 402,
+          "min": -4176,
+          "p05": -4096.0,
+          "p50": -4016.0,
+          "p95": -4016.0,
+          "max": -3952,
+          "mean": -4038.8457711442784
+        }
+      }
+    },
+    "all_lanes": {
+      "samples": 2008,
+      "min": 0,
+      "p05": 0.0,
+      "p50": 64.0,
+      "p95": 176.0,
+      "max": 176,
+      "mean": 83.63346613545816
+    },
+    "all_lanes_debug_delta": {
+      "samples": 2008,
+      "min": -4176,
+      "p05": -4096.0,
+      "p50": -4032.0,
+      "p95": -3920.0,
+      "max": -3920,
+      "mean": -4029.8964143426297
+    }
+  },
+  {
+    "test": "opq_cross_random_ready_overflow_step2_boundary_test",
+    "log_path": "packet_scheduler/tb/sim_runs_math_residency/logs/opq_cross_random_ready_overflow_step2_boundary_test.log",
+    "pass": true,
+    "uvm_error_count": 0,
+    "lanes": {
+      "0": {
+        "proxy_cycles": {
+          "samples": 5,
+          "min": 2704,
+          "p05": 2876.8,
+          "p50": 3920.0,
+          "p95": 4124.8,
+          "max": 4128,
+          "mean": 3686.4
+        },
+        "debug_delta_cycles": {
+          "samples": 5,
+          "min": -16560,
+          "p05": -13936.0,
+          "p50": -2576.0,
+          "p95": -57.60000000000002,
+          "max": -16,
+          "mean": -4563.2
+        }
+      },
+      "1": {
+        "proxy_cycles": {
+          "samples": 5,
+          "min": 2704,
+          "p05": 2876.8,
+          "p50": 3920.0,
+          "p95": 4124.8,
+          "max": 4128,
+          "mean": 3686.4
+        },
+        "debug_delta_cycles": {
+          "samples": 5,
+          "min": -16912,
+          "p05": -13936.0,
+          "p50": -1396.0,
+          "p95": -12.80000000000004,
+          "max": 28,
+          "mean": -4097.6
+        }
+      },
+      "2": {
+        "proxy_cycles": {
+          "samples": 5,
+          "min": 2704,
+          "p05": 2876.8,
+          "p50": 3920.0,
+          "p95": 4124.8,
+          "max": 4128,
+          "mean": 3686.4
+        },
+        "debug_delta_cycles": {
+          "samples": 5,
+          "min": -17776,
+          "p05": -17532.8,
+          "p50": -784.0,
+          "p95": -35.200000000000045,
+          "max": 12,
+          "mean": -7066.4
+        }
+      },
+      "3": {
+        "proxy_cycles": {
+          "samples": 5,
+          "min": 2704,
+          "p05": 2876.8,
+          "p50": 3920.0,
+          "p95": 4124.8,
+          "max": 4128,
+          "mean": 3686.4
+        },
+        "debug_delta_cycles": {
+          "samples": 5,
+          "min": -16912,
+          "p05": -13974.4,
+          "p50": -2032.0,
+          "p95": -329.60000000000036,
+          "max": 0,
+          "mean": -4563.2
+        }
+      }
+    },
+    "all_lanes": {
+      "samples": 20,
+      "min": 2704,
+      "p05": 2704.0,
+      "p50": 3920.0,
+      "p95": 4128.0,
+      "max": 4128,
+      "mean": 3686.4
+    },
+    "all_lanes_debug_delta": {
+      "samples": 20,
+      "min": -17776,
+      "p05": -16955.2,
+      "p50": -1840.0,
+      "p95": 12.800000000000011,
+      "max": 28,
+      "mean": -5072.6
+    }
+  }
+]

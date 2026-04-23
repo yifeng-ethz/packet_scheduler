@@ -1,0 +1,10 @@
+void vector(int nx1, int ny1, int nx2, int ny2, int ivec) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "vector_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, vector, nx1, ny1, nx2, ny2, ivec);
+}

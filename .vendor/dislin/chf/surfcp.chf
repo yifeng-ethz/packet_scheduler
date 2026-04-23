@@ -1,0 +1,11 @@
+void surfcp(double (*funptr)(double,double,int), double a1, double a2, 
+    double astp, double b1, double b2, double bstp) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "surfcp_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, surfcp, funptr, a1, a2, astp, b1, b2, bstp);
+}

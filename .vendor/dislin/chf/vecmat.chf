@@ -1,0 +1,10 @@
+void vecmat(double *xv, double *yv, int nx, int ny, double *xp, double *yp, int ivec) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "vecmat_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, vecmat, xv, yv, nx, ny, xp, yp, ivec);
+}

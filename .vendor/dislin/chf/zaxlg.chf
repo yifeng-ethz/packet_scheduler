@@ -1,0 +1,10 @@
+void zaxlg(double za, double ze, double zor, double zstp, int nl, char *cstr, int it, int id, int nx, int ny) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "zaxlg_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, zaxlg, za, ze, zor, zstp, nl, cstr, it, id, nx, ny);
+}

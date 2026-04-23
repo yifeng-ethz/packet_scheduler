@@ -1,0 +1,10 @@
+void gridim(double x1, double x2, double x3, int n) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "gridim_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, gridim, x1, x2, x3, n);
+}

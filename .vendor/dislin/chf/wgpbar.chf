@@ -1,0 +1,12 @@
+int wgpbar(int ip, double x1, double x2, double xstp) {
+    void *fptr;
+    int retval;
+
+    fptr = dlsym(_Chdislin_handle, "wgpbar_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return -1;
+    }
+    dlrunfun(fptr, &retval, wgpbar, ip, x1, x2, xstp);
+    return retval;
+}

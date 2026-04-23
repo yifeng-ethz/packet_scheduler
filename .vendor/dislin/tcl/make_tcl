@@ -1,0 +1,29 @@
+echo "/**************************************************************/"
+echo "/**                    m a k e _ t c l                       **/"
+echo "/**                                                          **/"
+echo "/** Creates a DISLIN Tcl module for Linux/UNIX systems.      **/"
+echo "/**                                                          **/"
+echo "/** Command: make_tcl     option                             **/"
+echo "/**                                                          **/"
+echo "/** option   linux_i586, linux_i586_64, fbsd, fbsd_64        **/"
+echo "/**          linux_arm                                       **/"
+echo "/**************************************************************/"
+if test $# -eq 0 ; then
+  exit 0
+fi
+
+if test $1 = linux_i586 ; then
+  gcc -fPIC -I/usr/include/tcl8.6 -shared -o dislin.so dislin.c -L$DISLIN -ldislin_d
+elif test $1 = linux_arm ; then
+  gcc -I/usr/include/tcl8.6 -fPIC -shared -o dislin.so dislin.c -L$DISLIN -ldislin_d
+elif test $1 = linux_i586_64 ; then
+  gcc -fPIC -I/usr/include/tcl8.6 -shared -o dislin.so dislin.c -L$DISLIN -ldislin_d
+elif test $1 = fbsd ; then
+  gcc -fPIC -I/usr/local/include/tcl8.7 -shared -o dislin.so dislin.c -L$DISLIN -ldislin_d
+elif test $1 = fbsd_64 ; then
+  gcc -fPIC -I/usr/local/include/tcl8.7 -shared -o dislin.so dislin.c -L$DISLIN -ldislin_d
+fi
+
+
+
+

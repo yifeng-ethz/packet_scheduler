@@ -1,0 +1,10 @@
+void rlrec(double x, double y, double xw, double xh) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "rlrec_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, rlrec, x, y, xw, xh);
+}

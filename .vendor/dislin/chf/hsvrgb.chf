@@ -1,0 +1,10 @@
+void hsvrgb(double xh, double xs, double xv, double *xr, double *xg, double *xb) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "hsvrgb_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, hsvrgb, xh, xs, xv, xr, xg, xb);
+}

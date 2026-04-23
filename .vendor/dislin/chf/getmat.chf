@@ -1,0 +1,10 @@
+void getmat(double *xray, double *yray, double *zray, int n, double *zmat, int nx, int ny, double zval, int *imat, double *wmat) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "getmat_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, getmat, xray, yray, zray, n, zmat, nx, ny, zval, imat, wmat);
+}

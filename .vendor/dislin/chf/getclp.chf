@@ -1,0 +1,10 @@
+void getclp(int *nx, int *ny, int *nw, int *nh) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "getclp_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, getclp, nx, ny, nw, nh);
+}

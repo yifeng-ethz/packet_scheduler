@@ -1,0 +1,10 @@
+void suriso(double *xray, int nx, double *yray, int ny, double *zray, int nz, double *wmat, double wlev) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "suriso_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, suriso, xray, nx, yray, ny, zray, nz, wmat, wlev);
+}

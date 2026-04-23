@@ -1,0 +1,10 @@
+void sortr1(double *xray, int n, char *copt) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "sortr1_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, sortr1, xray, n, copt);
+}

@@ -1,0 +1,10 @@
+void circle(int nx, int ny, int nr) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "circle_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, circle, nx, ny, nr);
+}

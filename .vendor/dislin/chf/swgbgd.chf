@@ -1,0 +1,10 @@
+void swgbgd(int id, double xr, double xg, double xb) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "swgbgd_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, swgbgd, id, xr, xg, xb);
+}

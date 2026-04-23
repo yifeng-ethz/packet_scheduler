@@ -1,0 +1,735 @@
+not found (n =    0 | bnd =    3 | counts =    0)
+good / bad  =        0 /     4096
+
+not found (n =    1 | bnd =    4 | counts =    0)
+good / bad  =        0 /     8192
+
+not found (n =    2 | bnd =    5 | counts =    0)
+good / bad  =        0 /    12288
+
+not found (n =    3 | bnd =    6 | counts =    0)
+good / bad  =        0 /    16384
+
+not found (n =    4 | bnd =    7 | counts =    0)
+good / bad  =        0 /    20480
+
+not found (n =    5 | bnd =    8 | counts =    0)
+good / bad  =        0 /    24576
+
+not found (n =    6 | bnd =    9 | counts =    0)
+good / bad  =        0 /    28672
+
+    found (n =    7 | bnd =    0 | counts = 4096)
+good / bad  =     4096 /    28672
+
+    found (n =    8 | bnd =    0 | counts = 4096)
+good / bad  =     8192 /    28672
+
+    found (n =    9 | bnd =    0 | counts = 4096)
+good / bad  =    12288 /    28672
+
+    found (n =   10 | bnd =    0 | counts = 4096)
+good / bad  =    16384 /    28672
+
+    found (n =   11 | bnd =    0 | counts = 4096)
+good / bad  =    20480 /    28672
+
+    found (n =   12 | bnd =    0 | counts = 4096)
+good / bad  =    24576 /    28672
+
+    found (n =   13 | bnd =    0 | counts = 4096)
+good / bad  =    28672 /    28672
+
+    found (n =   14 | bnd =    0 | counts = 4096)
+good / bad  =    32768 /    28672
+
+    found (n =   15 | bnd =    0 | counts = 4096)
+good / bad  =    36864 /    28672
+
+    found (n =   16 | bnd =    0 | counts = 4096)
+good / bad  =    40960 /    28672
+
+    found (n =   17 | bnd =    0 | counts = 4096)
+good / bad  =    45056 /    28672
+
+    found (n =   18 | bnd =    0 | counts = 4096)
+good / bad  =    49152 /    28672
+
+    found (n =   19 | bnd =    0 | counts = 4096)
+good / bad  =    53248 /    28672
+
+    found (n =   20 | bnd =    0 | counts = 4096)
+good / bad  =    57344 /    28672
+
+    found (n =   21 | bnd =    0 | counts = 4096)
+good / bad  =    61440 /    28672
+
+    found (n =   22 | bnd =    0 | counts = 4096)
+good / bad  =    65536 /    28672
+
+    found (n =   23 | bnd =    0 | counts = 4096)
+good / bad  =    69632 /    28672
+
+    found (n =   24 | bnd =    0 | counts = 4096)
+good / bad  =    73728 /    28672
+
+    found (n =   25 | bnd =    0 | counts = 4096)
+good / bad  =    77824 /    28672
+
+    found (n =   26 | bnd =    0 | counts = 4096)
+good / bad  =    81920 /    28672
+
+    found (n =   27 | bnd =    0 | counts = 4096)
+good / bad  =    86016 /    28672
+
+    found (n =   28 | bnd =    0 | counts = 4096)
+good / bad  =    90112 /    28672
+
+    found (n =   29 | bnd =    0 | counts = 4096)
+good / bad  =    94208 /    28672
+
+    found (n =   30 | bnd =    0 | counts = 4096)
+good / bad  =    98304 /    28672
+
+    found (n =   31 | bnd =    0 | counts = 4096)
+good / bad  =   102400 /    28672
+
+    found (n =   32 | bnd =    0 | counts = 4096)
+good / bad  =   106496 /    28672
+
+    found (n =   33 | bnd =    0 | counts = 4096)
+good / bad  =   110592 /    28672
+
+    found (n =   34 | bnd =    0 | counts = 4096)
+good / bad  =   114688 /    28672
+
+    found (n =   35 | bnd =    0 | counts = 4096)
+good / bad  =   118784 /    28672
+
+    found (n =   36 | bnd =    0 | counts = 2567)
+good / bad  =   121351 /    30201
+
+not found (n =   37 | bnd =    0 | counts =    0)
+good / bad  =   121351 /    34297
+
+    found (n =   38 | bnd =    1 | counts = 4096)
+good / bad  =   125447 /    34297
+
+    found (n =   39 | bnd =    1 | counts = 4096)
+good / bad  =   129543 /    34297
+
+    found (n =   40 | bnd =    1 | counts = 4096)
+good / bad  =   133639 /    34297
+
+    found (n =   41 | bnd =    1 | counts = 4096)
+good / bad  =   137735 /    34297
+
+    found (n =   42 | bnd =    1 | counts = 4096)
+good / bad  =   141831 /    34297
+
+    found (n =   43 | bnd =    1 | counts = 4096)
+good / bad  =   145927 /    34297
+
+    found (n =   44 | bnd =    1 | counts = 4096)
+good / bad  =   150023 /    34297
+
+    found (n =   45 | bnd =    1 | counts = 4096)
+good / bad  =   154119 /    34297
+
+    found (n =   46 | bnd =    1 | counts = 4096)
+good / bad  =   158215 /    34297
+
+    found (n =   47 | bnd =    1 | counts = 4096)
+good / bad  =   162311 /    34297
+
+    found (n =   48 | bnd =    1 | counts = 4096)
+good / bad  =   166407 /    34297
+
+    found (n =   49 | bnd =    1 | counts = 4096)
+good / bad  =   170503 /    34297
+
+    found (n =   50 | bnd =    1 | counts = 4096)
+good / bad  =   174599 /    34297
+
+    found (n =   51 | bnd =    1 | counts = 4096)
+good / bad  =   178695 /    34297
+
+    found (n =   52 | bnd =    1 | counts =  539)
+good / bad  =   179234 /    37854
+
+not found (n =   53 | bnd =    1 | counts =    0)
+good / bad  =   179234 /    41950
+
+not found (n =   54 | bnd =    2 | counts =    0)
+good / bad  =   179234 /    46046
+
+not found (n =   55 | bnd =    3 | counts =    0)
+good / bad  =   179234 /    50142
+
+not found (n =   56 | bnd =    4 | counts =    0)
+good / bad  =   179234 /    54238
+
+not found (n =   57 | bnd =    5 | counts =    0)
+good / bad  =   179234 /    58334
+
+not found (n =   58 | bnd =    6 | counts =    0)
+good / bad  =   179234 /    62430
+
+not found (n =   59 | bnd =    7 | counts =    0)
+good / bad  =   179234 /    66526
+
+not found (n =   60 | bnd =    8 | counts =    0)
+good / bad  =   179234 /    70622
+
+not found (n =   61 | bnd =    9 | counts =    0)
+good / bad  =   179234 /    74718
+
+not found (n =   62 | bnd =    0 | counts =    0)
+good / bad  =   179234 /    78814
+
+not found (n =   63 | bnd =    1 | counts =    0)
+good / bad  =   179234 /    82910
+
+    found (n =   64 | bnd =    2 | counts = 4096)
+good / bad  =   183330 /    82910
+
+    found (n =   65 | bnd =    2 | counts = 4096)
+good / bad  =   187426 /    82910
+
+    found (n =   66 | bnd =    2 | counts = 4096)
+good / bad  =   191522 /    82910
+
+    found (n =   67 | bnd =    2 | counts = 4096)
+good / bad  =   195618 /    82910
+
+    found (n =   68 | bnd =    2 | counts = 4096)
+good / bad  =   199714 /    82910
+
+    found (n =   69 | bnd =    2 | counts = 4096)
+good / bad  =   203810 /    82910
+
+    found (n =   70 | bnd =    2 | counts = 4096)
+good / bad  =   207906 /    82910
+
+    found (n =   71 | bnd =    2 | counts = 4096)
+good / bad  =   212002 /    82910
+
+    found (n =   72 | bnd =    2 | counts = 4096)
+good / bad  =   216098 /    82910
+
+    found (n =   73 | bnd =    2 | counts = 4096)
+good / bad  =   220194 /    82910
+
+    found (n =   74 | bnd =    2 | counts = 4096)
+good / bad  =   224290 /    82910
+
+    found (n =   75 | bnd =    2 | counts = 4096)
+good / bad  =   228386 /    82910
+
+    found (n =   76 | bnd =    2 | counts = 4096)
+good / bad  =   232482 /    82910
+
+    found (n =   77 | bnd =    2 | counts = 4096)
+good / bad  =   236578 /    82910
+
+    found (n =   78 | bnd =    2 | counts = 4096)
+good / bad  =   240674 /    82910
+
+    found (n =   79 | bnd =    2 | counts = 4096)
+good / bad  =   244770 /    82910
+
+    found (n =   80 | bnd =    2 | counts = 4096)
+good / bad  =   248866 /    82910
+
+    found (n =   81 | bnd =    2 | counts = 4096)
+good / bad  =   252962 /    82910
+
+    found (n =   82 | bnd =    2 | counts = 4096)
+good / bad  =   257058 /    82910
+
+    found (n =   83 | bnd =    2 | counts = 4096)
+good / bad  =   261154 /    82910
+
+    found (n =   84 | bnd =    2 | counts = 4096)
+good / bad  =   265250 /    82910
+
+    found (n =   85 | bnd =    2 | counts = 4096)
+good / bad  =   269346 /    82910
+
+    found (n =   86 | bnd =    2 | counts = 4096)
+good / bad  =   273442 /    82910
+
+    found (n =   87 | bnd =    2 | counts = 4096)
+good / bad  =   277538 /    82910
+
+    found (n =   88 | bnd =    2 | counts = 4096)
+good / bad  =   281634 /    82910
+
+    found (n =   89 | bnd =    2 | counts = 4096)
+good / bad  =   285730 /    82910
+
+    found (n =   90 | bnd =    2 | counts = 4096)
+good / bad  =   289826 /    82910
+
+    found (n =   91 | bnd =    2 | counts = 4096)
+good / bad  =   293922 /    82910
+
+    found (n =   92 | bnd =    2 | counts = 4096)
+good / bad  =   298018 /    82910
+
+    found (n =   93 | bnd =    2 | counts = 4096)
+good / bad  =   302114 /    82910
+
+    found (n =   94 | bnd =    2 | counts = 4096)
+good / bad  =   306210 /    82910
+
+    found (n =   95 | bnd =    2 | counts =  872)
+good / bad  =   307082 /    86134
+
+not found (n =   96 | bnd =    2 | counts =    0)
+good / bad  =   307082 /    90230
+
+not found (n =   97 | bnd =    3 | counts =    0)
+good / bad  =   307082 /    94326
+
+not found (n =   98 | bnd =    4 | counts =    0)
+good / bad  =   307082 /    98422
+
+not found (n =   99 | bnd =    5 | counts =    0)
+good / bad  =   307082 /   102518
+
+not found (n =  100 | bnd =    6 | counts =    0)
+good / bad  =   307082 /   106614
+
+not found (n =  101 | bnd =    7 | counts =    0)
+good / bad  =   307082 /   110710
+
+not found (n =  102 | bnd =    8 | counts =    0)
+good / bad  =   307082 /   114806
+
+not found (n =  103 | bnd =    9 | counts =    0)
+good / bad  =   307082 /   118902
+
+not found (n =  104 | bnd =    0 | counts =    0)
+good / bad  =   307082 /   122998
+
+    found (n =  105 | bnd =    1 | counts = 4096)
+good / bad  =   311178 /   122998
+
+    found (n =  106 | bnd =    1 | counts = 4096)
+good / bad  =   315274 /   122998
+
+    found (n =  107 | bnd =    1 | counts = 4096)
+good / bad  =   319370 /   122998
+
+    found (n =  108 | bnd =    1 | counts = 4096)
+good / bad  =   323466 /   122998
+
+    found (n =  109 | bnd =    1 | counts = 4096)
+good / bad  =   327562 /   122998
+
+    found (n =  110 | bnd =    1 | counts = 4096)
+good / bad  =   331658 /   122998
+
+    found (n =  111 | bnd =    1 | counts = 4096)
+good / bad  =   335754 /   122998
+
+    found (n =  112 | bnd =    1 | counts = 4096)
+good / bad  =   339850 /   122998
+
+    found (n =  113 | bnd =    1 | counts = 4096)
+good / bad  =   343946 /   122998
+
+    found (n =  114 | bnd =    1 | counts = 4096)
+good / bad  =   348042 /   122998
+
+    found (n =  115 | bnd =    1 | counts = 4096)
+good / bad  =   352138 /   122998
+
+    found (n =  116 | bnd =    1 | counts = 4096)
+good / bad  =   356234 /   122998
+
+    found (n =  117 | bnd =    1 | counts = 4096)
+good / bad  =   360330 /   122998
+
+    found (n =  118 | bnd =    1 | counts = 4096)
+good / bad  =   364426 /   122998
+
+    found (n =  119 | bnd =    1 | counts = 4096)
+good / bad  =   368522 /   122998
+
+    found (n =  120 | bnd =    1 | counts = 4096)
+good / bad  =   372618 /   122998
+
+    found (n =  121 | bnd =    1 | counts = 4096)
+good / bad  =   376714 /   122998
+
+    found (n =  122 | bnd =    1 | counts = 4096)
+good / bad  =   380810 /   122998
+
+    found (n =  123 | bnd =    1 | counts = 4096)
+good / bad  =   384906 /   122998
+
+    found (n =  124 | bnd =    1 | counts = 4096)
+good / bad  =   389002 /   122998
+
+    found (n =  125 | bnd =    1 | counts = 4096)
+good / bad  =   393098 /   122998
+
+    found (n =  126 | bnd =    1 | counts = 4096)
+good / bad  =   397194 /   122998
+
+    found (n =  127 | bnd =    1 | counts = 4096)
+good / bad  =   401290 /   122998
+
+    found (n =  128 | bnd =    1 | counts = 4096)
+good / bad  =   405386 /   122998
+
+    found (n =  129 | bnd =    1 | counts = 4096)
+good / bad  =   409482 /   122998
+
+    found (n =  130 | bnd =    1 | counts = 4096)
+good / bad  =   413578 /   122998
+
+    found (n =  131 | bnd =    1 | counts = 4096)
+good / bad  =   417674 /   122998
+
+    found (n =  132 | bnd =    1 | counts = 4096)
+good / bad  =   421770 /   122998
+
+    found (n =  133 | bnd =    1 | counts = 4096)
+good / bad  =   425866 /   122998
+
+    found (n =  134 | bnd =    1 | counts = 4096)
+good / bad  =   429962 /   122998
+
+    found (n =  135 | bnd =    1 | counts = 4096)
+good / bad  =   434058 /   122998
+
+    found (n =  136 | bnd =    1 | counts = 4096)
+good / bad  =   438154 /   122998
+
+    found (n =  137 | bnd =    1 | counts = 4096)
+good / bad  =   442250 /   122998
+
+    found (n =  138 | bnd =    1 | counts = 4096)
+good / bad  =   446346 /   122998
+
+    found (n =  139 | bnd =    1 | counts = 4096)
+good / bad  =   450442 /   122998
+
+    found (n =  140 | bnd =    1 | counts = 4096)
+good / bad  =   454538 /   122998
+
+    found (n =  141 | bnd =    1 | counts = 4096)
+good / bad  =   458634 /   122998
+
+    found (n =  142 | bnd =    1 | counts = 4096)
+good / bad  =   462730 /   122998
+
+    found (n =  143 | bnd =    1 | counts = 4096)
+good / bad  =   466826 /   122998
+
+    found (n =  144 | bnd =    1 | counts = 4096)
+good / bad  =   470922 /   122998
+
+    found (n =  145 | bnd =    1 | counts = 4096)
+good / bad  =   475018 /   122998
+
+    found (n =  146 | bnd =    1 | counts = 4096)
+good / bad  =   479114 /   122998
+
+    found (n =  147 | bnd =    1 | counts = 4096)
+good / bad  =   483210 /   122998
+
+    found (n =  148 | bnd =    1 | counts = 4096)
+good / bad  =   487306 /   122998
+
+    found (n =  149 | bnd =    1 | counts = 4096)
+good / bad  =   491402 /   122998
+
+    found (n =  150 | bnd =    1 | counts = 4096)
+good / bad  =   495498 /   122998
+
+    found (n =  151 | bnd =    1 | counts = 4096)
+good / bad  =   499594 /   122998
+
+    found (n =  152 | bnd =    1 | counts = 4096)
+good / bad  =   503690 /   122998
+
+    found (n =  153 | bnd =    1 | counts = 4096)
+good / bad  =   507786 /   122998
+
+    found (n =  154 | bnd =    1 | counts = 4096)
+good / bad  =   511882 /   122998
+
+    found (n =  155 | bnd =    1 | counts = 4096)
+good / bad  =   515978 /   122998
+
+    found (n =  156 | bnd =    1 | counts = 4096)
+good / bad  =   520074 /   122998
+
+    found (n =  157 | bnd =    1 | counts = 4096)
+good / bad  =   524170 /   122998
+
+    found (n =  158 | bnd =    1 | counts = 4096)
+good / bad  =   528266 /   122998
+
+    found (n =  159 | bnd =    1 | counts = 4096)
+good / bad  =   532362 /   122998
+
+    found (n =  160 | bnd =    1 | counts = 4096)
+good / bad  =   536458 /   122998
+
+    found (n =  161 | bnd =    1 | counts = 4096)
+good / bad  =   540554 /   122998
+
+    found (n =  162 | bnd =    1 | counts = 4096)
+good / bad  =   544650 /   122998
+
+    found (n =  163 | bnd =    1 | counts = 4096)
+good / bad  =   548746 /   122998
+
+    found (n =  164 | bnd =    1 | counts = 4096)
+good / bad  =   552842 /   122998
+
+    found (n =  165 | bnd =    1 | counts = 1121)
+good / bad  =   553963 /   125973
+
+not found (n =  166 | bnd =    1 | counts =    0)
+good / bad  =   553963 /   130069
+
+    found (n =  167 | bnd =    2 | counts = 4096)
+good / bad  =   558059 /   130069
+
+    found (n =  168 | bnd =    2 | counts = 4096)
+good / bad  =   562155 /   130069
+
+    found (n =  169 | bnd =    2 | counts = 4096)
+good / bad  =   566251 /   130069
+
+    found (n =  170 | bnd =    2 | counts = 4096)
+good / bad  =   570347 /   130069
+
+    found (n =  171 | bnd =    2 | counts = 4096)
+good / bad  =   574443 /   130069
+
+    found (n =  172 | bnd =    2 | counts = 4096)
+good / bad  =   578539 /   130069
+
+    found (n =  173 | bnd =    2 | counts = 4096)
+good / bad  =   582635 /   130069
+
+    found (n =  174 | bnd =    2 | counts = 4096)
+good / bad  =   586731 /   130069
+
+    found (n =  175 | bnd =    2 | counts = 4096)
+good / bad  =   590827 /   130069
+
+    found (n =  176 | bnd =    2 | counts = 4096)
+good / bad  =   594923 /   130069
+
+    found (n =  177 | bnd =    2 | counts = 4096)
+good / bad  =   599019 /   130069
+
+    found (n =  178 | bnd =    2 | counts = 4096)
+good / bad  =   603115 /   130069
+
+    found (n =  179 | bnd =    2 | counts = 3666)
+good / bad  =   606781 /   130499
+
+not found (n =  180 | bnd =    2 | counts =    0)
+good / bad  =   606781 /   134595
+
+not found (n =  181 | bnd =    3 | counts =    0)
+good / bad  =   606781 /   138691
+
+not found (n =  182 | bnd =    4 | counts =    0)
+good / bad  =   606781 /   142787
+
+not found (n =  183 | bnd =    5 | counts =    0)
+good / bad  =   606781 /   146883
+
+not found (n =  184 | bnd =    6 | counts =    0)
+good / bad  =   606781 /   150979
+
+not found (n =  185 | bnd =    7 | counts =    0)
+good / bad  =   606781 /   155075
+
+not found (n =  186 | bnd =    8 | counts =    0)
+good / bad  =   606781 /   159171
+
+not found (n =  187 | bnd =    9 | counts =    0)
+good / bad  =   606781 /   163267
+
+not found (n =  188 | bnd =    0 | counts =    0)
+good / bad  =   606781 /   167363
+
+    found (n =  189 | bnd =    1 | counts = 4096)
+good / bad  =   610877 /   167363
+
+    found (n =  190 | bnd =    1 | counts = 4096)
+good / bad  =   614973 /   167363
+
+    found (n =  191 | bnd =    1 | counts = 4096)
+good / bad  =   619069 /   167363
+
+    found (n =  192 | bnd =    1 | counts = 4096)
+good / bad  =   623165 /   167363
+
+    found (n =  193 | bnd =    1 | counts = 4096)
+good / bad  =   627261 /   167363
+
+    found (n =  194 | bnd =    1 | counts = 4096)
+good / bad  =   631357 /   167363
+
+    found (n =  195 | bnd =    1 | counts = 4096)
+good / bad  =   635453 /   167363
+
+    found (n =  196 | bnd =    1 | counts = 4096)
+good / bad  =   639549 /   167363
+
+    found (n =  197 | bnd =    1 | counts = 4096)
+good / bad  =   643645 /   167363
+
+    found (n =  198 | bnd =    1 | counts = 4096)
+good / bad  =   647741 /   167363
+
+    found (n =  199 | bnd =    1 | counts = 4096)
+good / bad  =   651837 /   167363
+
+    found (n =  200 | bnd =    1 | counts = 4096)
+good / bad  =   655933 /   167363
+
+    found (n =  201 | bnd =    1 | counts = 4096)
+good / bad  =   660029 /   167363
+
+    found (n =  202 | bnd =    1 | counts = 4096)
+good / bad  =   664125 /   167363
+
+    found (n =  203 | bnd =    1 | counts = 4096)
+good / bad  =   668221 /   167363
+
+    found (n =  204 | bnd =    1 | counts = 4096)
+good / bad  =   672317 /   167363
+
+    found (n =  205 | bnd =    1 | counts = 4096)
+good / bad  =   676413 /   167363
+
+    found (n =  206 | bnd =    1 | counts = 4096)
+good / bad  =   680509 /   167363
+
+    found (n =  207 | bnd =    1 | counts = 4096)
+good / bad  =   684605 /   167363
+
+    found (n =  208 | bnd =    1 | counts = 4096)
+good / bad  =   688701 /   167363
+
+    found (n =  209 | bnd =    1 | counts = 4096)
+good / bad  =   692797 /   167363
+
+    found (n =  210 | bnd =    1 | counts = 4096)
+good / bad  =   696893 /   167363
+
+    found (n =  211 | bnd =    1 | counts = 4096)
+good / bad  =   700989 /   167363
+
+    found (n =  212 | bnd =    1 | counts = 4096)
+good / bad  =   705085 /   167363
+
+    found (n =  213 | bnd =    1 | counts = 4096)
+good / bad  =   709181 /   167363
+
+    found (n =  214 | bnd =    1 | counts = 4096)
+good / bad  =   713277 /   167363
+
+    found (n =  215 | bnd =    1 | counts = 4096)
+good / bad  =   717373 /   167363
+
+    found (n =  216 | bnd =    1 | counts = 4096)
+good / bad  =   721469 /   167363
+
+    found (n =  217 | bnd =    1 | counts = 4096)
+good / bad  =   725565 /   167363
+
+    found (n =  218 | bnd =    1 | counts = 4096)
+good / bad  =   729661 /   167363
+
+    found (n =  219 | bnd =    1 | counts = 4096)
+good / bad  =   733757 /   167363
+
+    found (n =  220 | bnd =    1 | counts = 4096)
+good / bad  =   737853 /   167363
+
+    found (n =  221 | bnd =    1 | counts = 4096)
+good / bad  =   741949 /   167363
+
+    found (n =  222 | bnd =    1 | counts = 4096)
+good / bad  =   746045 /   167363
+
+    found (n =  223 | bnd =    1 | counts = 4096)
+good / bad  =   750141 /   167363
+
+    found (n =  224 | bnd =    1 | counts = 4096)
+good / bad  =   754237 /   167363
+
+    found (n =  225 | bnd =    1 | counts = 4096)
+good / bad  =   758333 /   167363
+
+    found (n =  226 | bnd =    1 | counts = 4096)
+good / bad  =   762429 /   167363
+
+    found (n =  227 | bnd =    1 | counts = 4096)
+good / bad  =   766525 /   167363
+
+    found (n =  228 | bnd =    1 | counts = 4096)
+good / bad  =   770621 /   167363
+
+    found (n =  229 | bnd =    1 | counts = 4096)
+good / bad  =   774717 /   167363
+
+    found (n =  230 | bnd =    1 | counts = 4096)
+good / bad  =   778813 /   167363
+
+    found (n =  231 | bnd =    1 | counts = 4096)
+good / bad  =   782909 /   167363
+
+    found (n =  232 | bnd =    1 | counts = 4096)
+good / bad  =   787005 /   167363
+
+    found (n =  233 | bnd =    1 | counts = 4096)
+good / bad  =   791101 /   167363
+
+    found (n =  234 | bnd =    1 | counts = 4096)
+good / bad  =   795197 /   167363
+
+    found (n =  235 | bnd =    1 | counts = 4096)
+good / bad  =   799293 /   167363
+
+    found (n =  236 | bnd =    1 | counts = 4096)
+good / bad  =   803389 /   167363
+
+    found (n =  237 | bnd =    1 | counts = 4096)
+good / bad  =   807485 /   167363
+
+    found (n =  238 | bnd =    1 | counts = 4096)
+good / bad  =   811581 /   167363
+
+    found (n =  239 | bnd =    1 | counts = 4096)
+good / bad  =   815677 /   167363
+
+    found (n =  240 | bnd =    1 | counts = 4096)
+good / bad  =   819773 /   167363
+
+    found (n =  241 | bnd =    1 | counts = 4096)
+good / bad  =   823869 /   167363
+
+    found (n =  242 | bnd =    1 | counts = 4096)
+good / bad  =   827965 /   167363
+
+    found (n =  243 | bnd =    1 | counts = 4096)
+good / bad  =   832061 /   167363
+
+    found (n =  244 | bnd =    1 | counts =  576)
+good / bad  =   832637 /   170883
+

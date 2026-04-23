@@ -1,0 +1,10 @@
+void wpxrow(unsigned char *iray, int ix, int iy, int n) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "wpxrow_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, wpxrow, iray, ix, iy, n);
+}

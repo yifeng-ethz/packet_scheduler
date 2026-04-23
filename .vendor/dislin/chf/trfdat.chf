@@ -1,0 +1,10 @@
+void trfdat(int ndays, int *id, int *im, int *iy) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "trfdat_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, trfdat, ndays, id, im, iy);
+}

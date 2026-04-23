@@ -1,0 +1,12 @@
+int nxposn(double x) {
+    void *fptr;
+    int retval;
+
+    fptr = dlsym(_Chdislin_handle, "nxposn_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return -1;
+    }
+    dlrunfun(fptr, &retval, nxposn, x);
+    return retval;
+}

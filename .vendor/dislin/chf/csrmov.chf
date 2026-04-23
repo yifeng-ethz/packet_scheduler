@@ -1,0 +1,10 @@
+void csrmov(int *ix, int *iy, int nmax, int *n, int *iret) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "csrmov_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, csrmov, ix, iy, nmax, n, iret);
+}

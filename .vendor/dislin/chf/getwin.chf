@@ -1,0 +1,10 @@
+void getwin(int *ix, int *iy, int *nwidth, int *nheight) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "getwin_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, getwin, ix, iy, nwidth, nheight);
+}

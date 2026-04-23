@@ -1,0 +1,10 @@
+void wincbk(void (*funptr)(int, int, int, int, int ), char *copt) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "wincbk_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, wincbk, funptr, copt);
+}

@@ -1,0 +1,10 @@
+void surmat(double *zmat, int nx, int ny, int ixpts, int iypts) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "surmat_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, surmat, zmat, nx, ny, ixpts, iypts);
+}

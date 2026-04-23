@@ -1,0 +1,10 @@
+void cone3d(double xm, double ym, double zm, double r, double h1, double h2, int nsk1, int nsk2) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "cone3d_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, cone3d, xm, ym, zm, r, h1, h2, nsk1, nsk2);
+}

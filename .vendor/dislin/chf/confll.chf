@@ -1,0 +1,10 @@
+void confll(double *xray, double *yray, double *zray, int n, int *i1ray, int *i2ray, int *i3ray, int ntri, double *zlev, int nlev) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "confll_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, confll, xray, yray, zray, n, i1ray, i2ray, i3ray, ntri, zlev, nlev);
+}

@@ -1,0 +1,10 @@
+void legini(char *cbuf, int nlin, int nmaxln) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "legini_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, legini, cbuf, nlin, nmaxln);
+}

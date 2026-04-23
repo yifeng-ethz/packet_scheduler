@@ -1,0 +1,12 @@
+char * getfil() {
+    void *fptr;
+    char *retval;
+
+    fptr = dlsym(_Chdislin_handle, "getfil_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return NULL;
+    }
+    dlrunfun(fptr, &retval, getfil);
+    return retval;
+}

@@ -1,0 +1,10 @@
+void curv4d(double *xray, double *yray, double *zray, double *wray, int n) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "curv4d_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, curv4d, xray, yray, zray, wray, n);
+}

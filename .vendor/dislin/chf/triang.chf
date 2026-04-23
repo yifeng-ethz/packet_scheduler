@@ -1,0 +1,12 @@
+int triang(double *xray, double *yray, int n, int *i1ray, int *i2ray, int *i3ray, int nmax) {
+    void *fptr;
+    int retval;
+
+    fptr = dlsym(_Chdislin_handle, "triang_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return -1;
+    }
+    dlrunfun(fptr, &retval, triang, xray, yray, n, i1ray, i2ray, i3ray, nmax);
+    return retval;
+}

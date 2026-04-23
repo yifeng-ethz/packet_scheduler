@@ -1,0 +1,10 @@
+void shdpat(long ipat) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "shdpat_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, shdpat, ipat);
+}

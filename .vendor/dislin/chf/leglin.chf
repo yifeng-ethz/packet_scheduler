@@ -1,0 +1,10 @@
+void leglin(char *cbuf, char *cstr, int ilin) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "leglin_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, leglin, cbuf, cstr, ilin);
+}

@@ -1,0 +1,10 @@
+void bars3d(double *xray, double *yray, double *z1ray, double *z2ray, double *xwray, double *ywray, int *icray, int n) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "bars3d_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, bars3d, xray, yray, z1ray, z2ray, xwray, ywray, icray, n);
+}

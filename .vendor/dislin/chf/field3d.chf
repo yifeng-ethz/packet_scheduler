@@ -1,0 +1,10 @@
+void field3d(double *x1ray, double *y1ray, double *z1ray, double *x2ray, double *y2ray, double *z2ray, int n, int ivec) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "field3d_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, field3d, x1ray, y1ray, z1ray, x2ray, y2ray, z2ray, n, ivec);
+}

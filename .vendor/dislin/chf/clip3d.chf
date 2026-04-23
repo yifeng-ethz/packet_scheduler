@@ -1,0 +1,10 @@
+void clip3d(char *ctyp) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "clip3d_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, clip3d, ctyp);
+}

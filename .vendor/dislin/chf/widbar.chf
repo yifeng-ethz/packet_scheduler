@@ -1,0 +1,10 @@
+void widbar(int nzb) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "widbar_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, widbar, nzb);
+}

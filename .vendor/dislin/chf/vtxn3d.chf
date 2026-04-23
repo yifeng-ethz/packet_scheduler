@@ -1,0 +1,10 @@
+void vtxn3d(double *xray, double *yray, double *zray, double *xn, double *yn, double *zn, int n, char *copt) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "vtxn3d_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, vtxn3d, xray, yray, zray, xn, yn, zn, n, copt);
+}

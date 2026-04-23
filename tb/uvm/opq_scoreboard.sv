@@ -8,6 +8,7 @@
 // Revision  : 0.5 - disambiguate exact drop accounting with frame pkg_cnt/serial
 // Revision  : 0.6 - allow unique ts/word lane-accounting fallback when merged no-restart egress reserializes packet ids
 // Revision  : 0.7 - keep canonical hit timestamps for delivery matching and parser timestamps for exact-drop bookkeeping
+// Revision  : 0.8 - trace canonical-domain residency proxy separately from ingress debug timestamp semantics
 // Description:
 //   Scoreboard for ingress-to-egress hit integrity and CSR-visible packet counts.
 //------------------------------------------------------------------------------
@@ -42,6 +43,13 @@ class opq_scoreboard extends uvm_component;
     int unsigned hit_drop_delta;
   } opq_pending_exact_drop_t;
 
+  typedef struct {
+    bit [47:0] frame_ts_full;
+    bit [15:0] pkg_cnt;
+    bit [30:0] proxy_ingress_ts;
+    bit [30:0] ingress_debug_ts;
+  } opq_stay_frame_t;
+
   uvm_analysis_imp_frame #(opq_frame_item, opq_scoreboard) frame_imp;
   uvm_analysis_imp_ingress #(opq_beat_item, opq_scoreboard) ingress_imp;
   uvm_analysis_imp_egress #(opq_beat_item, opq_scoreboard) egress_imp;
@@ -64,11 +72,13 @@ class opq_scoreboard extends uvm_component;
   bit        egress_in_packet;
   bit [47:0] egress_frame_ts;
   bit [15:0] egress_pkg_cnt;
+  bit [30:0] egress_debug_ts;
   bit [47:0] egress_current_ts;
   bit [7:0]  egress_current_shd;
   bit        egress_subheaders_seen;
   int        egress_header_idx;
   int        egress_hits_pending;
+  bit        enable_stay_time_trace;
 
   bit        egress_preamble_seen;
   int unsigned sop_count;
@@ -90,12 +100,14 @@ class opq_scoreboard extends uvm_component;
 
   opq_hit_trace_t pending_ingress_hits[OPQ_N_LANE][$];
   opq_frame_meta_t pending_ingress_frames[OPQ_N_LANE][$];
+  opq_stay_frame_t pending_stay_frames[OPQ_N_LANE][$];
   opq_hit_trace_t lane_accounting_hits[OPQ_N_LANE][$];
   opq_pending_exact_drop_t pending_exact_drops[OPQ_N_LANE][$];
   opq_hit_trace_t expected_hits[$];
   opq_hit_trace_t actual_hits[$];
   bit dropped_hit_id[string];
   bit dropped_hit_sig[string];
+  int unsigned stay_sample_count[OPQ_N_LANE];
 
   function new(string name = "opq_scoreboard", uvm_component parent = null);
     super.new(name, parent);
@@ -153,6 +165,7 @@ class opq_scoreboard extends uvm_component;
     egress_in_packet = 1'b0;
     egress_frame_ts = '0;
     egress_pkg_cnt = '0;
+    egress_debug_ts = '0;
     egress_current_ts = '0;
     egress_current_shd = '0;
     egress_subheaders_seen = 1'b0;
@@ -165,6 +178,7 @@ class opq_scoreboard extends uvm_component;
     if (!uvm_config_db#(opq_scoreboard_cfg)::get(this, "", "cfg", cfg)) begin
       cfg = opq_scoreboard_cfg::type_id::create("cfg");
     end
+    enable_stay_time_trace = $test$plusargs("OPQ_STAY_TRACE");
 
     foreach (ingress_header_idx[i]) begin
       reset_ingress_lane(i);
@@ -185,6 +199,7 @@ class opq_scoreboard extends uvm_component;
       dropped_lane_post_shd_cnt[i] = 0;
       dropped_lane_post_hit_cnt[i] = 0;
       actual_lane_hit_cnt[i] = 0;
+      stay_sample_count[i] = 0;
     end
     actual_egress_hdr_cnt = 0;
     actual_egress_shd_cnt = 0;
@@ -342,8 +357,93 @@ class opq_scoreboard extends uvm_component;
     return match_cnt;
   endfunction
 
+  function automatic void emit_stay_sample(
+    int        lane_id,
+    bit [47:0] frame_ts_full,
+    bit [30:0] proxy_ingress_ts_v,
+    bit [30:0] ingress_debug_ts_v,
+    bit [30:0] egress_debug_ts_v
+  );
+    int signed proxy_cycles_v;
+    int signed debug_delta_v;
+    int unsigned sample_idx_v;
+
+    if (lane_id < 0 || lane_id >= OPQ_N_LANE) begin
+      return;
+    end
+    proxy_cycles_v = $signed({1'b0, egress_debug_ts_v}) - $signed({1'b0, proxy_ingress_ts_v});
+    debug_delta_v = $signed({1'b0, egress_debug_ts_v}) - $signed({1'b0, ingress_debug_ts_v});
+    if (proxy_cycles_v < 0) begin
+      `uvm_warning(get_type_name(), $sformatf(
+        "OPQ residency proxy underflow lane=%0d frame_ts=0x%012h proxy_ingress_ts=0x%08h ingress_debug_ts=0x%08h egress_debug_ts=0x%08h",
+        lane_id,
+        frame_ts_full,
+        proxy_ingress_ts_v,
+        ingress_debug_ts_v,
+        egress_debug_ts_v
+      ))
+      return;
+    end
+
+    sample_idx_v = stay_sample_count[lane_id];
+    stay_sample_count[lane_id] = stay_sample_count[lane_id] + 1;
+    `uvm_info(get_type_name(), $sformatf(
+      "OPQ_RESIDENCY_PROXY_SAMPLE lane=%0d sample_idx=%0d frame_ts=0x%012h proxy_ingress_ts=0x%08h ingress_debug_ts=0x%08h egress_debug_ts=0x%08h proxy_cycles=%0d debug_delta_cycles=%0d",
+      lane_id,
+      sample_idx_v,
+      frame_ts_full,
+      proxy_ingress_ts_v,
+      ingress_debug_ts_v,
+      egress_debug_ts_v,
+      proxy_cycles_v,
+      debug_delta_v
+    ), UVM_LOW)
+  endfunction
+
+  function automatic void retire_stay_frames(
+    bit [47:0] frame_ts_full,
+    bit [30:0] egress_debug_ts_v
+  );
+    int matched_cnt;
+
+    if (!enable_stay_time_trace) begin
+      return;
+    end
+
+    matched_cnt = 0;
+    for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+      int idx;
+
+      idx = 0;
+      while (idx < pending_stay_frames[lane].size()) begin
+        if (pending_stay_frames[lane][idx].frame_ts_full == frame_ts_full) begin
+          emit_stay_sample(
+            lane,
+            pending_stay_frames[lane][idx].frame_ts_full,
+            pending_stay_frames[lane][idx].proxy_ingress_ts,
+            pending_stay_frames[lane][idx].ingress_debug_ts,
+            egress_debug_ts_v
+          );
+          pending_stay_frames[lane].delete(idx);
+          matched_cnt++;
+        end else begin
+          idx++;
+        end
+      end
+    end
+
+    if (matched_cnt == 0) begin
+      `uvm_warning(get_type_name(), $sformatf(
+        "OPQ stay trace saw egress frame_ts=0x%012h debug_ts=0x%08h without queued ingress stay metadata",
+        frame_ts_full,
+        egress_debug_ts_v
+      ))
+    end
+  endfunction
+
   function void write_frame(opq_frame_item frame);
     opq_frame_meta_t meta;
+    opq_stay_frame_t stay_meta;
     opq_hit_trace_t trace;
     opq_hit_trace_t accounting_trace;
     int unsigned accepted_subh_cnt;
@@ -364,8 +464,15 @@ class opq_scoreboard extends uvm_component;
     meta.data_header0 = make_frame_data_header0(frame.frame_ts);
     meta.data_header1 = make_frame_data_header1(frame.frame_ts, frame.pkg_cnt);
     meta.debug_header0 = make_frame_debug_header0(frame.frame_subh_count_bits(), frame.frame_hit_count_bits());
-    meta.debug_header1 = make_frame_debug_header1(frame.frame_ts);
+    meta.debug_header1 = make_frame_debug_header1(frame.ingress_debug_ts);
     pending_ingress_frames[frame.lane_id].push_back(meta);
+    if (enable_stay_time_trace) begin
+      stay_meta.frame_ts_full = frame.frame_ts;
+      stay_meta.pkg_cnt = frame.pkg_cnt;
+      stay_meta.proxy_ingress_ts = frame.frame_ts[30:0];
+      stay_meta.ingress_debug_ts = frame.ingress_debug_ts;
+      pending_stay_frames[frame.lane_id].push_back(stay_meta);
+    end
 
     accepted_subh_cnt = accepted_frame_subh_count(frame);
     accepted_hit_cnt = accepted_frame_hit_count(frame);
@@ -608,6 +715,10 @@ class opq_scoreboard extends uvm_component;
         2: begin
           egress_frame_ts[15:0] = data32[31:16];
           egress_pkg_cnt = data32[15:0];
+        end
+        4: begin
+          egress_debug_ts = data32[30:0];
+          retire_stay_frames(egress_frame_ts, egress_debug_ts);
         end
         default: begin
         end
@@ -1131,6 +1242,12 @@ class opq_scoreboard extends uvm_component;
           i, pending_ingress_frames[i].size()
         ))
       end
+      if (enable_stay_time_trace && (pending_stay_frames[i].size() != 0)) begin
+        `uvm_warning(get_type_name(), $sformatf(
+          "Lane %0d still has %0d queued stay-trace frames without an egress match",
+          i, pending_stay_frames[i].size()
+        ))
+      end
       resolve_pending_exact_drops(i);
       if (pending_exact_drops[i].size() != 0) begin
         `uvm_error(get_type_name(), $sformatf(
@@ -1211,6 +1328,14 @@ class opq_scoreboard extends uvm_component;
         get_actual_lane_hit_cnt(i),
         get_unexplained_lane_hit_cnt(i)
       ), UVM_LOW)
+      if (enable_stay_time_trace) begin
+        `uvm_info(get_type_name(), $sformatf(
+          "OPQ_RESIDENCY_PROXY_SUMMARY lane=%0d samples=%0d unmatched=%0d",
+          i,
+          stay_sample_count[i],
+          pending_stay_frames[i].size()
+        ), UVM_LOW)
+      end
     end
   endfunction
 

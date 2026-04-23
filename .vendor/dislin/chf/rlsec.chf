@@ -1,0 +1,10 @@
+void rlsec(double xm, double ym, double r1, double r2, double a, double b, int ncol) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "rlsec_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, rlsec, xm, ym, r1, r2, a, b, ncol);
+}

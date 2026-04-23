@@ -1,0 +1,10 @@
+void rlvec(double x1, double y1, double x2, double y2, int ivec) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "rlvec_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, rlvec, x1, y1, x2, y2, ivec);
+}

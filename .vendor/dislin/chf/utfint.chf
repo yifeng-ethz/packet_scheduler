@@ -1,0 +1,12 @@
+int utfint(char *cstr, int *iray, int nray) {
+    void *fptr;
+    int retval;
+
+    fptr = dlsym(_Chdislin_handle, "utfint_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, &retval, utfint, cstr, iray, nray);
+    return retval;
+}

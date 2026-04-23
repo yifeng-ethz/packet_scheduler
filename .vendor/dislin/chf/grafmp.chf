@@ -1,0 +1,10 @@
+void grafmp(double xa, double xe, double xorg, double xstp, double ya, double ye, double yorg, double ystp) {
+    void *fptr;
+
+    fptr = dlsym(_Chdislin_handle, "grafmp_chdl");
+    if(fptr == NULL) {
+        fprintf(_stderr, "Error: %s(): dlsym(): %s\n", __func__,  dlerror());
+        return;
+    }
+    dlrunfun(fptr, NULL, grafmp, xa, xe, xorg, xstp, ya, ye, yorg, ystp);
+}
