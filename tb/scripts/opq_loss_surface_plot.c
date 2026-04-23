@@ -187,6 +187,7 @@ static void render_plot(const opq_loss_grid_t *grid, const char *output_path) {
   int level_count = 12;
   float levels[12];
   float ref_levels[3];
+  float *yplot = NULL;
   float *zplot = NULL;
   float xmin = grid->x[0];
   float xmax = grid->x[grid->nx - 1];
@@ -198,28 +199,41 @@ static void render_plot(const opq_loss_grid_t *grid, const char *output_path) {
   float gxmax = xmax + xpad;
   float gymin = ymin - ypad;
   float gymax = ymax + ypad;
+  float gymin_pct = gymin * 100.0f;
+  float gymax_pct = gymax * 100.0f;
   float zmin = 1.0e-4f;
   float zmax = 1.0f;
   double xstep = nice_step((double) (gxmax - gxmin), 8);
-  double ystep = nice_step((double) (gymax - gymin), 7);
+  double ystep = nice_step((double) (gymax_pct - gymin_pct), 7);
   double xorigin = align_up(gxmin, xstep);
-  double yorigin = align_up(gymin, ystep);
+  double yorigin = align_up(gymin_pct, ystep);
   double zorigin = -4.0;
   double zstep = 1.0;
   const float base_ref_levels[3] = {0.002f, 0.005f, 0.010f};
   int level_idx;
   size_t point_count = (size_t) grid->nx * (size_t) grid->ny;
   size_t point_idx;
+  float zlabel_x = gxmax + 0.07f * (gxmax - gxmin);
+  float zlabel_span = gymax_pct - gymin_pct;
 
+  yplot = (float *) calloc((size_t) grid->ny, sizeof(float));
+  if (yplot == NULL) {
+    fprintf(stderr, "Out of memory while allocating percent-scaled y-axis grid\n");
+    return;
+  }
   zplot = (float *) calloc(point_count, sizeof(float));
   if (zplot == NULL) {
     fprintf(stderr, "Out of memory while allocating log-scaled contour grid\n");
+    free(yplot);
     return;
   }
   for (level_idx = 0; level_idx < level_count; level_idx++) {
     float prob = zmin * powf(zmax / zmin, (float) (level_idx + 1) / (float) level_count);
 
     levels[level_idx] = log10f(prob);
+  }
+  for (level_idx = 0; level_idx < grid->ny; level_idx++) {
+    yplot[level_idx] = grid->y[level_idx] * 100.0f;
   }
   for (level_idx = 0; level_idx < 3; level_idx++) {
     ref_levels[level_idx] = base_ref_levels[level_idx];
@@ -238,49 +252,56 @@ static void render_plot(const opq_loss_grid_t *grid, const char *output_path) {
   complx();
   init_loss_palette();
 
-  titlin("OPQ 4-lane loss contour", 1);
+  titlin("OPQ 4-lane loss contour", 2);
 
   name("burstiness B", "x");
-  name("rate / lane rho", "y");
+  name("rate / lane [%]", "y");
 
   intax();
-  labdig(2, "xy");
-  labdig(-1, "z");
-  labels("log", "z");
+  labdig(2, "x");
+  labdig(0, "y");
+  labels("none", "z");
   axspos(420, 1750);
   axslen(1950, 1100);
-  graf(gxmin, gxmax, (float) xorigin, (float) xstep,
-       gymin, gymax, (float) yorigin, (float) ystep);
+  graf(gxmin, gxmax, (float) xorigin, (float) xstep, gymin_pct, gymax_pct,
+       (float) yorigin, (float) ystep);
 
   shdmod("poly", "contur");
   zscale((float) zorigin, 0.0f);
-  conshd(grid->x, grid->nx, grid->y, grid->ny, zplot, levels, level_count);
+  conshd(grid->x, grid->nx, yplot, grid->ny, zplot, levels, level_count);
 
   labels("none", "contur");
   linwid(7);
   setrgb(0.08f, 0.08f, 0.08f);
   dotl();
-  contur(grid->x, grid->nx, grid->y, grid->ny, zplot, log10f(ref_levels[0]));
+  contur(grid->x, grid->nx, yplot, grid->ny, zplot, log10f(ref_levels[0]));
   dashm();
-  contur(grid->x, grid->nx, grid->y, grid->ny, zplot, log10f(ref_levels[1]));
+  contur(grid->x, grid->nx, yplot, grid->ny, zplot, log10f(ref_levels[1]));
   solid();
-  contur(grid->x, grid->nx, grid->y, grid->ny, zplot, log10f(ref_levels[2]));
+  contur(grid->x, grid->nx, yplot, grid->ny, zplot, log10f(ref_levels[2]));
   linwid(1);
   solid();
 
   color("fore");
   height(32);
   zaxis((float) zorigin, 0.0f, (float) zorigin, (float) zstep, 1100,
-        "log10(loss probability)", 1, 0, 2550, 1750);
+        "loss probability", 1, 0, 2550, 1750);
+  height(20);
+  rlmess("1", zlabel_x, gymax_pct);
+  rlmess("1e-1", zlabel_x, gymax_pct - 0.25f * zlabel_span);
+  rlmess("1e-2", zlabel_x, gymax_pct - 0.50f * zlabel_span);
+  rlmess("1e-3", zlabel_x, gymax_pct - 0.75f * zlabel_span);
+  rlmess("1e-4", zlabel_x, gymin_pct);
 
   height(50);
   title();
   color("fore");
   height(14);
-  messag("x: B=(SCV-1)/(SCV+1), y: offered rate / lane rho", 420, 1938);
+  messag("x: B=(SCV-1)/(SCV+1), y: offered rate / lane shown in percent", 420, 1938);
   messag("B=-1 periodic, B=0 Poisson, B=+1 bursty; color: log loss from 1e-4 to 1 with a 1e-4 zero floor", 420, 1980);
   messag("ref contours: dot 0.002, dash 0.005, solid 0.010", 420, 2022);
   disfin();
+  free(yplot);
   free(zplot);
 }
 
