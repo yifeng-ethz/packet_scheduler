@@ -18,6 +18,8 @@ Accepted figure rules:
 - Keep the color-bar label as the physical quantity `loss probability`.
 - Use logarithmic spacing for the color-bar ticks with probability labels
   `1`, `1e-1`, `1e-2`, `1e-3`, `1e-4`.
+- Keep a visible whitespace gap between the color bar and its tick-value text;
+  the tick labels must not visually touch or overlap the bar.
 - Make higher loss darker.
 - Keep the color bar vertically aligned to the plot body's y-span.
 - Use three interior reference contours:

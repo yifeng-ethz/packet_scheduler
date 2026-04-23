@@ -184,6 +184,7 @@ static float clamp_loss_floor(float value, float floor_value) {
 }
 
 static void render_plot(const opq_loss_grid_t *grid, const char *output_path) {
+  const char *output_format = output_format_from_path(output_path);
   int level_count = 12;
   float levels[12];
   float ref_levels[3];
@@ -213,7 +214,7 @@ static void render_plot(const opq_loss_grid_t *grid, const char *output_path) {
   int level_idx;
   size_t point_count = (size_t) grid->nx * (size_t) grid->ny;
   size_t point_idx;
-  float zlabel_x = gxmax + 0.07f * (gxmax - gxmin);
+  float zlabel_x = gxmax + 0.15f * (gxmax - gxmin);
   float zlabel_span = gymax_pct - gymin_pct;
 
   yplot = (float *) calloc((size_t) grid->ny, sizeof(float));
@@ -242,10 +243,13 @@ static void render_plot(const opq_loss_grid_t *grid, const char *output_path) {
     zplot[point_idx] = log10f(clamp_loss_floor(grid->z[point_idx], zmin));
   }
 
-  metafl(output_format_from_path(output_path));
+  metafl(output_format);
   setfil(output_path);
   filmod("delete");
   setpag("da4l");
+  if (strcasecmp(output_format, "PNG") == 0) {
+    winsiz(2048, 1448);
+  }
   scrmod("reverse");
   disini();
   pagera();
@@ -285,8 +289,8 @@ static void render_plot(const opq_loss_grid_t *grid, const char *output_path) {
   color("fore");
   height(32);
   zaxis((float) zorigin, 0.0f, (float) zorigin, (float) zstep, 1100,
-        "loss probability", 1, 0, 2550, 1750);
-  height(20);
+        "loss probability", 1, 0, 2480, 1750);
+  height(16);
   rlmess("1", zlabel_x, gymax_pct);
   rlmess("1e-1", zlabel_x, gymax_pct - 0.25f * zlabel_span);
   rlmess("1e-2", zlabel_x, gymax_pct - 0.50f * zlabel_span);
