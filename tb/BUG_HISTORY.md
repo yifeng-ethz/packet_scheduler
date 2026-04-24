@@ -1313,6 +1313,11 @@ Historical formal note:
     - together, those changes delay internal ownership updates until data is
       consumed and remove the resident-header hole that used to poison the
       default-build overflow witness
+    - follow-up `2026-04-24` MuSiP integration rerun `P124` exposed one final
+      handoff hole: tail lookahead could be captured in the same cycle that
+      final trailer acceptance cleared `page_ram_lookahead_*`; the presenter
+      now preserves that lookahead across the retire-to-idle transition so the
+      next packet preamble remains available to seed the restart path
   - before_fix_outcome:
     - the default-build overflow failure could emit a malformed five-word
       header at the first overflow window:

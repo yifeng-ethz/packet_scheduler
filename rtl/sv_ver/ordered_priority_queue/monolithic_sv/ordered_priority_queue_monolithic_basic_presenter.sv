@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_basic_presenter
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.67
-// Date    : 20260422
-// Change  : Keep restart/head handoff packet-safe under backpressure by discarding self-caught overlap requests, staging page-RAM lookahead capture off the BRAM output timing cone, and registering both overwrite-head and launch-head overlap decisions so the overlap math no longer feeds the launch/request enables directly
+// Version : 26.3.68
+// Date    : 20260424
+// Change  : Preserve tail lookahead across final trailer acceptance so the queued next-packet preamble cannot be captured and cleared in the same cycle
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_basic_presenter #(
@@ -1813,8 +1813,6 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
             pkt_accept_started <= 1'b0;
             page_ram_prime_pending <= 1'b0;
             page_ram_skid_valid <= 1'b0;
-            page_ram_lookahead_valid <= 1'b0;
-            page_ram_lookahead_pending_valid <= 1'b0;
             for (pipe_data_idx = 0; pipe_data_idx < EGRESS_DELAY; pipe_data_idx = pipe_data_idx + 1) begin
               output_data_pipe[pipe_data_idx] <= '0;
             end
