@@ -369,6 +369,41 @@ architectural result: OPQ can recover service by widening egress, while the
 time-merger model keeps a one-word tree service path whose effective service
 falls with the quadratic tree penalty.
 
+### Published DISLIN Feature Plot Set
+
+Published `MATH_REPORT.md` figures are rendered with DISLIN from the analytical
+data grids. Python is used only to generate the queueing/network-calculus data
+tables and DISLIN matrix files.
+
+The analytical plot outputs are separated from future evidence tiers under:
+
+| evidence tier | plot folder | status |
+|---|---|---|
+| analytical | [`../tb/REPORT/math/plots/analytical/`](../tb/REPORT/math/plots/analytical/) | populated with DISLIN model plots |
+| TLM | [`../tb/REPORT/math/plots/tlm/`](../tb/REPORT/math/plots/tlm/) | reserved; no TLM plots published |
+| RTL simulation | [`../tb/REPORT/math/plots/rtl_sim/`](../tb/REPORT/math/plots/rtl_sim/) | reserved; no RTL sweep plots published |
+| on-board measurement | [`../tb/REPORT/math/plots/on_board/`](../tb/REPORT/math/plots/on_board/) | reserved; no board measurements published |
+
+For each feature point, the DISLIN golden set contains:
+
+| feature point | OPQ loss surface | OPQ/time-merger loss contour | OPQ/time-merger loss curve | ready/burst ratio |
+|---|---|---|---|---|
+| `N=4`, `E=1x` | [`png`](../tb/REPORT/math/plots/analytical/opq_loss_surface_nlane04_egress01x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_contour_nlane04_egress01x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_curve_nlane04_egress01x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_ready_burst_ratio_nlane04_egress01x.png) |
+| `N=4`, `E=2x` | [`png`](../tb/REPORT/math/plots/analytical/opq_loss_surface_nlane04_egress02x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_contour_nlane04_egress02x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_curve_nlane04_egress02x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_ready_burst_ratio_nlane04_egress02x.png) |
+| `N=4`, `E=4x` | [`png`](../tb/REPORT/math/plots/analytical/opq_loss_surface_nlane04_egress04x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_contour_nlane04_egress04x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_curve_nlane04_egress04x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_ready_burst_ratio_nlane04_egress04x.png) |
+| `N=4`, `E=8x` | [`png`](../tb/REPORT/math/plots/analytical/opq_loss_surface_nlane04_egress08x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_contour_nlane04_egress08x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_curve_nlane04_egress08x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_ready_burst_ratio_nlane04_egress08x.png) |
+| `N=8`, `E=1x` | [`png`](../tb/REPORT/math/plots/analytical/opq_loss_surface_nlane08_egress01x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_contour_nlane08_egress01x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_curve_nlane08_egress01x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_ready_burst_ratio_nlane08_egress01x.png) |
+| `N=8`, `E=2x` | [`png`](../tb/REPORT/math/plots/analytical/opq_loss_surface_nlane08_egress02x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_contour_nlane08_egress02x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_curve_nlane08_egress02x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_ready_burst_ratio_nlane08_egress02x.png) |
+| `N=8`, `E=4x` | [`png`](../tb/REPORT/math/plots/analytical/opq_loss_surface_nlane08_egress04x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_contour_nlane08_egress04x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_curve_nlane08_egress04x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_ready_burst_ratio_nlane08_egress04x.png) |
+| `N=8`, `E=8x` | [`png`](../tb/REPORT/math/plots/analytical/opq_loss_surface_nlane08_egress08x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_contour_nlane08_egress08x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_curve_nlane08_egress08x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_ready_burst_ratio_nlane08_egress08x.png) |
+| `N=16`, `E=1x` | [`png`](../tb/REPORT/math/plots/analytical/opq_loss_surface_nlane16_egress01x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_contour_nlane16_egress01x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_curve_nlane16_egress01x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_ready_burst_ratio_nlane16_egress01x.png) |
+| `N=16`, `E=2x` | [`png`](../tb/REPORT/math/plots/analytical/opq_loss_surface_nlane16_egress02x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_contour_nlane16_egress02x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_curve_nlane16_egress02x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_ready_burst_ratio_nlane16_egress02x.png) |
+| `N=16`, `E=4x` | [`png`](../tb/REPORT/math/plots/analytical/opq_loss_surface_nlane16_egress04x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_contour_nlane16_egress04x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_curve_nlane16_egress04x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_ready_burst_ratio_nlane16_egress04x.png) |
+| `N=16`, `E=8x` | [`png`](../tb/REPORT/math/plots/analytical/opq_loss_surface_nlane16_egress08x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_contour_nlane16_egress08x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_curve_nlane16_egress08x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_ready_burst_ratio_nlane16_egress08x.png) |
+
+The feature-scaling DISLIN heatmap is:
+[`../tb/REPORT/math/plots/analytical/opq_vs_time_merger_feature_scaling.png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_feature_scaling.png).
+
 ## Independent Queueing Review
 
 An independent second-pass review of the math framing gave the following
@@ -467,19 +502,16 @@ To promote this from a proxy study into a physical stay-time study:
   [`../tb/scripts/opq_queueing_network_calculus_model.py`](../tb/scripts/opq_queueing_network_calculus_model.py)
 - Queueing model summary:
   [`../tb/REPORT/math/queueing_model/queueing_model_summary.json`](../tb/REPORT/math/queueing_model/queueing_model_summary.json)
-- OPQ full-feature loss surface:
-  [`../tb/REPORT/math/queueing_model/opq_full_feature_loss_surface.png`](../tb/REPORT/math/queueing_model/opq_full_feature_loss_surface.png),
-  [`../tb/REPORT/math/queueing_model/opq_full_feature_loss_surface.svg`](../tb/REPORT/math/queueing_model/opq_full_feature_loss_surface.svg)
-- OPQ-vs-time-merger ready/burst ratio contour:
-  [`../tb/REPORT/math/queueing_model/opq_vs_time_merger_ready_burst_ratio.png`](../tb/REPORT/math/queueing_model/opq_vs_time_merger_ready_burst_ratio.png),
-  [`../tb/REPORT/math/queueing_model/opq_vs_time_merger_ready_burst_ratio.svg`](../tb/REPORT/math/queueing_model/opq_vs_time_merger_ready_burst_ratio.svg)
-- OPQ-vs-time-merger feature-scaling heatmap:
-  [`../tb/REPORT/math/queueing_model/opq_vs_time_merger_feature_scaling.png`](../tb/REPORT/math/queueing_model/opq_vs_time_merger_feature_scaling.png),
-  [`../tb/REPORT/math/queueing_model/opq_vs_time_merger_feature_scaling.svg`](../tb/REPORT/math/queueing_model/opq_vs_time_merger_feature_scaling.svg)
+- Published analytical DISLIN plot folder:
+  [`../tb/REPORT/math/plots/analytical/`](../tb/REPORT/math/plots/analytical/)
+- Plot evidence-tier index:
+  [`../tb/REPORT/math/plots/README.md`](../tb/REPORT/math/plots/README.md)
 - Queueing model CSV grids:
   [`../tb/REPORT/math/queueing_model/opq_full_feature_loss_surface_grid.csv`](../tb/REPORT/math/queueing_model/opq_full_feature_loss_surface_grid.csv),
   [`../tb/REPORT/math/queueing_model/opq_vs_time_merger_ready_burst_ratio_grid.csv`](../tb/REPORT/math/queueing_model/opq_vs_time_merger_ready_burst_ratio_grid.csv),
   [`../tb/REPORT/math/queueing_model/opq_vs_time_merger_feature_scaling_grid.csv`](../tb/REPORT/math/queueing_model/opq_vs_time_merger_feature_scaling_grid.csv)
+- DISLIN matrix grids:
+  [`../tb/REPORT/math/queueing_model/dislin/`](../tb/REPORT/math/queueing_model/dislin/)
 - Quantiles CSV:
   [`../tb/REPORT/math/residency_proxy_quantiles.csv`](../tb/REPORT/math/residency_proxy_quantiles.csv)
 - JSON summary:
@@ -516,5 +548,7 @@ To promote this from a proxy study into a physical stay-time study:
 Legacy analytical/proxy plot artifacts that remain directly under
 `../tb/REPORT/math/` or `../tb_old_reference/REPORT/` are stale development
 artifacts and are not math-report evidence for this revision. The promoted
-analytical model artifacts live under `../tb/REPORT/math/queueing_model/` and
-are explicitly labeled as analytical, not RTL evidence.
+analytical model data lives under `../tb/REPORT/math/queueing_model/`; the
+published analytical DISLIN figures live under
+`../tb/REPORT/math/plots/analytical/`. Both are explicitly labeled as
+analytical, not RTL evidence.

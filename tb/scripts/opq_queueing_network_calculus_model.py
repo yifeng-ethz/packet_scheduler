@@ -25,12 +25,20 @@ from matplotlib.colors import Normalize
 DEFAULT_OUTPUT_DIR = (
     Path(__file__).resolve().parents[1] / "REPORT" / "math" / "queueing_model"
 )
+DEFAULT_PLOT_OUTPUT_DIR = (
+    Path(__file__).resolve().parents[1] / "REPORT" / "math" / "plots" / "analytical"
+)
 DEFAULT_BURSTINESS_COUNT = 121
 DEFAULT_RATE_COUNT = 121
 DEFAULT_READY_COUNT = 101
 LOSS_FLOOR = 1.0e-12
 RATIO_CLIP = 1.0e6
 MAX_ENDPOINT_SCV = 1_000.0
+PUBLISHED_FEATURES = tuple(
+    (n_lane, egress_symbols)
+    for n_lane in (4, 8, 16)
+    for egress_symbols in (1, 2, 4, 8)
+)
 
 
 @dataclass(frozen=True)
@@ -630,6 +638,284 @@ def write_model_grids(args: argparse.Namespace, output_dir: Path) -> dict[str, s
     }
 
 
+def write_dat_matrix(
+    path: Path,
+    x_values: np.ndarray,
+    y_values: np.ndarray,
+    z_by_y_then_x: np.ndarray,
+) -> None:
+    with path.open("w", encoding="ascii") as handle:
+        handle.write(f"{len(x_values)} {len(y_values)}\n")
+        handle.write(" ".join(f"{float(value):.8f}" for value in x_values) + "\n")
+        handle.write(" ".join(f"{float(value):.8f}" for value in y_values) + "\n")
+        for x_idx in range(len(x_values)):
+            row = [
+                f"{float(z_by_y_then_x[y_idx, x_idx]):.12e}"
+                for y_idx in range(len(y_values))
+            ]
+            handle.write(" ".join(row) + "\n")
+
+
+def write_loss_curve_dat(
+    path: Path,
+    rho_values: np.ndarray,
+    opq_loss: np.ndarray,
+    time_merger_loss: np.ndarray,
+) -> None:
+    with path.open("w", encoding="ascii") as handle:
+        handle.write(f"{len(rho_values)}\n")
+        handle.write(" ".join(f"{float(value):.8f}" for value in rho_values) + "\n")
+        handle.write(" ".join(f"{float(value):.12e}" for value in opq_loss) + "\n")
+        handle.write(" ".join(f"{float(value):.12e}" for value in time_merger_loss) + "\n")
+
+
+def write_dislin_grids(
+    args: argparse.Namespace,
+    output_dir: Path,
+    plot_output_dir: Path,
+) -> dict[str, object]:
+    dislin_dir = output_dir / "dislin"
+    dislin_dir.mkdir(parents=True, exist_ok=True)
+    plot_output_dir.mkdir(parents=True, exist_ok=True)
+
+    b_values = linspace(args.burstiness_min, args.burstiness_max, args.burstiness_count)
+    rho_values = linspace(args.rho_min, args.rho_max, args.rate_count)
+    ready_values = linspace(args.ready_min, args.ready_max, args.ready_count)
+    b_rho_grid, rho_grid = np.meshgrid(b_values, rho_values)
+    b_ready_grid, ready_grid = np.meshgrid(b_values, ready_values)
+    ratio_rho_grid = np.full_like(b_ready_grid, args.ratio_rho_lane)
+
+    loss_dat: dict[str, str] = {}
+    opq_loss_dat: dict[str, str] = {}
+    time_merger_loss_dat: dict[str, str] = {}
+    ratio_dat: dict[str, str] = {}
+    loss_curve_dat: dict[str, str] = {}
+    published_png: dict[str, str] = {}
+
+    for n_lane, egress_symbols in PUBLISHED_FEATURES:
+        key = f"N_LANE={n_lane},EGRESS={egress_symbols}x"
+        loss_stem = f"opq_loss_surface_nlane{n_lane:02d}_egress{egress_symbols:02d}x"
+        overlay_stem = (
+            f"opq_vs_time_merger_loss_contour_nlane{n_lane:02d}_egress{egress_symbols:02d}x"
+        )
+        curve_stem = (
+            f"opq_vs_time_merger_loss_curve_nlane{n_lane:02d}_egress{egress_symbols:02d}x"
+        )
+        ratio_stem = (
+            f"opq_vs_time_merger_ready_burst_ratio_nlane{n_lane:02d}_egress{egress_symbols:02d}x"
+        )
+
+        _, opq_loss = loss_surface(
+            "opq",
+            n_lane,
+            egress_symbols,
+            1.0,
+            b_rho_grid,
+            rho_grid,
+            args.opq_capacity,
+            args.time_merger_credit,
+        )
+        _, tm_loss = loss_surface(
+            "time_merger",
+            n_lane,
+            egress_symbols,
+            1.0,
+            b_rho_grid,
+            rho_grid,
+            args.opq_capacity,
+            args.time_merger_credit,
+        )
+
+        loss_dat_path = dislin_dir / f"{loss_stem}.dat"
+        opq_dat_path = dislin_dir / f"{overlay_stem}_opq.dat"
+        tm_dat_path = dislin_dir / f"{overlay_stem}_time_merger.dat"
+        write_dat_matrix(loss_dat_path, b_values, rho_values, opq_loss)
+        write_dat_matrix(opq_dat_path, b_values, rho_values, opq_loss)
+        write_dat_matrix(tm_dat_path, b_values, rho_values, tm_loss)
+        loss_dat[key] = str(loss_dat_path)
+        opq_loss_dat[key] = str(opq_dat_path)
+        time_merger_loss_dat[key] = str(tm_dat_path)
+        published_png[f"{key},OPQ_LOSS_SURFACE"] = str(plot_output_dir / f"{loss_stem}.png")
+        published_png[f"{key},LOSS_CONTOUR_OVERLAY"] = str(plot_output_dir / f"{overlay_stem}.png")
+
+        curve_b = np.full_like(rho_values, args.scaling_burstiness)
+        curve_rho = rho_values
+        _, opq_curve_loss = loss_surface(
+            "opq",
+            n_lane,
+            egress_symbols,
+            args.scaling_ready_duty,
+            curve_b,
+            curve_rho,
+            args.opq_capacity,
+            args.time_merger_credit,
+        )
+        _, tm_curve_loss = loss_surface(
+            "time_merger",
+            n_lane,
+            egress_symbols,
+            args.scaling_ready_duty,
+            curve_b,
+            curve_rho,
+            args.opq_capacity,
+            args.time_merger_credit,
+        )
+        curve_dat_path = dislin_dir / f"{curve_stem}.dat"
+        write_loss_curve_dat(curve_dat_path, rho_values, opq_curve_loss, tm_curve_loss)
+        loss_curve_dat[key] = str(curve_dat_path)
+        published_png[f"{key},LOSS_CURVE"] = str(plot_output_dir / f"{curve_stem}.png")
+
+        _, opq_ready_loss = loss_surface(
+            "opq",
+            n_lane,
+            egress_symbols,
+            ready_grid,
+            b_ready_grid,
+            ratio_rho_grid,
+            args.opq_capacity,
+            args.time_merger_credit,
+        )
+        _, tm_ready_loss = loss_surface(
+            "time_merger",
+            n_lane,
+            egress_symbols,
+            ready_grid,
+            b_ready_grid,
+            ratio_rho_grid,
+            args.opq_capacity,
+            args.time_merger_credit,
+        )
+        ratio = np.clip(
+            tm_ready_loss / np.maximum(opq_ready_loss, LOSS_FLOOR),
+            1.0,
+            RATIO_CLIP,
+        )
+        ratio_dat_path = dislin_dir / f"{ratio_stem}.dat"
+        write_dat_matrix(ratio_dat_path, b_values, ready_values, ratio)
+        ratio_dat[key] = str(ratio_dat_path)
+        published_png[f"{key},READY_BURST_RATIO"] = str(plot_output_dir / f"{ratio_stem}.png")
+
+    n_values = np.array([4.0, 8.0, 16.0])
+    e_values = np.array([1.0, 2.0, 4.0, 8.0])
+    scaling_matrix = np.zeros((len(n_values), len(e_values)), dtype=float)
+    for n_idx, n_lane_value in enumerate(n_values):
+        for e_idx, egress_value in enumerate(e_values):
+            b_grid = np.array([[args.scaling_burstiness]])
+            rho_grid = np.array([[args.ratio_rho_lane]])
+            ready_grid = np.array([[args.scaling_ready_duty]])
+            _, opq_loss = loss_surface(
+                "opq",
+                int(n_lane_value),
+                int(egress_value),
+                ready_grid,
+                b_grid,
+                rho_grid,
+                args.opq_capacity,
+                args.time_merger_credit,
+            )
+            _, tm_loss = loss_surface(
+                "time_merger",
+                int(n_lane_value),
+                int(egress_value),
+                ready_grid,
+                b_grid,
+                rho_grid,
+                args.opq_capacity,
+                args.time_merger_credit,
+            )
+            scaling_matrix[n_idx, e_idx] = float(
+                np.clip(tm_loss / np.maximum(opq_loss, LOSS_FLOOR), 1.0, RATIO_CLIP)[0, 0]
+            )
+    scaling_dat = dislin_dir / "opq_vs_time_merger_feature_scaling.dat"
+    write_dat_matrix(scaling_dat, e_values, n_values, scaling_matrix)
+    published_png["FEATURE_SCALING"] = str(plot_output_dir / "opq_vs_time_merger_feature_scaling.png")
+
+    return {
+        "dislin_dir": str(dislin_dir),
+        "published_plot_dir": str(plot_output_dir),
+        "opq_loss_surface_dat": loss_dat,
+        "opq_loss_overlay_dat": opq_loss_dat,
+        "time_merger_loss_overlay_dat": time_merger_loss_dat,
+        "loss_curve_dat": loss_curve_dat,
+        "ready_burst_ratio_dat": ratio_dat,
+        "feature_scaling_dat": str(scaling_dat),
+        "published_png": published_png,
+    }
+
+
+def compute_ratio_surface_summary(args: argparse.Namespace) -> dict[str, object]:
+    b_values = linspace(args.burstiness_min, args.burstiness_max, args.burstiness_count)
+    ready_values = linspace(args.ready_min, args.ready_max, args.ready_count)
+    b_grid, ready_grid = np.meshgrid(b_values, ready_values)
+    rho_grid = np.full_like(b_grid, args.ratio_rho_lane)
+    features = [(4, 1), (8, 2), (16, 4), (16, 8)]
+    summary: dict[str, object] = {}
+
+    for n_lane, egress_symbols in features:
+        _, opq_loss = loss_surface(
+            "opq",
+            n_lane,
+            egress_symbols,
+            ready_grid,
+            b_grid,
+            rho_grid,
+            args.opq_capacity,
+            args.time_merger_credit,
+        )
+        _, tm_loss = loss_surface(
+            "time_merger",
+            n_lane,
+            egress_symbols,
+            ready_grid,
+            b_grid,
+            rho_grid,
+            args.opq_capacity,
+            args.time_merger_credit,
+        )
+        ratio = np.clip(tm_loss / np.maximum(opq_loss, LOSS_FLOOR), 1.0, RATIO_CLIP)
+        summary[f"N_LANE={n_lane},EGRESS={egress_symbols}x"] = {
+            "max_ratio_clipped": float(np.max(ratio)),
+            "min_ratio_clipped": float(np.min(ratio)),
+            "fraction_ge_1e3": float(np.mean(ratio >= 1.0e3)),
+            "fraction_ge_1e6": float(np.mean(ratio >= RATIO_CLIP)),
+        }
+    return summary
+
+
+def compute_feature_scaling_summary(args: argparse.Namespace) -> dict[str, object]:
+    ratio_values: dict[str, float] = {}
+
+    for n_lane in (4, 8, 16):
+        for egress_symbols in (1, 2, 4, 8):
+            b_grid = np.array([[args.scaling_burstiness]])
+            rho_grid = np.array([[args.ratio_rho_lane]])
+            ready_grid = np.array([[args.scaling_ready_duty]])
+            _, opq_loss = loss_surface(
+                "opq",
+                n_lane,
+                egress_symbols,
+                ready_grid,
+                b_grid,
+                rho_grid,
+                args.opq_capacity,
+                args.time_merger_credit,
+            )
+            _, tm_loss = loss_surface(
+                "time_merger",
+                n_lane,
+                egress_symbols,
+                ready_grid,
+                b_grid,
+                rho_grid,
+                args.opq_capacity,
+                args.time_merger_credit,
+            )
+            ratio_values[f"N_LANE={n_lane},EGRESS={egress_symbols}x"] = float(
+                np.clip(tm_loss / np.maximum(opq_loss, LOSS_FLOOR), 1.0, RATIO_CLIP)[0, 0]
+            )
+    return ratio_values
+
+
 def parse_feature(value: str) -> tuple[int, int]:
     try:
         n_text, e_text = value.lower().replace("n", "").replace("e", "").split(",")
@@ -643,6 +929,7 @@ def parse_feature(value: str) -> tuple[int, int]:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
+    parser.add_argument("--plot-output-dir", type=Path, default=DEFAULT_PLOT_OUTPUT_DIR)
     parser.add_argument("--burstiness-min", type=float, default=-0.25)
     parser.add_argument("--burstiness-max", type=float, default=0.95)
     parser.add_argument("--burstiness-count", type=int, default=DEFAULT_BURSTINESS_COUNT)
@@ -658,6 +945,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--opq-capacity", type=int, default=255)
     parser.add_argument("--time-merger-credit", type=float, default=96.0)
     parser.add_argument(
+        "--preview-matplotlib-plots",
+        action="store_true",
+        help="Also emit non-publishing Matplotlib preview plots.",
+    )
+    parser.add_argument(
         "--feature",
         type=parse_feature,
         nargs="+",
@@ -670,11 +962,37 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    args.plot_output_dir.mkdir(parents=True, exist_ok=True)
 
     grid_paths = write_model_grids(args, args.output_dir)
-    plot_opq_loss_surface(args, args.output_dir)
-    ratio_summary = plot_ratio_surface(args, args.output_dir)
-    scaling_summary = plot_feature_scaling(args, args.output_dir)
+    dislin_paths = write_dislin_grids(args, args.output_dir, args.plot_output_dir)
+    ratio_summary = compute_ratio_surface_summary(args)
+    scaling_summary = compute_feature_scaling_summary(args)
+    preview_artifacts: dict[str, str] = {}
+    if args.preview_matplotlib_plots:
+        plot_opq_loss_surface(args, args.output_dir)
+        ratio_summary = plot_ratio_surface(args, args.output_dir)
+        scaling_summary = plot_feature_scaling(args, args.output_dir)
+        preview_artifacts = {
+            "opq_loss_surface_preview_png": str(
+                args.output_dir / "opq_full_feature_loss_surface.png"
+            ),
+            "opq_loss_surface_preview_svg": str(
+                args.output_dir / "opq_full_feature_loss_surface.svg"
+            ),
+            "ready_burst_ratio_preview_png": str(
+                args.output_dir / "opq_vs_time_merger_ready_burst_ratio.png"
+            ),
+            "ready_burst_ratio_preview_svg": str(
+                args.output_dir / "opq_vs_time_merger_ready_burst_ratio.svg"
+            ),
+            "feature_scaling_preview_png": str(
+                args.output_dir / "opq_vs_time_merger_feature_scaling.png"
+            ),
+            "feature_scaling_preview_svg": str(
+                args.output_dir / "opq_vs_time_merger_feature_scaling.svg"
+            ),
+        }
 
     summary = {
         "model": "OPQ queueing/network-calculus analytical design-space model",
@@ -704,12 +1022,8 @@ def main() -> None:
         "feature_scaling_ratio": scaling_summary,
         "artifacts": {
             **grid_paths,
-            "opq_loss_surface_png": str(args.output_dir / "opq_full_feature_loss_surface.png"),
-            "opq_loss_surface_svg": str(args.output_dir / "opq_full_feature_loss_surface.svg"),
-            "ready_burst_ratio_png": str(args.output_dir / "opq_vs_time_merger_ready_burst_ratio.png"),
-            "ready_burst_ratio_svg": str(args.output_dir / "opq_vs_time_merger_ready_burst_ratio.svg"),
-            "feature_scaling_png": str(args.output_dir / "opq_vs_time_merger_feature_scaling.png"),
-            "feature_scaling_svg": str(args.output_dir / "opq_vs_time_merger_feature_scaling.svg"),
+            **dislin_paths,
+            **preview_artifacts,
         },
     }
     summary_path = args.output_dir / "queueing_model_summary.json"

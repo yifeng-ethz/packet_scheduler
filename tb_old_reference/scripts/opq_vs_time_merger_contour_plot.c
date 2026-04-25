@@ -173,7 +173,7 @@ static void draw_grid(float xmin, float xmax, float ymin, float ymax) {
   setrgb(0.80f, 0.80f, 0.80f);
   dotl();
   linwid(1);
-  for (float x = -0.5f; x < xmax; x += 0.5f) {
+  for (float x = xmin; x < xmax; x += 0.2f) {
     float xs[2] = {x, x};
     float ys[2] = {ymin, ymax};
     curve(xs, ys, 2);
@@ -186,43 +186,53 @@ static void draw_grid(float xmin, float xmax, float ymin, float ymax) {
   solid();
 }
 
-static void draw_legend(void) {
+static void draw_legend(float xmin, float xmax, float ymax) {
   float xs[2];
   float ys[2];
+  float impl_x0 = xmin + 0.05f;
+  float impl_x1 = impl_x0 + 0.16f;
+  float impl_text_x = impl_x1 + 0.05f;
+  float impl_y0 = ymax - 3.0f;
+  float level_x0 = xmax - 0.48f;
+  float level_x1 = level_x0 + 0.16f;
+  float level_text_x = level_x1 + 0.05f;
+  float level_y0 = ymax - 3.0f;
 
   simplx();
   height(18);
   color("fore");
-  rlmess("implementation", -0.92f, 23.0f);
+  rlmess("implementation", impl_x0, impl_y0 + 1.0f);
   linwid(7);
-  xs[0] = -0.92f; xs[1] = -0.72f; ys[0] = 21.6f; ys[1] = 21.6f;
+  xs[0] = impl_x0; xs[1] = impl_x1; ys[0] = impl_y0; ys[1] = impl_y0;
   set_impl_color(0); solid(); curve(xs, ys, 2);
-  color("fore"); linwid(1); rlmess("OPQ", -0.66f, 22.1f);
+  color("fore"); linwid(1); rlmess("OPQ", impl_text_x, impl_y0 + 0.4f);
   linwid(7);
-  xs[0] = -0.92f; xs[1] = -0.72f; ys[0] = 20.3f; ys[1] = 20.3f;
+  xs[0] = impl_x0; xs[1] = impl_x1; ys[0] = impl_y0 - 1.4f; ys[1] = impl_y0 - 1.4f;
   set_impl_color(1); solid(); curve(xs, ys, 2);
-  color("fore"); linwid(1); rlmess("Time-Merger", -0.66f, 20.8f);
+  color("fore"); linwid(1); rlmess("Time-Merger", impl_text_x, impl_y0 - 1.0f);
 
   height(18);
-  rlmess("loss contour", 0.22f, 37.0f);
+  rlmess("loss contour", level_x0, level_y0 + 1.0f);
   linwid(7);
-  xs[0] = 0.22f; xs[1] = 0.42f; ys[0] = 35.6f; ys[1] = 35.6f;
+  xs[0] = level_x0; xs[1] = level_x1; ys[0] = level_y0; ys[1] = level_y0;
   color("fore"); dotl(); curve(xs, ys, 2);
-  solid(); linwid(1); rlmess("1e-6", 0.48f, 36.1f);
+  solid(); linwid(1); rlmess("1e-6", level_text_x, level_y0 + 0.4f);
   linwid(7);
-  xs[0] = 0.22f; xs[1] = 0.42f; ys[0] = 34.3f; ys[1] = 34.3f;
+  xs[0] = level_x0; xs[1] = level_x1; ys[0] = level_y0 - 1.4f; ys[1] = level_y0 - 1.4f;
   dashm(); curve(xs, ys, 2);
-  solid(); linwid(1); rlmess("1 %", 0.48f, 34.8f);
+  solid(); linwid(1); rlmess("1 %", level_text_x, level_y0 - 1.0f);
   linwid(7);
-  xs[0] = 0.22f; xs[1] = 0.42f; ys[0] = 33.0f; ys[1] = 33.0f;
+  xs[0] = level_x0; xs[1] = level_x1; ys[0] = level_y0 - 2.8f; ys[1] = level_y0 - 2.8f;
   solid(); curve(xs, ys, 2);
-  linwid(1); rlmess("5 %", 0.48f, 33.5f);
+  linwid(1); rlmess("5 %", level_text_x, level_y0 - 2.4f);
   complx();
 }
 
 static void render_plot(const loss_grid_t *opq_grid, const loss_grid_t *tm_grid, const char *output_path) {
   const float levels[LEVEL_COUNT] = {1.0e-6f, 1.0e-2f, 5.0e-2f};
   const char *output_format = output_format_from_path(output_path);
+  const char *plot_title = getenv("OPQ_TM_CONTOUR_TITLE");
+  const char *plot_note = getenv("OPQ_TM_CONTOUR_NOTE");
   float xmin = opq_grid->x[0];
   float xmax = opq_grid->x[opq_grid->nx - 1];
   float ymin = opq_grid->y[0];
@@ -240,7 +250,10 @@ static void render_plot(const loss_grid_t *opq_grid, const loss_grid_t *tm_grid,
   pagera();
   complx();
 
-  titlin("OPQ IP-Core vs Time-Merger Burst/Rate Loss Contour", 2);
+  if (plot_title == NULL || plot_title[0] == '\0') {
+    plot_title = "OPQ IP-Core vs Time-Merger Burst/Rate Loss Contour";
+  }
+  titlin(plot_title, 2);
   name("burstiness B", "x");
   name("rate / lane [%]", "y");
   intax();
@@ -248,7 +261,7 @@ static void render_plot(const loss_grid_t *opq_grid, const loss_grid_t *tm_grid,
   labdig(0, "y");
   axspos(420, 1720);
   axslen(2050, 1100);
-  graf(xmin, xmax, -1.0f, 0.5f, ymin, ymax, 5.0f, 5.0f);
+  graf(xmin, xmax, -0.2f, 0.2f, ymin, ymax, 5.0f, 5.0f);
   draw_grid(xmin, xmax, ymin, ymax);
 
   for (int level_idx = 0; level_idx < LEVEL_COUNT; level_idx++) {
@@ -256,12 +269,15 @@ static void render_plot(const loss_grid_t *opq_grid, const loss_grid_t *tm_grid,
     draw_single_contour(tm_grid, levels[level_idx], 1, level_idx);
   }
 
-  draw_legend();
+  draw_legend(xmin, xmax, ymax);
   height(44);
   title();
   color("fore");
   height(15);
-  messag("x: B=(SCV-1)/(SCV+1), y: offered rate/lane; window zooms out to expose early time-merger loss", 420, 1918);
+  if (plot_note == NULL || plot_note[0] == '\0') {
+    plot_note = "x: B=(SCV-1)/(SCV+1), y: offered rate/lane; window zooms out to expose early time-merger loss";
+  }
+  messag(plot_note, 420, 1918);
   messag("finite-buffer analytical proxy: OPQ capacity=255, Time-Merger tree capacity/service penalized", 420, 1960);
   disfin();
 }

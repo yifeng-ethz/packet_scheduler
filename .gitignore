@@ -26,6 +26,7 @@ tb/**/ordered_priority_queue.vhd
 # artifacts live under tb/REPORT/math/queueing_model/.
 tb/REPORT/math/lane_skew_loss*
 tb/REPORT/math/opq_family/
+tb/REPORT/math/queueing_model/.build_dislin/
 
 # TERP-generated wrappers (regenerated each run)
 rtl/ordered_priority_queue/split/top/ordered_priority_queue_top.vhd
