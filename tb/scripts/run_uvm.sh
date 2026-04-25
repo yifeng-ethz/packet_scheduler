@@ -2,7 +2,7 @@
 #------------------------------------------------------------------------------
 # IP Name   : run_uvm
 # Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
-# Revision  : 0.3 - derive the safe ticket FIFO depth from N_SHD whenever unset
+# Revision  : 0.4 - derive the safe ticket FIFO depth from N_SHD and N_LANE whenever unset
 # Description:
 #   Wrapper around the active OPQ UVM make targets.
 #------------------------------------------------------------------------------
@@ -26,7 +26,9 @@ Environment:
   COV_ENABLE        1 to use `make run_cov`
   DUT_IMPL          Must be `native_sv` for signoff/report evidence; defaults to `native_sv`
   OPQ_N_SHD         Optional N_SHD override passed into the DUT wrapper generator and UVM package
-  OPQ_TICKET_FIFO_DEPTH Optional ticket FIFO depth override; if unset the script derives a safe power-of-two depth from N_SHD
+  OPQ_TICKET_FIFO_DEPTH Optional ticket FIFO depth override; if unset the script derives a safe power-of-two depth from N_SHD and N_LANE
+  OPQ_N_LANE        Optional N_LANE override passed into the native SV DUT wrapper and UVM package
+  OPQ_PAGE_RAM_RD_WIDTH Optional egress pack width override passed into the native SV DUT wrapper and UVM package
   OPQ_PAGE_RAM_DEPTH Optional page RAM depth override passed into the DUT wrapper generator
   BUILD_DIR         Optional explicit build directory override for a single invocation
   BUILD_ROOT        Optional parent directory used for auto-generated per-run build directories
@@ -40,9 +42,16 @@ EOF
 
 derive_ticket_fifo_depth() {
   local n_shd="$1"
+  local n_lane="$2"
+  local target_lane=$((n_shd * 32))
+  local target_scan=$((n_shd * n_lane * 2))
+  local target="${target_lane}"
   local depth=256
 
-  while (( depth <= n_shd )); do
+  if (( target_scan > target )); then
+    target="${target_scan}"
+  fi
+  while (( depth < target )); do
     depth=$((depth * 2))
   done
 
@@ -90,7 +99,9 @@ run_one() {
   local log_file="${LOG_DIR}/${test_name}.log"
   local dut_impl="${DUT_IMPL:-native_sv}"
   local page_ram_depth="${OPQ_PAGE_RAM_DEPTH:-65536}"
+  local n_lane="${OPQ_N_LANE:-2}"
   local n_shd="${OPQ_N_SHD:-256}"
+  local page_ram_rd_width="${OPQ_PAGE_RAM_RD_WIDTH:-36}"
   local ticket_fifo_depth="${OPQ_TICKET_FIFO_DEPTH:-}"
   local user_build_dir="${BUILD_DIR:-}"
   local build_root="${BUILD_ROOT:-${UVM_DIR}/build_runs}"
@@ -149,9 +160,9 @@ run_one() {
     page_ram_depth=512
   fi
   if [[ -z "${ticket_fifo_depth}" ]]; then
-    ticket_fifo_depth="$(derive_ticket_fifo_depth "${n_shd}")"
+    ticket_fifo_depth="$(derive_ticket_fifo_depth "${n_shd}" "${n_lane}")"
   fi
-  build_tag="dut${dut_impl}_lane${OPQ_N_LANE:-2}_nshd${n_shd}_ticket${ticket_fifo_depth}_page${page_ram_depth}_cov${COV_ENABLE:-0}"
+  build_tag="dut${dut_impl}_lane${n_lane}_nshd${n_shd}_ticket${ticket_fifo_depth}_page${page_ram_depth}_rd${page_ram_rd_width}_cov${COV_ENABLE:-0}"
   build_key="${build_tag}"
   if [[ -n "${user_build_dir}" ]]; then
     build_dir="${user_build_dir}"
@@ -161,7 +172,9 @@ run_one() {
   fi
   make_args+=("OPQ_PAGE_RAM_DEPTH=${page_ram_depth}")
   make_args+=("OPQ_N_SHD=${n_shd}")
+  make_args+=("OPQ_N_LANE=${n_lane}")
   make_args+=("OPQ_TICKET_FIFO_DEPTH=${ticket_fifo_depth}")
+  make_args+=("OPQ_PAGE_RAM_RD_WIDTH=${page_ram_rd_width}")
   make_args+=("BUILD_DIR=${build_dir}")
   make_args+=("TEST=${uvm_test_name}")
   if [[ "${COV_ENABLE:-0}" == "1" ]]; then
@@ -177,7 +190,8 @@ run_one() {
 
   if {
     printf '[run_uvm] DUT_IMPL=%s TEST=%s ARTIFACT=%s OPQ_N_LANE=%s OPQ_N_SHD=%s OPQ_TICKET_FIFO_DEPTH=%s OPQ_PAGE_RAM_DEPTH=%s COV_ENABLE=%s VSIM_PLUSARGS=%s\n' \
-      "${dut_impl}" "${uvm_test_name}" "${artifact_name}" "${OPQ_N_LANE:-2}" "${n_shd}" "${ticket_fifo_depth}" "${page_ram_depth}" "${COV_ENABLE:-0}" "${case_plusargs} ${VSIM_PLUSARGS:-}";
+      "${dut_impl}" "${uvm_test_name}" "${artifact_name}" "${n_lane}" "${n_shd}" "${ticket_fifo_depth}" "${page_ram_depth}" "${COV_ENABLE:-0}" "${case_plusargs} ${VSIM_PLUSARGS:-}";
+    printf '[run_uvm] OPQ_PAGE_RAM_RD_WIDTH=%s\n' "${page_ram_rd_width}";
     printf '[run_uvm] BUILD_DIR=%s BUILD_KEY=%s TARGET=%s\n' "${build_dir}" "${build_key}" "${target}";
     if [[ -z "${PREPARED_BUILD_KEYS[${build_key}]+x}" ]]; then
       printf '[run_uvm] COMPILE_TARGET=%s\n' "${compile_target}";

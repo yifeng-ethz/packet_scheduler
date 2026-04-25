@@ -9,6 +9,25 @@ Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 > `qverify` / `znformal` with simulation stress fallback only when the
 > Siemens formal binaries are not present on the host.
 
+## 26.4.3.0425
+
+- **RTL / Feature Timing Closure**: closed the focused
+  `N_LANE=16`, `N_SHD=256`, `PAGE_RAM_RD_WIDTH=36` native-SV feature
+  signoff point at the tightened `275 MHz` standalone clock without
+  multicycle constraints. The fix uses real pipeline cuts on ticket-FIFO
+  read addresses, allocator fetch/page-commit reductions, SOP-hit reduction,
+  and lane-vector ready qualification; the accepted tradeoff is extra ticket
+  processing latency rather than a relaxed timing exception.
+- **Synthesis / Feature Evidence**: the refreshed
+  `opq_feature_l16_s256_w36` Arria-10 compile reports slow-100 setup
+  `+0.047 ns` / TNS `0.000 ns`, slow-100 hold `+0.041 ns`, and positive hold
+  slack on all checked corners at the 3.636 ns signoff clock.
+- **Math / Queueing Model**: added the queueing/network-calculus model and
+  reproducible full-feature plots for OPQ loss surface and OPQ-vs-time-merger
+  loss-ratio comparisons. The report now keeps these analytical artifacts
+  separate from RTL-derived loss evidence and links the generated CSV/PNG/SVG
+  files under `tb/REPORT/math/queueing_model/`.
+
 ## 26.3.66.0423
 
 - **RTL / Native-SV Allocator Retirement Closure**: fixed the active-frame

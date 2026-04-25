@@ -1,0 +1,69 @@
+{
+  "model": "OPQ queueing/network-calculus analytical design-space model",
+  "scope_note": "Analytical model only.  It supports architecture comparison and report equations, but it is not direct RTL loss evidence.",
+  "burstiness_definition": "B = (SCV - 1) / (SCV + 1)",
+  "arrival_curve": "A(t) <= sigma(B,rho) + N_LANE*rho_lane*t",
+  "opq_service_curve": "beta_opq(t) = EGRESS_SYMBOLS_PER_BEAT*ready_duty*[t-T_opq]^+",
+  "time_merger_service_curve": "beta_tm(t) = ready_duty/(1+ceil(log2(N_LANE))^2)*[t-T_tm]^+",
+  "blocking_proxy": "p_loss ~= P_K(rho_eff), rho_eff=(N_LANE*rho_lane/R)*sqrt((1+SCV)/2)",
+  "opq_capacity": 255,
+  "time_merger_credit": 96.0,
+  "ratio_clip": 1000000.0,
+  "ratio_rho_lane": 0.0075,
+  "scaling_stress_point": {
+    "burstiness": 0.7,
+    "ready_duty": 0.75,
+    "rho_lane": 0.0075
+  },
+  "ratio_surface_summary": {
+    "N_LANE=4,EGRESS=1x": {
+      "max_ratio_clipped": 1000000.0,
+      "min_ratio_clipped": 1.0,
+      "fraction_ge_1e3": 0.31413141314131415,
+      "fraction_ge_1e6": 0.12789460764258245
+    },
+    "N_LANE=8,EGRESS=2x": {
+      "max_ratio_clipped": 1000000.0,
+      "min_ratio_clipped": 1000000.0,
+      "fraction_ge_1e3": 1.0,
+      "fraction_ge_1e6": 1.0
+    },
+    "N_LANE=16,EGRESS=4x": {
+      "max_ratio_clipped": 1000000.0,
+      "min_ratio_clipped": 1000000.0,
+      "fraction_ge_1e3": 1.0,
+      "fraction_ge_1e6": 1.0
+    },
+    "N_LANE=16,EGRESS=8x": {
+      "max_ratio_clipped": 1000000.0,
+      "min_ratio_clipped": 1000000.0,
+      "fraction_ge_1e3": 1.0,
+      "fraction_ge_1e6": 1.0
+    }
+  },
+  "feature_scaling_ratio": {
+    "N_LANE=4,EGRESS=1x": 3087.3810657759345,
+    "N_LANE=4,EGRESS=2x": 3087.3810657759345,
+    "N_LANE=4,EGRESS=4x": 3087.3810657759345,
+    "N_LANE=4,EGRESS=8x": 3087.3810657759345,
+    "N_LANE=8,EGRESS=1x": 1000000.0,
+    "N_LANE=8,EGRESS=2x": 1000000.0,
+    "N_LANE=8,EGRESS=4x": 1000000.0,
+    "N_LANE=8,EGRESS=8x": 1000000.0,
+    "N_LANE=16,EGRESS=1x": 1000000.0,
+    "N_LANE=16,EGRESS=2x": 1000000.0,
+    "N_LANE=16,EGRESS=4x": 1000000.0,
+    "N_LANE=16,EGRESS=8x": 1000000.0
+  },
+  "artifacts": {
+    "opq_loss_surface_csv": "/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/REPORT/math/queueing_model/opq_full_feature_loss_surface_grid.csv",
+    "ready_burst_ratio_csv": "/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/REPORT/math/queueing_model/opq_vs_time_merger_ready_burst_ratio_grid.csv",
+    "feature_scaling_csv": "/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/REPORT/math/queueing_model/opq_vs_time_merger_feature_scaling_grid.csv",
+    "opq_loss_surface_png": "/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/REPORT/math/queueing_model/opq_full_feature_loss_surface.png",
+    "opq_loss_surface_svg": "/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/REPORT/math/queueing_model/opq_full_feature_loss_surface.svg",
+    "ready_burst_ratio_png": "/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/REPORT/math/queueing_model/opq_vs_time_merger_ready_burst_ratio.png",
+    "ready_burst_ratio_svg": "/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/REPORT/math/queueing_model/opq_vs_time_merger_ready_burst_ratio.svg",
+    "feature_scaling_png": "/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/REPORT/math/queueing_model/opq_vs_time_merger_feature_scaling.png",
+    "feature_scaling_svg": "/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/REPORT/math/queueing_model/opq_vs_time_merger_feature_scaling.svg"
+  }
+}

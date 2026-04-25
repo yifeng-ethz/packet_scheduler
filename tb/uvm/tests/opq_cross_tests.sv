@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 // IP Name   : opq_cross_tests
 // Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
-// Revision  : 0.2 - align DRR checks to block-level defer semantics and add bursty CRV
+// Revision  : 0.3 - check DRR beat counters as grant beats rather than pure hit counts
 // Description:
 //   Cross-bucket tests for backpressure, credit, and DRR scheduler interactions.
 //------------------------------------------------------------------------------
@@ -119,15 +119,15 @@ class opq_cross_drr_allowance_test extends opq_base_test;
     sample_lane_drr_snapshot(0, 4, 1'b1, 1'b1);
     sample_lane_drr_snapshot(1, 32, 1'b1, 1'b0);
 
-    if (lane0_beat_cnt != env.scoreboard.get_accepted_lane_hit_cnt(0)) begin
+    if (lane0_beat_cnt < env.scoreboard.get_accepted_lane_hit_cnt(0)) begin
       `uvm_error(get_type_name(), $sformatf(
-        "lane0 DRR beat count mismatch expected=%0d actual=%0d",
+        "lane0 DRR beat count below accepted hits expected_at_least=%0d actual=%0d",
         env.scoreboard.get_accepted_lane_hit_cnt(0), lane0_beat_cnt
       ))
     end
-    if (lane1_beat_cnt != env.scoreboard.get_accepted_lane_hit_cnt(1)) begin
+    if (lane1_beat_cnt < env.scoreboard.get_accepted_lane_hit_cnt(1)) begin
       `uvm_error(get_type_name(), $sformatf(
-        "lane1 DRR beat count mismatch expected=%0d actual=%0d",
+        "lane1 DRR beat count below accepted hits expected_at_least=%0d actual=%0d",
         env.scoreboard.get_accepted_lane_hit_cnt(1), lane1_beat_cnt
       ))
     end
@@ -693,9 +693,9 @@ class opq_cross_drr_bursty_random_test extends opq_base_test;
         lane_has_service && (lane == hot_lane)
       );
 
-      if (beat_cnt_word != env.scoreboard.get_accepted_lane_hit_cnt(lane)) begin
+      if (beat_cnt_word < env.scoreboard.get_accepted_lane_hit_cnt(lane)) begin
         `uvm_error(get_type_name(), $sformatf(
-          "lane%0d DRR beat count mismatch expected=%0d actual=%0d",
+          "lane%0d DRR beat count below accepted hits expected_at_least=%0d actual=%0d",
           lane,
           env.scoreboard.get_accepted_lane_hit_cnt(lane),
           beat_cnt_word

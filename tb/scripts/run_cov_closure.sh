@@ -41,14 +41,15 @@ fi
 rm -rf "${COV_DIR}"
 mkdir -p "${COV_DIR}"
 
-OPQ_N_SHD=256 OPQ_TICKET_FIFO_DEPTH=512 COV_ENABLE=1 DUT_IMPL="${DUT_IMPL:-native_sv}" \
+env -u OPQ_TICKET_FIFO_DEPTH \
+  OPQ_N_LANE=4 OPQ_N_SHD=128 COV_ENABLE=1 VSIM_ACC= DUT_IMPL="${DUT_IMPL:-native_sv}" \
   "${SCRIPT_DIR}/run_uvm.sh" "${TESTS[@]}"
-OPQ_N_SHD_LIST=128,512 COV_ENABLE=1 DUT_IMPL="${DUT_IMPL:-native_sv}" "${SCRIPT_DIR}/run_param.sh" \
+OPQ_N_LANE=4 OPQ_N_SHD_LIST=64,128,256 COV_ENABLE=1 VSIM_ACC= DUT_IMPL="${DUT_IMPL:-native_sv}" "${SCRIPT_DIR}/run_param.sh" \
   opq_basic_smoke_test \
   opq_basic_ts_boundary_test \
   opq_edge_max_hits_test
 
-mapfile -t UCDBS < <(find "${COV_DIR}" -maxdepth 1 -type f -name '*.ucdb' | sort)
+mapfile -t UCDBS < <(find "${COV_DIR}" -maxdepth 1 -type f -name '*.ucdb' ! -name '*_nshd*.ucdb' ! -name 'opq_merged.ucdb' | sort)
 if [[ "${#UCDBS[@]}" -eq 0 ]]; then
   echo "No UCDB files produced under ${COV_DIR}" >&2
   exit 1

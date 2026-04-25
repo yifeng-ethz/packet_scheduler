@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 // IP Name   : opq_hit3_contract_sva
 // Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
-// Revision  : 0.4 - validate emitted frame header counts against body content
+// Revision  : 0.5 - allow same-timestamp emitted frames while catching regressions
 // Description:
 //   Checks the active egress frame/subheader/hit contract used by the UVM
 //   scoreboard: an implicit 5-word frame header, then K237 subheaders, hit
@@ -125,8 +125,11 @@ module opq_hit3_contract_sva (
               assert (data[15:0] > last_closed_frame_pkg_cnt)
                 else $error("[opq_hit3_contract] frame pkg_cnt did not increase: prev=%0d new=%0d",
                   last_closed_frame_pkg_cnt, data[15:0]);
-              assert ({frame_ts_hi32, data[31:16]} > last_closed_frame_ts)
-                else $error("[opq_hit3_contract] frame timestamp did not increase: prev=0x%012h new=0x%012h",
+              // Multiple emitted frames can legally carry the same frame
+              // timestamp when continuous aggregate traffic is split across
+              // egress frames. The global order contract is nondecreasing.
+              assert ({frame_ts_hi32, data[31:16]} >= last_closed_frame_ts)
+                else $error("[opq_hit3_contract] frame timestamp regressed: prev=0x%012h new=0x%012h",
                   last_closed_frame_ts, {frame_ts_hi32, data[31:16]});
             end
           end

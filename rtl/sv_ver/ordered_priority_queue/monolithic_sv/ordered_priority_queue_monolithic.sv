@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_sv
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.56
-// Date    : 20260421
-// Change  : Preserve frame serial on every ticket/drop debug path so allocator tail/drop state and scoreboard identity stay aligned across timestamp alias windows
+// Version : 26.4.3
+// Date    : 20260425
+// Change  : Pipeline ticket FIFO read addresses for timing
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_sv #(
@@ -42,7 +42,11 @@ module ordered_priority_queue_monolithic_sv #(
   parameter int unsigned HANDLE_FIFO_ADDR_WIDTH = $clog2(HANDLE_FIFO_DEPTH),
   parameter int unsigned PAGE_RAM_DATA_WIDTH = 40,
   parameter int unsigned PAGE_RAM_ADDR_WIDTH = $clog2(PAGE_RAM_DEPTH),
-  parameter int unsigned HANDLE_LENGTH = LANE_FIFO_ADDR_WIDTH + PAGE_RAM_ADDR_WIDTH + MAX_PKT_LENGTH_BITS
+  parameter int unsigned HANDLE_LENGTH = LANE_FIFO_ADDR_WIDTH + PAGE_RAM_ADDR_WIDTH + MAX_PKT_LENGTH_BITS,
+  parameter int unsigned EGRESS_SYMBOL_WIDTH = INGRESS_DATA_WIDTH + INGRESS_DATAK_WIDTH,
+  parameter int unsigned EGRESS_SYMBOLS_PER_BEAT = PAGE_RAM_RD_WIDTH / EGRESS_SYMBOL_WIDTH,
+  parameter int unsigned EGRESS_EMPTY_WIDTH =
+    (EGRESS_SYMBOLS_PER_BEAT <= 1) ? 1 : $clog2(EGRESS_SYMBOLS_PER_BEAT)
 ) (
   input  logic [N_LANE-1:0][INGRESS_DATA_WIDTH+INGRESS_DATAK_WIDTH-1:0] asi_ingress_data,
   input  logic [N_LANE-1:0]                                              asi_ingress_valid,
@@ -56,6 +60,7 @@ module ordered_priority_queue_monolithic_sv #(
   output logic                                                           aso_egress_startofpacket,
   output logic                                                           aso_egress_endofpacket,
   output logic [2:0]                                                     aso_egress_error,
+  output logic [EGRESS_EMPTY_WIDTH-1:0]                                  aso_egress_empty,
   input  logic [N_LANE-1:0][9:0]                                         cfg_drr_allowance_i,
   input  logic [N_LANE-1:0]                                              cfg_drr_allowance_reload_i,
   input  logic                                                           d_clk,
@@ -74,10 +79,18 @@ module ordered_priority_queue_monolithic_sv #(
   // mapper and tiled page-ram hookup are swapped over and regression-backed.
   // ----------------------------------------------------------------------------
 
+  localparam int unsigned MAX_SHR_CNT_BITS =
+    $clog2(N_SHD * N_LANE) + 1;
+  localparam int unsigned MAX_HIT_CNT_BITS =
+    (($clog2(N_SHD * N_HIT) + 1) < 16) ? ($clog2(N_SHD * N_HIT) + 1) : 16;
+  localparam int unsigned TICKET_FIFO_RAW_DELAY = 3;
+
   logic [N_LANE-1:0][TICKET_FIFO_DATA_WIDTH-1:0] ingress_ticket_wdata;
+  logic [N_LANE-1:0][TICKET_FIFO_ADDR_WIDTH-1:0] ingress_ticket_waddr;
   logic [N_LANE-1:0][TICKET_FIFO_ADDR_WIDTH-1:0] ingress_ticket_wptr;
   logic [N_LANE-1:0] ingress_ticket_we;
   logic [N_LANE-1:0][LANE_FIFO_WIDTH-1:0] ingress_lane_wdata;
+  logic [N_LANE-1:0][LANE_FIFO_ADDR_WIDTH-1:0] ingress_lane_waddr;
   logic [N_LANE-1:0][LANE_FIFO_ADDR_WIDTH-1:0] ingress_lane_wptr;
   logic [N_LANE-1:0] ingress_lane_we;
   logic [N_LANE-1:0][47:0] ingress_running_ts_dbg;
@@ -109,6 +122,7 @@ module ordered_priority_queue_monolithic_sv #(
   logic [N_LANE-1:0] ticket_credit_update_valid;
   logic [N_LANE-1:0][TICKET_FIFO_DATA_WIDTH-1:0] ticket_fifos_rd_data;
   logic [N_LANE-1:0][TICKET_FIFO_ADDR_WIDTH-1:0] ticket_fifos_rd_addr;
+  logic [N_LANE-1:0][TICKET_FIFO_ADDR_WIDTH-1:0] ticket_fifos_rd_addr_pipe_q;
   logic [N_LANE-1:0][LANE_FIFO_WIDTH-1:0] lane_fifos_rd_data;
   logic [N_LANE-1:0][LANE_FIFO_ADDR_WIDTH-1:0] lane_fifos_rd_addr;
   logic [N_LANE-1:0][HANDLE_LENGTH:0] handle_fifos_rd_data;
@@ -133,14 +147,14 @@ module ordered_priority_queue_monolithic_sv #(
   logic [2:0] write_meta_flow_d1_dbg;
   logic [PAGE_RAM_ADDR_WIDTH-1:0] frame_start_addr_dbg;
   logic [PAGE_RAM_ADDR_WIDTH-1:0] packet_complete_frame_start_addr_dbg;
-  logic [$clog2(N_SHD * N_LANE):0] packet_complete_shr_cnt_dbg;
-  logic [15:0] packet_complete_hit_cnt_dbg;
-  logic [N_LANE-1:0][$clog2(N_SHD * N_LANE):0] packet_complete_lane_shd_cnt_dbg;
-  logic [N_LANE-1:0][15:0] packet_complete_lane_hit_cnt_dbg;
-  logic [$clog2(N_SHD * N_LANE):0] frame_shr_cnt_this_dbg;
-  logic [15:0] frame_hit_cnt_this_dbg;
-  logic [N_LANE-1:0][$clog2(N_SHD * N_LANE):0] frame_lane_shd_cnt_this_dbg;
-  logic [N_LANE-1:0][15:0] frame_lane_hit_cnt_this_dbg;
+  logic [MAX_SHR_CNT_BITS-1:0] packet_complete_shr_cnt_dbg;
+  logic [MAX_HIT_CNT_BITS-1:0] packet_complete_hit_cnt_dbg;
+  logic [N_LANE-1:0][MAX_SHR_CNT_BITS-1:0] packet_complete_lane_shd_cnt_dbg;
+  logic [N_LANE-1:0][MAX_HIT_CNT_BITS-1:0] packet_complete_lane_hit_cnt_dbg;
+  logic [MAX_SHR_CNT_BITS-1:0] frame_shr_cnt_this_dbg;
+  logic [MAX_HIT_CNT_BITS-1:0] frame_hit_cnt_this_dbg;
+  logic [N_LANE-1:0][MAX_SHR_CNT_BITS-1:0] frame_lane_shd_cnt_this_dbg;
+  logic [N_LANE-1:0][MAX_HIT_CNT_BITS-1:0] frame_lane_hit_cnt_this_dbg;
   logic page_we_dbg;
   logic [PAGE_RAM_ADDR_WIDTH-1:0] page_waddr_dbg;
   logic [PAGE_RAM_DATA_WIDTH-1:0] page_wdata_dbg;
@@ -149,6 +163,13 @@ module ordered_priority_queue_monolithic_sv #(
   logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_wr_data_dbg;
   logic [PAGE_RAM_ADDR_WIDTH-1:0] page_ram_rd_addr_dbg;
   logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_rd_data_dbg;
+  logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_rd_data_presenter_dbg;
+  logic [EGRESS_SYMBOL_WIDTH-1:0] presenter_egress_data;
+  logic presenter_egress_valid;
+  logic presenter_egress_ready;
+  logic presenter_egress_startofpacket;
+  logic presenter_egress_endofpacket;
+  logic [2:0] presenter_egress_error;
   logic presenter_resident_hold_dbg;
   logic presenter_resident_head_valid_dbg;
   logic [PAGE_RAM_ADDR_WIDTH-1:0] presenter_resident_head_addr_dbg;
@@ -161,22 +182,22 @@ module ordered_priority_queue_monolithic_sv #(
   logic packet_complete_presenter_dbg;
   logic [PAGE_RAM_ADDR_WIDTH-1:0] packet_complete_addr_presenter_delay_dbg [1:0];
   logic [PAGE_RAM_ADDR_WIDTH-1:0] packet_complete_addr_presenter_dbg;
-  logic [$clog2(N_SHD * N_LANE):0] packet_complete_shr_cnt_presenter_delay_dbg [1:0];
-  logic [15:0] packet_complete_hit_cnt_presenter_delay_dbg [1:0];
-  logic [N_LANE-1:0][$clog2(N_SHD * N_LANE):0] packet_complete_lane_shd_cnt_presenter_delay_dbg [1:0];
-  logic [N_LANE-1:0][15:0] packet_complete_lane_hit_cnt_presenter_delay_dbg [1:0];
-  logic [$clog2(N_SHD * N_LANE):0] packet_complete_shr_cnt_presenter_new_frame_dbg;
-  logic [15:0] packet_complete_hit_cnt_presenter_new_frame_dbg;
-  logic [N_LANE-1:0][$clog2(N_SHD * N_LANE):0] packet_complete_lane_shd_cnt_presenter_dbg;
-  logic [N_LANE-1:0][15:0] packet_complete_lane_hit_cnt_presenter_dbg;
-  logic [$clog2(N_SHD * N_LANE):0] packet_complete_shr_cnt_presenter_dbg;
-  logic [15:0] packet_complete_hit_cnt_presenter_dbg;
+  logic [MAX_SHR_CNT_BITS-1:0] packet_complete_shr_cnt_presenter_delay_dbg [1:0];
+  logic [MAX_HIT_CNT_BITS-1:0] packet_complete_hit_cnt_presenter_delay_dbg [1:0];
+  logic [N_LANE-1:0][MAX_SHR_CNT_BITS-1:0] packet_complete_lane_shd_cnt_presenter_delay_dbg [1:0];
+  logic [N_LANE-1:0][MAX_HIT_CNT_BITS-1:0] packet_complete_lane_hit_cnt_presenter_delay_dbg [1:0];
+  logic [MAX_SHR_CNT_BITS-1:0] packet_complete_shr_cnt_presenter_new_frame_dbg;
+  logic [MAX_HIT_CNT_BITS-1:0] packet_complete_hit_cnt_presenter_new_frame_dbg;
+  logic [N_LANE-1:0][MAX_SHR_CNT_BITS-1:0] packet_complete_lane_shd_cnt_presenter_dbg;
+  logic [N_LANE-1:0][MAX_HIT_CNT_BITS-1:0] packet_complete_lane_hit_cnt_presenter_dbg;
+  logic [MAX_SHR_CNT_BITS-1:0] packet_complete_shr_cnt_presenter_dbg;
+  logic [MAX_HIT_CNT_BITS-1:0] packet_complete_hit_cnt_presenter_dbg;
   logic ft_drop_valid_dbg;
   logic [31:0] ft_drop_hdr_cnt_dbg;
   logic [31:0] ft_drop_shd_cnt_dbg;
   logic [31:0] ft_drop_hit_cnt_dbg;
-  logic [N_LANE-1:0][$clog2(N_SHD * N_LANE):0] ft_drop_lane_shd_cnt_dbg;
-  logic [N_LANE-1:0][15:0] ft_drop_lane_hit_cnt_dbg;
+  logic [N_LANE-1:0][MAX_SHR_CNT_BITS-1:0] ft_drop_lane_shd_cnt_dbg;
+  logic [N_LANE-1:0][MAX_HIT_CNT_BITS-1:0] ft_drop_lane_hit_cnt_dbg;
   logic allocator_resident_protect_valid_dbg;
   logic [PAGE_RAM_ADDR_WIDTH-1:0] allocator_resident_protect_addr_dbg;
   logic [PAGE_RAM_ADDR_WIDTH-1:0] allocator_resident_protect_len_dbg;
@@ -198,14 +219,24 @@ module ordered_priority_queue_monolithic_sv #(
     end
   end
 
-  for (genvar m = 0; m < N_LANE; m++) begin : g_storage
+  always_ff @(posedge d_clk) begin : proc_ticket_fifo_read_addr_pipe
+    if (d_reset) begin
+      ticket_fifos_rd_addr_pipe_q <= '0;
+    end else begin
+      ticket_fifos_rd_addr_pipe_q <= ticket_fifos_rd_addr;
+    end
+  end
+
+  genvar m;
+  generate
+    for (m = 0; m < N_LANE; m = m + 1) begin : g_storage
     ticket_fifo #(
       .DATA_WIDTH(TICKET_FIFO_DATA_WIDTH),
       .ADDR_WIDTH(TICKET_FIFO_ADDR_WIDTH)
     ) ticket_fifo_i (
       .data(ingress_ticket_wdata[m]),
-      .read_addr(ticket_fifos_rd_addr[m]),
-      .write_addr(ingress_ticket_wptr[m] - 1'b1),
+      .read_addr(ticket_fifos_rd_addr_pipe_q[m]),
+      .write_addr(ingress_ticket_waddr[m]),
       .we(ingress_ticket_we[m]),
       .clk(d_clk),
       .q(ticket_fifos_rd_data[m])
@@ -217,7 +248,7 @@ module ordered_priority_queue_monolithic_sv #(
     ) lane_fifo_i (
       .data(ingress_lane_wdata[m]),
       .read_addr(lane_fifos_rd_addr[m]),
-      .write_addr(ingress_lane_wptr[m] - 1'b1),
+      .write_addr(ingress_lane_waddr[m]),
       .we(ingress_lane_we[m]),
       .clk(d_clk),
       .q(lane_fifos_rd_data[m])
@@ -234,9 +265,12 @@ module ordered_priority_queue_monolithic_sv #(
       .clk(d_clk),
       .q(handle_fifos_rd_data[m])
     );
-  end
+    end
+  endgenerate
 
-  for (genvar g = 0; g < N_LANE; g++) begin : g_ingress_parser
+  genvar g;
+  generate
+    for (g = 0; g < N_LANE; g = g + 1) begin : g_ingress_parser
     ordered_priority_queue_monolithic_ingress_parser #(
       .INGRESS_DATA_WIDTH(INGRESS_DATA_WIDTH),
       .INGRESS_DATAK_WIDTH(INGRESS_DATAK_WIDTH),
@@ -260,9 +294,11 @@ module ordered_priority_queue_monolithic_sv #(
       .ticket_credit_update(ticket_credit_update[g]),
       .ticket_credit_update_valid(ticket_credit_update_valid[g]),
       .ticket_wdata(ingress_ticket_wdata[g]),
+      .ticket_waddr(ingress_ticket_waddr[g]),
       .ticket_wptr(ingress_ticket_wptr[g]),
       .ticket_we(ingress_ticket_we[g]),
       .lane_wdata(ingress_lane_wdata[g]),
+      .lane_waddr(ingress_lane_waddr[g]),
       .lane_wptr(ingress_lane_wptr[g]),
       .lane_we(ingress_lane_we[g]),
       .running_ts_dbg(ingress_running_ts_dbg[g]),
@@ -287,7 +323,8 @@ module ordered_priority_queue_monolithic_sv #(
       .d_clk(d_clk),
       .d_reset(d_reset)
     );
-  end
+    end
+  endgenerate
 
   ordered_priority_queue_monolithic_page_allocator #(
     .N_LANE(N_LANE),
@@ -304,7 +341,8 @@ module ordered_priority_queue_monolithic_sv #(
     .TRL_SIZE(TRL_SIZE),
     .FRAME_SERIAL_SIZE(FRAME_SERIAL_SIZE),
     .FRAME_SUBH_CNT_SIZE(FRAME_SUBH_CNT_SIZE),
-    .FRAME_HIT_CNT_SIZE(FRAME_HIT_CNT_SIZE)
+    .FRAME_HIT_CNT_SIZE(FRAME_HIT_CNT_SIZE),
+    .FIFO_RAW_DELAY(TICKET_FIFO_RAW_DELAY)
   ) page_allocator_i (
     .ingress_ticket_wptr(ingress_ticket_wptr),
     .ticket_fifos_rd_data_i(ticket_fifos_rd_data),
@@ -413,6 +451,18 @@ module ordered_priority_queue_monolithic_sv #(
     .clk(d_clk),
     .q(page_ram_rd_data_dbg)
   );
+
+`ifndef OPQ_OSS_FORMAL
+  always_ff @(posedge d_clk) begin : proc_presenter_page_ram_read_pipe
+    if (d_reset) begin
+      page_ram_rd_data_presenter_dbg <= '0;
+    end else begin
+      page_ram_rd_data_presenter_dbg <= page_ram_rd_data_dbg;
+    end
+  end
+`else
+  assign page_ram_rd_data_presenter_dbg = page_ram_rd_data_dbg;
+`endif
 
   always_ff @(posedge d_clk) begin : proc_presenter_packet_complete_delay
     if (d_reset) begin
@@ -586,7 +636,7 @@ module ordered_priority_queue_monolithic_sv #(
   ordered_priority_queue_monolithic_basic_presenter #(
     .N_LANE(N_LANE),
     .PAGE_RAM_DEPTH(PAGE_RAM_DEPTH),
-    .PAGE_RAM_RD_WIDTH(PAGE_RAM_RD_WIDTH),
+    .PAGE_RAM_RD_WIDTH(EGRESS_SYMBOL_WIDTH),
     .PAGE_RAM_DATA_WIDTH(PAGE_RAM_DATA_WIDTH),
     .PAGE_RAM_ADDR_WIDTH(PAGE_RAM_ADDR_WIDTH),
     .N_SHD(N_SHD),
@@ -603,7 +653,7 @@ module ordered_priority_queue_monolithic_sv #(
     .packet_complete_hit_cnt_i(packet_complete_hit_cnt_presenter_dbg),
     .payload_commit_idle_i(payload_commit_idle_dbg),
     .page_ram_rd_addr_o(page_ram_rd_addr_dbg),
-    .page_ram_rd_data_i(page_ram_rd_data_dbg),
+    .page_ram_rd_data_i(page_ram_rd_data_presenter_dbg),
     .resident_backpressure_hold_o(presenter_resident_hold_dbg),
     .resident_head_valid_o(presenter_resident_head_valid_dbg),
     .resident_head_addr_o(presenter_resident_head_addr_dbg),
@@ -616,12 +666,35 @@ module ordered_priority_queue_monolithic_sv #(
     .ft_drop_hit_cnt_o(ft_drop_hit_cnt_dbg),
     .ft_drop_lane_shd_cnt_o(ft_drop_lane_shd_cnt_dbg),
     .ft_drop_lane_hit_cnt_o(ft_drop_lane_hit_cnt_dbg),
+    .aso_egress_data(presenter_egress_data),
+    .aso_egress_valid(presenter_egress_valid),
+    .aso_egress_ready(presenter_egress_ready),
+    .aso_egress_startofpacket(presenter_egress_startofpacket),
+    .aso_egress_endofpacket(presenter_egress_endofpacket),
+    .aso_egress_error(presenter_egress_error),
+    .d_clk(d_clk),
+    .d_reset(d_reset)
+  );
+
+  ordered_priority_queue_monolithic_egress_packer #(
+    .SYMBOL_WIDTH(EGRESS_SYMBOL_WIDTH),
+    .OUT_WIDTH(PAGE_RAM_RD_WIDTH),
+    .SYMBOLS_PER_BEAT(EGRESS_SYMBOLS_PER_BEAT),
+    .EMPTY_WIDTH(EGRESS_EMPTY_WIDTH)
+  ) egress_packer_i (
+    .symbol_data_i(presenter_egress_data),
+    .symbol_valid_i(presenter_egress_valid),
+    .symbol_ready_o(presenter_egress_ready),
+    .symbol_startofpacket_i(presenter_egress_startofpacket),
+    .symbol_endofpacket_i(presenter_egress_endofpacket),
+    .symbol_error_i(presenter_egress_error),
     .aso_egress_data(aso_egress_data),
     .aso_egress_valid(aso_egress_valid),
     .aso_egress_ready(aso_egress_ready),
     .aso_egress_startofpacket(aso_egress_startofpacket),
     .aso_egress_endofpacket(aso_egress_endofpacket),
     .aso_egress_error(aso_egress_error),
+    .aso_egress_empty(aso_egress_empty),
     .d_clk(d_clk),
     .d_reset(d_reset)
   );
@@ -631,6 +704,11 @@ module ordered_priority_queue_monolithic_sv #(
       else $warning("PAGE RAM ADDR NON-DEFAULT (16 bits expected)");
     assert ($clog2(N_SHD * N_HIT) + 1 <= 16)
       else $warning("N hits counter will likely overflow the 16-bit frame hit counter");
+    assert (PAGE_RAM_RD_WIDTH % EGRESS_SYMBOL_WIDTH == 0)
+      else $fatal(1, "PAGE_RAM_RD_WIDTH must be an integer multiple of the OPQ symbol width");
+    assert ((EGRESS_SYMBOLS_PER_BEAT == 1) || (EGRESS_SYMBOLS_PER_BEAT == 2) ||
+            (EGRESS_SYMBOLS_PER_BEAT == 4) || (EGRESS_SYMBOLS_PER_BEAT == 8))
+      else $fatal(1, "PAGE_RAM_RD_WIDTH must select 1/2/4/8 OPQ symbols per egress beat");
   end
 
 endmodule

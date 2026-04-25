@@ -1,0 +1,24 @@
+[tasks]
+bmc
+cover
+
+[options]
+bmc: mode bmc
+bmc: depth 24
+bmc: wait on
+cover: mode cover
+cover: depth 24
+cover: wait on
+
+[engines]
+bmc: smtbmc bitwuzla
+cover: smtbmc bitwuzla
+
+[script]
+read_verilog -formal -sv -DFORMAL rtl/old_time_merger_ref.sv
+read_verilog -formal -sv formal/old_time_merger_ref_formal_tb.sv
+prep -top old_time_merger_ref_formal_tb
+
+[files]
+rtl/old_time_merger_ref.sv ../rtl/old_time_merger_ref.sv
+formal/old_time_merger_ref_formal_tb.sv old_time_merger_ref_formal_tb.sv

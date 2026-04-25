@@ -21,18 +21,36 @@ package opq_pkg;
 `define OPQ_N_SHD 256
 `endif
 `ifndef OPQ_TICKET_FIFO_DEPTH
-`define OPQ_TICKET_FIFO_DEPTH 256
+`define OPQ_TICKET_FIFO_DEPTH 8192
 `endif
 `ifndef OPQ_N_LANE
 `define OPQ_N_LANE 2
 `endif
+`ifndef OPQ_LANE_FIFO_DEPTH
+`define OPQ_LANE_FIFO_DEPTH 1024
+`endif
+`ifndef OPQ_CHANNEL_WIDTH
+`define OPQ_CHANNEL_WIDTH 2
+`endif
+`ifndef OPQ_PAGE_RAM_RD_WIDTH
+`define OPQ_PAGE_RAM_RD_WIDTH 36
+`endif
+`ifndef OPQ_EGRESS_SYMBOLS_PER_BEAT
+`define OPQ_EGRESS_SYMBOLS_PER_BEAT 1
+`endif
+`ifndef OPQ_EGRESS_EMPTY_WIDTH
+`define OPQ_EGRESS_EMPTY_WIDTH 1
+`endif
 
   localparam int OPQ_N_LANE = `OPQ_N_LANE;
   localparam int OPQ_INGRESS_WIDTH = 36;
-  localparam int OPQ_CHANNEL_WIDTH = 2;
-  localparam int OPQ_PAGE_RAM_RD_WIDTH = 36;
+  localparam int OPQ_CHANNEL_WIDTH = `OPQ_CHANNEL_WIDTH;
+  localparam int OPQ_PAGE_RAM_RD_WIDTH = `OPQ_PAGE_RAM_RD_WIDTH;
+  localparam int OPQ_EGRESS_SYMBOL_WIDTH = OPQ_INGRESS_WIDTH;
+  localparam int OPQ_EGRESS_SYMBOLS_PER_BEAT = `OPQ_EGRESS_SYMBOLS_PER_BEAT;
+  localparam int OPQ_EGRESS_EMPTY_WIDTH = `OPQ_EGRESS_EMPTY_WIDTH;
   localparam int OPQ_PAGE_RAM_DEPTH = `OPQ_PAGE_RAM_DEPTH;
-  localparam int OPQ_LANE_FIFO_DEPTH = 1024;
+  localparam int OPQ_LANE_FIFO_DEPTH = `OPQ_LANE_FIFO_DEPTH;
   localparam int OPQ_TICKET_FIFO_DEPTH = `OPQ_TICKET_FIFO_DEPTH;
   localparam int OPQ_HANDLE_FIFO_DEPTH = 64;
   localparam int OPQ_LANE_FIFO_MAX_CREDIT = OPQ_LANE_FIFO_DEPTH - 2;
@@ -148,6 +166,10 @@ package opq_pkg;
     return add_debug_ts_offset(frame_ts[30:0], OPQ_VIRTUAL_FEB_HEADER_LATENCY_CYCLES);
   endfunction
 
+  function automatic bit [OPQ_CHANNEL_WIDTH-1:0] lane_to_channel(int unsigned lane_id);
+    return lane_id[OPQ_CHANNEL_WIDTH-1:0];
+  endfunction
+
   function automatic bit [31:0] make_trailer();
     bit [31:0] data32;
     data32 = '0;
@@ -197,7 +219,7 @@ package opq_pkg;
 
   class opq_frame_item extends uvm_sequence_item;
     rand int unsigned lane_id;
-    rand bit [1:0] channel;
+    rand bit [OPQ_CHANNEL_WIDTH-1:0] channel;
     rand bit [47:0] frame_ts;
     rand bit [15:0] pkg_cnt;
     rand bit [5:0] dt_type;
@@ -218,7 +240,7 @@ package opq_pkg;
     opq_subheader_desc subheaders[$];
 
     constraint c_lane_range { lane_id < OPQ_N_LANE; }
-    constraint c_channel_match { channel == lane_id[1:0]; }
+    constraint c_channel_match { channel == lane_to_channel(lane_id); }
 
     `uvm_object_utils_begin(opq_frame_item)
       `uvm_field_int(lane_id, UVM_DEFAULT)

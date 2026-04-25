@@ -1,8 +1,8 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_ingress_parser
-// Version : 26.3.59
-// Date    : 20260421
-// Change  : Keep localized cover checks visible to sim/formal while hiding them from Quartus synthesis parsing
+// Version : 26.4.2
+// Date    : 20260425
+// Change  : Export registered RAM write addresses to remove wrapper subtractors
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_ingress_parser #(
@@ -40,9 +40,11 @@ module ordered_priority_queue_monolithic_ingress_parser #(
   input  logic [TICKET_FIFO_ADDR_WIDTH-1:0]                 ticket_credit_update,
   input  logic                                              ticket_credit_update_valid,
   output logic [TICKET_FIFO_DATA_WIDTH-1:0]                 ticket_wdata,
+  output logic [TICKET_FIFO_ADDR_WIDTH-1:0]                 ticket_waddr,
   output logic [TICKET_FIFO_ADDR_WIDTH-1:0]                 ticket_wptr,
   output logic                                              ticket_we,
   output logic [LANE_FIFO_WIDTH-1:0]                        lane_wdata,
+  output logic [LANE_FIFO_ADDR_WIDTH-1:0]                   lane_waddr,
   output logic [LANE_FIFO_ADDR_WIDTH-1:0]                   lane_wptr,
   output logic                                              lane_we,
   output logic [47:0]                                       running_ts_dbg,
@@ -139,10 +141,12 @@ module ordered_priority_queue_monolithic_ingress_parser #(
   typedef struct packed {
     logic                  lane_we;
     lane_fifo_addr_t       lane_wptr;
+    lane_fifo_addr_t       lane_waddr;
     logic [LANE_FIFO_WIDTH-1:0] lane_wdata;
     lane_fifo_addr_t       lane_credit;
     logic                  ticket_we;
     ticket_fifo_addr_t     ticket_wptr;
+    ticket_fifo_addr_t     ticket_waddr;
     logic [TICKET_FIFO_DATA_WIDTH-1:0] ticket_wdata;
     ticket_fifo_addr_t     ticket_credit;
     logic [47:0]           running_ts;
@@ -258,9 +262,11 @@ module ordered_priority_queue_monolithic_ingress_parser #(
     ingress_parser_if_write_lane_data[38] = asi_ingress_error[0];
 
     ticket_wdata = ingress_parser.ticket_wdata;
+    ticket_waddr = ingress_parser.ticket_waddr;
     ticket_wptr = ingress_parser.ticket_wptr;
     ticket_we = ingress_parser.ticket_we;
     lane_wdata = ingress_parser.lane_wdata;
+    lane_waddr = ingress_parser.lane_waddr;
     lane_wptr = ingress_parser.lane_wptr;
     lane_we = ingress_parser.lane_we;
   running_ts_dbg = ingress_parser.running_ts;
@@ -348,7 +354,8 @@ module ordered_priority_queue_monolithic_ingress_parser #(
             ingress_parser.shd_len <= '0;
             ingress_parser.shd_decl_len <= ingress_parser_if_subheader_hit_cnt;
             ingress_parser.shd_seen_cnt <= '0;
-            if (int'(ingress_parser_if_subheader_hit_cnt) >= int'(ingress_parser.lane_credit)) begin
+            if ((ingress_parser_if_subheader_hit_cnt != '0) &&
+                (int'(ingress_parser_if_subheader_hit_cnt) >= int'(ingress_parser.lane_credit))) begin
               credit_drop_valid_o <= 1'b1;
               credit_drop_lane_o <= 1'b1;
               credit_drop_pkg_cnt_o <= ingress_parser.pkg_cnt;
@@ -377,6 +384,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
 `ifdef OPQ_OSS_FORMAL
               ticket_issue_dbg_oss <= 1'b1;
 `endif
+              ingress_parser.ticket_waddr <= ingress_parser.ticket_wptr;
               ingress_parser.ticket_wptr <= ingress_parser.ticket_wptr + TICKET_FIFO_ADDR_ONE_CONST;
               ingress_parser.ticket_wdata <= ingress_parser_if_write_ticket_data;
 `ifndef SYNTHESIS
@@ -456,6 +464,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
                 end else begin
                   ingress_parser.ticket_credit <= ingress_parser.ticket_credit - TICKET_FIFO_ADDR_ONE_CONST;
                 end
+                ingress_parser.ticket_waddr <= ingress_parser.ticket_wptr;
                 ingress_parser.ticket_wptr <= ingress_parser.ticket_wptr + TICKET_FIFO_ADDR_ONE_CONST;
                 ingress_parser.ticket_wdata <= ingress_parser_if_write_ticket_data;
 `ifndef SYNTHESIS
@@ -512,7 +521,8 @@ module ordered_priority_queue_monolithic_ingress_parser #(
             ingress_parser.shd_len <= '0;
             ingress_parser.shd_decl_len <= ingress_parser_if_subheader_hit_cnt;
             ingress_parser.shd_seen_cnt <= '0;
-            if (int'(ingress_parser_if_subheader_hit_cnt) >= int'(ingress_parser.lane_credit)) begin
+            if ((ingress_parser_if_subheader_hit_cnt != '0) &&
+                (int'(ingress_parser_if_subheader_hit_cnt) >= int'(ingress_parser.lane_credit))) begin
               credit_drop_valid_o <= 1'b1;
               credit_drop_lane_o <= 1'b1;
               credit_drop_pkg_cnt_o <= ingress_parser.pkg_cnt;
@@ -541,6 +551,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
 `ifdef OPQ_OSS_FORMAL
               ticket_issue_dbg_oss <= 1'b1;
 `endif
+              ingress_parser.ticket_waddr <= ingress_parser.ticket_wptr;
               ingress_parser.ticket_wptr <= ingress_parser.ticket_wptr + TICKET_FIFO_ADDR_ONE_CONST;
               ingress_parser.ticket_wdata <= ingress_parser_if_write_ticket_data;
 `ifndef SYNTHESIS
@@ -581,6 +592,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
       INGRESS_PARSER_WR_HITS: begin
         if (hit_accept_v) begin
           ingress_parser.lane_wdata <= ingress_parser_if_write_lane_data;
+          ingress_parser.lane_waddr <= ingress_parser.lane_wptr;
           ingress_parser.lane_wptr <= ingress_parser.lane_wptr + LANE_FIFO_ADDR_ONE_CONST;
           ingress_parser.lane_we <= 1'b1;
 `ifdef OPQ_OSS_FORMAL
@@ -598,6 +610,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
 `ifdef OPQ_OSS_FORMAL
             ticket_issue_dbg_oss <= 1'b1;
 `endif
+            ingress_parser.ticket_waddr <= ingress_parser.ticket_wptr;
             ingress_parser.ticket_wptr <= ingress_parser.ticket_wptr + TICKET_FIFO_ADDR_ONE_CONST;
             ingress_parser.ticket_wdata <= ingress_parser_if_write_ticket_data;
 `ifndef SYNTHESIS

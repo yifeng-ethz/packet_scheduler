@@ -8,7 +8,7 @@ package require -exact altera_terp 1.0
 
 set_module_property NAME                             ordered_priority_queue
 set_module_property DISPLAY_NAME                     "Ordered Priority Queue"
-set_module_property VERSION                          26.3.66.0423
+set_module_property VERSION                          26.4.0.0424
 set_module_property DESCRIPTION                      "Ordered Priority Queue Mu3e IP Core"
 set_module_property GROUP                            "Mu3e Data Plane/Modules"
 set_module_property AUTHOR                           "Yifeng Wang (yifenwan@phys.ethz.ch)"
@@ -63,9 +63,15 @@ proc derive_lane_fifo_width {data_w datak_w} {
     return [expr {$data_w + $datak_w + 4}]
 }
 
-proc derive_ticket_fifo_depth {n_shd} {
+proc derive_ticket_fifo_depth {n_shd n_lane} {
+    set target_lane [expr {$n_shd * 32}]
+    set target_scan [expr {$n_shd * $n_lane * 2}]
+    set target $target_lane
+    if {$target_scan > $target} {
+        set target $target_scan
+    }
     set depth 256
-    while {$depth <= $n_shd} {
+    while {$depth < $target} {
         set depth [expr {$depth * 2}]
     }
     return $depth
@@ -76,8 +82,20 @@ proc derive_handle_fifo_depth {} {
 }
 
 proc derive_page_ram_rd_width {data_w datak_w} {
-    # Current packaged release keeps one ingress symbol per egress beat.
     return [expr {$data_w + $datak_w}]
+}
+
+proc legal_page_ram_rd_widths {data_w datak_w} {
+    set beat_w [expr {$data_w + $datak_w}]
+    return [list $beat_w [expr {$beat_w * 2}] [expr {$beat_w * 4}] [expr {$beat_w * 8}]]
+}
+
+proc derive_empty_width {symbols_per_beat} {
+    set empty_w [ceil_log2 $symbols_per_beat]
+    if {$empty_w < 1} {
+        set empty_w 1
+    }
+    return $empty_w
 }
 
 proc derive_hit_payload_width {data_w} {
@@ -96,9 +114,8 @@ proc sync_auto_parameters {} {
 
     set_parameter_value CHANNEL_WIDTH     [derive_channel_width $n_lane]
     set_parameter_value LANE_FIFO_WIDTH   [derive_lane_fifo_width $data_w $datak_w]
-    set_parameter_value TICKET_FIFO_DEPTH [derive_ticket_fifo_depth $n_shd]
+    set_parameter_value TICKET_FIFO_DEPTH [derive_ticket_fifo_depth $n_shd $n_lane]
     set_parameter_value HANDLE_FIFO_DEPTH [derive_handle_fifo_depth]
-    set_parameter_value PAGE_RAM_RD_WIDTH [derive_page_ram_rd_width $data_w $datak_w]
 }
 
 proc opq_define_preset {name desc params} {
@@ -268,8 +285,8 @@ proc opq_preset_summary_html {selected_preset} {
     variable OPQ_PRESET_ORDER
 
     set html "<html><b>Representative preset selector</b><br/>"
-    append html "Concrete presets intentionally pin <b>N_SHD=128</b> and the safe current <b>32 data + 4 datak</b> / <b>36-bit egress</b> contract. "
-    append html "Wider ingress / egress preset families are intentionally deferred because the current monolithic RTL still contains fixed 36/40-bit assumptions in the ingress parser and basic presenter path.<br/><br/>"
+    append html "Concrete presets intentionally pin <b>N_SHD=128</b> and the safe current <b>32 data + 4 datak</b> ingress contract. "
+    append html "PAGE_RAM_RD_WIDTH remains selectable as 1x/2x/4x/8x OPQ symbols per egress beat for the active wide-egress DV closure.<br/><br/>"
     append html "<table border=\"1\" cellpadding=\"3\" width=\"100%\">"
     append html "<tr><th>Preset</th><th>N_LANE</th><th>LANE_FIFO_DEPTH</th><th>Ingress</th><th>Egress</th><th>Description</th></tr>"
     foreach name $OPQ_PRESET_ORDER {
@@ -281,24 +298,24 @@ proc opq_preset_summary_html {selected_preset} {
         if {$name eq $selected_preset} {
             set preset_label "<b>$name</b>"
         }
-        append html "<tr><td>$preset_label</td><td>$n_lane</td><td>$lane_fifo_depth</td><td>32+4</td><td>36</td><td><small>$desc</small></td></tr>"
+        append html "<tr><td>$preset_label</td><td>$n_lane</td><td>$lane_fifo_depth</td><td>32+4</td><td>36/72/144/288</td><td><small>$desc</small></td></tr>"
     }
     append html "</table><br/><b>CUSTOM</b> leaves the individual parameters editable; the named presets are representative starting points rather than a signoff claim on the full matrix space.</html>"
     return $html
 }
 
 # ────────────────────────────────────────────────────────────────────────────
-# Identity constants — packaged 2026-04-20
+# Identity constants — packaged 2026-04-24
 # ────────────────────────────────────────────────────────────────────────────
 # UID = ASCII "OPQM" (Ordered Priority Queue, Monolithic) = 0x4F50514D
 set IP_UID_DEFAULT_CONST        1330663757
 set VERSION_MAJOR_DEFAULT_CONST 26
-set VERSION_MINOR_DEFAULT_CONST 3
-set VERSION_PATCH_DEFAULT_CONST 29
-set BUILD_DEFAULT_CONST         420
-set VERSION_DATE_DEFAULT_CONST  20260421
+set VERSION_MINOR_DEFAULT_CONST 4
+set VERSION_PATCH_DEFAULT_CONST 0
+set BUILD_DEFAULT_CONST         424
+set VERSION_DATE_DEFAULT_CONST  20260424
 # 32-bit packaged provenance stamp for this release family
-set VERSION_GIT_DEFAULT_CONST   2897562749
+set VERSION_GIT_DEFAULT_CONST   36303022
 set INSTANCE_ID_DEFAULT_CONST   0
 set OPQ_VERSION_STRING          [format "%d.%d.%d.%04d" \
     $VERSION_MAJOR_DEFAULT_CONST \
@@ -414,10 +431,7 @@ proc compute_derived_values {} {
     if {$ingress_beat_w > 0 && $page_ram_rd_w >= $ingress_beat_w} {
         set symbols_per_beat [expr {$page_ram_rd_w / $ingress_beat_w}]
     }
-    set empty_w 0
-    if {$symbols_per_beat > 1} {
-        set empty_w [expr {int(ceil(log($symbols_per_beat) / log(2.0)))}]
-    }
+    set empty_w [derive_empty_width $symbols_per_beat]
 
     set lane_store_bits   [expr {$n_lane * $lane_fifo_d  * $lane_fifo_w}]
     set ticket_store_bits [expr {$n_lane * $ticket_fifo_d * 16}]
@@ -432,16 +446,16 @@ proc compute_derived_values {} {
     set_parameter_value EGRESS_EMPTY_WIDTH_DERIVED   $empty_w
 
     catch {
-        set_display_item_property sizing_html TEXT "<html><b>Derived storage and auto-sized knobs</b><br/>Ingress symbol: <b>${ingress_beat_w}</b> bits = data <b>${data_w}</b> + datak <b>${datak_w}</b><br/>CHANNEL_WIDTH auto = <b>${channel_w}</b> (compatibility floor of 2 bits, then grows with N_LANE)<br/>LANE_FIFO_WIDTH auto = <b>${lane_fifo_w}</b> bits = ingress symbol + sop/eop/hit_err/reserved<br/>TICKET_FIFO_DEPTH auto = <b>${ticket_fifo_d}</b> (smallest power-of-two above N_SHD, minimum 256)<br/>HANDLE_FIFO_DEPTH auto = <b>${handle_fifo_d}</b><br/>PAGE_RAM_RD_WIDTH auto = <b>${page_ram_rd_w}</b> bits in the current release (one ingress symbol per egress beat)<br/>Hit payload model: current packaged point = <b>${data_w}</b>-bit hit word with <b>${hit_payload_w}</b>-bit non-timestamp payload<br/><br/><b>Derived storage</b><br/>Lane FIFO storage: <b>${lane_store_bits}</b> bits (${n_lane} \u00d7 ${lane_fifo_d} \u00d7 ${lane_fifo_w})<br/>Ticket FIFO storage: <b>${ticket_store_bits}</b> bits<br/>Handle FIFO storage: <b>${handle_store_bits}</b> bits<br/>Page RAM storage: <b>${page_ram_bits}</b> bits (${page_ram_d} \u00d7 ${lane_fifo_w})<br/>Total on-chip memory: <b>${total_store_bits}</b> bits</html>"
+        set_display_item_property sizing_html TEXT "<html><b>Derived storage and auto-sized knobs</b><br/>Ingress symbol: <b>${ingress_beat_w}</b> bits = data <b>${data_w}</b> + datak <b>${datak_w}</b><br/>CHANNEL_WIDTH auto = <b>${channel_w}</b> (compatibility floor of 2 bits, then grows with N_LANE)<br/>LANE_FIFO_WIDTH auto = <b>${lane_fifo_w}</b> bits = ingress symbol + sop/eop/hit_err/reserved<br/>TICKET_FIFO_DEPTH auto = <b>${ticket_fifo_d}</b> (smallest power-of-two at or above max(32 \u00d7 N_SHD, 2 \u00d7 N_SHD \u00d7 N_LANE), minimum 256)<br/>HANDLE_FIFO_DEPTH auto = <b>${handle_fifo_d}</b><br/>PAGE_RAM_RD_WIDTH selected = <b>${page_ram_rd_w}</b> bits = <b>${symbols_per_beat}</b> OPQ symbol(s) per egress beat<br/>EGRESS_EMPTY_WIDTH derived = <b>${empty_w}</b><br/>Hit payload model: current packaged point = <b>${data_w}</b>-bit hit word with <b>${hit_payload_w}</b>-bit non-timestamp payload<br/><br/><b>Derived storage</b><br/>Lane FIFO storage: <b>${lane_store_bits}</b> bits (${n_lane} \u00d7 ${lane_fifo_d} \u00d7 ${lane_fifo_w})<br/>Ticket FIFO storage: <b>${ticket_store_bits}</b> bits<br/>Handle FIFO storage: <b>${handle_store_bits}</b> bits<br/>Page RAM storage: <b>${page_ram_bits}</b> bits (${page_ram_d} \u00d7 ${lane_fifo_w})<br/>Total on-chip memory: <b>${total_store_bits}</b> bits</html>"
     }
     catch {
         set_display_item_property packet_html TEXT "<html><b>Packet format</b><br/>Current packaged release uses a <b>${ingress_beat_w}</b>-bit symbol: datak[${ingress_beat_w}-1:${data_w}] + data[${data_w}-1:0].<br/><table border=\"1\" cellpadding=\"3\" width=\"100%\"><tr><th>Segment</th><th>Words</th><th>Marker</th><th>Current layout</th></tr><tr><td>Header preamble</td><td>1</td><td><b>K285</b> / 0xBC</td><td>datak=<b>0001</b>, data[31:26]=dt_type, data[23:8]=feb_id, data[7:0]=K285</td></tr><tr><td>Header payload</td><td>4</td><td>data</td><td>word1=frame_ts[47:16], word2=frame_ts[15:0]|pkg_cnt, word3=subheader_cnt|hit_cnt, word4=send_ts[30:0]</td></tr><tr><td>Subheader</td><td>1 each</td><td><b>K237</b> / 0xF7</td><td>datak=<b>0001</b>, data[31:24]=subheader_ts, data[15:8]=hit_cnt, data[7:0]=K237</td></tr><tr><td>Hit</td><td>1 each</td><td>data</td><td>datak=<b>0000</b>, data[31:0]=hit word. Current packaged point: 32-bit hit word with 24-bit non-timestamp payload.</td></tr><tr><td>Trailer</td><td>1</td><td><b>K284</b> / 0x9C</td><td>datak=<b>0001</b>, data[7:0]=K284</td></tr></table><br/><b>Packet limits</b><br/>TRACK_HEADER is fixed to <b>${track_header}</b> in this release.<br/>Subheaders per header packet: <b>${n_shd}</b><br/>Max hits per subheader: <b>${n_hit}</b><br/>Max hits per header packet: <b>${worst_case_hits_per_frame}</b> (worst case before <i>ingress parser</i> drop)</html>"
     }
     catch {
-        set_display_item_property throughput_html TEXT "<html><b>Expected throughput</b><br/>Aggregation mode: <b>${mode}</b><br/>Current packaged egress beat: <b>${page_ram_rd_w}</b> bits/cycle = <b>${symbols_per_beat}</b> ingress symbol per egress beat<br/>Per-lane ingress budget: <b>${ingress_beat_w}</b> bits/cycle at the shared data-path clock<br/>Lossless equal-load share guideline: the single egress symbol stream gives each lane roughly <b>1/${n_lane}</b> of the sustained symbol budget before packet-overhead effects.<br/>Block-mover scheduling: shared page-RAM write port is serviced by an <b>ordered block-level DRR arbiter</b> with software-tunable per-lane refill allowance.<br/>Backpressure: ingress lanes are <i>non-backlog</i> (drop-on-full inside the lane/ticket FIFOs); egress honours <code>ready</code>.<br/>Wide DMA pack ratios (4\u00d7 / 8\u00d7 / 16\u00d7 base beat with <code>empty</code>) are staged future work and are intentionally not exposed as legal points in this packaged release.</html>"
+        set_display_item_property throughput_html TEXT "<html><b>Expected throughput</b><br/>Aggregation mode: <b>${mode}</b><br/>Current packaged egress beat: <b>${page_ram_rd_w}</b> bits/cycle = <b>${symbols_per_beat}</b> OPQ ingress symbol(s) per egress beat<br/>Per-lane ingress budget: <b>${ingress_beat_w}</b> bits/cycle at the shared data-path clock<br/>Lossless equal-load share guideline: the selected egress pack ratio gives each lane roughly <b>${symbols_per_beat}/${n_lane}</b> of the sustained symbol budget before packet-overhead effects.<br/>Block-mover scheduling: shared page-RAM write port is serviced by an <b>ordered block-level DRR arbiter</b> with software-tunable per-lane refill allowance.<br/>Backpressure: ingress lanes are <i>non-backlog</i> (drop-on-full inside the lane/ticket FIFOs); egress honours <code>ready</code> and exports <code>empty</code> for packet-tail packing.</html>"
     }
     catch {
-        set_display_item_property profile_html TEXT "<html><b>Catalog revision</b><br/>This release is packaged as <b>${::OPQ_VERSION_STRING}</b> (git <b>${::OPQ_GIT_HEX_STRING}</b>).<br/><br/><b>Packaged legal points</b><br/>N_LANE=<b>{2,4,8,16}</b>, MODE=<b>MERGING</b>, TRACK_HEADER=<b>true</b>, ingress=<b>32 data + 4 datak</b>, N_SHD=<b>{64,128,256,512}</b>. CHANNEL_WIDTH, LANE_FIFO_WIDTH, TICKET_FIFO_DEPTH, HANDLE_FIFO_DEPTH, and PAGE_RAM_RD_WIDTH are auto-derived for the selected point.<br/><br/><b>Representative preset family</b><br/>The preset menu adds nine GUI options (<b>CUSTOM</b> plus eight named presets). All concrete named presets pin <b>N_SHD=128</b> and scale <b>N_LANE</b> plus <b>LANE_FIFO_DEPTH</b> as a starting point for later quantitative analysis.<br/><br/><b>Deferred preset axes</b><br/>64-bit / 128-bit hit words and wider DMA egress packing remain future work because the current monolithic RTL still contains fixed 36/40-bit assumptions in the ingress parser and presenter path.<br/><br/><b>Current instance</b><br/>PRESET=<b>${preset}</b>, MODE=<b>${mode}</b>, N_LANE=<b>${n_lane}</b>, N_SHD=<b>${n_shd}</b>, N_HIT=<b>${n_hit}</b>, CHANNEL_WIDTH=<b>${channel_w}</b>, PAGE_RAM_RD_WIDTH=<b>${page_ram_rd_w}</b>.<br/><br/><b>Runtime visibility</b><br/>The monolithic OPQ exposes a runtime <b>CSR Avalon-MM slave</b>. Software can read the common Mu3e <b>UID + META</b> header, inspect per-lane write/read/drop counters, inspect frame-table ownership counters, clear counter state, program a per-lane packet-boundary mask, and tune the per-lane <b>DRR allowance</b> used by the shared page-RAM arbiter.</html>"
+        set_display_item_property profile_html TEXT "<html><b>Catalog revision</b><br/>This release is packaged as <b>${::OPQ_VERSION_STRING}</b> (git <b>${::OPQ_GIT_HEX_STRING}</b>).<br/><br/><b>Packaged legal points</b><br/>N_LANE=<b>{2,4,8,16}</b>, MODE=<b>MERGING</b>, TRACK_HEADER=<b>true</b>, ingress=<b>32 data + 4 datak</b>, N_SHD=<b>{64,128,256,512}</b>, PAGE_RAM_RD_WIDTH=<b>{36,72,144,288}</b>. CHANNEL_WIDTH, LANE_FIFO_WIDTH, TICKET_FIFO_DEPTH, HANDLE_FIFO_DEPTH, EGRESS_SYMBOLS_PER_BEAT, and EGRESS_EMPTY_WIDTH are derived for the selected point.<br/><br/><b>Representative preset family</b><br/>The preset menu adds nine GUI options (<b>CUSTOM</b> plus eight named presets). All concrete named presets pin <b>N_SHD=128</b> and scale <b>N_LANE</b> plus <b>LANE_FIFO_DEPTH</b> as a starting point for later quantitative analysis.<br/><br/><b>Deferred preset axes</b><br/>64-bit / 128-bit hit words remain future work because the current monolithic ingress parser still uses the 32-bit hit-word contract.<br/><br/><b>Current instance</b><br/>PRESET=<b>${preset}</b>, MODE=<b>${mode}</b>, N_LANE=<b>${n_lane}</b>, N_SHD=<b>${n_shd}</b>, N_HIT=<b>${n_hit}</b>, CHANNEL_WIDTH=<b>${channel_w}</b>, PAGE_RAM_RD_WIDTH=<b>${page_ram_rd_w}</b>.<br/><br/><b>Runtime visibility</b><br/>The monolithic OPQ exposes a runtime <b>CSR Avalon-MM slave</b>. Software can read the common Mu3e <b>UID + META</b> header, inspect per-lane write/read/drop counters, inspect frame-table ownership counters, clear counter state, program a per-lane packet-boundary mask, and tune the per-lane <b>DRR allowance</b> used by the shared page-RAM arbiter.</html>"
     }
     catch {
         set_display_item_property preset_html TEXT [opq_preset_summary_html $preset]
@@ -473,9 +487,9 @@ proc validate {} {
     set ingress_beat_w  [expr {$data_w + $datak_w}]
     set expected_channel_w   [derive_channel_width $n_lane]
     set expected_lane_fifo_w [derive_lane_fifo_width $data_w $datak_w]
-    set expected_ticket_d    [derive_ticket_fifo_depth $n_shd]
+    set expected_ticket_d    [derive_ticket_fifo_depth $n_shd $n_lane]
     set expected_handle_d    [derive_handle_fifo_depth]
-    set expected_page_rd_w   [derive_page_ram_rd_width $data_w $datak_w]
+    set legal_page_rd_ws     [legal_page_ram_rd_widths $data_w $datak_w]
 
     if {[lsearch -exact {2 4 8 16} $n_lane] < 0} {
         send_message error "N_LANE must be one of {2, 4, 8, 16} in the packaged release."
@@ -505,7 +519,7 @@ proc validate {} {
         send_message error "LANE_FIFO_WIDTH (${lane_fifo_w}) is auto-derived from the ingress symbol and must be ${expected_lane_fifo_w}."
     }
     if {$ticket_fifo_d != $expected_ticket_d} {
-        send_message error "TICKET_FIFO_DEPTH (${ticket_fifo_d}) is auto-derived from N_SHD and must be ${expected_ticket_d}."
+        send_message error "TICKET_FIFO_DEPTH (${ticket_fifo_d}) is auto-derived from N_SHD and N_LANE and must be ${expected_ticket_d}."
     }
     if {$handle_fifo_d != $expected_handle_d} {
         send_message error "HANDLE_FIFO_DEPTH (${handle_fifo_d}) is auto-derived and must be ${expected_handle_d}."
@@ -513,8 +527,8 @@ proc validate {} {
     if {![is_power_of_two $page_ram_d]} {
         send_message error "PAGE_RAM_DEPTH must be a power of two."
     }
-    if {$page_ram_rd_w != $expected_page_rd_w} {
-        send_message error "PAGE_RAM_RD_WIDTH (${page_ram_rd_w}) is auto-derived and must be ${expected_page_rd_w} in the current packaged release."
+    if {[lsearch -exact $legal_page_rd_ws $page_ram_rd_w] < 0} {
+        send_message error "PAGE_RAM_RD_WIDTH (${page_ram_rd_w}) must select one of ${legal_page_rd_ws} for 1/2/4/8 OPQ symbols per egress beat."
     }
     if {[lsearch -exact {64 128 256 512} $n_shd] < 0} {
         send_message error "N_SHD must be one of {64, 128, 256, 512}."
@@ -546,14 +560,11 @@ proc elaborate {} {
     set_parameter_property LANE_FIFO_WIDTH ALLOWED_RANGES [list [get_parameter_value LANE_FIFO_WIDTH]]
     set_parameter_property TICKET_FIFO_DEPTH ALLOWED_RANGES [list [get_parameter_value TICKET_FIFO_DEPTH]]
     set_parameter_property HANDLE_FIFO_DEPTH ALLOWED_RANGES [list [get_parameter_value HANDLE_FIFO_DEPTH]]
-    set_parameter_property PAGE_RAM_RD_WIDTH ALLOWED_RANGES [list [get_parameter_value PAGE_RAM_RD_WIDTH]]
+    set_parameter_property PAGE_RAM_RD_WIDTH ALLOWED_RANGES [legal_page_ram_rd_widths $data_w $datak_w]
 
     set page_ram_rd_w    [get_parameter_value PAGE_RAM_RD_WIDTH]
     set symbols_per_beat [expr {$page_ram_rd_w / $ingress_beat_w}]
-    set empty_w          0
-    if {$symbols_per_beat > 1} {
-        set empty_w [expr {int(ceil(log($symbols_per_beat) / log(2.0)))}]
-    }
+    set empty_w          [derive_empty_width $symbols_per_beat]
 
     # ---- Ingress sinks (one per lane) --------------------------------------
     for {set i 0} {$i < $n_lane} {incr i} {
@@ -580,10 +591,8 @@ proc elaborate {} {
     # ---- Egress source — dynamic data + optional empty ---------------------
     add_interface_port egress aso_egress_data data Output $page_ram_rd_w
     set_port_property aso_egress_data WIDTH_EXPR $page_ram_rd_w
-    if {$empty_w > 0} {
-        add_interface_port egress aso_egress_empty empty Output $empty_w
-        set_port_property aso_egress_empty WIDTH_EXPR $empty_w
-    }
+    add_interface_port egress aso_egress_empty empty Output $empty_w
+    set_port_property aso_egress_empty WIDTH_EXPR $empty_w
     set_interface_property egress symbolsPerBeat    $symbols_per_beat
     set_interface_property egress dataBitsPerSymbol $ingress_beat_w
 
@@ -605,7 +614,7 @@ proc elaborate {} {
     set_parameter_property LANE_FIFO_WIDTH    ENABLED false
     set_parameter_property TICKET_FIFO_DEPTH  ENABLED false
     set_parameter_property HANDLE_FIFO_DEPTH  ENABLED false
-    set_parameter_property PAGE_RAM_RD_WIDTH  ENABLED false
+    set_parameter_property PAGE_RAM_RD_WIDTH  ENABLED true
 }
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -621,10 +630,7 @@ proc my_generate {output_name} {
     set datak_w [get_parameter_value INGRESS_DATAK_WIDTH]
     set beat_w  [expr {$data_w + $datak_w}]
     set out_w   [get_parameter_value PAGE_RAM_RD_WIDTH]
-    set empty_w 0
-    if {$out_w > $beat_w} {
-        set empty_w [expr {int(ceil(log($out_w / $beat_w) / log(2.0)))}]
-    }
+    set empty_w [derive_empty_width [expr {$out_w / $beat_w}]]
 
     set params(n_lane)             [get_parameter_value N_LANE]
     set params(fifos_names)        [list "ticket_fifo" "lane_fifo" "handle_fifo"]
@@ -707,9 +713,9 @@ set_parameter_property LANE_FIFO_WIDTH DESCRIPTION "Auto-derived from ingress sy
 
 add_parameter TICKET_FIFO_DEPTH NATURAL 256
 set_parameter_property TICKET_FIFO_DEPTH DISPLAY_NAME "Ticket FIFO Depth"
-set_parameter_property TICKET_FIFO_DEPTH ALLOWED_RANGES {256 512 1024}
+set_parameter_property TICKET_FIFO_DEPTH ALLOWED_RANGES {256 512 1024 2048 4096 8192 16384}
 set_parameter_property TICKET_FIFO_DEPTH HDL_PARAMETER true
-set_parameter_property TICKET_FIFO_DEPTH DESCRIPTION "Auto-derived from N_SHD as the smallest power-of-two strictly larger than N_SHD, with a minimum of 256."
+set_parameter_property TICKET_FIFO_DEPTH DESCRIPTION "Auto-derived from N_SHD and N_LANE as the smallest power-of-two at or above max(32*N_SHD, 2*N_SHD*N_LANE), with a minimum of 256."
 
 add_parameter HANDLE_FIFO_DEPTH NATURAL 64
 set_parameter_property HANDLE_FIFO_DEPTH DISPLAY_NAME "Handle FIFO Depth"
@@ -726,9 +732,9 @@ set_parameter_property PAGE_RAM_DEPTH DESCRIPTION "Page RAM depth in units of la
 add_parameter PAGE_RAM_RD_WIDTH NATURAL 36
 set_parameter_property PAGE_RAM_RD_WIDTH DISPLAY_NAME "Page RAM Read Width"
 set_parameter_property PAGE_RAM_RD_WIDTH UNITS Bits
-set_parameter_property PAGE_RAM_RD_WIDTH ALLOWED_RANGES {36}
+set_parameter_property PAGE_RAM_RD_WIDTH ALLOWED_RANGES {36 72 144 288}
 set_parameter_property PAGE_RAM_RD_WIDTH HDL_PARAMETER true
-set_parameter_property PAGE_RAM_RD_WIDTH DESCRIPTION "Auto-derived to the base ingress symbol width (32d + 4k = 36 bits) in the current packaged release. Future DMA-compatible 4x / 8x / 16x packed widths and the corresponding <code>empty</code> sideband are staged future work."
+set_parameter_property PAGE_RAM_RD_WIDTH DESCRIPTION "Selectable egress read/pack width for 1/2/4/8 OPQ symbols per Avalon-ST egress beat. Legal values for the 32d+4k ingress contract are 36, 72, 144, and 288 bits; EGRESS_EMPTY_WIDTH is derived from the selected pack ratio."
 
 add_parameter N_SHD NATURAL 128
 set_parameter_property N_SHD DISPLAY_NAME "Subheaders per Header Packet"
@@ -880,7 +886,7 @@ add_display_item $TAB_CONFIGURATION "Packet Format"  GROUP
 add_display_item $TAB_CONFIGURATION "Throughput"     GROUP
 add_display_item $TAB_CONFIGURATION "Debug"          GROUP
 
-add_html_text "Overview" overview_html {<html><b>Function</b><br/>Aggregates <i>N_LANE</i> ingress Avalon-ST flows (one per FEB) into a single timestamp-ordered egress flow. The monolithic core owns the full datapath: per-lane <b>ingress parser</b> \u2192 <b>lane FIFO</b> + <b>ticket FIFO</b> \u2192 <b>page allocator</b> \u2192 <b>block mover</b> \u2192 <b>ordered block-level DRR arbiter</b> \u2192 <b>page RAM</b> (3-segment dynamic) \u2192 egress.<br/><br/><b>Current packaged scope</b><br/>This release packages the verified 36-bit symbol contract: <b>32-bit data + 4-bit datak</b>, <b>MERGING</b> mode only, <b>TRACK_HEADER=true</b>, and <b>N_SHD={64,128,256,512}</b>. Wider hit words and wide DMA pack ratios remain staged future work and are not advertised as legal points here.<br/><br/><b>Clocking</b><br/>Single synchronous data-path domain (<code>d_clk</code> / <code>d_reset</code>) shared by all lanes and the egress path.<br/><br/><b>Flow control</b><br/>Ingress lanes are non-backlog (drop-on-full inside the lane/ticket FIFOs). The egress source honours Avalon-ST <code>ready</code>.</html>}
+add_html_text "Overview" overview_html {<html><b>Function</b><br/>Aggregates <i>N_LANE</i> ingress Avalon-ST flows (one per FEB) into a single timestamp-ordered egress flow. The monolithic core owns the full datapath: per-lane <b>ingress parser</b> \u2192 <b>lane FIFO</b> + <b>ticket FIFO</b> \u2192 <b>page allocator</b> \u2192 <b>block mover</b> \u2192 <b>ordered block-level DRR arbiter</b> \u2192 <b>page RAM</b> (3-segment dynamic) \u2192 packed egress.<br/><br/><b>Current packaged scope</b><br/>This release packages the 36-bit OPQ symbol contract: <b>32-bit data + 4-bit datak</b>, <b>MERGING</b> mode only, <b>TRACK_HEADER=true</b>, <b>N_LANE={2,4,8,16}</b>, <b>N_SHD={64,128,256,512}</b>, and egress packing at <b>1/2/4/8</b> OPQ symbols per beat. Wider hit words remain staged future work.<br/><br/><b>Clocking</b><br/>Single synchronous data-path domain (<code>d_clk</code> / <code>d_reset</code>) shared by all lanes and the egress path.<br/><br/><b>Flow control</b><br/>Ingress lanes are non-backlog (drop-on-full inside the lane/ticket FIFOs). The egress source honours Avalon-ST <code>ready</code>.</html>}
 
 add_display_item "Presets" PRESET parameter
 add_html_text "Presets" preset_html "<html><b>Representative preset selector</b><br/>Loading preset matrix...</html>"
@@ -942,7 +948,7 @@ add_html_text "Clock / Reset" clock_html "<html><b>clk_interface</b> / <b>rst_in
 
 add_html_text "Ingress" ingress_html {<html><b>ingress_0 \u2026 ingress_<i>N_LANE-1</i></b> — Avalon-ST <i>sinks</i>, one per FEB lane. <i>Non-backlog</i>: no <code>ready</code> exported; full FIFOs drop the in-flight packet internally.<br/><br/><b>Current packaged symbol layout (36 bits)</b><br/><table border="1" cellpadding="3" width="100%"><tr><th>Bits</th><th>Field</th><th>Description</th></tr><tr><td>[35:32]</td><td>datak</td><td>8b/10b control-symbol flag per data byte. <code>0001</code> marks K-coded header/subheader/trailer words; <code>0000</code> marks hit words.</td></tr><tr><td>[31:0]</td><td>data</td><td>Header payload, subheader payload, or hit word.</td></tr></table><br/>Sidebands: <code>channel</code> (<i>CHANNEL_WIDTH</i> bits, auto-derived from <i>N_LANE</i>), <code>startofpacket</code>, <code>endofpacket</code>, <code>valid</code>, <code>error[2:0] = {hit_err, shd_err, hdr_err}</code>. An asserted <code>error</code> blocks the remainder of the packet until <code>eop</code> and revokes it.</html>}
 
-add_html_text "Egress" egress_html {<html><b>egress</b> — Avalon-ST <i>source</i>.<br/><table border="1" cellpadding="3" width="100%"><tr><th>Port</th><th>Direction</th><th>Width</th><th>Description</th></tr><tr><td>data</td><td>out</td><td>PAGE_RAM_RD_WIDTH</td><td>Current packaged release emits one 36-bit ingress symbol per egress beat.</td></tr><tr><td>startofpacket / endofpacket</td><td>out</td><td>1</td><td>Packet framing.</td></tr><tr><td>valid / ready</td><td>out / in</td><td>1</td><td>Standard Avalon-ST handshake (backpressured).</td></tr><tr><td>error[2:0]</td><td>out</td><td>3</td><td>{hit_err, shd_err, hdr_err} — propagated from ingress parser.</td></tr></table><br/><b>Current packaged limitation</b><br/>The release locks <code>PAGE_RAM_RD_WIDTH</code> to the base symbol width, so no <code>empty</code> sideband is exported here. Future 4\u00d7 / 8\u00d7 / 16\u00d7 DMA packing requires a widened presenter/top-level path and will be enabled only with matching RTL and DV closure.</html>}
+add_html_text "Egress" egress_html {<html><b>egress</b> — Avalon-ST <i>source</i>.<br/><table border="1" cellpadding="3" width="100%"><tr><th>Port</th><th>Direction</th><th>Width</th><th>Description</th></tr><tr><td>data</td><td>out</td><td>PAGE_RAM_RD_WIDTH</td><td>Selected 36/72/144/288-bit pack width, equal to 1/2/4/8 OPQ symbols per egress beat.</td></tr><tr><td>empty</td><td>out</td><td>EGRESS_EMPTY_WIDTH_DERIVED</td><td>Avalon-ST packet-tail empty count for multi-symbol egress packing; width is at least 1 bit.</td></tr><tr><td>startofpacket / endofpacket</td><td>out</td><td>1</td><td>Packet framing.</td></tr><tr><td>valid / ready</td><td>out / in</td><td>1</td><td>Standard Avalon-ST handshake (backpressured).</td></tr><tr><td>error[2:0]</td><td>out</td><td>3</td><td>{hit_err, shd_err, hdr_err} — propagated from ingress parser.</td></tr></table></html>}
 
 add_html_text "CSR" csr_html {<html><b>csr</b> — Avalon-MM <i>slave</i>, 32-bit data, 9-bit word address.<br/>Implements the common Mu3e UID + META identity header plus OPQ-specific runtime control and counters. <b>LANE_MASK</b> applies at packet boundaries: in-flight packets drain, then new packets on masked lanes are dropped and accounted. The per-lane region also exposes a <b>DRR allowance</b> register and live arbiter observability for scheduler tuning under real traffic.</html>}
 

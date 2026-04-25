@@ -1,0 +1,46 @@
+# -------------------------------------------------------------------------- #
+#
+# Copyright (C) 2018  Intel Corporation. All rights reserved.
+# Your use of Intel Corporation's design tools, logic functions
+# and other software and tools, and its AMPP partner logic
+# functions, and any output files from any of the foregoing
+# (including device programming or simulation files), and any
+# associated documentation or information are expressly subject
+# to the terms and conditions of the Intel Program License
+# Subscription Agreement, the Intel Quartus Prime License Agreement,
+# the Intel FPGA IP License Agreement, or other applicable license
+# agreement, including, without limitation, that your use is for
+# the sole purpose of programming logic devices manufactured by
+# Intel and sold by Intel or its authorized distributors.  Please
+# refer to the applicable agreement for further details.
+#
+# -------------------------------------------------------------------------- #
+#
+# Quartus Prime
+# Version 18.1.0 Build 625 09/12/2018 SJ Standard Edition
+# Date created = 13:11:30  April 25, 2026
+#
+# -------------------------------------------------------------------------- #
+
+QUARTUS_VERSION = "18.1"
+DATE = "13:11:30  April 25, 2026"
+
+# Revisions
+
+PROJECT_REVISION = "opq_feature_l16_s256_w36"
+PROJECT_REVISION = "opq_feature_l16_s128_w36"
+PROJECT_REVISION = "opq_feature_l16_s256_w288"
+PROJECT_REVISION = "opq_feature_l16_s64_w36"
+PROJECT_REVISION = "opq_feature_l4_s256_w36"
+PROJECT_REVISION = "opq_feature_l4_s64_w36"
+PROJECT_REVISION = "opq_feature_l16_s128_w288"
+PROJECT_REVISION = "opq_feature_l16_s128_w144"
+PROJECT_REVISION = "opq_feature_l16_s128_w72"
+PROJECT_REVISION = "opq_feature_l8_s128_w288"
+PROJECT_REVISION = "opq_feature_l8_s128_w144"
+PROJECT_REVISION = "opq_feature_l8_s128_w72"
+PROJECT_REVISION = "opq_feature_l8_s128_w36"
+PROJECT_REVISION = "opq_feature_l4_s128_w288"
+PROJECT_REVISION = "opq_feature_l4_s128_w144"
+PROJECT_REVISION = "opq_feature_l4_s128_w72"
+PROJECT_REVISION = "opq_feature_l4_s128_w36"

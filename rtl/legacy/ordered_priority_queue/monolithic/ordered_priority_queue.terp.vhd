@@ -189,7 +189,7 @@ entity ${output_name} is
         -- IP advance
         LANE_FIFO_DEPTH         : natural := 1024; -- size of each lane FIFO in unit of its data width. Affects the max delay skew between each lane supported and maximum waiting time for the <b>page allocator</b>
         LANE_FIFO_WIDTH         : natural := 40; -- data width of each lane FIFO in unit of bits, must be larger than total(39) = data(32)+datak(4)+eop(1)+sop(1)+err(1)
-        TICKET_FIFO_DEPTH       : natural := 256; -- size of each ticket FIFO in unit of its data width, set accordingly to the expected latency / max delay it allows. If too many empty subframes, the credit can be consumed quickly. For N_SHD > 256, this must be larger than N_SHD to absorb the burst per frame.
+        TICKET_FIFO_DEPTH       : natural := 256; -- size of each ticket FIFO in unit of its data width, auto-sized from N_SHD and N_LANE for empty-subframe bursts and no-restart skew soaks.
         HANDLE_FIFO_DEPTH       : natural := 64; -- size of each handle FIFO in unit of its data width, set accordingly to the expected latency / max delay it allows. Drop means blk mover too slow
         PAGE_RAM_DEPTH          : natural := 65536; -- size of the page RAM in unit of its WR data width, need to be larger than the full header packet, which is usually 65k max for each FEB flow
         PAGE_RAM_RD_WIDTH       : natural := 36; -- RD data width of the page RAM in unit of bits, write width = LANE_FIFO_WIDTH, read width can be larger to interface with PCIe DMA
@@ -206,11 +206,11 @@ entity ${output_name} is
         -- csr identity
         IP_UID                  : natural := 16#4F50514D#; -- ASCII "OPQM"
         VERSION_MAJOR           : natural := 26;
-        VERSION_MINOR           : natural := 3;
-        VERSION_PATCH           : natural := 6;
-        BUILD                   : natural := 414;
-        VERSION_DATE            : natural := 20260414;
-        VERSION_GIT             : natural := 16#630F1720#;
+        VERSION_MINOR           : natural := 4;
+        VERSION_PATCH           : natural := 0;
+        BUILD                   : natural := 424;
+        VERSION_DATE            : natural := 20260424;
+        VERSION_GIT             : natural := 16#0229F0AE#;
         INSTANCE_ID             : natural := 0;
 
         -- debug configuration
@@ -1323,8 +1323,8 @@ begin
         end process;
     end generate;
     assert integer(ceil(log2(real(N_SHD*N_HIT)))) + 1 <= 16 report "N Hits counter will likely to overflow, resulting in functional error" severity warning;
-    assert not (N_SHD > 256 and TICKET_FIFO_DEPTH <= N_SHD)
-        report "TICKET_FIFO_DEPTH should be larger than N_SHD for N_SHD > 256, otherwise empty-subframe bursts can drop tickets."
+    assert not ((TICKET_FIFO_DEPTH < 2*N_SHD*N_LANE) or (TICKET_FIFO_DEPTH < 32*N_SHD))
+        report "TICKET_FIFO_DEPTH should be at least max(32*N_SHD, 2*N_SHD*N_LANE), otherwise empty-subframe bursts and no-restart skew soaks can drop tickets."
         severity warning;
 
     -- io mapping

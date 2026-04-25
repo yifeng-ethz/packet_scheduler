@@ -121,11 +121,23 @@ class opq_egress_monitor extends uvm_component;
     ap = new("ap", this);
   endfunction
 
+  function automatic bit [35:0] egress_symbol_at(
+    bit [OPQ_PAGE_RAM_RD_WIDTH-1:0] wide_data,
+    int unsigned symbol_idx
+  );
+    int unsigned lsb;
+
+    lsb = (OPQ_EGRESS_SYMBOLS_PER_BEAT - 1 - symbol_idx) * OPQ_EGRESS_SYMBOL_WIDTH;
+    return wide_data[lsb +: OPQ_EGRESS_SYMBOL_WIDTH];
+  endfunction
+
   task run_phase(uvm_phase phase);
     opq_beat_item beat;
     bit trace_all_beats;
     longint unsigned trace_after_ps;
     bit trace_after_ps_valid;
+    int unsigned empty_count;
+    int unsigned valid_symbols;
 
     trace_all_beats = $test$plusargs("OPQ_TRACE_EGRESS_ALL");
     trace_after_ps = 0;
@@ -137,20 +149,41 @@ class opq_egress_monitor extends uvm_component;
     forever begin
       @(vif.mon_cb);
       if (!vif.mon_cb.reset && vif.mon_cb.valid && vif.mon_cb.ready) begin
-        beat = opq_beat_item::type_id::create("beat");
-        beat.lane_id = -1;
-        beat.data = vif.mon_cb.data;
-        beat.sop = vif.mon_cb.startofpacket;
-        beat.eop = vif.mon_cb.endofpacket;
-        beat.error = vif.mon_cb.error;
-        if (((trace_all_beats && ($time >= trace_after_ps)) || (beat_count < 64))) begin
-          `uvm_info(get_type_name(), $sformatf(
-            "egress[%0d] data=0x%09h datak=0x%1h sop=%0b eop=%0b err=0x%0h",
-            beat_count, beat.data, beat.data[35:32], beat.sop, beat.eop, beat.error
-          ), UVM_LOW)
+        empty_count = vif.mon_cb.endofpacket ? int'(vif.mon_cb.empty) : 0;
+        if (empty_count >= OPQ_EGRESS_SYMBOLS_PER_BEAT) begin
+          `uvm_error(get_type_name(), $sformatf(
+            "egress empty=%0d is illegal for %0d symbols per beat",
+            empty_count,
+            OPQ_EGRESS_SYMBOLS_PER_BEAT
+          ))
+          empty_count = OPQ_EGRESS_SYMBOLS_PER_BEAT - 1;
         end
-        beat_count++;
-        ap.write(beat);
+        valid_symbols = OPQ_EGRESS_SYMBOLS_PER_BEAT - empty_count;
+
+        for (int unsigned symbol_idx = 0; symbol_idx < valid_symbols; symbol_idx++) begin
+          beat = opq_beat_item::type_id::create("beat");
+          beat.lane_id = -1;
+          beat.data = egress_symbol_at(vif.mon_cb.data, symbol_idx);
+          beat.sop = vif.mon_cb.startofpacket && (symbol_idx == 0);
+          beat.eop = vif.mon_cb.endofpacket && (symbol_idx == (valid_symbols - 1));
+          beat.error = vif.mon_cb.error;
+          if (((trace_all_beats && ($time >= trace_after_ps)) || (beat_count < 64))) begin
+            `uvm_info(get_type_name(), $sformatf(
+              "egress[%0d] symbol=%0d/%0d data=0x%09h datak=0x%1h sop=%0b eop=%0b err=0x%0h empty=%0d",
+              beat_count,
+              symbol_idx,
+              valid_symbols,
+              beat.data,
+              beat.data[35:32],
+              beat.sop,
+              beat.eop,
+              beat.error,
+              empty_count
+            ), UVM_LOW)
+          end
+          beat_count++;
+          ap.write(beat);
+        end
       end
     end
   endtask

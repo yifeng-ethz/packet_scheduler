@@ -92,7 +92,7 @@ def parse_log(log_path: Path) -> dict:
 
 def write_csv(results: list[dict], csv_path: Path) -> None:
     with csv_path.open("w", newline="", encoding="ascii") as f:
-        writer = csv.writer(f)
+        writer = csv.writer(f, lineterminator="\n")
         writer.writerow([
             "test",
             "lane",

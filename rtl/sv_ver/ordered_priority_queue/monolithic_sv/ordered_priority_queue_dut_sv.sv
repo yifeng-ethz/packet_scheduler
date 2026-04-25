@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_dut_sv
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.56
-// Date    : 20260421
-// Change  : Export frame serial/pkg identity on exact drop events so native DV can disambiguate wrapped subheader timestamps across frames
+// Version : 26.4.0
+// Date    : 20260424
+// Change  : Align native wrapper provenance with the N_LANE and wide-egress closure release
 //------------------------------------------------------------------------------
 
 `ifndef OPQ_N_SHD
@@ -171,6 +171,7 @@ module ordered_priority_queue_dut_sv (
   logic [8:0]  csr_read_addr_d;
   logic [OPQ_N_LANE_LOCAL-1:0] csr_lane_mask_effective;
   logic [3:0]  asi_ingress_valid_eff_bus;
+  logic [0:0]  native_egress_empty_unused;
 
   logic [OPQ_N_LANE_LOCAL-1:0][LANE_FIFO_ADDR_WIDTH_CONST-1:0] native_lane_credit_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][TICKET_FIFO_ADDR_WIDTH_CONST-1:0] native_ticket_credit_dbg;
@@ -446,6 +447,7 @@ module ordered_priority_queue_dut_sv (
     .aso_egress_startofpacket(aso_egress_startofpacket),
     .aso_egress_endofpacket(aso_egress_endofpacket),
     .aso_egress_error(aso_egress_error),
+    .aso_egress_empty(native_egress_empty_unused),
     .cfg_drr_allowance_i(csr_drr_allowance),
     .cfg_drr_allowance_reload_i(csr_drr_allowance_reload),
     .d_clk(d_clk),

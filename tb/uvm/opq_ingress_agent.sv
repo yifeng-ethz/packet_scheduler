@@ -72,7 +72,7 @@ class opq_ingress_driver extends uvm_driver #(opq_frame_item);
     bit sop,
     bit eop,
     bit [2:0] err_bits,
-    bit [1:0] channel
+    bit [OPQ_CHANNEL_WIDTH-1:0] channel
   );
     vif.drv_cb.data <= {datak, data32};
     vif.drv_cb.valid <= '1;
@@ -221,7 +221,7 @@ class opq_ingress_monitor extends uvm_component;
 
     curr_frame = opq_frame_item::type_id::create($sformatf("lane%0d_frame_%0d", lane_id, n_frames_captured));
     curr_frame.lane_id = lane_id;
-    curr_frame.channel = lane_id[1:0];
+    curr_frame.channel = lane_to_channel(lane_id);
     curr_frame.dt_type = beat.data[31:26];
     curr_frame.feb_id = beat.data[23:8];
     curr_frame.whole_frame_packet = 1'b1;

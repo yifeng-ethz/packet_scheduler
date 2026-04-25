@@ -1,13 +1,18 @@
 //------------------------------------------------------------------------------
 // IP Name   : opq_native_ingress_formal_sva
 // Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
-// Revision  : 0.3 - add trailer-bypass pulse checks alongside the typed ingress error contracts
+// Revision  : 0.4 - keep the parameter surface aligned with the bound ingress parser
 // Description:
 //   Native-SV formal checker for the ingress parser. These checks implement
 //   the packet-shape/credit invariants called out in DV_FORMAL plane A/B
 //   without changing DUT behavior.
 //------------------------------------------------------------------------------
 module opq_native_ingress_formal_sva #(
+  parameter int unsigned N_SHD = 256,
+  parameter int unsigned N_HIT = 255,
+  parameter int unsigned FRAME_HDR_AUX_WORDS = 4,
+  parameter int unsigned FRAME_SUBH_CNT_SIZE = 16,
+  parameter int unsigned FRAME_HIT_CNT_SIZE = 16,
   parameter int unsigned LANE_FIFO_DEPTH = 1024,
   parameter int unsigned TICKET_FIFO_DEPTH = 256,
   parameter int unsigned LANE_FIFO_ADDR_WIDTH = $clog2(LANE_FIFO_DEPTH),

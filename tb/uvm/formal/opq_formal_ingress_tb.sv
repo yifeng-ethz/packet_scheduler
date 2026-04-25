@@ -38,9 +38,11 @@ module opq_formal_ingress_tb;
   logic [TICKET_FIFO_ADDR_WIDTH-1:0]                 ticket_credit_update;
   logic                                              ticket_credit_update_valid;
   logic [TICKET_FIFO_DATA_WIDTH-1:0]                 ticket_wdata;
+  logic [TICKET_FIFO_ADDR_WIDTH-1:0]                 ticket_waddr;
   logic [TICKET_FIFO_ADDR_WIDTH-1:0]                 ticket_wptr;
   logic                                              ticket_we;
   logic [LANE_FIFO_WIDTH-1:0]                        lane_wdata;
+  logic [LANE_FIFO_ADDR_WIDTH-1:0]                   lane_waddr;
   logic [LANE_FIFO_ADDR_WIDTH-1:0]                   lane_wptr;
   logic                                              lane_we;
   logic [47:0]                                       running_ts_dbg;
@@ -112,9 +114,11 @@ module opq_formal_ingress_tb;
     .ticket_credit_update(ticket_credit_update),
     .ticket_credit_update_valid(ticket_credit_update_valid),
     .ticket_wdata(ticket_wdata),
+    .ticket_waddr(ticket_waddr),
     .ticket_wptr(ticket_wptr),
     .ticket_we(ticket_we),
     .lane_wdata(lane_wdata),
+    .lane_waddr(lane_waddr),
     .lane_wptr(lane_wptr),
     .lane_we(lane_we),
     .running_ts_dbg(running_ts_dbg),

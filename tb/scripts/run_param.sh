@@ -25,7 +25,7 @@ fi
 if [[ -n "${OPQ_N_SHD_LIST-}" ]]; then
   IFS=',' read -r -a N_SHD_SWEEP <<< "${OPQ_N_SHD_LIST}"
 else
-  N_SHD_SWEEP=(128 512)
+  N_SHD_SWEEP=(64 128 256)
 fi
 
 RESTORE_DIR="$(mktemp -d)"
@@ -79,15 +79,16 @@ for test_name in "${TESTS[@]}"; do
   fi
 done
 
-# If the caller explicitly swept the default 256 build point, restore the
+# If the caller explicitly swept the default build point, restore the
 # unsuffixed artifacts so the default-geometry buckets keep a stable contract.
-if [[ " ${N_SHD_SWEEP[*]} " == *" 256 "* ]]; then
+default_n_shd="${OPQ_N_SHD_DEFAULT:-${OPQ_N_SHD:-128}}"
+if [[ " ${N_SHD_SWEEP[*]} " == *" ${default_n_shd} "* ]]; then
   for test_name in "${TESTS[@]}"; do
-    if [[ -f "${LOG_DIR}/${test_name}_nshd256.log" ]]; then
-      cp -f "${LOG_DIR}/${test_name}_nshd256.log" "${LOG_DIR}/${test_name}.log"
+    if [[ -f "${LOG_DIR}/${test_name}_nshd${default_n_shd}.log" ]]; then
+      cp -f "${LOG_DIR}/${test_name}_nshd${default_n_shd}.log" "${LOG_DIR}/${test_name}.log"
     fi
-    if [[ "${COV_ENABLE:-0}" == "1" ]] && [[ -f "${COV_DIR}/${test_name}_nshd256.ucdb" ]]; then
-      cp -f "${COV_DIR}/${test_name}_nshd256.ucdb" "${COV_DIR}/${test_name}.ucdb"
+    if [[ "${COV_ENABLE:-0}" == "1" ]] && [[ -f "${COV_DIR}/${test_name}_nshd${default_n_shd}.ucdb" ]]; then
+      cp -f "${COV_DIR}/${test_name}_nshd${default_n_shd}.ucdb" "${COV_DIR}/${test_name}.ucdb"
     fi
   done
 fi

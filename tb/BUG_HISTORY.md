@@ -70,6 +70,227 @@ Historical formal note:
 | [BUG-030-R](#bug-030-r-overlap-request-replay-can-self-drop-the-current-head-and-synthesize-a-zero-length-packet) | R | hard stuck error | `corner-only (targeted backpressure stress)` | fixed | `opq_formal_like_egress_flush_backpressure_stress_test` on `2026-04-22` @ `OPQ_N_LANE=4 OPQ_N_SHD=128` | `309f1d4` | The presenter now discards overlap requests that have already caught up to their own head slot, so the restart path no longer self-drops the live head or launches a zero-length packet after a legal trailer retire. |
 | [BUG-031-R](#bug-031-r-partially-joined-4-lane-frames-could-age-current-frame-body-tickets-into-post-drop) | R | soft error | `corner-only (4-lane half-frame skew sweep)` | fixed | `opq_prof_per_lane_half_frame_skew_sweep_test` / `P127` on `2026-04-22` @ `OPQ_N_LANE=4 OPQ_N_SHD=128` | `49d800f` | Partially joined frames no longer clear their join hold too early, so late lanes in the current frame keep their body tickets in-window instead of aging into `tk_past` and post-drop. |
 | [BUG-032-R](#bug-032-r-active-frame-tail-retire-could-treat-future-body-tickets-as-live-frame-blockers-and-spin-forever) | R | hard stuck error | `corner-only (overflow random-ready)` | fixed | `opq_cross_random_ready_overflow_step2_boundary_test` on `2026-04-23` @ `OPQ_N_LANE=4 OPQ_N_SHD=128` | `bf760d4` | The allocator no longer holds a tail-ready active frame open just because an active-lane body ticket has already advanced into the next frame and is classified `future`. |
+| [BUG-033-R](#bug-033-r-active-frame-tail-retire-could-drop-same-serial-body-tickets-as-future) | R | soft error | `common (multi-lane whole-frame traffic)` | fixed | `opq_basic_smoke_test` on `2026-04-24` @ `OPQ_N_LANE=4/8/16` | `pending` | Same-serial body tickets in an active frame no longer get treated as next-frame future traffic and late-dropped by tail retire. |
+| [BUG-034-H](#bug-034-h-parameter-sweep-sequences-kept-default-geometry-assumptions) | H | non-datapath-refactor | `corner-only (parameter sweep)` | fixed | `N_SHD=64` and `N_LANE=8/16` closure sweeps on `2026-04-24` | `pending` | Parameter-sweep sequences kept default geometry assumptions for boundary timestamps and max-hit distribution. |
+| [BUG-035-H](#bug-035-h-frame-timestamp-sva-required-strict-increase-for-legal-aggregate-frames) | H | non-datapath-refactor | `corner-only (continuous-frame signoff)` | fixed | `opq_bucket_frame_native_sv_test` @ `OPQ_N_SHD=64` on `2026-04-24` | `pending` | Frame timestamp SVA required strict increase and false-failed legal same-timestamp aggregate frames. |
+| [BUG-036-H](#bug-036-h-coverage-closure-merged-out-of-scope-ucdbs-and-old-geometry) | H | non-datapath-refactor | `directed-only (coverage flow)` | fixed | `run_cov_closure.sh` on `2026-04-24` | `pending` | Coverage closure mixed old-geometry UCDBs into the baseline merge and let vendor RAM coverage dominate the run. |
+| [BUG-037-H](#bug-037-h-ingress-formal-checker-parameter-surface-drifted-from-the-parser) | H | non-datapath-refactor | `directed-only (formal elaboration)` | fixed | `formal_ingress.sh` on `2026-04-24` | `pending` | Ingress formal checker stopped accepting parser configuration parameters and blocked elaboration. |
+
+## 2026-04-24
+
+### BUG-033-R: Active-frame tail-retire could drop same-serial body tickets as future
+- First seen in:
+  - `packet_scheduler/tb/uvm`
+    `TEST=opq_basic_smoke_test DUT_IMPL=native_sv OPQ_N_LANE=4`
+    during the all-lane exact-frame bring-up for `N_LANE=8/16`
+  - the same repaired path was then rerun at `OPQ_N_LANE=8` and
+    `OPQ_N_LANE=16`
+- Symptom:
+  - all lanes accepted exact OPQ/FEB whole-frame traffic, but the egress
+    produced a merged frame with zero delivered hits
+  - trace evidence showed SOP tickets opening the frame, then same-serial body
+    tickets entering the allocator with timestamps ahead of the current
+    subheader cursor
+  - the tail-retire path closed the active frame after the trailer and the
+    later body tickets were late-dropped
+- Root cause:
+  - `ordered_priority_queue_monolithic_page_allocator.sv` used
+    `idle_tk_future_q` as a frame-retire escape without preserving the stronger
+    same-serial active-frame relationship
+  - a body ticket can legitimately be ahead of the current subheader cursor and
+    still belong to the current frame when its serial matches the active frame
+  - treating that ticket as next-frame future traffic allowed the current frame
+    to retire before the body was consumed
+- Fix status:
+  - state:
+    - fixed on the direct all-lane exact-frame screens for
+      `N_LANE=4/8/16`
+  - mechanism:
+    - the active-frame tail-retire guard now keeps
+      `idle_tk_active_frame_q` tickets in-window even when their decoded
+      timestamp also classifies as future relative to the current cursor
+    - only non-active-frame future tickets are allowed to release the current
+      frame from waiting on that lane
+  - before_fix_outcome:
+    - `OPQ_N_LANE=4` exact-frame smoke ended with accepted input hits and zero
+      delivered hits
+  - after_fix_outcome:
+    - `make -C packet_scheduler/tb/uvm BUILD_DIR=/tmp/opq_lane4_fix OPQ_N_LANE=4 DUT_IMPL=native_sv TEST=opq_basic_smoke_test run`
+      passes with `expected=8 actual=8`, zero UVM errors, and zero drops
+    - `make -C packet_scheduler/tb/uvm BUILD_DIR=/tmp/opq_lane8_fix OPQ_N_LANE=8 DUT_IMPL=native_sv TEST=opq_basic_smoke_test run`
+      passes with `expected=16 actual=16`, zero UVM errors, and zero drops
+    - `make -C packet_scheduler/tb/uvm BUILD_DIR=/tmp/opq_lane16_fix OPQ_N_LANE=16 DUT_IMPL=native_sv TEST=opq_basic_smoke_test run`
+      passes with `expected=32 actual=32`, zero UVM errors, and zero drops
+  - potential_hazard:
+    - the local fix is specific and permanent for same-serial active-frame
+      body tickets, and the focused `N_LANE=4/8/16` plus
+      `PAGE_RAM_RD_WIDTH=36/72/144/288` matrix now covers the wider
+      bucket-frame/all-buckets-frame paths
+  - Claude Opus 4.7 xhigh review decision:
+    - pending / not run in this turn
+- Runtime / coverage context:
+  - this bug was exposed by making the UVM smoke sequence drive every
+    configured lane instead of only the legacy 2/4-lane subset
+  - the follow-up closure matrix under
+    `/tmp/opq_dv_lane_width_20260424_rerun2/` passed `72/72` runs with zero
+    UVM errors and zero Questa errors
+- Commit:
+  - pending
+
+### BUG-034-H: Parameter-sweep sequences kept default geometry assumptions
+- First seen in:
+  - `packet_scheduler/tb/uvm`
+    `TEST=opq_basic_ts_boundary_test OPQ_N_LANE=4 OPQ_N_SHD=64`
+  - `packet_scheduler/tb/uvm`
+    `TEST=opq_edge_max_hits_test OPQ_N_LANE=8/16`
+- Symptom:
+  - the boundary-timestamp sequence still used fixed subheader positions such
+    as `0xff`, which is outside the valid subheader range for `N_SHD=64`
+  - the max-hit sequence drove a fixed per-lane hit count, so the aggregate
+    requested hits exceeded the OPQ frame contract when lane count increased
+- Root cause:
+  - both sequences inherited the old default-geometry assumptions and did not
+    scale their generated traffic from the compiled `OPQ_N_SHD`,
+    `OPQ_N_LANE`, and `OPQ_N_HIT` values
+- Fix status:
+  - state:
+    - fixed on the focused parameter and feature matrix
+  - mechanism:
+    - boundary positions are derived from `OPQ_N_SHD`
+    - max-hit traffic is distributed across active lanes while keeping the
+      aggregate hit count inside `OPQ_N_HIT`
+  - before_fix_outcome:
+    - direct `N_SHD=64` boundary and `N_LANE=8/16` max-hit checks failed from
+      illegal stimulus expectations rather than a DUT data-loss signature
+  - after_fix_outcome:
+    - `/tmp/opq_dv_nshd_frame_20260424_rerun2/` passes `15/15`
+    - `/tmp/opq_dv_lane_width_20260424_rerun2/` passes `72/72`
+  - potential_hazard:
+    - the fix is harness-local and parameter-derived; future new geometry axes
+      must follow the same rule instead of adding fixed constants
+  - Claude Opus 4.7 xhigh review decision:
+    - pending / not run in this turn
+- Runtime / coverage context:
+  - this closed the user's concern that `N_SHD=64` and `N_SHD=256` might have
+    been silently falling back to the `128` default
+- Commit:
+  - pending
+
+### BUG-035-H: Frame timestamp SVA required strict increase for legal aggregate frames
+- First seen in:
+  - `packet_scheduler/tb/uvm`
+    `TEST=opq_bucket_frame_native_sv_test OPQ_N_LANE=4 OPQ_N_SHD=64`
+- Symptom:
+  - `opq_hit3_contract_sva` reported a frame timestamp violation even though
+    the scoreboard delivered every expected hit with no missing or ghost hits
+  - the failing frame was a legal aggregate frame with the same frame timestamp
+    as the previous packet and a larger package count
+- Root cause:
+  - the SVA checked strict frame timestamp increase across accepted aggregate
+    frames
+  - the OPQ contract requires nondecreasing frame timestamp plus monotonic
+    packet count/subheader order, not strict timestamp advance on every
+    emitted aggregate packet
+- Fix status:
+  - state:
+    - fixed in the live hit-contract SVA and matching native formal egress
+      checkers
+  - mechanism:
+    - frame timestamp assertions now reject only timestamp regression while
+      keeping the package-count and subheader-order checks strict
+  - before_fix_outcome:
+    - the `N_SHD=64` bucket-frame screen tripped a false SVA failure
+  - after_fix_outcome:
+    - `/tmp/opq_fix_hit3_sva_n64_bucket.log` passes with `expected=4306
+      actual=4306 missing=0 ghost=0`
+    - the follow-up `N_SHD=64/128/256` matrix passes `15/15`
+  - potential_hazard:
+    - the SVA now matches the documented frame-identity contract; no datapath
+      behavior changed
+  - Claude Opus 4.7 xhigh review decision:
+    - pending / not run in this turn
+- Runtime / coverage context:
+  - this is a harness/assertion correctness fix and does not weaken the
+    no-regression or per-hit integrity properties
+- Commit:
+  - pending
+
+### BUG-036-H: Coverage closure merged out-of-scope UCDBs and old geometry
+- First seen in:
+  - `packet_scheduler/tb/scripts/run_cov_closure.sh` on `2026-04-24`
+- Symptom:
+  - the closure script mixed baseline UCDBs with `*_nshd*` supplemental UCDBs,
+    which created source/instance mismatches during merge
+  - the old `N_LANE=2/N_SHD=256` backpressure geometry stalled and was outside
+    the deliverable `N_LANE=4/8/16` feature range
+  - vendor RAM/FIFO models were compiled with code coverage enabled and
+    inflated irrelevant coverage noise
+- Root cause:
+  - the script predated the current deliverable baseline and did not separate
+    canonical baseline coverage from supplemental parameter-sweep evidence
+  - run-parameter cleanup restored a hard-coded default instead of the active
+    `OPQ_N_SHD` default
+- Fix status:
+  - state:
+    - fixed for the active coverage closure flow
+  - mechanism:
+    - baseline coverage runs at `OPQ_N_LANE=4 OPQ_N_SHD=128`
+    - `N_SHD=64/128/256` runs are retained as supplemental evidence but are
+      excluded from the baseline UCDB merge
+    - vendor RAM coverage defaults off through `COV_VENDOR_RAM=0`
+    - `run_param.sh` restores the active default instead of a fixed `256`
+  - before_fix_outcome:
+    - merge reported source mismatch / duplicate coverage problems and the old
+      geometry could stall in backpressure
+  - after_fix_outcome:
+    - `/tmp/opq_cov_closure_final2_20260424.log` ends with baseline
+      `25/25`, each `N_SHD` sweep `3/3`, merge/report `Errors: 0`, and
+      filtered total coverage `54.89%`
+  - potential_hazard:
+    - raw structural coverage remains a documented metric, not a standalone
+      closure claim; future coverage expansion must use current-scope UCDBs
+  - Claude Opus 4.7 xhigh review decision:
+    - pending / not run in this turn
+- Runtime / coverage context:
+  - this makes the closure script reproducible and keeps supplemental sweeps
+    from corrupting baseline coverage accounting
+- Commit:
+  - pending
+
+### BUG-037-H: Ingress formal checker parameter surface drifted from the parser
+- First seen in:
+  - `packet_scheduler/tb/scripts/formal_ingress.sh` on `2026-04-24`
+- Symptom:
+  - ingress formal compilation passed, but elaboration failed with parameter
+    override errors for `N_SHD`, `N_HIT`, and frame-count width constants
+- Root cause:
+  - `ordered_priority_queue_monolithic_ingress_parser.sv` still passed the
+    parser configuration constants into `opq_native_ingress_formal_sva`
+  - the checker module signature had drifted and no longer accepted those
+    parameters
+- Fix status:
+  - state:
+    - fixed for compile/elab formal readiness
+  - mechanism:
+    - the checker parameter surface now accepts the same configuration
+      constants as the parser instantiation
+  - before_fix_outcome:
+    - `formal_ingress.sh` ended with `elab=fail:opq_formal_ingress_tb`
+  - after_fix_outcome:
+    - `/tmp/opq_formal_ingress_20260424_rerun.log` reports
+      `compile=pass elab=pass`
+    - egress and mover formal planes also report `compile=pass elab=pass`
+  - potential_hazard:
+    - proof execution remains blocked by missing `qverify`/ZnFormal tooling in
+      the current environment, but the RTL/SVA plane is no longer an
+      elaboration blocker
+  - Claude Opus 4.7 xhigh review decision:
+    - pending / not run in this turn
+- Runtime / coverage context:
+  - this keeps formal readiness aligned with the native-SV checker flow used by
+    `formal_ingress.sh`, `formal_mover.sh`, and `formal_egress.sh`
+- Commit:
+  - pending
 
 ## 2026-04-17
 

@@ -2,9 +2,10 @@
 #------------------------------------------------------------------------------
 # IP Name   : render_loss_surface
 # Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
-# Revision  : 0.1 - generate OPQ analytical loss-surface data and DISLIN plots
+# Revision  : 0.2 - render OPQ loss-surface data from RTL simulation only
 # Description:
-#   Build the local DISLIN contour renderer and emit PNG/SVG loss-surface plots.
+#   Build the local DISLIN contour renderer and emit PNG/SVG loss-surface plots
+#   from an explicitly supplied HDL-simulation matrix.
 #------------------------------------------------------------------------------
 set -euo pipefail
 
@@ -17,7 +18,18 @@ DISLIN_DIR="${DISLIN_DIR:-${IP_DIR}/.vendor/dislin}"
 
 mkdir -p "${REPORT_DIR}" "${BUILD_DIR}"
 
-python3 "${SCRIPT_DIR}/opq_loss_surface_model.py" --output-dir "${REPORT_DIR}"
+if [[ -z "${RTL_LOSS_SURFACE_DAT:-}" ]]; then
+  cat >&2 <<'EOF'
+Refusing to render an analytical/proxy loss surface.
+Set RTL_LOSS_SURFACE_DAT to a DISLIN matrix emitted by an HDL simulation sweep.
+EOF
+  exit 2
+fi
+
+if [[ ! -f "${RTL_LOSS_SURFACE_DAT}" ]]; then
+  printf 'RTL_LOSS_SURFACE_DAT does not exist: %s\n' "${RTL_LOSS_SURFACE_DAT}" >&2
+  exit 2
+fi
 
 gcc -O2 -Wall -Wextra -std=c11 \
   -I"${DISLIN_DIR}" \
@@ -28,11 +40,11 @@ gcc -O2 -Wall -Wextra -std=c11 \
   -o "${BUILD_DIR}/opq_loss_surface_plot"
 
 "${BUILD_DIR}/opq_loss_surface_plot" \
-  "${REPORT_DIR}/loss_surface_grid.dat" \
+  "${RTL_LOSS_SURFACE_DAT}" \
   "${REPORT_DIR}/loss_surface_contour.png"
 
 "${BUILD_DIR}/opq_loss_surface_plot" \
-  "${REPORT_DIR}/loss_surface_grid.dat" \
+  "${RTL_LOSS_SURFACE_DAT}" \
   "${REPORT_DIR}/loss_surface_contour.svg"
 
 printf 'Wrote %s\n' "${REPORT_DIR}/loss_surface_contour.png"

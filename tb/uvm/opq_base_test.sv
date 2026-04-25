@@ -47,6 +47,15 @@ class opq_base_test extends uvm_test;
     return 300us;
   endfunction
 
+  function automatic time configured_dwell_time(time default_dwell);
+    int unsigned dwell_us;
+
+    if ($value$plusargs("OPQ_DWELL_US=%d", dwell_us)) begin
+      return dwell_us * 1us;
+    end
+    return default_dwell;
+  endfunction
+
   task automatic csr_write32(bit [8:0] addr, bit [31:0] data);
     logic [31:0] dummy_data;
     csr_vif.write32(addr, data);
@@ -823,7 +832,7 @@ class opq_base_test extends uvm_test;
     phase.raise_objection(this);
     check_csr_header_and_caps();
     run_main_sequence();
-    holdoff = dwell_time();
+    holdoff = configured_dwell_time(dwell_time());
     #(holdoff);
     run_post_sequence_checks();
     phase.drop_objection(this);

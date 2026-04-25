@@ -1,9 +1,19 @@
+`ifndef OPQ_CHANNEL_WIDTH
+`define OPQ_CHANNEL_WIDTH 2
+`endif
+`ifndef OPQ_PAGE_RAM_RD_WIDTH
+`define OPQ_PAGE_RAM_RD_WIDTH 36
+`endif
+`ifndef OPQ_EGRESS_EMPTY_WIDTH
+`define OPQ_EGRESS_EMPTY_WIDTH 1
+`endif
+
 interface opq_ingress_if(input logic clk);
   logic reset;
   longint unsigned cycle_count;
   logic [35:0] data;
   logic [0:0] valid;
-  logic [1:0] channel;
+  logic [`OPQ_CHANNEL_WIDTH-1:0] channel;
   logic [0:0] startofpacket;
   logic [0:0] endofpacket;
   logic [2:0] error;
@@ -27,20 +37,21 @@ endinterface
 
 interface opq_egress_if(input logic clk);
   logic reset;
-  logic [35:0] data;
+  logic [`OPQ_PAGE_RAM_RD_WIDTH-1:0] data;
   logic valid;
   logic ready;
   logic startofpacket;
   logic endofpacket;
   logic [2:0] error;
+  logic [`OPQ_EGRESS_EMPTY_WIDTH-1:0] empty;
 
   clocking drv_cb @(posedge clk);
     output ready;
-    input reset, data, valid, startofpacket, endofpacket, error;
+    input reset, data, valid, startofpacket, endofpacket, error, empty;
   endclocking
 
   clocking mon_cb @(posedge clk);
-    input reset, data, valid, ready, startofpacket, endofpacket, error;
+    input reset, data, valid, ready, startofpacket, endofpacket, error, empty;
   endclocking
 endinterface
 

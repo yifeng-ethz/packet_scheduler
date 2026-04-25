@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 // IP Name   : opq_native_basic_presenter_formal_sva
 // Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
-// Revision  : 0.2 - add header-count-aware egress frame grammar checks
+// Revision  : 0.3 - allow same-timestamp emitted frames while catching regressions
 // Description:
 //   Native-SV formal checker for the live basic presenter. This is the active
 //   native-SV signoff egress path today, so these checks are prioritized ahead
@@ -187,8 +187,8 @@ module opq_native_basic_presenter_formal_sva #(
             if (last_closed_frame_valid) begin
               assert (aso_egress_data[15:0] > last_closed_frame_pkg_cnt)
                 else $error("OPQ_NATIVE_BASIC_PRESENTER_FORMAL frame pkg_cnt did not increase");
-              assert ({frame_ts_hi32, aso_egress_data[31:16]} > last_closed_frame_ts)
-                else $error("OPQ_NATIVE_BASIC_PRESENTER_FORMAL frame timestamp did not increase");
+              assert ({frame_ts_hi32, aso_egress_data[31:16]} >= last_closed_frame_ts)
+                else $error("OPQ_NATIVE_BASIC_PRESENTER_FORMAL frame timestamp regressed");
             end
           end
           FRAME_HDR_AUX_WORDS_WIDTH'(2): begin

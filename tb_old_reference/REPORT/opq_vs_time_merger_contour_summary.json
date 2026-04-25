@@ -1,0 +1,28 @@
+{
+  "model": "finite-buffer OPQ vs time-merger burst/rate proxy",
+  "scope_note": "Analytical contour comparison.  It uses finite-buffer blocking as a smooth proxy and is not direct RTL drop-probability evidence.",
+  "n_lane": 4,
+  "opq_egress_symbols_per_beat": 1,
+  "opq_capacity": 255,
+  "time_merger_tree_depth": 2,
+  "time_merger_stage_bubble": 1.0,
+  "time_merger_service_symbols_per_beat": 0.3333333333333333,
+  "time_merger_capacity": 32,
+  "burstiness_definition": "B = (SCV - 1) / (SCV + 1)",
+  "effective_load": "rho_eff = rate_per_lane * N_LANE / service_symbols_per_beat * sqrt((1+SCV)/2)",
+  "rate_range": [
+    0.01,
+    0.4
+  ],
+  "burstiness_range": [
+    -1.0,
+    1.0
+  ],
+  "artifacts": {
+    "csv": "/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb_old_reference/REPORT/opq_vs_time_merger_contour_grid.csv",
+    "opq_grid_dat": "/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb_old_reference/REPORT/opq_vs_time_merger_contour_opq.dat",
+    "time_merger_grid_dat": "/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb_old_reference/REPORT/opq_vs_time_merger_contour_time_merger.dat",
+    "png": "/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb_old_reference/REPORT/opq_vs_time_merger_loss_contour.png",
+    "svg": "/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb_old_reference/REPORT/opq_vs_time_merger_loss_contour.svg"
+  }
+}

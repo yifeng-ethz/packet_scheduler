@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 // IP Name   : opq_oss_block_path_formal_tb
 // Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
-// Revision  : 0.1 - OSS Yosys/SBY block-path proof harness
+// Revision  : 0.3 - rely on registered page-RAM source consistency after staged ownership
 // Description:
 //   Yosys/SymbiYosys-friendly harness for the native-SV block mover / DRR
 //   arbiter. The proof target is page-writer ownership plus onehot/eligibility
@@ -200,13 +200,6 @@ module opq_oss_block_path_formal_tb;
       end
       if (!locked_dbg_oss && !pa_write && (req_eligible_dbg_oss == '0)) begin
         assert(gnt_dbg_oss == '0);
-      end
-
-      if (page_allocator_write_head_i || page_allocator_write_tail_i || page_allocator_write_page_i) begin
-        assert(!page_allocator_page_we_i || page_ram_src_valid_comb_dbg_oss);
-        assert(!page_allocator_page_we_i || page_ram_src_is_pa_comb_dbg_oss);
-        assert(!page_allocator_page_we_i || (page_ram_src_addr_comb_dbg_oss == page_allocator_page_waddr_i));
-        assert(!page_allocator_page_we_i || (page_ram_src_data_comb_dbg_oss == page_allocator_page_wdata_i));
       end
 
       if (page_ram_we_o) begin

@@ -1,9 +1,11 @@
-module opq_avst_ingress_sva (
+module opq_avst_ingress_sva #(
+  parameter int unsigned CHANNEL_WIDTH = 2
+) (
   input logic clk,
   input logic reset,
   input logic [35:0] data,
   input logic [0:0] valid,
-  input logic [1:0] channel,
+  input logic [CHANNEL_WIDTH-1:0] channel,
   input logic [0:0] startofpacket,
   input logic [0:0] endofpacket,
   input logic [2:0] error

@@ -3,7 +3,7 @@
 **DUT:** `packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic.sv`  
 **Packaging:** `packet_scheduler/script/ordered_priority_queue_hw.tcl`  
 **Author:** Yifeng Wang (yifenwan@phys.ethz.ch)  
-**Date:** 2026-04-22
+**Date:** 2026-04-24
 **Status:** Active current-tree plan for the native monolithic SystemVerilog DUT and the live `packet_scheduler/tb/uvm` harness. The legacy monolithic VHDL image remains a behavioral reference only and does not count as signoff evidence.
 
 ---
@@ -64,19 +64,30 @@ revision and current harness.
 - The full frame timestamp is now part of the active contract. The DUT uses the
   full frame-base timestamp and extends subheader low-byte wrap into an
   absolute hit timestamp.
-- `N_SHD=256` is the active default, but the current signoff intent must also
-  cover `N_SHD=128` and `N_SHD=512`.
-- For `N_SHD > 256`, `TICKET_FIFO_DEPTH` must be larger than `N_SHD`; this is a
-  packaging and harness contract now.
+- Frame timestamp spacing is measured in FEB header timestamp ticks, not in
+  live SWB/UVM clock cycles. One OPQ frame advances `frame_ts` by
+  `N_SHD * 16` ticks, where each timestamp tick is `8 ns`: `0x400` for
+  `N_SHD=64`, `0x800` for `N_SHD=128`, and `0x1000` for `N_SHD=256`.
+  The live SWB/UVM clock is `250 MHz` (`4 ns`), so the equivalent SWB-cycle
+  spacing is doubled: `0x800`, `0x1000`, and `0x2000` cycles for those three
+  points. Harness fields named `*_CYCLES` must convert between these domains
+  explicitly instead of reusing header timestamp increments directly.
+- `N_SHD=128` is the active default. Current feature-range signoff covers
+  `N_SHD=64 / 128 / 256`, and the `64` point remains mandatory because its
+  shorter frame period exposes hard-coded timing assumptions that the default
+  point can hide.
+- `TICKET_FIFO_DEPTH` must be derived from both frame size and lane count:
+  `max(256, 32 * N_SHD, 2 * N_SHD * N_LANE)`, rounded up to a power of two.
+  This is now a shared packaging and harness contract.
 - The old split-tree scope is deprecated. Live DV is for the monolithic DUT.
 
 ### Deferred from the archived plan
 
 - Full `MODE` matrix (`MERGING` plus `MULTIPLEXING`) is not yet closed on the
   live harness.
-- Full `N_LANE` sweep is not yet closed on the live harness.
-- Full width sweep (`PAGE_RAM_RD_WIDTH`, `CHANNEL_WIDTH`, non-default ingress
-  widths) is not yet closed on the live harness.
+- The deliverable OPQ feature-range sweep for `N_LANE=4/8/16` and
+  `PAGE_RAM_RD_WIDTH=36/72/144/288` is closed by the focused RTL simulation
+  matrix below. Wider mode combinations outside that matrix remain backlog.
 - The very large legacy directed catalog remains a backlog, not a current-tree
   implementation claim.
 
@@ -91,12 +102,12 @@ current implementation scope is intentionally narrower than the archived plan:
 - mixed-language UVM harness in `packet_scheduler/tb/uvm`
 - active generated standalone dashboard slice is
   `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256 DUT_IMPL=native_sv`
-- historical 2-lane closure, bounded `N_SHD` extensions, and other supplemental
-  native-SV points remain useful evidence, but they are tracked outside the
-  active generated dashboard unless rerun in that exact current scope
+- historical 2-lane closure remains useful evidence, but the current deliverable
+  feature-range evidence is the `4/8/16` lane and `1x/2x/4x/8x` egress-width
+  matrix below
 - build-time sweep knobs that already work today and remain planned expansion
   axes:
-  - `OPQ_N_SHD = 128 / 256 / 512`
+  - `OPQ_N_SHD = 64 / 128 / 256`
   - derived or explicit `OPQ_TICKET_FIFO_DEPTH`
   - reduced `OPQ_PAGE_RAM_DEPTH` for overflow forcing
 
@@ -104,10 +115,85 @@ The following compile / elaboration-time sweep is part of signoff intent and
 must remain in the plan, even though the current generated dashboard is frozen
 to the canonical `4-lane/128/256` rerun slice:
 
-- randomize `N_SHD` across `128 / 256 / 512` at build time
+- randomize `N_SHD` across `64 / 128 / 256` at build time
 - derive a safe `TICKET_FIFO_DEPTH` from `N_SHD`
 - extend the same mechanism to other exposed generics once the harness supports
   them cleanly
+
+### 2026-04-24 `N_SHD` timing-domain sanity
+
+The direct standalone sanity sweep was rerun for `OPQ_N_LANE=4`,
+`DUT_IMPL=native_sv`, and `N_SHD=64 / 128 / 256`, with logs preserved under
+`/tmp/opq_dv_nshd_frame_20260424_rerun2/`.
+
+| `N_SHD` | `frame_ts` step | SWB cycles at 250 MHz | ticket depth | direct no-drop tests | continuous-frame tests |
+|---------|----------------:|----------------------:|-------------:|----------------------|------------------------|
+| `64` | `0x400` FEB ticks | `0x800` cycles | `2048` | pass: smoke `8/8`, ts `6/6`, max-hits `319/319` | pass: bucket `4306/4306`, all-buckets `4342/4342` |
+| `128` | `0x800` FEB ticks | `0x1000` cycles | `4096` | pass: smoke `8/8`, ts `6/6`, max-hits `319/319` | pass: bucket `4306/4306`, all-buckets `4342/4342` |
+| `256` | `0x1000` FEB ticks | `0x2000` cycles | `8192` | pass: smoke `8/8`, ts `6/6`, max-hits `319/319` | pass: bucket `4306/4306`, all-buckets `4342/4342` |
+
+This shows that the non-default `N_SHD` values are genuinely compiled and
+elaborated; the `64` and `256` points are not silently falling back to the
+default. The earlier direct-test failures were harness assumptions:
+hard-coded boundary positions were outside `N_SHD=64`, and the max-hit sequence
+overdrove aggregate hits when lane count changed. Those stimulus issues are
+closed on the rerun.
+
+### 2026-04-24 `N_LANE=8/16` and wide-egress closure status
+
+The `_hw.tcl` package exposes `N_LANE={2,4,8,16}`. The deliverable OPQ
+feature range for this release is `N_LANE=4/8/16`, with egress beat width
+`PAGE_RAM_RD_WIDTH=36/72/144/288` (1/2/4/8 OPQ 36-bit words per beat).
+
+The full focused matrix was rerun on 2026-04-24 under
+`/tmp/opq_dv_lane_width_20260424_rerun2/`.
+
+| matrix axis | values | tests per point | result |
+|-------------|--------|-----------------|--------|
+| `N_LANE` | `4 / 8 / 16` | 6 | pass |
+| `PAGE_RAM_RD_WIDTH` | `36 / 72 / 144 / 288` | 6 | pass |
+| total | 12 build points | 72 runs | `72/72` pass, `UVM_ERROR=0`, `UVM_FATAL=0`, Questa `Errors=0` |
+
+The per-point tests are `opq_basic_smoke_test`,
+`opq_basic_ts_boundary_test`, `opq_edge_max_hits_test`,
+`opq_prof_whole_frame_skew_test`, `opq_bucket_frame_native_sv_test`, and
+`opq_all_buckets_frame_native_sv_test`. The worst-size
+`N_LANE=16/PAGE_RAM_RD_WIDTH=288` all-buckets run closed with
+`expected=5550 actual=5550 missing=0 ghost=0`.
+
+This debug found a real allocator bug before the 8/16-lane screens could be
+trusted: same-serial body tickets in an active frame were classified as
+`future` when their hit timestamp was ahead of the current subheader cursor,
+so the tail-retire path could close the frame after the trailer and late-drop
+the body tickets. `ordered_priority_queue_monolithic_page_allocator.sv` now
+keeps same-serial active-frame body tickets in-window until the current frame
+has consumed or retired them.
+
+This matrix is the current DV closure point for the OPQ lane-count and
+multi-symbol egress feature range. It does not claim the deprecated 2-lane
+path as a release target and does not expand the full legacy bucket catalog to
+every lane/width pair.
+
+The old time-merger comparison path also has a standalone exact-frame
+SystemVerilog reference under `packet_scheduler/tb_old_reference/`. It parses
+the same OPQ/FEB 36-bit frame words as the UVM ingress driver, builds a
+stage-buffered 2-input tree for `N_LANE=4/8/16`, and currently passes:
+
+```sh
+make -C packet_scheduler/tb_old_reference BUILD_DIR=/tmp/old_tm_ref smoke-all
+```
+
+That reference is intentionally not pin-to-pin integrated into the historical
+SWB datapath; the required contract is exact frame-format parsing and a
+standalone finite-service tree suitable for matched OPQ/time-merger sweeps.
+
+Loss/contour/skew plot evidence for this DV plan must come from HDL simulation
+CSV/DAT artifacts. Analytical or proxy Python/C model outputs must not be used
+as `MATH_REPORT` evidence.
+
+`PAGE_RAM_RD_WIDTH > 36` is now covered by the same matrix. The widened
+presenter/packer path and `aso_egress_empty` sideband are exercised by the UVM
+egress monitor and scoreboard at 2x/4x/8x widths.
 
 ---
 
@@ -119,7 +205,7 @@ matching script wrappers under `packet_scheduler/tb/scripts/`.
 | Bucket | Markdown | Wrapper | Current promoted tests | Contract exercised |
 |--------|----------|---------|------------------------|--------------------|
 | `DV_BASIC` | `DV_BASIC.md` | `run_basic.sh` | `opq_basic_smoke_test`, `opq_basic_ts_boundary_test`, `opq_basic_subheader_shape_test`, `opq_basic_feb_packet_contract_test`, `opq_basic_single_active_lane_test`, `opq_basic_single_active_lane_lane1_test`, `opq_basic_single_active_lane_dense_test` | End-to-end hit preservation, full-ts boundary behavior, subheader shape, native FEB whole-frame contract, and single-active-lane healthy-path closure |
-| `DV_PARAM` | `DV_PARAM.md` | `run_param.sh` | `opq_basic_smoke_test`, `opq_basic_ts_boundary_test`, `opq_edge_max_hits_test` across `N_SHD=128/256/512` | Compile / elaboration-time configuration sweep for the active harness |
+| `DV_PARAM` | `DV_PARAM.md` | `run_param.sh` | `opq_basic_smoke_test`, `opq_basic_ts_boundary_test`, `opq_edge_max_hits_test` across `N_SHD=64/128/256` | Compile / elaboration-time configuration sweep for the active harness |
 | `DV_EDGE` | `DV_EDGE.md` | `run_edge.sh` | `opq_edge_backpressure_test`, `opq_edge_always_ready_test`, `opq_edge_ready_medium_profile_test`, `opq_edge_stuck_low_backpressure_test`, `opq_edge_max_hits_test`, `opq_edge_toggle_backpressure_test`, `opq_edge_burst_restart_profile_test`, `opq_edge_long_toggle_backpressure_test`, `opq_edge_max_hits_backpressure_test` | Backpressure restart, always-ready baseline, medium/stuck-low ready profiles, max-hit packet shape, short/long-toggle ready behavior, and max-hit under healthy restart |
 | `DV_PROF` | `DV_PROF.md` | `run_perf.sh` | `opq_prof_stress_test`, `opq_prof_lane_skew_test`, `opq_prof_whole_frame_skew_test`, `opq_prof_missing_empty_frame_test`, `opq_prof_long_soak_test`, `opq_prof_heavy_lane_skew_test`, `opq_prof_deep_whole_frame_skew_test`, `opq_prof_per_lane_half_frame_skew_sweep_test`, `opq_prof_asymmetric_missing_empty_frame_test` | Sustained traffic without drop, lane skew, deeper whole-frame cadence skew, 4-lane per-lane half-frame skew sweep, asymmetric missing-empty-frame residency, and longer healthy soaks on the active signoff contract |
 | `DV_ERROR` | `DV_ERROR.md` | `run_error.sh` | `opq_error_lane_mask_test`, `opq_error_lane_mask_single_hit_test`, `opq_error_lane_mask_burst_test`, `opq_error_lane_mask_recovery_test`, `opq_error_hit_mask_recovery_test`, `opq_error_subheader_mask_recovery_test`, `opq_error_header_mask_recovery_test`, `opq_error_header_word_mask_recovery_test`, `opq_error_counter_clear_test`, `opq_error_ftable_overflow_test` | Mask-at-boundary recovery, typed ingress error masking at hit/subheader/header scope, the passing counter-clear supplemental screen, and the reduced-depth overwrite/drop elaboration point |
@@ -389,7 +475,9 @@ closure progress without reading the whole testcase catalog.
 | Feature / contract | Plan evidence | Code / harness hook | Status | Functional gain | Code-path gain |
 |--------------------|---------------|---------------------|--------|-----------------|----------------|
 | Full-ts hit integrity | `DV_BASIC`, `DV_EDGE` | scoreboard + `opq_hit3_contract_sva` | Implemented / green | High | High |
-| Active `N_SHD` sweep | `DV_PARAM` | `run_param.sh`, `cg_cfg`, wrapper defines | Implemented / green at `128/256/512` | Medium | Medium |
+| Active `N_SHD` sweep | `DV_PARAM` | `run_param.sh`, `cg_cfg`, wrapper defines | Implemented / green at `64/128/256` | Medium | Medium |
+| Deliverable lane-count sweep | `DV_PARAM`, focused feature matrix | array DUT wrapper, scoreboard lane accounting | Implemented / green at `N_LANE=4/8/16` | High | High |
+| Multi-symbol egress width | focused feature matrix | egress packer, `aso_egress_empty`, egress monitor unpacking | Implemented / green at `PAGE_RAM_RD_WIDTH=36/72/144/288` | High | High |
 | Runtime CSR header + counters | `DV_ERROR`, `DV_CROSS` | CSR helpers + `opq_csr_sva` | Implemented / green on the promoted subset | Medium | Medium |
 | Lane mask at packet boundary | `DV_ERROR` | CSR lane-mask helpers + counter checks | Implemented / green | Medium | Medium |
 | DRR allowance programming | `DV_CROSS` | `opq_cross_drr_allowance_test`, DRR CSR reads | Implemented / green | Medium | Medium |
@@ -411,22 +499,23 @@ states which items are really closed and which are still backlog.
 |------------------------|---------------|----------|
 | Full-ts hit tracking with no ambiguity after long lane stalls | Implemented / green on promoted path | scoreboard absolute `ts[47:0]`, `opq_hit3_contract_sva`, `DV_BASIC`, `DV_PARAM` |
 | UVM-only `HIT_ID` for missing/ghost-hit tracking | Implemented / green | scoreboard contract in `DV_HARNESS.md`, promoted integrity tests |
-| `N_SHD=256` default plus `128/256/512` signoff sweep | Implemented / green | `DV_PARAM.md`, `run_param.sh`, `cg_cfg` |
+| `N_SHD=128` default plus `64/128/256` signoff sweep | Implemented / green | `DV_PARAM.md`, `run_param.sh`, `cg_cfg`, `/tmp/opq_dv_nshd_frame_20260424_rerun2/` |
 | DRR per-lane allowance through CSR plus monitors/counters | Implemented / green on directed path | `DV_CROSS.md`, `opq_cross_drr_allowance_test`, DRR CSR checks |
 | DRR SVA and constrained-random stress | Implemented / green on current named screens: directed SVA closure is green, `opq_cross_drr_bursty_frame2_boundary_test` and `opq_cross_drr_bursty_frame3_repro_test` are both green, and the refreshed `opq_cross_drr_bursty_random_test` seed sweep `1..8` closes with `UVM_ERROR : 0` and per-lane `unexplained=0` | `opq_drr_sva`, `opq_cross_drr_bursty_random_test`, `opq_cross_drr_bursty_frame2_boundary_test`, `opq_cross_drr_bursty_frame3_repro_test`, `DV_FORMAL.md`, `DV_PROBE.md` |
 | Formal section separate from directed/random | Implemented in plan | `DV_FORMAL.md` |
 | Realistic FEB-like driver contract derived from frontend frame format | Implemented at FEB-frame contract level, not yet the full `online_dpv2` IP chain | `DV_HARNESS.md`, packet builders in `opq_pkg.sv` |
 | Full `online_dpv2` FEB datapath in the active harness | Open backlog | not yet wired into the current-tree harness |
-| Full native-SV rewrite with same architecture and source-level SVA ownership | Partial / open | `rtl/sv_ver/ordered_priority_queue/monolithic_sv`, not yet full signoff replacement |
-| Non-default `N_SHD` sweep | `DV_BASIC` signoff sweep | build-time config randomization + wrapper defines | Implemented / green at `128/256/512` on the basic trilogy | Medium | Medium |
+| Full native-SV rewrite with same architecture and source-level SVA ownership | Implemented for the deliverable OPQ monolithic feature range; wider legacy mode matrix remains backlog | `rtl/sv_ver/ordered_priority_queue/monolithic_sv`, SVA bind modules, focused feature matrix |
+| Non-default `N_SHD` sweep | Implemented / green at `64/256` plus default `128` | build-time config randomization + wrapper defines |
+| `N_LANE=8/16` and 2x/4x/8x egress width | Implemented / green on focused RTL simulation closure | `/tmp/opq_dv_lane_width_20260424_rerun2/`, 72/72 pass |
 
 ### Current coverage snapshot
 
 | Metric | Current live evidence | Status |
 |--------|-----------------------|--------|
-| Functional coverage | `90.04%` promoted functional closure (`45/46` promoted cases evidenced); per-bucket merged covergroup totals are rendered in `DV_COV.md` | Active promoted baseline; the reduced-depth overflow supplemental screens are green on the current tree |
-| Structural code coverage | `stmt=83.73`, `branch=80.83`, `fsm_state=95.45`, `fsm_trans=58.00`, `toggle=46.48` on the current merged UCDB flow | Active baseline, not closed |
-| Directive coverage | `100.00%` on the current merged UCDB flow | Active baseline |
+| Functional coverage | `run_cov_closure.sh` rerun on `2026-04-24`: baseline `25/25` pass, `N_SHD=64/128/256` supplemental sweep `3/3` each | Active baseline script is clean |
+| Structural code coverage | `Total Coverage By Instance (filtered view): 54.89%` on the refreshed merged UCDB | Active baseline, not a raw structural closure claim |
+| Directive coverage | assertion/directive report generated with `Errors: 0, Warnings: 0` | Active baseline |
 | DRR directed closure | `opq_cross_drr_allowance_test` green | Closed for directed allowance path |
 | DRR bursty closure | `opq_cross_drr_bursty_frame2_boundary_test` remains green, `opq_cross_drr_bursty_frame3_repro_test` reruns green with `expected=714 actual=714 missing=0 ghost=0`, and the refreshed `opq_cross_drr_bursty_random_test` seed sweep `1..8` is green on the current `2026-04-21` patchset with per-lane `unexplained=0` | No active failing boundary currently reproduced on the named deterministic or constrained-random screens |
 | Default-build legal pre-drop boundary | `opq_cross_bp_predrop_boundary_test` is green on `2026-04-20`, with final `ft_drop_hdr/shd/hit=0/0/0`, aggregate `accepted=13260 dropped=66612 delivered=13260 unexplained=0`, and `core_principles first_break=clean` | Closed for the legal pre-drop half of the default-build overflow contract |
@@ -436,7 +525,7 @@ states which items are really closed and which are still backlog.
 
 ---
 
-## 8. Formal Verification Plan
+## 9. Formal Verification Plan
 
 Formal verification is a distinct signoff activity from directed or
 constrained-random simulation. The immediate formal scope should target the
@@ -465,9 +554,12 @@ clear module-boundary contracts before the full native-SV rewrite is complete.
 
 ### Formal method
 
-- short term: mixed-language bind SVA onto the current monolithic VHDL DUT
-- medium term: move the highest-value invariants into the native SV rewrite so
-  block-level proofs can run without mixed-language limitations
+- current supported path: native-SV SVA modules compiled and elaborated through
+  `formal_ingress.sh`, `formal_mover.sh`, and `formal_egress.sh`
+- `2026-04-24` result: ingress, mover, and egress formal planes all compile
+  and elaborate; proof execution is blocked by the absence of a runnable
+  `qverify`/ZnFormal executable in `QUESTA_FORMAL_HOME`, `QUESTA_HOME`, or
+  `PATH`
 
 ### Simulation vs formal split
 
@@ -481,20 +573,19 @@ clear module-boundary contracts before the full native-SV rewrite is complete.
 
 ---
 
-## 9. Remaining Planned Work
+## 10. Remaining Planned Work
 
 The following legacy expressions remain valid but are not yet closed in the
 current tree:
 
 - `MODE=MULTIPLEXING`
 - `TRACK_HEADER=false`
-- live `N_LANE` sweep beyond the current 2-lane harness
-- wide egress packing (`PAGE_RAM_RD_WIDTH > 36`)
 - reset-in-state catalog from the archived error bucket
 - deeper truncation / malformed packet matrix
 - broader CSR / counter crosses
 - monolithic accepted-count vs frame-table metadata consistency under bursty DRR drop
 - merged structural code-coverage hole disposition after the latest testcase
   expansion
+- full legacy bucket expansion across every `N_LANE` and egress-width pair
 
 These are backlog items for closure, not current signoff claims.

@@ -45,7 +45,7 @@ module lane_fifo
 			.wren_a    (we)
 		);
 
-		assign q = (we && (read_addr == write_addr)) ? data : ram_q;
+		assign q = ram_q;
 `else
 	reg [(DATA_WIDTH-1):0] q_reg;
 	assign q = q_reg;
@@ -67,11 +67,10 @@ module lane_fifo
 		if (we)
 			ram[write_addr] <= data;
 
-		// Read (bypass on same-address read/write).
-		if (we && (read_addr == write_addr))
-			q_reg <= data;
-		else
-			q_reg <= ram[read_addr];
+		// Read. The block mover only consumes addresses after the ingress side
+		// has returned credit/latency, so same-address forwarding is not part of
+		// the legal lane FIFO contract.
+		q_reg <= ram[read_addr];
 	end
 `endif
 

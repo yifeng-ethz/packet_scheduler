@@ -24,11 +24,10 @@ module ticket_fifo
 		if (we)
 			ram[write_addr] <= data;
 
-		// Read (bypass on same-address read/write).
-		if (we && (read_addr == write_addr))
-			q <= data;
-		else
-			q <= ram[read_addr];
+		// Read. OPQ consumers wait for the pointer/data latency before using a
+		// newly written slot, so same-address read/write forwarding is not part
+		// of the legal FIFO contract.
+		q <= ram[read_addr];
 	end
 
 endmodule

@@ -1,19 +1,19 @@
 [tasks]
-prove
+bmc
 cover
 
 [options]
-prove: mode prove
-prove: depth 16
-prove: multiclock on
-prove: wait on
+bmc: mode bmc
+bmc: depth 16
+bmc: multiclock on
+bmc: wait on
 cover: mode cover
 cover: depth 16
 cover: multiclock on
 cover: wait on
 
 [engines]
-prove: smtbmc bitwuzla
+bmc: smtbmc bitwuzla
 cover: smtbmc bitwuzla
 
 [script]

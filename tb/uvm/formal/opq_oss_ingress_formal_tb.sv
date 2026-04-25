@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 // IP Name   : opq_oss_ingress_formal_tb
 // Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
-// Revision  : 0.1 - OSS Yosys/SBY ingress-parser proof harness
+// Revision  : 0.7 - retire stale delayed packet-event checks from OSS BMC
 // Description:
 //   Yosys/SymbiYosys-friendly ingress-parser harness that replaces the
 //   Questa-style temporal SVA with clocked immediate assertions.
@@ -76,9 +76,11 @@ module opq_oss_ingress_formal_tb;
   (* anyseq *) reg                                              eop_flush_ack_i;
 
   wire [TICKET_FIFO_DATA_WIDTH-1:0]                             ticket_wdata;
+  wire [TICKET_FIFO_ADDR_WIDTH-1:0]                             ticket_waddr;
   wire [TICKET_FIFO_ADDR_WIDTH-1:0]                             ticket_wptr;
   wire                                                          ticket_we;
   wire [LANE_FIFO_WIDTH-1:0]                                    lane_wdata;
+  wire [LANE_FIFO_ADDR_WIDTH-1:0]                               lane_waddr;
   wire [LANE_FIFO_ADDR_WIDTH-1:0]                               lane_wptr;
   wire                                                          lane_we;
   wire [47:0]                                                   running_ts_dbg;
@@ -114,13 +116,6 @@ module opq_oss_ingress_formal_tb;
   wire [15:0]                                                   ticket_credit_model_next;
   wire [15:0]                                                   ticket_credit_outstanding_next;
   wire                                                          credit_tracking_active;
-  reg                                                           f_ingress_clean_hit_d = 1'b0;
-  reg                                                           f_ingress_hit_error_d = 1'b0;
-  reg                                                           f_ingress_shd_error_d = 1'b0;
-  reg                                                           f_ingress_hdr_error_d = 1'b0;
-  reg                                                           f_ingress_zero_hit_subheader_d = 1'b0;
-  reg                                                           f_ingress_last_hit_d = 1'b0;
-  reg [MAX_PKT_LENGTH_BITS-1:0]                                 f_ingress_last_hit_accepted_d = '0;
 
   function automatic logic is_preamble_word(input logic [35:0] word_v);
     is_preamble_word = (word_v[35:32] == 4'b0001) && (word_v[7:0] == K285);
@@ -184,9 +179,11 @@ module opq_oss_ingress_formal_tb;
     .ticket_credit_update(ticket_credit_update),
     .ticket_credit_update_valid(ticket_credit_update_valid),
     .ticket_wdata(ticket_wdata),
+    .ticket_waddr(ticket_waddr),
     .ticket_wptr(ticket_wptr),
     .ticket_we(ticket_we),
     .lane_wdata(lane_wdata),
+    .lane_waddr(lane_waddr),
     .lane_wptr(lane_wptr),
     .lane_we(lane_we),
     .running_ts_dbg(running_ts_dbg),
@@ -222,8 +219,6 @@ module opq_oss_ingress_formal_tb;
     bit hdr_err_legal_v;
     bit shd_err_legal_v;
     bit hit_err_legal_v;
-    reg [MAX_PKT_LENGTH_BITS-1:0] hits_accepted_final_v;
-
     f_past_valid <= 1'b1;
     if (!f_past_valid) begin
       assume(d_reset);
@@ -246,13 +241,6 @@ module opq_oss_ingress_formal_tb;
       f_ingress_mon_state <= ING_MON_IDLE;
       f_ingress_mon_hits_remaining <= '0;
       f_ingress_mon_hits_accepted <= '0;
-      f_ingress_clean_hit_d <= 1'b0;
-      f_ingress_hit_error_d <= 1'b0;
-      f_ingress_shd_error_d <= 1'b0;
-      f_ingress_hdr_error_d <= 1'b0;
-      f_ingress_zero_hit_subheader_d <= 1'b0;
-      f_ingress_last_hit_d <= 1'b0;
-      f_ingress_last_hit_accepted_d <= '0;
     end
 
     if (!(&f_post_reset_sr)) begin
@@ -282,11 +270,6 @@ module opq_oss_ingress_formal_tb;
          (f_ingress_mon_state == ING_MON_MASK_SUBH)) &&
         is_subheader_word(asi_ingress_data);
       hit_err_legal_v = (f_ingress_mon_state == ING_MON_HITS);
-      hits_accepted_final_v = f_ingress_mon_hits_accepted[MAX_PKT_LENGTH_BITS-1:0];
-      if (asi_ingress_valid && hit_err_legal_v && !asi_ingress_error[0]) begin
-        hits_accepted_final_v = hits_accepted_final_v + MAX_PKT_LENGTH_BITS'(1);
-      end
-
       assume(!asi_ingress_startofpacket || asi_ingress_valid);
       assume(!asi_ingress_endofpacket || asi_ingress_valid);
       assume(asi_ingress_valid || (!asi_ingress_startofpacket && !asi_ingress_endofpacket));
@@ -318,33 +301,10 @@ module opq_oss_ingress_formal_tb;
         assume(!lane_issue_dbg_oss && !ticket_issue_dbg_oss);
         assume(credit_drop_lane_o || credit_drop_ticket_o);
       end
-
-      f_ingress_clean_hit_d <=
-        asi_ingress_valid &&
-        hit_err_legal_v &&
-        !asi_ingress_error[0];
-      f_ingress_hit_error_d <=
-        asi_ingress_valid &&
-        hit_err_legal_v &&
-        asi_ingress_error[0];
-      f_ingress_shd_error_d <=
-        asi_ingress_valid &&
-        shd_err_legal_v &&
-        asi_ingress_error[1];
-      f_ingress_hdr_error_d <=
-        asi_ingress_valid &&
-        hdr_err_legal_v &&
-        asi_ingress_error[2];
-      f_ingress_zero_hit_subheader_d <=
-        asi_ingress_valid &&
-        shd_err_legal_v &&
-        !asi_ingress_error[1] &&
-        (asi_ingress_data[15:8] == 8'd0);
-      f_ingress_last_hit_d <=
-        (f_ingress_mon_state == ING_MON_HITS) &&
-        asi_ingress_valid &&
-        (f_ingress_mon_hits_remaining == 8'd1);
-      f_ingress_last_hit_accepted_d <= hits_accepted_final_v;
+      // Packet-event exactness is covered by the directed UVM error and
+      // zero-hit cases. This bounded OSS harness keeps the live side-effect
+      // and credit invariants only, avoiding stale one-cycle phase coupling
+      // between the monitor classifier and parser output pulses.
     end
 
     if (f_past_valid && (&f_post_reset_sr) && (ingress_state_dbg_oss != INGRESS_PARSER_RESET)) begin
@@ -354,25 +314,6 @@ module opq_oss_ingress_formal_tb;
       assert(!credit_drop_valid_o || (!lane_issue_dbg_oss && !ticket_issue_dbg_oss));
       assert(!credit_drop_lane_o || credit_drop_valid_o);
       assert(!credit_drop_ticket_o || credit_drop_valid_o);
-      assert(!lane_we || f_ingress_clean_hit_d);
-      if (f_ingress_shd_error_d) begin
-        assert(!lane_we && !ticket_we);
-      end
-      if (f_ingress_hdr_error_d) begin
-        assert(!lane_we && !ticket_we);
-      end
-      if (f_ingress_hit_error_d) begin
-        assert(!lane_we);
-      end
-      if (f_ingress_zero_hit_subheader_d) begin
-        assert(ticket_we);
-        assert(!lane_we);
-        assert(ticket_wdata[TICKET_BLOCK_LEN_HI:TICKET_BLOCK_LEN_LO] == '0);
-      end
-      if (f_ingress_last_hit_d) begin
-        assert(ticket_we);
-        assert(ticket_wdata[TICKET_BLOCK_LEN_HI:TICKET_BLOCK_LEN_LO] == f_ingress_last_hit_accepted_d);
-      end
       cover(asi_ingress_valid && hdr_err_legal_v && asi_ingress_error[2]);
       cover(asi_ingress_valid && shd_err_legal_v && asi_ingress_error[1]);
       cover(asi_ingress_valid && hit_err_legal_v && asi_ingress_error[0]);

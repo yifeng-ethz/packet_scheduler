@@ -1,0 +1,67 @@
+{
+  "model": "OPQ vs old time-merger analytical skew-loss proxy",
+  "scope_note": "This is not pin-equivalent RTL evidence.  It compares the OPQ finite ticket-window stress model against a simplified old tree-merger service-credit model derived from the historical VHDL architecture.",
+  "lane_count": 4,
+  "aligned_lanes": 3,
+  "skewed_lanes": 1,
+  "n_shd": [
+    64,
+    128,
+    256
+  ],
+  "rho": 0.92,
+  "skew_frames_range": [
+    0.0,
+    2.0
+  ],
+  "skew_count": 121,
+  "timestamp_unit_ns": 8.0,
+  "frame_tick_formula": "frame_ticks = N_SHD * 16",
+  "opq_effective_capacity": 256,
+  "old_tree_depth": 2,
+  "old_stage_bubble_cycles": 1.0,
+  "old_node_service_credit": 96.0,
+  "old_service_efficiency": 0.3333333333333333,
+  "old_effective_capacity": 32,
+  "loss_formula": "X~Poisson(3*rho*N_SHD*skew_frames); loss=E[max(0,X-capacity)]/(4*rho*N_SHD*skew_frames)",
+  "ratio_floor": 1e-12,
+  "ratio_clip": 1000000.0,
+  "max_loss_ratio_clipped_by_n_shd": {
+    "64": 1000000.0,
+    "128": 1000000.0,
+    "256": 1000000.0
+  },
+  "skew_span_ratio_ge_1e3_by_n_shd": {
+    "64": [
+      0.06666666666666667,
+      1.2833333333333332
+    ],
+    "128": [
+      0.03333333333333333,
+      0.6333333333333333
+    ],
+    "256": [
+      0.016666666666666666,
+      0.31666666666666665
+    ]
+  },
+  "skew_span_ratio_ge_1e6_by_n_shd": {
+    "64": [
+      0.08333333333333333,
+      1.1166666666666667
+    ],
+    "128": [
+      0.05,
+      0.55
+    ],
+    "256": [
+      0.03333333333333333,
+      0.26666666666666666
+    ]
+  },
+  "artifacts": {
+    "csv": "/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb_old_reference/REPORT/old_vs_opq_loss_comparison.csv",
+    "png": "/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb_old_reference/REPORT/old_vs_opq_loss_comparison.png",
+    "svg": "/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb_old_reference/REPORT/old_vs_opq_loss_comparison.svg"
+  }
+}

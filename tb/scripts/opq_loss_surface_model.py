@@ -7,6 +7,8 @@ import argparse
 import csv
 import json
 import math
+import multiprocessing as mp
+import os
 import random
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -14,15 +16,17 @@ from typing import Iterable, List
 
 
 DEFAULT_BURSTINESS_MIN = -1.0
-DEFAULT_BURSTINESS_MAX = 0.90
-DEFAULT_BURSTINESS_COUNT = 17
-DEFAULT_RATE_MIN = 0.86
-DEFAULT_RATE_MAX = 1.04
-DEFAULT_RATE_COUNT = 13
+DEFAULT_BURSTINESS_MAX = 1.0
+DEFAULT_BURSTINESS_COUNT = 73
+DEFAULT_RATE_MIN = 0.85
+DEFAULT_RATE_MAX = 1.05
+DEFAULT_RATE_COUNT = 61
 DEFAULT_BUFFER_CAPACITY = 255
 DEFAULT_WARMUP_ARRIVALS = 10_000
-DEFAULT_MEASURED_ARRIVALS = 100_000
+DEFAULT_MEASURED_ARRIVALS = 500_000
 DEFAULT_SEED = 20_260_423
+DEFAULT_JOBS = max(1, min(os.cpu_count() or 1, 24))
+MAX_ENDPOINT_SCV = 1_000.0
 
 
 @dataclass
@@ -37,6 +41,18 @@ class SweepPoint:
     drops_measured: int
 
 
+@dataclass(frozen=True)
+class SweepTask:
+    burstiness_idx: int
+    rate_idx: int
+    burstiness: float
+    rate_per_lane: float
+    buffer_capacity: int
+    warmup_arrivals: int
+    measured_arrivals: int
+    seed: int
+
+
 def linspace(start: float, stop: float, count: int) -> List[float]:
     if count <= 1:
         return [float(start)]
@@ -47,6 +63,10 @@ def linspace(start: float, stop: float, count: int) -> List[float]:
 def burstiness_to_scv(burstiness: float) -> float:
     if burstiness <= -0.999_999:
         return 0.0
+    if burstiness >= 0.999_999:
+        # B=+1 maps to infinite SCV, so clamp the sampled endpoint to a large
+        # but finite value and keep the visible axis range intact.
+        return MAX_ENDPOINT_SCV
     return (1.0 + burstiness) / (1.0 - burstiness)
 
 
@@ -154,6 +174,18 @@ def simulate_loss_point(
     )
 
 
+def simulate_loss_task(task: SweepTask) -> SweepPoint:
+    point_seed = task.seed + (task.burstiness_idx * 1009) + (task.rate_idx * 9176)
+    return simulate_loss_point(
+        rate_per_lane=task.rate_per_lane,
+        burstiness_target=task.burstiness,
+        buffer_capacity=task.buffer_capacity,
+        warmup_arrivals=task.warmup_arrivals,
+        measured_arrivals=task.measured_arrivals,
+        seed=point_seed,
+    )
+
+
 def write_grid_dat(
     output_path: Path,
     x_values: list[float],
@@ -246,6 +278,12 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_SEED,
         help="Base RNG seed for repeatable sweeps.",
     )
+    parser.add_argument(
+        "--jobs",
+        type=int,
+        default=DEFAULT_JOBS,
+        help="Parallel worker processes for independent sweep points.",
+    )
     return parser.parse_args()
 
 
@@ -258,27 +296,40 @@ def main() -> None:
     )
     rate_values = linspace(args.rate_min, args.rate_max, args.rate_count)
 
-    rows: list[SweepPoint] = []
+    tasks: list[SweepTask] = []
     for burstiness_idx, burstiness in enumerate(burstiness_values):
         for rate_idx, rate_per_lane in enumerate(rate_values):
-            point_seed = args.seed + (burstiness_idx * 1009) + (rate_idx * 9176)
-            rows.append(
-                simulate_loss_point(
+            tasks.append(
+                SweepTask(
+                    burstiness_idx=burstiness_idx,
+                    rate_idx=rate_idx,
+                    burstiness=burstiness,
                     rate_per_lane=rate_per_lane,
-                    burstiness_target=burstiness,
                     buffer_capacity=args.buffer_capacity,
                     warmup_arrivals=args.warmup_arrivals,
                     measured_arrivals=args.measured_arrivals,
-                    seed=point_seed,
+                    seed=args.seed,
                 )
             )
+
+    jobs = max(1, min(args.jobs, len(tasks)))
+    if jobs == 1:
+        rows = [simulate_loss_task(task) for task in tasks]
+    else:
+        chunksize = max(1, len(tasks) // (jobs * 8))
+        with mp.Pool(processes=jobs) as pool:
+            rows = pool.map(simulate_loss_task, tasks, chunksize=chunksize)
 
     csv_path = args.output_dir / "loss_surface_grid.csv"
     dat_path = args.output_dir / "loss_surface_grid.dat"
     json_path = args.output_dir / "loss_surface_summary.json"
 
     with csv_path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(asdict(rows[0]).keys()))
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=list(asdict(rows[0]).keys()),
+            lineterminator="\n",
+        )
         writer.writeheader()
         for row in rows:
             writer.writerow(asdict(row))
@@ -304,6 +355,7 @@ def main() -> None:
         "rate_count": args.rate_count,
         "warmup_arrivals": args.warmup_arrivals,
         "measured_arrivals": args.measured_arrivals,
+        "jobs": jobs,
         "seed": args.seed,
         "loss_probability_min": min(point.loss_probability for point in rows),
         "loss_probability_max": max(point.loss_probability for point in rows),
