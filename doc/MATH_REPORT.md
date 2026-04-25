@@ -2,7 +2,7 @@
 
 **DUT:** `ordered_priority_queue`  
 **Date:** `2026-04-25`
-**Active scope:** `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256 DUT_IMPL=native_sv`, plus analytical full-feature queueing model for `N_LANE={4,8,16}` and egress width `{1,2,4,8}` words/beat
+**Active scope:** `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256 DUT_IMPL=native_sv`, plus analytical and TLM full-feature queueing models for `N_LANE={4,8,16}` and egress width `{1,2,4,8}` words/beat
 
 This note studies frame stay behavior with a queueing-theory abstraction and
 explicitly separates what is already measurable from what is still only a
@@ -213,17 +213,29 @@ for congestion signatures, but weak for pure skew elasticity.
 
 ## Loss Plot Evidence Tiers
 
-Loss plots have two tiers in this report:
+The modeling ladder for loss evidence is:
 
-1. RTL loss evidence must come from real HDL simulation output.
-2. Analytical queueing/network-calculus plots may be used for architecture
-   comparison and design-space reasoning, but are not direct RTL
-   drop-probability evidence.
+1. architectural truth from the reordering slides and source RTL contracts;
+2. analytical queueing/network-calculus equations;
+3. executable TLM event tables;
+4. RTL simulation counters from HDL runs;
+5. on-board measurement counters.
+
+The upstream slide truth is `../doc/Archive/ethhw_reordering.pptx`: the relevant
+physical quantities are delay jitter `V`, resequencing timeout `T`, RTO `lambda`,
+finite buffer size `B`, and loss caused by dropping outlier packets when a
+finite resequencing resource is exceeded. This report maps those quantities to
+`burstiness`, `ready_duty`, `rho_lane`, finite OPQ ticket capacity, and the old
+time-merger tree-depth penalty.
+
+Analytical and TLM plots may be used for architecture comparison and
+design-space reasoning. They are not direct RTL or board drop-probability
+evidence. RTL loss evidence must come from real HDL simulation output. Board
+loss evidence must come from a hardware run using the same observable schema.
 
 Legacy analytical lane-skew, burst/rate contour, OPQ-vs-time-merger, and
-lane/egress-width families outside the new `queueing_model/` directory remain
-stale development artifacts and are intentionally excluded from the promoted
-evidence list.
+lane/egress-width families outside `model/` remain stale development artifacts
+and are intentionally excluded from the promoted evidence list.
 
 The accepted raw data sources are:
 
@@ -276,7 +288,7 @@ requested 2-input tree for `N_LANE=4/8/16`.
 
 The new full-feature plots are analytical model plots, not RTL loss evidence.
 They are included because they make the architectural scaling argument
-explicit and reproducible while the HDL sweep grid is still pending.
+explicit and reproducible before descending to TLM and HDL evidence.
 
 Burstiness is parameterized by squared coefficient of variation:
 
@@ -369,40 +381,93 @@ architectural result: OPQ can recover service by widening egress, while the
 time-merger model keeps a one-word tree service path whose effective service
 falls with the quadratic tree penalty.
 
-### Published DISLIN Feature Plot Set
+## TLM Event Model
 
-Published `MATH_REPORT.md` figures are rendered with DISLIN from the analytical
-data grids. Python is used only to generate the queueing/network-calculus data
-tables and DISLIN matrix files.
+The TLM tier implements the same feature grid as an executable deterministic
+finite-FIFO event model. It emits explicit transaction counters:
 
-The analytical plot outputs are separated from future evidence tiers under:
+`p_loss = dropped_transactions / offered_transactions`
+
+The TLM traffic source is a periodic on/off aggregate arrival model whose mean
+arrival rate is:
+
+`lambda = N_LANE * rho_lane`
+
+and whose on-window duty `tau(B)` decreases as traffic becomes more bursty.
+The currently published TLM generator uses:
+
+`tau(B > 0) = clamp(1 / (1 + 6 * sqrt(SCV)), 0.025, 0.98)`
+
+`tau(B <= 0) = clamp(0.92 + 0.12 * min(-B, 0.50), 0.025, 0.98)`
+
+The source emits arrivals into a finite queue for `8192` cycles after a `1024`
+cycle warm-up. Egress ready is a deterministic vacation process with duty `q`.
+OPQ receives `E` service tokens on each ready cycle. The time-merger path
+receives:
+
+`1 / (1 + ceil(log2(N_LANE))^2)`
+
+service tokens on each ready cycle, matching the old one-word tree path and
+quadratic depth penalty used by the analytical model.
+
+The TLM result is intentionally not tuned to the HDL. It is an executable
+bridge between the slide-level finite-buffer/RTO argument and future RTL
+simulation. If RTL simulation disagrees, the RTL stimulus, counters, and queue
+contracts must be debugged before changing this model.
+
+At `rho_lane=0.0075`, the TLM OPQ-vs-time-merger ratio contour gives:
+
+| feature point | TLM ratio reading |
+|---|---|
+| `N_LANE=4`, `egress=1x` | ratio is at least `1e3` over `37.9%` of the sampled ready/burst plane and reaches the clipped `1e6` region over `37.9%` |
+| `N_LANE=8`, `egress=2x` | ratio is at least `1e3` over `83.6%` of the sampled ready/burst plane and reaches the clipped `1e6` region over `83.6%` |
+| `N_LANE=16`, `egress=4x` | full sampled ready/burst plane is clipped at `1e6` time-merger/OPQ loss ratio |
+| `N_LANE=16`, `egress=8x` | full sampled ready/burst plane is clipped at `1e6` time-merger/OPQ loss ratio |
+
+At the same stress point used by the analytical heatmap, `B=0.70`, ready duty
+`0.75`, and `rho_lane=0.0075`, the TLM feature-scaling heatmap is clipped at
+`1e6` for the representative `N_LANE=4,E=1x`, `N_LANE=8,E=2x`, and higher
+lane/egress feature points. This is the expected executable-model reading of
+the slide claim: a burst can overflow a small time-merger resequencing resource
+even when the average rate is modest, while OPQ has a larger finite window and
+recovers with wider egress.
+
+## Published DISLIN Feature Plot Set
+
+Published `MATH_REPORT.md` figures are rendered with DISLIN. Python is used
+only to generate analytical/TLM data tables and DISLIN matrix files, not to
+render report figures.
+
+The plot outputs are separated by evidence tier:
 
 | evidence tier | plot folder | status |
 |---|---|---|
-| analytical | [`../tb/REPORT/math/plots/analytical/`](../tb/REPORT/math/plots/analytical/) | populated with DISLIN model plots |
-| TLM | [`../tb/REPORT/math/plots/tlm/`](../tb/REPORT/math/plots/tlm/) | reserved; no TLM plots published |
-| RTL simulation | [`../tb/REPORT/math/plots/rtl_sim/`](../tb/REPORT/math/plots/rtl_sim/) | reserved; no RTL sweep plots published |
-| on-board measurement | [`../tb/REPORT/math/plots/on_board/`](../tb/REPORT/math/plots/on_board/) | reserved; no board measurements published |
+| analytical | [`../model/analytical/plots/`](../model/analytical/plots/) | populated with DISLIN model plots |
+| TLM | [`../model/tlm/plots/`](../model/tlm/plots/) | populated with DISLIN TLM plots |
+| RTL simulation | [`../model/rtl_sim/plots/`](../model/rtl_sim/plots/) | residency proxy plots only; full loss-sweep plots pending HDL tables |
+| on-board measurement | [`../model/on_board/`](../model/on_board/) | no board measurements published |
 
-For each feature point, the DISLIN golden set contains:
+For both analytical and TLM tiers, each feature point has the same DISLIN figure
+family:
 
 | feature point | OPQ loss surface | OPQ/time-merger loss contour | OPQ/time-merger loss curve | ready/burst ratio |
 |---|---|---|---|---|
-| `N=4`, `E=1x` | [`png`](../tb/REPORT/math/plots/analytical/opq_loss_surface_nlane04_egress01x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_contour_nlane04_egress01x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_curve_nlane04_egress01x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_ready_burst_ratio_nlane04_egress01x.png) |
-| `N=4`, `E=2x` | [`png`](../tb/REPORT/math/plots/analytical/opq_loss_surface_nlane04_egress02x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_contour_nlane04_egress02x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_curve_nlane04_egress02x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_ready_burst_ratio_nlane04_egress02x.png) |
-| `N=4`, `E=4x` | [`png`](../tb/REPORT/math/plots/analytical/opq_loss_surface_nlane04_egress04x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_contour_nlane04_egress04x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_curve_nlane04_egress04x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_ready_burst_ratio_nlane04_egress04x.png) |
-| `N=4`, `E=8x` | [`png`](../tb/REPORT/math/plots/analytical/opq_loss_surface_nlane04_egress08x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_contour_nlane04_egress08x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_curve_nlane04_egress08x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_ready_burst_ratio_nlane04_egress08x.png) |
-| `N=8`, `E=1x` | [`png`](../tb/REPORT/math/plots/analytical/opq_loss_surface_nlane08_egress01x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_contour_nlane08_egress01x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_curve_nlane08_egress01x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_ready_burst_ratio_nlane08_egress01x.png) |
-| `N=8`, `E=2x` | [`png`](../tb/REPORT/math/plots/analytical/opq_loss_surface_nlane08_egress02x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_contour_nlane08_egress02x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_curve_nlane08_egress02x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_ready_burst_ratio_nlane08_egress02x.png) |
-| `N=8`, `E=4x` | [`png`](../tb/REPORT/math/plots/analytical/opq_loss_surface_nlane08_egress04x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_contour_nlane08_egress04x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_curve_nlane08_egress04x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_ready_burst_ratio_nlane08_egress04x.png) |
-| `N=8`, `E=8x` | [`png`](../tb/REPORT/math/plots/analytical/opq_loss_surface_nlane08_egress08x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_contour_nlane08_egress08x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_curve_nlane08_egress08x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_ready_burst_ratio_nlane08_egress08x.png) |
-| `N=16`, `E=1x` | [`png`](../tb/REPORT/math/plots/analytical/opq_loss_surface_nlane16_egress01x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_contour_nlane16_egress01x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_curve_nlane16_egress01x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_ready_burst_ratio_nlane16_egress01x.png) |
-| `N=16`, `E=2x` | [`png`](../tb/REPORT/math/plots/analytical/opq_loss_surface_nlane16_egress02x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_contour_nlane16_egress02x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_curve_nlane16_egress02x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_ready_burst_ratio_nlane16_egress02x.png) |
-| `N=16`, `E=4x` | [`png`](../tb/REPORT/math/plots/analytical/opq_loss_surface_nlane16_egress04x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_contour_nlane16_egress04x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_curve_nlane16_egress04x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_ready_burst_ratio_nlane16_egress04x.png) |
-| `N=16`, `E=8x` | [`png`](../tb/REPORT/math/plots/analytical/opq_loss_surface_nlane16_egress08x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_contour_nlane16_egress08x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_loss_curve_nlane16_egress08x.png) | [`png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_ready_burst_ratio_nlane16_egress08x.png) |
+| `N=4`, `E=1x` | [`analytical`](../model/analytical/plots/opq_loss_surface_nlane04_egress01x.png), [`TLM`](../model/tlm/plots/opq_loss_surface_nlane04_egress01x.png) | [`analytical`](../model/analytical/plots/opq_vs_time_merger_loss_contour_nlane04_egress01x.png), [`TLM`](../model/tlm/plots/opq_vs_time_merger_loss_contour_nlane04_egress01x.png) | [`analytical`](../model/analytical/plots/opq_vs_time_merger_loss_curve_nlane04_egress01x.png), [`TLM`](../model/tlm/plots/opq_vs_time_merger_loss_curve_nlane04_egress01x.png) | [`analytical`](../model/analytical/plots/opq_vs_time_merger_ready_burst_ratio_nlane04_egress01x.png), [`TLM`](../model/tlm/plots/opq_vs_time_merger_ready_burst_ratio_nlane04_egress01x.png) |
+| `N=4`, `E=2x` | full set in both tier folders | full set in both tier folders | full set in both tier folders | full set in both tier folders |
+| `N=4`, `E=4x` | full set in both tier folders | full set in both tier folders | full set in both tier folders | full set in both tier folders |
+| `N=4`, `E=8x` | full set in both tier folders | full set in both tier folders | full set in both tier folders | full set in both tier folders |
+| `N=8`, `E=1x` | full set in both tier folders | full set in both tier folders | full set in both tier folders | full set in both tier folders |
+| `N=8`, `E=2x` | full set in both tier folders | full set in both tier folders | full set in both tier folders | full set in both tier folders |
+| `N=8`, `E=4x` | full set in both tier folders | full set in both tier folders | full set in both tier folders | full set in both tier folders |
+| `N=8`, `E=8x` | full set in both tier folders | full set in both tier folders | full set in both tier folders | full set in both tier folders |
+| `N=16`, `E=1x` | full set in both tier folders | full set in both tier folders | full set in both tier folders | full set in both tier folders |
+| `N=16`, `E=2x` | full set in both tier folders | full set in both tier folders | full set in both tier folders | full set in both tier folders |
+| `N=16`, `E=4x` | full set in both tier folders | full set in both tier folders | full set in both tier folders | full set in both tier folders |
+| `N=16`, `E=8x` | [`analytical`](../model/analytical/plots/opq_loss_surface_nlane16_egress08x.png), [`TLM`](../model/tlm/plots/opq_loss_surface_nlane16_egress08x.png) | [`analytical`](../model/analytical/plots/opq_vs_time_merger_loss_contour_nlane16_egress08x.png), [`TLM`](../model/tlm/plots/opq_vs_time_merger_loss_contour_nlane16_egress08x.png) | [`analytical`](../model/analytical/plots/opq_vs_time_merger_loss_curve_nlane16_egress08x.png), [`TLM`](../model/tlm/plots/opq_vs_time_merger_loss_curve_nlane16_egress08x.png) | [`analytical`](../model/analytical/plots/opq_vs_time_merger_ready_burst_ratio_nlane16_egress08x.png), [`TLM`](../model/tlm/plots/opq_vs_time_merger_ready_burst_ratio_nlane16_egress08x.png) |
 
-The feature-scaling DISLIN heatmap is:
-[`../tb/REPORT/math/plots/analytical/opq_vs_time_merger_feature_scaling.png`](../tb/REPORT/math/plots/analytical/opq_vs_time_merger_feature_scaling.png).
+The feature-scaling DISLIN heatmaps are:
+[`analytical`](../model/analytical/plots/opq_vs_time_merger_feature_scaling.png)
+and [`TLM`](../model/tlm/plots/opq_vs_time_merger_feature_scaling.png).
 
 ## Independent Queueing Review
 
@@ -438,8 +503,8 @@ For the current scope, the measured signatures can be summarized as:
 
 ## Loss Surface RTL Sweep Definition
 
-To promote the analytical contours above into RTL evidence, the raw grid must
-be generated by HDL simulation. The required grid schema is:
+To promote the analytical and TLM contours above into RTL evidence, the raw grid
+must be generated by HDL simulation. The required grid schema is:
 
 | column | definition |
 |---|---|
@@ -474,6 +539,12 @@ The accepted contour levels remain `1e-6`, `1%`, and `5%`. The renderer must
 use a filled log-gradient color map over the full sampled phase-space region,
 not contour-band-only shading.
 
+The current RTL-simulation tier contains residency-proxy evidence and the loss
+sweep execution contract under [`../model/rtl_sim/`](../model/rtl_sim/). It does
+not yet contain promoted OPQ/time-merger loss-surface plots because the HDL
+loss table for matched OPQ and standalone time-merger runs has not been
+generated.
+
 ## Lane And Egress Width Sweep
 
 - `N_LANE = 4 / 8 / 16`
@@ -499,27 +570,39 @@ To promote this from a proxy study into a physical stay-time study:
 ## Evidence And Artifacts
 
 - Queueing/network-calculus model generator:
-  [`../tb/scripts/opq_queueing_network_calculus_model.py`](../tb/scripts/opq_queueing_network_calculus_model.py)
+  [`../model/analytical/scripts/opq_queueing_network_calculus_model.py`](../model/analytical/scripts/opq_queueing_network_calculus_model.py)
 - Queueing model summary:
-  [`../tb/REPORT/math/queueing_model/queueing_model_summary.json`](../tb/REPORT/math/queueing_model/queueing_model_summary.json)
+  [`../model/analytical/data/queueing_model/queueing_model_summary.json`](../model/analytical/data/queueing_model/queueing_model_summary.json)
 - Published analytical DISLIN plot folder:
-  [`../tb/REPORT/math/plots/analytical/`](../tb/REPORT/math/plots/analytical/)
+  [`../model/analytical/plots/`](../model/analytical/plots/)
+- TLM model generator:
+  [`../model/tlm/scripts/opq_tlm_feature_sweep.py`](../model/tlm/scripts/opq_tlm_feature_sweep.py)
+- TLM model summary:
+  [`../model/tlm/data/tlm_model_summary.json`](../model/tlm/data/tlm_model_summary.json)
+- Published TLM DISLIN plot folder:
+  [`../model/tlm/plots/`](../model/tlm/plots/)
 - Plot evidence-tier index:
-  [`../tb/REPORT/math/plots/README.md`](../tb/REPORT/math/plots/README.md)
+  [`../model/README.md`](../model/README.md)
 - Queueing model CSV grids:
-  [`../tb/REPORT/math/queueing_model/opq_full_feature_loss_surface_grid.csv`](../tb/REPORT/math/queueing_model/opq_full_feature_loss_surface_grid.csv),
-  [`../tb/REPORT/math/queueing_model/opq_vs_time_merger_ready_burst_ratio_grid.csv`](../tb/REPORT/math/queueing_model/opq_vs_time_merger_ready_burst_ratio_grid.csv),
-  [`../tb/REPORT/math/queueing_model/opq_vs_time_merger_feature_scaling_grid.csv`](../tb/REPORT/math/queueing_model/opq_vs_time_merger_feature_scaling_grid.csv)
+  [`../model/analytical/data/queueing_model/opq_full_feature_loss_surface_grid.csv`](../model/analytical/data/queueing_model/opq_full_feature_loss_surface_grid.csv),
+  [`../model/analytical/data/queueing_model/opq_vs_time_merger_ready_burst_ratio_grid.csv`](../model/analytical/data/queueing_model/opq_vs_time_merger_ready_burst_ratio_grid.csv),
+  [`../model/analytical/data/queueing_model/opq_vs_time_merger_feature_scaling_grid.csv`](../model/analytical/data/queueing_model/opq_vs_time_merger_feature_scaling_grid.csv)
 - DISLIN matrix grids:
-  [`../tb/REPORT/math/queueing_model/dislin/`](../tb/REPORT/math/queueing_model/dislin/)
+  [`../model/analytical/data/queueing_model/dislin/`](../model/analytical/data/queueing_model/dislin/)
+- TLM CSV grids:
+  [`../model/tlm/data/tlm_full_feature_loss_surface_grid.csv`](../model/tlm/data/tlm_full_feature_loss_surface_grid.csv),
+  [`../model/tlm/data/tlm_opq_vs_time_merger_ready_burst_ratio_grid.csv`](../model/tlm/data/tlm_opq_vs_time_merger_ready_burst_ratio_grid.csv),
+  [`../model/tlm/data/tlm_opq_vs_time_merger_feature_scaling_grid.csv`](../model/tlm/data/tlm_opq_vs_time_merger_feature_scaling_grid.csv)
+- TLM DISLIN matrix grids:
+  [`../model/tlm/data/dislin/`](../model/tlm/data/dislin/)
 - Quantiles CSV:
-  [`../tb/REPORT/math/residency_proxy_quantiles.csv`](../tb/REPORT/math/residency_proxy_quantiles.csv)
+  [`../model/rtl_sim/data/residency_proxy_quantiles.csv`](../model/rtl_sim/data/residency_proxy_quantiles.csv)
 - JSON summary:
-  [`../tb/REPORT/math/residency_proxy_summary.json`](../tb/REPORT/math/residency_proxy_summary.json)
+  [`../model/rtl_sim/data/residency_proxy_summary.json`](../model/rtl_sim/data/residency_proxy_summary.json)
 - Signature ECDF:
-  [`../tb/REPORT/math/residency_proxy_signature_ecdf.png`](../tb/REPORT/math/residency_proxy_signature_ecdf.png)
+  [`../model/rtl_sim/plots/residency_proxy_signature_ecdf.png`](../model/rtl_sim/plots/residency_proxy_signature_ecdf.png)
 - Per-test / per-lane ECDF:
-  [`../tb/REPORT/math/residency_proxy_per_test_lane_ecdf.png`](../tb/REPORT/math/residency_proxy_per_test_lane_ecdf.png)
+  [`../model/rtl_sim/plots/residency_proxy_per_test_lane_ecdf.png`](../model/rtl_sim/plots/residency_proxy_per_test_lane_ecdf.png)
 - Old-reference README:
   [`../tb_old_reference/README.md`](../tb_old_reference/README.md)
 - Old-reference RTL model:
@@ -531,24 +614,24 @@ To promote this from a proxy study into a physical stay-time study:
 - Generator:
   [`../tb/scripts/opq_residency_math_report.py`](../tb/scripts/opq_residency_math_report.py)
 - Loss-surface DISLIN renderer:
-  [`../tb/scripts/opq_loss_surface_plot.c`](../tb/scripts/opq_loss_surface_plot.c)
+  [`../model/analytical/scripts/opq_loss_surface_plot.c`](../model/analytical/scripts/opq_loss_surface_plot.c)
 - Loss-surface build wrapper, now requiring externally supplied RTL-sim data:
-  [`../tb/scripts/render_loss_surface.sh`](../tb/scripts/render_loss_surface.sh)
+  [`../model/rtl_sim/scripts/render_loss_surface.sh`](../model/rtl_sim/scripts/render_loss_surface.sh)
 - Lane-skew build wrapper, now requiring externally supplied RTL-sim data:
-  [`../tb/scripts/render_lane_skew_loss.sh`](../tb/scripts/render_lane_skew_loss.sh)
+  [`../model/rtl_sim/scripts/render_lane_skew_loss.sh`](../model/rtl_sim/scripts/render_lane_skew_loss.sh)
 - Old-vs-OPQ DISLIN renderer:
   [`../tb_old_reference/scripts/old_vs_opq_comparison_plot.c`](../tb_old_reference/scripts/old_vs_opq_comparison_plot.c)
 - Old-vs-OPQ build wrapper, now requiring externally supplied RTL-sim data:
   [`../tb_old_reference/scripts/render_old_vs_opq_comparison.sh`](../tb_old_reference/scripts/render_old_vs_opq_comparison.sh)
 - OPQ-vs-Time-Merger contour DISLIN renderer:
-  [`../tb_old_reference/scripts/opq_vs_time_merger_contour_plot.c`](../tb_old_reference/scripts/opq_vs_time_merger_contour_plot.c)
+  [`../model/analytical/scripts/opq_vs_time_merger_contour_plot.c`](../model/analytical/scripts/opq_vs_time_merger_contour_plot.c)
 - OPQ family contour build wrapper, now requiring externally supplied RTL-sim data:
-  [`../tb/scripts/render_opq_loss_surface_family.sh`](../tb/scripts/render_opq_loss_surface_family.sh)
+  [`../model/rtl_sim/scripts/render_opq_loss_surface_family.sh`](../model/rtl_sim/scripts/render_opq_loss_surface_family.sh)
 
 Legacy analytical/proxy plot artifacts that remain directly under
-`../tb/REPORT/math/` or `../tb_old_reference/REPORT/` are stale development
-artifacts and are not math-report evidence for this revision. The promoted
-analytical model data lives under `../tb/REPORT/math/queueing_model/`; the
-published analytical DISLIN figures live under
-`../tb/REPORT/math/plots/analytical/`. Both are explicitly labeled as
-analytical, not RTL evidence.
+`../tb_old_reference/REPORT/` are stale development artifacts and are not
+math-report evidence for this revision. The promoted analytical model data
+lives under `../model/analytical/data/queueing_model/`; the TLM data lives
+under `../model/tlm/data/`; and the published DISLIN figures live in the
+matching tier `plots/` directories. All model-derived artifacts are explicitly
+labeled as non-RTL and non-board evidence.

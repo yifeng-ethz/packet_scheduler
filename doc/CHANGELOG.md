@@ -22,11 +22,11 @@ Author: Yifeng Wang (yifenwan@phys.ethz.ch)
   `opq_feature_l16_s256_w36` Arria-10 compile reports slow-100 setup
   `+0.047 ns` / TNS `0.000 ns`, slow-100 hold `+0.041 ns`, and positive hold
   slack on all checked corners at the 3.636 ns signoff clock.
-- **Math / Queueing Model**: added the queueing/network-calculus model and
-  reproducible full-feature plots for OPQ loss surface and OPQ-vs-time-merger
-  loss-ratio comparisons. The report now keeps these analytical artifacts
-  separate from RTL-derived loss evidence and links the generated CSV/PNG/SVG
-  files under `tb/REPORT/math/queueing_model/`.
+- **Math / Queueing Model**: added the queueing/network-calculus model,
+  transaction-level feature sweep, and reproducible DISLIN full-feature plots
+  for OPQ loss surfaces and OPQ-vs-time-merger loss comparisons. The report now
+  keeps analytical artifacts under `model/analytical/`, TLM artifacts under
+  `model/tlm/`, and RTL/board evidence tiers explicitly separated.
 
 ## 26.3.66.0423
 

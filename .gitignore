@@ -23,10 +23,12 @@ tb_int/uvm/logs/
 tb/**/ordered_priority_queue.vhd
 
 # Stale/generated exploratory math artifacts. Current report-owned model
-# artifacts live under tb/REPORT/math/queueing_model/.
+# artifacts live under model/{analytical,tlm,rtl_sim,on_board}/.
 tb/REPORT/math/lane_skew_loss*
 tb/REPORT/math/opq_family/
 tb/REPORT/math/queueing_model/.build_dislin/
+model/**/.build/
+model/**/.build_dislin/
 
 # TERP-generated wrappers (regenerated each run)
 rtl/ordered_priority_queue/split/top/ordered_priority_queue_top.vhd
