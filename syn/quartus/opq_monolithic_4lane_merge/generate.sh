@@ -7,7 +7,7 @@ repo_root=$(cd -- "${script_dir}/../../../.." && pwd)
 
 qsys_script_bin="${QSYS_SCRIPT_BIN:-qsys-script}"
 qsys_generate_bin="${QSYS_GENERATE_BIN:-qsys-generate}"
-search_path="${repo_root}/quartus_system,${ip_root}/script,${ip_root},$"
+search_path="${repo_root}/firmware_builds,${ip_root}/script,${ip_root},$"
 
 pushd "${script_dir}" >/dev/null
 

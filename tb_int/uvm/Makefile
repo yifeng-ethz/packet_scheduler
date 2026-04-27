@@ -10,7 +10,7 @@
 #
 #   FEB firmware RTL (emulator_mutrig, mutrig_frame_deassembly, mts_processor,
 #   ring_buffer_cam, feb_frame_assembly) is compiled from the authoritative
-#   copies under quartus_system/feb_system_v3/synthesis/submodules/ — the
+#   copies under firmware_builds/feb_system_v3/synthesis/submodules/ — the
 #   Qsys-generated top-level submodule tree that Quartus compiles for the FEB
 #   FPGA bitstream. This keeps tb_int in lock-step with the integration build.
 #------------------------------------------------------------------------------
@@ -52,8 +52,8 @@ IP_ROOT        := $(abspath $(REPO_ROOT))
 # FEB firmware RTL is pulled from the Qsys-generated top-level submodule
 # tree used by the FEB compile, so tb_int tracks the exact source set in
 # feb_system_v3/synthesis/submodules/ (see CLAUDE.md "Qsys IP Source File Rule").
-QUARTUS_SYSTEM_DIR := $(IP_ROOT)/quartus_system
-FEB_SUBMOD_DIR := $(QUARTUS_SYSTEM_DIR)/feb_system_v3/synthesis/submodules
+FIRMWARE_BUILDS_DIR := $(IP_ROOT)/firmware_builds
+FEB_SUBMOD_DIR := $(FIRMWARE_BUILDS_DIR)/feb_system_v3/synthesis/submodules
 DPI_CPP_PATH   ?= /usr/bin/gcc
 OPQ_PAGE_RAM_DEPTH ?= 65536
 OPQ_N_SHD          ?= 256

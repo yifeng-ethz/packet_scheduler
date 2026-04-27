@@ -221,7 +221,7 @@ The modeling ladder for loss evidence is:
 4. RTL simulation counters from HDL runs;
 5. on-board measurement counters.
 
-The upstream slide truth is `../doc/Archive/ethhw_reordering.pptx`: the relevant
+The upstream slide truth is `../../docs/Archive/ethhw_reordering.pptx`: the relevant
 physical quantities are delay jitter `V`, resequencing timeout `T`, RTO `lambda`,
 finite buffer size `B`, and loss caused by dropping outlier packets when a
 finite resequencing resource is exceeded. This report maps those quantities to
