@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_dut_sv
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.4.10
+// Version : 26.4.11
 // Date    : 20260427
-// Change  : Align native wrapper identity to the partial-frame tail-hold fix
+// Change  : Align native wrapper identity to the partial-frame body-hold fix
 //------------------------------------------------------------------------------
 
 `ifndef OPQ_N_SHD
@@ -129,7 +129,7 @@ module ordered_priority_queue_dut_sv #(
   localparam logic [31:0] UID_CONST = 32'h4F50_514D;
   localparam int unsigned VERSION_MAJOR_CONST = 26;
   localparam int unsigned VERSION_MINOR_CONST = 4;
-  localparam int unsigned VERSION_PATCH_CONST = 10;
+  localparam int unsigned VERSION_PATCH_CONST = 11;
   localparam int unsigned VERSION_BUILD_CONST = 427;
   localparam logic [31:0] VERSION_DATE_CONST = 32'd20260427;
   localparam logic [31:0] VERSION_GIT_CONST = 32'h3B55_C935;

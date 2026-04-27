@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_page_allocator
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.4.10
+// Version : 26.4.11
 // Date    : 20260427
-// Change  : Hold partial frames and tail flush until delayed join SOPs arrive or window expires
+// Change  : Keep body fetch held until inactive join lanes present their current-frame SOPs
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_page_allocator #(
@@ -649,6 +649,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
   logic [N_LANE-1:0] active_frame_pending_nonfuture_lane;
   logic [N_LANE-1:0] active_frame_pending_nonfuture_lane_q;
   logic [N_LANE-1:0] inactive_frame_join_pending_lane;
+  logic inactive_frame_join_sop_pending;
   logic active_frame_pending_nonfuture_ticket;
   logic frame_join_hold;
   logic frame_join_hold_q;
@@ -751,6 +752,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
     active_frame_waiting_busy_lane_v = '0;
     active_frame_pending_nonfuture_lane = '0;
     inactive_frame_join_pending_lane = '0;
+    inactive_frame_join_sop_pending = 1'b0;
     active_frame_pending_nonfuture_ticket = 1'b0;
     frame_join_hold = 1'b0;
     page_allocator_ticket_serial_ref = page_allocator.frame_serial;
@@ -979,6 +981,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
           // the following body ticket ages into the late-drop path.
           active_frame_pending_nonfuture_lane[i] = 1'b1;
           inactive_frame_join_pending_lane[i] = 1'b1;
+          inactive_frame_join_sop_pending = 1'b1;
           active_frame_pending_nonfuture_ticket = 1'b1;
         end
       end
@@ -1020,7 +1023,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
     if ((page_allocator.frame_join_wait != '0) &&
         (page_allocator.frame_lane_active != '0) &&
         (page_allocator.frame_lane_active != '1) &&
-        !any_pending_sop_ticket) begin
+        !inactive_frame_join_sop_pending) begin
       frame_join_hold = 1'b1;
     end
     idle_tail_flush_base =
