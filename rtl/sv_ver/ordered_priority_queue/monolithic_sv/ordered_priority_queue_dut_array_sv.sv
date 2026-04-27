@@ -1,10 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_dut_array_sv
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.4.0
-// Date    : 20260424
-// Change  : Add PAGE_RAM_RD_WIDTH and empty-sideband plumbing for native
-//           N_LANE x egress-width DV closure release
+// Version : 26.4.5
+// Date    : 20260427
+// Change  : Use explicit native credit debug ports instead of nested hierarchy probes
 //------------------------------------------------------------------------------
 
 `ifndef OPQ_N_SHD
@@ -464,6 +463,8 @@ module ordered_priority_queue_dut_array_sv #(
     .aso_egress_endofpacket(aso_egress_endofpacket),
     .aso_egress_error(aso_egress_error),
     .aso_egress_empty(aso_egress_empty),
+    .ingress_lane_credit_dbg_o(native_lane_credit_dbg),
+    .ingress_ticket_credit_dbg_o(native_ticket_credit_dbg),
     .cfg_drr_allowance_i(csr_drr_allowance),
     .cfg_drr_allowance_reload_i(csr_drr_allowance_reload),
     .d_clk(d_clk),
@@ -471,10 +472,6 @@ module ordered_priority_queue_dut_array_sv #(
   );
 
   for (genvar g = 0; g < OPQ_N_LANE_LOCAL; g++) begin : g_native_dbg
-    assign native_lane_credit_dbg[g] =
-      u_native.g_ingress_parser[g].ingress_parser_i.ingress_parser.lane_credit;
-    assign native_ticket_credit_dbg[g] =
-      u_native.g_ingress_parser[g].ingress_parser_i.ingress_parser.ticket_credit;
     assign native_ingress_ticket_we_dbg[g] = u_native.ingress_ticket_we[g];
     assign native_ingress_ticket_wdata_dbg[g] = u_native.ingress_ticket_wdata[g];
     assign native_ingress_lane_we_dbg[g] = u_native.ingress_lane_we[g];

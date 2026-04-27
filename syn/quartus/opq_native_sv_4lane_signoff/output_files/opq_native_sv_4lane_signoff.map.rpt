@@ -1,5 +1,5 @@
 Analysis & Synthesis report for opq_native_sv_4lane_signoff
-Mon Apr 27 14:44:46 2026
+Mon Apr 27 15:07:24 2026
 Quartus Prime Version 18.1.0 Build 625 09/12/2018 SJ Standard Edition
 
 
@@ -151,7 +151,7 @@ refer to the applicable agreement for further details.
 +-------------------------------------------------------------------------------+
 ; Analysis & Synthesis Summary                                                  ;
 +-----------------------------+-------------------------------------------------+
-; Analysis & Synthesis Status ; Successful - Mon Apr 27 14:44:46 2026           ;
+; Analysis & Synthesis Status ; Successful - Mon Apr 27 15:07:24 2026           ;
 ; Quartus Prime Version       ; 18.1.0 Build 625 09/12/2018 SJ Standard Edition ;
 ; Revision Name               ; opq_native_sv_4lane_signoff                     ;
 ; Top-level Entity Name       ; opq_native_sv_4lane_signoff_top                 ;
@@ -274,9 +274,9 @@ refer to the applicable agreement for further details.
 ;     Processor 3            ;   0.4%      ;
 ;     Processor 4            ;   0.4%      ;
 ;     Processor 5            ;   0.4%      ;
-;     Processor 6            ;   0.4%      ;
-;     Processor 7            ;   0.4%      ;
-;     Processor 8            ;   0.4%      ;
+;     Processor 6            ;   0.3%      ;
+;     Processor 7            ;   0.3%      ;
+;     Processor 8            ;   0.3%      ;
 ;     Processors 9-16        ;   0.3%      ;
 +----------------------------+-------------+
 
@@ -7972,36 +7972,38 @@ Note: In order to hide this table in the UI and the text report file, please set
 +-----------------------+--------+----------+------------------------------------------------------------------------------------------------------------------+
 
 
-+----------------------------------------------------------------------------------------------------------------------------------------+
-; Port Connectivity Checks: "ordered_priority_queue_monolithic_sv:dut_i"                                                                 ;
-+------------------------------+--------+----------+-------------------------------------------------------------------------------------+
-; Port                         ; Type   ; Severity ; Details                                                                             ;
-+------------------------------+--------+----------+-------------------------------------------------------------------------------------+
-; asi_ingress_channel[3]       ; Input  ; Info     ; Stuck at VCC                                                                        ;
-; asi_ingress_channel[2][1]    ; Input  ; Info     ; Stuck at VCC                                                                        ;
-; asi_ingress_channel[2][0]    ; Input  ; Info     ; Stuck at GND                                                                        ;
-; asi_ingress_channel[1][1]    ; Input  ; Info     ; Stuck at GND                                                                        ;
-; asi_ingress_channel[1][0]    ; Input  ; Info     ; Stuck at VCC                                                                        ;
-; asi_ingress_channel[0]       ; Input  ; Info     ; Stuck at GND                                                                        ;
-; asi_ingress_error            ; Input  ; Info     ; Stuck at GND                                                                        ;
-; aso_egress_data              ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed. ;
-; aso_egress_valid             ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed. ;
-; aso_egress_startofpacket     ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed. ;
-; aso_egress_endofpacket       ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed. ;
-; aso_egress_error             ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed. ;
-; cfg_drr_allowance_i[3][5..4] ; Input  ; Info     ; Stuck at VCC                                                                        ;
-; cfg_drr_allowance_i[3][9..6] ; Input  ; Info     ; Stuck at GND                                                                        ;
-; cfg_drr_allowance_i[3][3..0] ; Input  ; Info     ; Stuck at GND                                                                        ;
-; cfg_drr_allowance_i[2][5..4] ; Input  ; Info     ; Stuck at VCC                                                                        ;
-; cfg_drr_allowance_i[2][9..6] ; Input  ; Info     ; Stuck at GND                                                                        ;
-; cfg_drr_allowance_i[2][3..0] ; Input  ; Info     ; Stuck at GND                                                                        ;
-; cfg_drr_allowance_i[1][5..4] ; Input  ; Info     ; Stuck at VCC                                                                        ;
-; cfg_drr_allowance_i[1][9..6] ; Input  ; Info     ; Stuck at GND                                                                        ;
-; cfg_drr_allowance_i[1][3..0] ; Input  ; Info     ; Stuck at GND                                                                        ;
-; cfg_drr_allowance_i[0][9..6] ; Input  ; Info     ; Stuck at GND                                                                        ;
-; cfg_drr_allowance_i[0][4..0] ; Input  ; Info     ; Stuck at GND                                                                        ;
-; cfg_drr_allowance_i[0][5]    ; Input  ; Info     ; Stuck at VCC                                                                        ;
-+------------------------------+--------+----------+-------------------------------------------------------------------------------------+
++-------------------------------------------------------------------------------------------------------------------------------------------------------------+
+; Port Connectivity Checks: "ordered_priority_queue_monolithic_sv:dut_i"                                                                                      ;
++------------------------------+--------+----------+----------------------------------------------------------------------------------------------------------+
+; Port                         ; Type   ; Severity ; Details                                                                                                  ;
++------------------------------+--------+----------+----------------------------------------------------------------------------------------------------------+
+; asi_ingress_channel[3]       ; Input  ; Info     ; Stuck at VCC                                                                                             ;
+; asi_ingress_channel[2][1]    ; Input  ; Info     ; Stuck at VCC                                                                                             ;
+; asi_ingress_channel[2][0]    ; Input  ; Info     ; Stuck at GND                                                                                             ;
+; asi_ingress_channel[1][1]    ; Input  ; Info     ; Stuck at GND                                                                                             ;
+; asi_ingress_channel[1][0]    ; Input  ; Info     ; Stuck at VCC                                                                                             ;
+; asi_ingress_channel[0]       ; Input  ; Info     ; Stuck at GND                                                                                             ;
+; asi_ingress_error            ; Input  ; Info     ; Stuck at GND                                                                                             ;
+; aso_egress_data              ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed.                      ;
+; aso_egress_valid             ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed.                      ;
+; aso_egress_startofpacket     ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed.                      ;
+; aso_egress_endofpacket       ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed.                      ;
+; aso_egress_error             ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed.                      ;
+; cfg_drr_allowance_i[3][5..4] ; Input  ; Info     ; Stuck at VCC                                                                                             ;
+; cfg_drr_allowance_i[3][9..6] ; Input  ; Info     ; Stuck at GND                                                                                             ;
+; cfg_drr_allowance_i[3][3..0] ; Input  ; Info     ; Stuck at GND                                                                                             ;
+; cfg_drr_allowance_i[2][5..4] ; Input  ; Info     ; Stuck at VCC                                                                                             ;
+; cfg_drr_allowance_i[2][9..6] ; Input  ; Info     ; Stuck at GND                                                                                             ;
+; cfg_drr_allowance_i[2][3..0] ; Input  ; Info     ; Stuck at GND                                                                                             ;
+; cfg_drr_allowance_i[1][5..4] ; Input  ; Info     ; Stuck at VCC                                                                                             ;
+; cfg_drr_allowance_i[1][9..6] ; Input  ; Info     ; Stuck at GND                                                                                             ;
+; cfg_drr_allowance_i[1][3..0] ; Input  ; Info     ; Stuck at GND                                                                                             ;
+; cfg_drr_allowance_i[0][9..6] ; Input  ; Info     ; Stuck at GND                                                                                             ;
+; cfg_drr_allowance_i[0][4..0] ; Input  ; Info     ; Stuck at GND                                                                                             ;
+; cfg_drr_allowance_i[0][5]    ; Input  ; Info     ; Stuck at VCC                                                                                             ;
+; ingress_lane_credit_dbg_o    ; Output ; Warning  ; Declared by entity but not connected by instance. Logic that only feeds a dangling port will be removed. ;
+; ingress_ticket_credit_dbg_o  ; Output ; Warning  ; Declared by entity but not connected by instance. Logic that only feeds a dangling port will be removed. ;
++------------------------------+--------+----------+----------------------------------------------------------------------------------------------------------+
 
 
 +-----------------------------------------------------+
@@ -8066,7 +8068,7 @@ Note: In order to hide this table in the UI and the text report file, please set
 Info: *******************************************************************
 Info: Running Quartus Prime Analysis & Synthesis
     Info: Version 18.1.0 Build 625 09/12/2018 SJ Standard Edition
-    Info: Processing started: Mon Apr 27 14:43:56 2026
+    Info: Processing started: Mon Apr 27 15:06:33 2026
 Info: Command: quartus_map --read_settings_files=on --write_settings_files=off opq_native_sv_4lane_signoff -c opq_native_sv_4lane_signoff
 Info (16303): High Performance Effort optimization mode selected -- timing performance will be prioritized at the potential cost of increased compilation time
 Info (20032): Parallel compilation is enabled and will use up to 16 processors
@@ -8103,7 +8105,7 @@ Info (12127): Elaborating entity "opq_native_sv_4lane_signoff_top" for the top l
 Info (12128): Elaborating entity "ordered_priority_queue_monolithic_sv" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 319
 Info (10008): Verilog HDL or VHDL information: EDA Netlist Writer cannot regroup multidimensional array "packet_complete_lane_shd_cnt_presenter_delay_dbg" into its bus
 Info (10008): Verilog HDL or VHDL information: EDA Netlist Writer cannot regroup multidimensional array "packet_complete_lane_hit_cnt_presenter_delay_dbg" into its bus
-Info (12128): Elaborating entity "ticket_fifo" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[0].ticket_fifo_i" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 223
+Info (12128): Elaborating entity "ticket_fifo" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[0].ticket_fifo_i" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 225
 Info (12128): Elaborating entity "altsyncram" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[0].ticket_fifo_i|altsyncram:ticket_fifo_ram" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ticket_fifo.v Line: 23
 Info (12130): Elaborated megafunction instantiation "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[0].ticket_fifo_i|altsyncram:ticket_fifo_ram" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ticket_fifo.v Line: 23
 Info (12133): Instantiated megafunction "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[0].ticket_fifo_i|altsyncram:ticket_fifo_ram" with the following parameter: File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ticket_fifo.v Line: 23
@@ -8130,7 +8132,7 @@ Info (12133): Instantiated megafunction "ordered_priority_queue_monolithic_sv:du
 Info (12021): Found 1 design units, including 1 entities, in source file db/altsyncram_e702.tdf
     Info (12023): Found entity 1: altsyncram_e702 File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_e702.tdf Line: 27
 Info (12128): Elaborating entity "altsyncram_e702" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[0].ticket_fifo_i|altsyncram:ticket_fifo_ram|altsyncram_e702:auto_generated" File: /data1/intelFPGA/18.1/quartus/libraries/megafunctions/altsyncram.tdf Line: 791
-Info (12128): Elaborating entity "lane_fifo" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 235
+Info (12128): Elaborating entity "lane_fifo" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 237
 Info (12128): Elaborating entity "altsyncram" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/lane_fifo.v Line: 23
 Info (12130): Elaborated megafunction instantiation "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/lane_fifo.v Line: 23
 Info (12133): Instantiated megafunction "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram" with the following parameter: File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/lane_fifo.v Line: 23
@@ -8157,7 +8159,7 @@ Info (12133): Instantiated megafunction "ordered_priority_queue_monolithic_sv:du
 Info (12021): Found 1 design units, including 1 entities, in source file db/altsyncram_g402.tdf
     Info (12023): Found entity 1: altsyncram_g402 File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 27
 Info (12128): Elaborating entity "altsyncram_g402" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated" File: /data1/intelFPGA/18.1/quartus/libraries/megafunctions/altsyncram.tdf Line: 791
-Info (12128): Elaborating entity "handle_fifo" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|handle_fifo:g_storage[0].handle_fifo_i" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 247
+Info (12128): Elaborating entity "handle_fifo" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|handle_fifo:g_storage[0].handle_fifo_i" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 249
 Info (12128): Elaborating entity "altsyncram" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|handle_fifo:g_storage[0].handle_fifo_i|altsyncram:handle_fifo_ram" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/handle_fifo.v Line: 23
 Info (12130): Elaborated megafunction instantiation "ordered_priority_queue_monolithic_sv:dut_i|handle_fifo:g_storage[0].handle_fifo_i|altsyncram:handle_fifo_ram" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/handle_fifo.v Line: 23
 Info (12133): Instantiated megafunction "ordered_priority_queue_monolithic_sv:dut_i|handle_fifo:g_storage[0].handle_fifo_i|altsyncram:handle_fifo_ram" with the following parameter: File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/handle_fifo.v Line: 23
@@ -8184,11 +8186,11 @@ Info (12133): Instantiated megafunction "ordered_priority_queue_monolithic_sv:du
 Info (12021): Found 1 design units, including 1 entities, in source file db/altsyncram_8sv1.tdf
     Info (12023): Found entity 1: altsyncram_8sv1 File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_8sv1.tdf Line: 27
 Info (12128): Elaborating entity "altsyncram_8sv1" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|handle_fifo:g_storage[0].handle_fifo_i|altsyncram:handle_fifo_ram|altsyncram_8sv1:auto_generated" File: /data1/intelFPGA/18.1/quartus/libraries/megafunctions/altsyncram.tdf Line: 791
-Info (12128): Elaborating entity "ordered_priority_queue_monolithic_ingress_parser" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[0].ingress_parser_i" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 300
-Warning (10230): Verilog HDL assignment warning at ordered_priority_queue_monolithic_ingress_parser.sv(114): truncated value with size 32 to match size of target (10) File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 114
-Warning (10230): Verilog HDL assignment warning at ordered_priority_queue_monolithic_ingress_parser.sv(115): truncated value with size 32 to match size of target (10) File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 115
-Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_ingress_parser.sv(181): object "ingress_parser_if_subheader_shd_ts" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 181
-Info (12128): Elaborating entity "ordered_priority_queue_monolithic_page_allocator" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 377
+Info (12128): Elaborating entity "ordered_priority_queue_monolithic_ingress_parser" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[0].ingress_parser_i" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 304
+Warning (10230): Verilog HDL assignment warning at ordered_priority_queue_monolithic_ingress_parser.sv(116): truncated value with size 32 to match size of target (10) File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 116
+Warning (10230): Verilog HDL assignment warning at ordered_priority_queue_monolithic_ingress_parser.sv(117): truncated value with size 32 to match size of target (10) File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 117
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_ingress_parser.sv(183): object "ingress_parser_if_subheader_shd_ts" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 183
+Info (12128): Elaborating entity "ordered_priority_queue_monolithic_page_allocator" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 381
 Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(529): object "idle_tk_past_q" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 529
 Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(545): object "fetch_resident_predict_matches_q" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 545
 Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(546): object "fetch_predicted_frame_len_q" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 546
@@ -8213,13 +8215,13 @@ Warning (10230): Verilog HDL assignment warning at ordered_priority_queue_monoli
 Info (10008): Verilog HDL or VHDL information: EDA Netlist Writer cannot regroup multidimensional array "page_allocator_ticket_rptr_d" into its bus
 Info (12128): Elaborating entity "tile_fifo" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|tile_fifo:gen_tail_status_wrap_ram[0].tail_status_wrap_ram_i" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 715
 Info (12128): Elaborating entity "tile_fifo" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|tile_fifo:gen_tail_status_wrap_ram[0].tail_status_state_ram_i" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 727
-Info (12128): Elaborating entity "ordered_priority_queue_monolithic_block_path" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_block_path:block_path_i" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 414
+Info (12128): Elaborating entity "ordered_priority_queue_monolithic_block_path" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_block_path:block_path_i" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 418
 Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_block_path.sv(168): object "block_mover_flag" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_block_path.sv Line: 168
 Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_block_path.sv(180): object "drr_lock_event_dbg" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_block_path.sv Line: 180
 Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_block_path.sv(181): object "drr_defer_event_dbg" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_block_path.sv Line: 181
 Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_block_path.sv(182): object "b2p_arb_quantum_update_if_updating" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_block_path.sv Line: 182
 Info (10008): Verilog HDL or VHDL information: EDA Netlist Writer cannot regroup multidimensional array "block_mover_handle_rptr_d" into its bus
-Info (12128): Elaborating entity "page_ram" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 426
+Info (12128): Elaborating entity "page_ram" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 430
 Info (12128): Elaborating entity "altsyncram" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/page_ram.v Line: 25
 Info (12130): Elaborated megafunction instantiation "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/page_ram.v Line: 25
 Info (12133): Instantiated megafunction "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i" with the following parameter: File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/page_ram.v Line: 25
@@ -8252,7 +8254,7 @@ Info (12128): Elaborating entity "decode_lda" for hierarchy "ordered_priority_qu
 Info (12021): Found 1 design units, including 1 entities, in source file db/mux_h9b.tdf
     Info (12023): Found entity 1: mux_h9b File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/db/mux_h9b.tdf Line: 22
 Info (12128): Elaborating entity "mux_h9b" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|mux_h9b:mux3" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 43
-Info (12128): Elaborating entity "ordered_priority_queue_monolithic_basic_presenter" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_basic_presenter:presenter_i" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 529
+Info (12128): Elaborating entity "ordered_priority_queue_monolithic_basic_presenter" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_basic_presenter:presenter_i" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 533
 Info (12128): Elaborating entity "ordered_priority_queue_monolithic_basic_presenter_native" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_basic_presenter:presenter_i|ordered_priority_queue_monolithic_basic_presenter_native:native_i" File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv Line: 111
 Warning (10230): Verilog HDL assignment warning at ordered_priority_queue_monolithic_basic_presenter.sv(849): truncated value with size 32 to match size of target (18) File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv Line: 849
 Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_basic_presenter.sv(927): object "is_new_pkt_complete" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv Line: 927
@@ -8374,10 +8376,10 @@ Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_
 Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_basic_presenter:presenter_i|ordered_priority_queue_monolithic_basic_presenter_native:native_i|presenter_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv Line: 853
 Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_block_path:block_path_i|arbiter_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_block_path.sv Line: 183
 Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|page_allocator_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 514
-Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[3].ingress_parser_i|ingress_parser_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 169
-Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[2].ingress_parser_i|ingress_parser_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 169
-Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[1].ingress_parser_i|ingress_parser_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 169
-Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[0].ingress_parser_i|ingress_parser_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 169
+Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[3].ingress_parser_i|ingress_parser_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 171
+Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[2].ingress_parser_i|ingress_parser_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 171
+Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[1].ingress_parser_i|ingress_parser_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 171
+Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[0].ingress_parser_i|ingress_parser_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 171
 Info (19000): Inferred 11 megafunctions from design logic
     Info (276029): Inferred altsyncram megafunction from the following design logic: "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_basic_presenter:presenter_i|ordered_priority_queue_monolithic_basic_presenter_native:native_i|overlap_req_addr_q_rtl_0"
         Info (286033): Parameter OPERATION_MODE set to DUAL_PORT
@@ -8643,7 +8645,7 @@ Info (12133): Instantiated megafunction "ordered_priority_queue_monolithic_sv:du
     Info (12134): Parameter "READ_DURING_WRITE_MODE_MIXED_PORTS" = "OLD_DATA"
 Info (12021): Found 1 design units, including 1 entities, in source file db/altsyncram_fuo1.tdf
     Info (12023): Found entity 1: altsyncram_fuo1 File: /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_fuo1.tdf Line: 27
-Warning (12241): 5 hierarchies have connectivity warnings - see the Connectivity Checks report folder
+Warning (12241): 6 hierarchies have connectivity warnings - see the Connectivity Checks report folder
 Info (17049): 107 registers lost all their fanouts during netlist optimizations.
 Info (144001): Generated suppressed messages file /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/output_files/opq_native_sv_4lane_signoff.map.smsg
 Critical Warning (15725): clock port is fed by virtual pin "clk~input"; timing analysis treats input to the clock port as a ripple clock
@@ -8672,10 +8674,10 @@ Info (21057): Implemented 15050 device resources after synthesis - the final res
     Info (21061): Implemented 14080 logic cells
     Info (21064): Implemented 970 RAM segments
 Info: Quartus Prime Analysis & Synthesis was successful. 0 errors, 138 warnings
-    Info: Peak virtual memory: 1318 megabytes
-    Info: Processing ended: Mon Apr 27 14:44:46 2026
-    Info: Elapsed time: 00:00:50
-    Info: Total CPU time (on all processors): 00:01:09
+    Info: Peak virtual memory: 1314 megabytes
+    Info: Processing ended: Mon Apr 27 15:07:24 2026
+    Info: Elapsed time: 00:00:51
+    Info: Total CPU time (on all processors): 00:01:08
 
 
 +------------------------------------------+

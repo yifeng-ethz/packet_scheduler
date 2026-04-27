@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_dut_sv
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.19
-// Date    : 20260418
-// Change  : Count ingress credit-mask drops in the native-SV CSR plane and expose them to the standalone UVM harness
+// Version : 26.4.5-syn
+// Date    : 20260427
+// Change  : Use explicit native credit debug ports instead of nested hierarchy probes
 //------------------------------------------------------------------------------
 
 `ifndef OPQ_N_SHD
@@ -392,6 +392,8 @@ module ordered_priority_queue_dut_sv (
     .aso_egress_startofpacket(aso_egress_startofpacket),
     .aso_egress_endofpacket(aso_egress_endofpacket),
     .aso_egress_error(aso_egress_error),
+    .ingress_lane_credit_dbg_o(native_lane_credit_dbg),
+    .ingress_ticket_credit_dbg_o(native_ticket_credit_dbg),
     .cfg_drr_allowance_i(csr_drr_allowance),
     .cfg_drr_allowance_reload_i(csr_drr_allowance_reload),
     .d_clk(d_clk),
@@ -401,10 +403,6 @@ module ordered_priority_queue_dut_sv (
   genvar g;
   generate
     for (g = 0; g < OPQ_N_LANE_LOCAL; g = g + 1) begin : g_native_dbg
-    assign native_lane_credit_dbg[g] =
-      u_native.g_ingress_parser[g].ingress_parser_i.ingress_parser.lane_credit;
-    assign native_ticket_credit_dbg[g] =
-      u_native.g_ingress_parser[g].ingress_parser_i.ingress_parser.ticket_credit;
     assign native_ingress_ticket_we_dbg[g] = u_native.ingress_ticket_we[g];
     assign native_ingress_ticket_wdata_dbg[g] = u_native.ingress_ticket_wdata[g];
     assign native_ingress_lane_we_dbg[g] = u_native.ingress_lane_we[g];

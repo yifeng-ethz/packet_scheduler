@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_sv
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.4.3
-// Date    : 20260425
-// Change  : Pipeline ticket FIFO read addresses for timing
+// Version : 26.4.5
+// Date    : 20260427
+// Change  : Export ingress credit debug ports for Qsys synthesis wrappers
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_sv #(
@@ -61,6 +61,8 @@ module ordered_priority_queue_monolithic_sv #(
   output logic                                                           aso_egress_endofpacket,
   output logic [2:0]                                                     aso_egress_error,
   output logic [EGRESS_EMPTY_WIDTH-1:0]                                  aso_egress_empty,
+  output logic [N_LANE-1:0][LANE_FIFO_ADDR_WIDTH-1:0]                    ingress_lane_credit_dbg_o,
+  output logic [N_LANE-1:0][TICKET_FIFO_ADDR_WIDTH-1:0]                  ingress_ticket_credit_dbg_o,
   input  logic [N_LANE-1:0][9:0]                                         cfg_drr_allowance_i,
   input  logic [N_LANE-1:0]                                              cfg_drr_allowance_reload_i,
   input  logic                                                           d_clk,
@@ -307,6 +309,8 @@ module ordered_priority_queue_monolithic_sv #(
       .dt_type_dbg(ingress_dt_type_dbg[g]),
       .feb_id_dbg(ingress_feb_id_dbg[g]),
       .parser_busy_o(ingress_parser_busy_dbg[g]),
+      .lane_credit_dbg_o(ingress_lane_credit_dbg_o[g]),
+      .ticket_credit_dbg_o(ingress_ticket_credit_dbg_o[g]),
       .credit_drop_valid_o(ingress_credit_drop_valid_dbg[g]),
       .credit_drop_lane_o(ingress_credit_drop_lane_dbg[g]),
       .credit_drop_ticket_o(ingress_credit_drop_ticket_dbg[g]),

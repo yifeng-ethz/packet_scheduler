@@ -1,8 +1,8 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_ingress_parser
-// Version : 26.4.2
-// Date    : 20260425
-// Change  : Export registered RAM write addresses to remove wrapper subtractors
+// Version : 26.4.5
+// Date    : 20260427
+// Change  : Export credit debug ports so synthesis wrappers avoid nested struct hierarchy references
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_ingress_parser #(
@@ -53,6 +53,8 @@ module ordered_priority_queue_monolithic_ingress_parser #(
   output logic [5:0]                                        dt_type_dbg,
   output logic [15:0]                                       feb_id_dbg,
   output logic                                              parser_busy_o,
+  output logic [LANE_FIFO_ADDR_WIDTH-1:0]                   lane_credit_dbg_o,
+  output logic [TICKET_FIFO_ADDR_WIDTH-1:0]                 ticket_credit_dbg_o,
 `ifdef OPQ_OSS_FORMAL
   output logic [LANE_FIFO_ADDR_WIDTH-1:0]                   lane_credit_dbg_oss,
   output logic [TICKET_FIFO_ADDR_WIDTH-1:0]                 ticket_credit_dbg_oss,
@@ -287,9 +289,11 @@ module ordered_priority_queue_monolithic_ingress_parser #(
 `else
     parser_busy_o = (ingress_parser_state != INGRESS_PARSER_IDLE);
 `endif
+    lane_credit_dbg_o = ingress_parser.lane_credit;
+    ticket_credit_dbg_o = ingress_parser.ticket_credit;
 `ifdef OPQ_OSS_FORMAL
-    lane_credit_dbg_oss = ingress_parser.lane_credit;
-    ticket_credit_dbg_oss = ingress_parser.ticket_credit;
+    lane_credit_dbg_oss = lane_credit_dbg_o;
+    ticket_credit_dbg_oss = ticket_credit_dbg_o;
     shd_len_dbg_oss = ingress_parser.shd_len;
     ingress_state_dbg_oss = ingress_parser_state;
 `endif
