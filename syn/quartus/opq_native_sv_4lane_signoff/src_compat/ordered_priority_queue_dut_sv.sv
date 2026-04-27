@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_dut_sv
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.4.7-syn
+// Version : 26.4.8-syn
 // Date    : 20260427
-// Change  : Expose N_HIT through the Qsys top-level wrapper
+// Change  : Align signoff wrapper ticket debug width and 16-bit subheader hit accounting
 //------------------------------------------------------------------------------
 
 `ifndef OPQ_N_SHD
@@ -84,10 +84,15 @@ module ordered_priority_queue_dut_sv #(
   localparam int unsigned HANDLE_FIFO_ADDR_WIDTH_CONST = $clog2(HANDLE_FIFO_DEPTH_CONST);
   localparam int unsigned PAGE_RAM_DEPTH_CONST = `OPQ_PAGE_RAM_DEPTH;
   localparam int unsigned PAGE_RAM_ADDR_WIDTH_CONST = $clog2(PAGE_RAM_DEPTH_CONST);
+  localparam int unsigned FRAME_SERIAL_SIZE_CONST = 16;
+  localparam int unsigned FRAME_SUBH_CNT_SIZE_CONST = 16;
+  localparam int unsigned FRAME_HIT_CNT_SIZE_CONST = 16;
   localparam int unsigned MAX_PKT_LENGTH_CONST = N_HIT;
   localparam int unsigned MAX_PKT_LENGTH_BITS_CONST = (MAX_PKT_LENGTH_CONST <= 1) ? 1 : $clog2(MAX_PKT_LENGTH_CONST);
-  localparam int unsigned TICKET_FIFO_DATA_WIDTH_A_CONST = 48 + LANE_FIFO_ADDR_WIDTH_CONST + MAX_PKT_LENGTH_BITS_CONST + 2;
-  localparam int unsigned TICKET_FIFO_DATA_WIDTH_B_CONST = 16 + 16 + 16 + 2;
+  localparam int unsigned TICKET_FIFO_DATA_WIDTH_A_CONST =
+    48 + LANE_FIFO_ADDR_WIDTH_CONST + MAX_PKT_LENGTH_BITS_CONST + FRAME_SERIAL_SIZE_CONST + 2;
+  localparam int unsigned TICKET_FIFO_DATA_WIDTH_B_CONST =
+    FRAME_SERIAL_SIZE_CONST + FRAME_SUBH_CNT_SIZE_CONST + FRAME_HIT_CNT_SIZE_CONST + 6 + 16 + 48 + 2;
   localparam int unsigned TICKET_FIFO_DATA_WIDTH_CONST =
     (TICKET_FIFO_DATA_WIDTH_A_CONST > TICKET_FIFO_DATA_WIDTH_B_CONST) ?
       TICKET_FIFO_DATA_WIDTH_A_CONST : TICKET_FIFO_DATA_WIDTH_B_CONST;
@@ -127,10 +132,10 @@ module ordered_priority_queue_dut_sv #(
   localparam logic [31:0] UID_CONST = 32'h4F50_514D;
   localparam int unsigned VERSION_MAJOR_CONST = 26;
   localparam int unsigned VERSION_MINOR_CONST = 4;
-  localparam int unsigned VERSION_PATCH_CONST = 7;
+  localparam int unsigned VERSION_PATCH_CONST = 8;
   localparam int unsigned VERSION_BUILD_CONST = 427;
   localparam logic [31:0] VERSION_DATE_CONST = 32'd20260427;
-  localparam logic [31:0] VERSION_GIT_CONST = 32'h087E_4710;
+  localparam logic [31:0] VERSION_GIT_CONST = 32'h3B55_C935;
   localparam logic [31:0] INSTANCE_ID_CONST = 32'd0;
   localparam logic [9:0] DRR_DEFAULT_ALLOWANCE_CONST = 10'd256;
 
@@ -452,7 +457,7 @@ module ordered_priority_queue_dut_sv #(
     assign native_drop_hit_dbg[g] =
       (csr_lane_mask_effective[g] && asi_ingress_valid_bus[g] &&
         is_subheader_word(asi_ingress_data_bus[g]) ?
-          {8'd0, asi_ingress_data_bus[g][15:8]} : 16'd0) +
+          asi_ingress_data_bus[g][23:8] : 16'd0) +
       native_ingress_credit_drop_hit_dbg[g] +
       (native_handle_we_dbg[g] && native_handle_flag_dbg[g] ?
         {{(16-MAX_PKT_LENGTH_BITS_CONST){1'b0}}, native_handle_block_len_dbg[g]} : 16'd0);
@@ -606,7 +611,7 @@ module ordered_priority_queue_dut_sv #(
           if (csr_lane_mask_effective[lane] && asi_ingress_valid_bus[lane] &&
               is_subheader_word(asi_ingress_data_bus[lane])) begin
             drop_shd_delta_v = drop_shd_delta_v + 32'd1;
-            drop_hit_delta_v = drop_hit_delta_v + {{24{1'b0}}, asi_ingress_data_bus[lane][15:8]};
+            drop_hit_delta_v = drop_hit_delta_v + {{16{1'b0}}, asi_ingress_data_bus[lane][23:8]};
           end
 
           if (native_ingress_credit_drop_valid_dbg[lane]) begin

@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_dut_sv
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.4.7
+// Version : 26.4.8
 // Date    : 20260427
-// Change  : Expose N_HIT to the native SV wrapper
+// Change  : Align native wrapper debug/drop accounting to 16-bit subheader hit fields
 //------------------------------------------------------------------------------
 
 `ifndef OPQ_N_SHD
@@ -129,10 +129,10 @@ module ordered_priority_queue_dut_sv #(
   localparam logic [31:0] UID_CONST = 32'h4F50_514D;
   localparam int unsigned VERSION_MAJOR_CONST = 26;
   localparam int unsigned VERSION_MINOR_CONST = 4;
-  localparam int unsigned VERSION_PATCH_CONST = 7;
+  localparam int unsigned VERSION_PATCH_CONST = 8;
   localparam int unsigned VERSION_BUILD_CONST = 427;
   localparam logic [31:0] VERSION_DATE_CONST = 32'd20260427;
-  localparam logic [31:0] VERSION_GIT_CONST = 32'h087E_4710;
+  localparam logic [31:0] VERSION_GIT_CONST = 32'h3B55_C935;
   localparam logic [31:0] INSTANCE_ID_CONST = 32'd0;
   localparam logic [9:0] DRR_DEFAULT_ALLOWANCE_CONST = 10'd256;
 
@@ -520,7 +520,7 @@ module ordered_priority_queue_dut_sv #(
     assign native_drop_hit_dbg[g] =
       (csr_lane_mask_effective[g] && asi_ingress_valid_bus[g] &&
         is_subheader_word(asi_ingress_data_bus[g]) ?
-          {8'd0, asi_ingress_data_bus[g][15:8]} : 16'd0) +
+          asi_ingress_data_bus[g][23:8] : 16'd0) +
       native_ingress_credit_drop_hit_dbg[g] +
       native_late_frame_drop_hit_dbg[g] +
       (native_handle_we_dbg[g] && native_handle_flag_dbg[g] ?
@@ -781,14 +781,14 @@ module ordered_priority_queue_dut_sv #(
           if (csr_lane_mask_effective[lane] && asi_ingress_valid_bus[lane] &&
               is_subheader_word(asi_ingress_data_bus[lane])) begin
             drop_shd_delta_v = drop_shd_delta_v + 32'd1;
-            drop_hit_delta_v = drop_hit_delta_v + {{24{1'b0}}, asi_ingress_data_bus[lane][15:8]};
+            drop_hit_delta_v = drop_hit_delta_v + {{16{1'b0}}, asi_ingress_data_bus[lane][23:8]};
             drop_pre_shd_delta_v = drop_pre_shd_delta_v + 32'd1;
-            drop_pre_hit_delta_v = drop_pre_hit_delta_v + {{24{1'b0}}, asi_ingress_data_bus[lane][15:8]};
+            drop_pre_hit_delta_v = drop_pre_hit_delta_v + {{16{1'b0}}, asi_ingress_data_bus[lane][23:8]};
             native_exact_pre_valid_dbg[lane] <= 1'b1;
             native_exact_pre_ts_dbg[lane] <= masked_exact_pre_ts_v;
             native_exact_pre_serial_dbg[lane] <= masked_pkg_cnt_dbg[lane];
             native_exact_pre_shd_dbg[lane] <= 16'd1;
-            native_exact_pre_hit_dbg[lane] <= {{8{1'b0}}, asi_ingress_data_bus[lane][15:8]};
+            native_exact_pre_hit_dbg[lane] <= asi_ingress_data_bus[lane][23:8];
           end
 
           if (native_ingress_credit_drop_valid_dbg[lane]) begin
