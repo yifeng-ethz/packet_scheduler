@@ -1,8 +1,8 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_ingress_parser
-// Version : 26.4.5
+// Version : 26.4.6
 // Date    : 20260427
-// Change  : Export credit debug ports so synthesis wrappers avoid nested struct hierarchy references
+// Change  : Export parser-idle debug port so synthesis wrappers avoid hierarchy references
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_ingress_parser #(
@@ -53,6 +53,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
   output logic [5:0]                                        dt_type_dbg,
   output logic [15:0]                                       feb_id_dbg,
   output logic                                              parser_busy_o,
+  output logic                                              parser_idle_dbg_o,
   output logic [LANE_FIFO_ADDR_WIDTH-1:0]                   lane_credit_dbg_o,
   output logic [TICKET_FIFO_ADDR_WIDTH-1:0]                 ticket_credit_dbg_o,
 `ifdef OPQ_OSS_FORMAL
@@ -288,6 +289,11 @@ module ordered_priority_queue_monolithic_ingress_parser #(
       ticket_we;
 `else
     parser_busy_o = (ingress_parser_state != INGRESS_PARSER_IDLE);
+`endif
+`ifdef SYNTHESIS
+    parser_idle_dbg_o = !parser_busy_o;
+`else
+    parser_idle_dbg_o = (ingress_parser_state == INGRESS_PARSER_IDLE);
 `endif
     lane_credit_dbg_o = ingress_parser.lane_credit;
     ticket_credit_dbg_o = ingress_parser.ticket_credit;

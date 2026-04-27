@@ -8,7 +8,7 @@ package require -exact altera_terp 1.0
 
 set_module_property NAME                             ordered_priority_queue
 set_module_property DISPLAY_NAME                     "Ordered Priority Queue"
-set_module_property VERSION                          26.4.5.0427
+set_module_property VERSION                          26.4.6.0427
 set_module_property DESCRIPTION                      "Ordered Priority Queue Mu3e IP Core"
 set_module_property GROUP                            "Mu3e Data Plane/Modules"
 set_module_property AUTHOR                           "Yifeng Wang (yifenwan@phys.ethz.ch)"
@@ -305,17 +305,17 @@ proc opq_preset_summary_html {selected_preset} {
 }
 
 # ────────────────────────────────────────────────────────────────────────────
-# Identity constants — packaged 2026-04-24
+# Identity constants - packaged 2026-04-27
 # ────────────────────────────────────────────────────────────────────────────
 # UID = ASCII "OPQM" (Ordered Priority Queue, Monolithic) = 0x4F50514D
 set IP_UID_DEFAULT_CONST        1330663757
 set VERSION_MAJOR_DEFAULT_CONST 26
 set VERSION_MINOR_DEFAULT_CONST 4
-set VERSION_PATCH_DEFAULT_CONST 5
+set VERSION_PATCH_DEFAULT_CONST 6
 set BUILD_DEFAULT_CONST         427
 set VERSION_DATE_DEFAULT_CONST  20260427
 # 32-bit packaged provenance stamp for this release family
-set VERSION_GIT_DEFAULT_CONST   36303022
+set VERSION_GIT_DEFAULT_CONST   136727728
 set INSTANCE_ID_DEFAULT_CONST   0
 set OPQ_VERSION_STRING          [format "%d.%d.%d.%04d" \
     $VERSION_MAJOR_DEFAULT_CONST \

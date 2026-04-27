@@ -1,5 +1,5 @@
 Fitter report for opq_native_sv_4lane_signoff
-Mon Apr 27 15:11:05 2026
+Mon Apr 27 15:41:09 2026
 Quartus Prime Version 18.1.0 Build 625 09/12/2018 SJ Standard Edition
 
 
@@ -58,7 +58,7 @@ refer to the applicable agreement for further details.
 +-------------------------------------------------------------------------------+
 ; Fitter Summary                                                                ;
 +-----------------------------+-------------------------------------------------+
-; Fitter Status               ; Successful - Mon Apr 27 15:11:04 2026           ;
+; Fitter Status               ; Successful - Mon Apr 27 15:41:08 2026           ;
 ; Quartus Prime Version       ; 18.1.0 Build 625 09/12/2018 SJ Standard Edition ;
 ; Revision Name               ; opq_native_sv_4lane_signoff                     ;
 ; Top-level Entity Name       ; opq_native_sv_4lane_signoff_top                 ;
@@ -152,9 +152,9 @@ refer to the applicable agreement for further details.
 ;                            ;             ;
 ; Usage by Processor         ; % Time Used ;
 ;     Processor 1            ; 100.0%      ;
-;     Processor 2            ;  13.4%      ;
+;     Processor 2            ;  13.5%      ;
 ;     Processor 3            ;   5.9%      ;
-;     Processor 4            ;   5.5%      ;
+;     Processor 4            ;   5.6%      ;
 ;     Processor 5            ;   5.4%      ;
 ;     Processor 6            ;   5.2%      ;
 ;     Processor 7            ;   5.0%      ;
@@ -162,8 +162,8 @@ refer to the applicable agreement for further details.
 ;     Processor 9            ;   4.5%      ;
 ;     Processor 10           ;   4.5%      ;
 ;     Processor 11           ;   4.5%      ;
-;     Processor 12           ;   4.4%      ;
-;     Processor 13           ;   4.4%      ;
+;     Processor 12           ;   4.5%      ;
+;     Processor 13           ;   4.5%      ;
 ;     Processor 14           ;   4.4%      ;
 ;     Processor 15           ;   4.4%      ;
 ;     Processor 16           ;   4.4%      ;
@@ -3024,11 +3024,11 @@ Info (332111): Found 1 clocks
     Info (332111):    3.636          clk
 Info (170189): Fitter placement preparation operations beginning
 Info (14951): The Fitter is using Advanced Physical Optimization.
-Info (170190): Fitter placement preparation operations ending: elapsed time is 00:00:18
+Info (170190): Fitter placement preparation operations ending: elapsed time is 00:00:17
 Info (170191): Fitter placement operations beginning
 Info (170137): Fitter placement was successful
 Info (170192): Fitter placement operations ending: elapsed time is 00:00:23
-Info (11888): Total time spent on timing analysis during Global Placement is 5.79 seconds.
+Info (11888): Total time spent on timing analysis during Global Placement is 5.68 seconds.
 Info (18258): Fitter Physical Synthesis operations beginning
 Info (18259): Fitter Physical Synthesis operations ending: elapsed time is 00:00:02
 Info (11888): Total time spent on timing analysis during Physical Synthesis is 0.00 seconds.
@@ -3040,17 +3040,17 @@ Info (11888): Total time spent on timing analysis during Placement is 0.07 secon
 Info (170193): Fitter routing operations beginning
 Info (170195): Router estimated average interconnect usage is 0% of the available device resources
     Info (170196): Router estimated peak interconnect usage is 29% of the available device resources in the region that extends from location X153_Y94 to location X164_Y105
-Info (11888): Total time spent on timing analysis during Routing is 4.92 seconds.
+Info (11888): Total time spent on timing analysis during Routing is 4.87 seconds.
 Info (16607): Fitter routing operations ending: elapsed time is 00:00:48
-Info (11888): Total time spent on timing analysis during Post-Routing is 0.47 seconds.
+Info (11888): Total time spent on timing analysis during Post-Routing is 0.46 seconds.
 Info (16557): Fitter post-fit operations ending: elapsed time is 00:00:32
 Info (144001): Generated suppressed messages file /home/yifeng/packages/mu3e_ip_dev/.worktrees/packet_scheduler_opq_musip_timing_20260427/syn/quartus/opq_native_sv_4lane_signoff/output_files/opq_native_sv_4lane_signoff.fit.smsg
 Info (11793): Fitter databases successfully split.
 Info: Quartus Prime Fitter was successful. 0 errors, 4 warnings
-    Info: Peak virtual memory: 8342 megabytes
-    Info: Processing ended: Mon Apr 27 15:11:06 2026
-    Info: Elapsed time: 00:03:41
-    Info: Total CPU time (on all processors): 00:19:46
+    Info: Peak virtual memory: 8278 megabytes
+    Info: Processing ended: Mon Apr 27 15:41:10 2026
+    Info: Elapsed time: 00:03:39
+    Info: Total CPU time (on all processors): 00:19:28
 
 
 +----------------------------+

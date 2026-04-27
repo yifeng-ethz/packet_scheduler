@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_dut_sv
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.4.5
+// Version : 26.4.6
 // Date    : 20260427
-// Change  : Use explicit native credit debug ports instead of nested hierarchy probes
+// Change  : Use explicit native debug ports instead of hierarchy probes
 //------------------------------------------------------------------------------
 
 `ifndef OPQ_N_SHD
@@ -123,10 +123,10 @@ module ordered_priority_queue_dut_sv (
   localparam logic [31:0] UID_CONST = 32'h4F50_514D;
   localparam int unsigned VERSION_MAJOR_CONST = 26;
   localparam int unsigned VERSION_MINOR_CONST = 3;
-  localparam int unsigned VERSION_PATCH_CONST = 30;
-  localparam int unsigned VERSION_BUILD_CONST = 420;
-  localparam logic [31:0] VERSION_DATE_CONST = 32'd20260420;
-  localparam logic [31:0] VERSION_GIT_CONST = 32'h38D3_2BFD;
+  localparam int unsigned VERSION_PATCH_CONST = 6;
+  localparam int unsigned VERSION_BUILD_CONST = 427;
+  localparam logic [31:0] VERSION_DATE_CONST = 32'd20260427;
+  localparam logic [31:0] VERSION_GIT_CONST = 32'h0826_4CB0;
   localparam logic [31:0] INSTANCE_ID_CONST = 32'd0;
   localparam logic [9:0] DRR_DEFAULT_ALLOWANCE_CONST = 10'd256;
 
@@ -175,6 +175,7 @@ module ordered_priority_queue_dut_sv (
 
   logic [OPQ_N_LANE_LOCAL-1:0][LANE_FIFO_ADDR_WIDTH_CONST-1:0] native_lane_credit_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][TICKET_FIFO_ADDR_WIDTH_CONST-1:0] native_ticket_credit_dbg;
+  logic [OPQ_N_LANE_LOCAL-1:0] native_ingress_parser_idle_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0] native_ingress_ticket_we_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][TICKET_FIFO_DATA_WIDTH_CONST-1:0] native_ingress_ticket_wdata_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0] native_ingress_lane_we_dbg;
@@ -446,46 +447,57 @@ module ordered_priority_queue_dut_sv (
     .aso_egress_ready(aso_egress_ready),
     .aso_egress_startofpacket(aso_egress_startofpacket),
     .aso_egress_endofpacket(aso_egress_endofpacket),
-    .aso_egress_error(aso_egress_error),
-    .aso_egress_empty(native_egress_empty_unused),
-    .ingress_lane_credit_dbg_o(native_lane_credit_dbg),
-    .ingress_ticket_credit_dbg_o(native_ticket_credit_dbg),
-    .cfg_drr_allowance_i(csr_drr_allowance),
-    .cfg_drr_allowance_reload_i(csr_drr_allowance_reload),
-    .d_clk(d_clk),
-    .d_reset(d_reset)
-  );
+      .aso_egress_error(aso_egress_error),
+      .aso_egress_empty(native_egress_empty_unused),
+      .ingress_lane_credit_dbg_o(native_lane_credit_dbg),
+      .ingress_ticket_credit_dbg_o(native_ticket_credit_dbg),
+      .ingress_parser_idle_dbg_o(native_ingress_parser_idle_dbg),
+      .ingress_ticket_we_dbg_o(native_ingress_ticket_we_dbg),
+      .ingress_ticket_wdata_dbg_o(native_ingress_ticket_wdata_dbg),
+      .ingress_lane_we_dbg_o(native_ingress_lane_we_dbg),
+      .ingress_running_ts_dbg_o(native_ingress_running_ts_dbg),
+      .ingress_pkg_cnt_dbg_o(native_ingress_pkg_cnt_dbg),
+      .ingress_credit_drop_valid_dbg_o(native_ingress_credit_drop_valid_dbg),
+      .ingress_credit_drop_lane_dbg_o(native_ingress_credit_drop_lane_dbg),
+      .ingress_credit_drop_ticket_dbg_o(native_ingress_credit_drop_ticket_dbg),
+      .ingress_credit_drop_pkg_cnt_dbg_o(native_ingress_credit_drop_pkg_dbg),
+      .ingress_credit_drop_ts_dbg_o(native_ingress_credit_drop_ts_dbg),
+      .ingress_credit_drop_shd_cnt_dbg_o(native_ingress_credit_drop_shd_dbg),
+      .ingress_credit_drop_hit_cnt_dbg_o(native_ingress_credit_drop_hit_dbg),
+      .handle_we_dbg_o(native_handle_we_dbg),
+      .handle_flag_dbg_o(native_handle_flag_dbg),
+      .handle_block_len_dbg_o(native_handle_block_len_dbg),
+      .late_frame_drop_valid_dbg_o(native_late_frame_drop_valid_dbg),
+      .late_frame_drop_hdr_cnt_dbg_o(native_late_frame_drop_hdr_dbg),
+      .late_frame_drop_shd_cnt_dbg_o(native_late_frame_drop_shd_dbg),
+      .late_frame_drop_hit_cnt_dbg_o(native_late_frame_drop_hit_dbg),
+      .late_frame_drop_serial_dbg_o(native_late_frame_drop_serial_dbg),
+      .late_frame_drop_ts_dbg_o(native_late_frame_drop_ts_dbg),
+      .drr_quantum_dbg_o(native_drr_quantum_dbg),
+      .drr_req_dbg_o(native_drr_req_dbg),
+      .drr_gnt_dbg_o(native_drr_gnt_dbg),
+      .drr_lock_event_dbg_o(native_drr_lock_event_dbg),
+      .drr_defer_event_dbg_o(native_drr_defer_event_dbg),
+      .new_frame_dbg_o(native_new_frame_dbg),
+      .ft_wr_page_dbg_o(native_ft_wr_page_dbg),
+      .ft_wr_hit_len_dbg_o(native_ft_wr_hit_len_dbg),
+      .ft_drop_valid_dbg_o(native_ft_drop_valid_dbg),
+      .ft_drop_hdr_dbg_o(native_ft_drop_hdr_dbg),
+      .ft_drop_shd_dbg_o(native_ft_drop_shd_dbg),
+      .ft_drop_hit_dbg_o(native_ft_drop_hit_dbg),
+      .ft_drop_lane_shd_dbg_o(native_ft_drop_lane_shd_dbg),
+      .ft_drop_lane_hit_dbg_o(native_ft_drop_lane_hit_dbg),
+      .page_allocator_active_dbg_o(native_page_allocator_active_dbg),
+      .arbiter_active_dbg_o(native_arbiter_active_dbg),
+      .cfg_drr_allowance_i(csr_drr_allowance),
+      .cfg_drr_allowance_reload_i(csr_drr_allowance_reload),
+      .d_clk(d_clk),
+      .d_reset(d_reset)
+    );
 
-  for (genvar g = 0; g < OPQ_N_LANE_LOCAL; g++) begin : g_native_dbg
-    assign native_ingress_ticket_we_dbg[g] = u_native.ingress_ticket_we[g];
-    assign native_ingress_ticket_wdata_dbg[g] = u_native.ingress_ticket_wdata[g];
-    assign native_ingress_lane_we_dbg[g] = u_native.ingress_lane_we[g];
-    assign native_ingress_running_ts_dbg[g] = u_native.ingress_running_ts_dbg[g];
-    assign native_ingress_pkg_cnt_dbg[g] = u_native.ingress_pkg_cnt_dbg[g];
-    assign native_ingress_credit_drop_valid_dbg[g] = u_native.ingress_credit_drop_valid_dbg[g];
-    assign native_ingress_credit_drop_lane_dbg[g] = u_native.ingress_credit_drop_lane_dbg[g];
-    assign native_ingress_credit_drop_ticket_dbg[g] = u_native.ingress_credit_drop_ticket_dbg[g];
-    assign native_ingress_credit_drop_pkg_dbg[g] = u_native.ingress_credit_drop_pkg_cnt_dbg[g];
-    assign native_ingress_credit_drop_ts_dbg[g] = u_native.ingress_credit_drop_ts_dbg[g];
-    assign native_ingress_credit_drop_shd_dbg[g] = u_native.ingress_credit_drop_shd_cnt_dbg[g];
-    assign native_ingress_credit_drop_hit_dbg[g] = u_native.ingress_credit_drop_hit_cnt_dbg[g];
-    assign native_handle_we_dbg[g] = u_native.handle_we_dbg[g];
-    assign native_handle_flag_dbg[g] = u_native.handle_wdata_dbg[g][HANDLE_LENGTH_CONST];
-    assign native_handle_block_len_dbg[g] =
-      u_native.handle_wdata_dbg[g][HANDLE_LEN_HI_CONST:HANDLE_LEN_LO_CONST];
-    assign native_late_frame_drop_valid_dbg[g] = u_native.late_frame_drop_valid_dbg[g];
-    assign native_late_frame_drop_hdr_dbg[g] = u_native.late_frame_drop_hdr_cnt_dbg[g];
-    assign native_late_frame_drop_shd_dbg[g] = u_native.late_frame_drop_shd_cnt_dbg[g];
-    assign native_late_frame_drop_hit_dbg[g] = u_native.late_frame_drop_hit_cnt_dbg[g];
-    assign native_late_frame_drop_serial_dbg[g] = u_native.late_frame_drop_serial_dbg[g];
-    assign native_late_frame_drop_ts_dbg[g] = u_native.late_frame_drop_ts_dbg[g];
-    assign native_drr_quantum_dbg[g] = u_native.block_path_i.b2p_arb.quantum[g];
-    assign native_drr_req_dbg[g] = u_native.block_path_i.b2p_arb_req_raw[g];
-    assign native_drr_gnt_dbg[g] = u_native.block_path_i.b2p_arb_gnt[g];
-    assign native_drr_lock_event_dbg[g] = u_native.block_path_i.drr_lock_event_dbg[g];
-    assign native_drr_defer_event_dbg[g] = u_native.block_path_i.drr_defer_event_dbg[g];
-    assign csr_lane_mask_effective[g] = csr_lane_mask[g] &&
-      (u_native.g_ingress_parser[g].ingress_parser_i.ingress_parser_state == 3'd0);
+    for (genvar g = 0; g < OPQ_N_LANE_LOCAL; g++) begin : g_native_dbg
+      assign csr_lane_mask_effective[g] = csr_lane_mask[g] &&
+        native_ingress_parser_idle_dbg[g];
     assign asi_ingress_valid_eff_bus[g] = asi_ingress_valid_bus[g] && !csr_lane_mask_effective[g];
     assign native_drop_valid_dbg[g] = (csr_lane_mask_effective[g] && asi_ingress_valid_bus[g] &&
       is_subheader_word(asi_ingress_data_bus[g])) ||
@@ -508,20 +520,6 @@ module ordered_priority_queue_dut_sv (
         {{(16-MAX_PKT_LENGTH_BITS_CONST){1'b0}}, native_handle_block_len_dbg[g]} : 16'd0);
   end
 
-  assign native_new_frame_dbg = u_native.write_head_active_dbg && (u_native.write_meta_flow_dbg == 3'd0);
-  assign native_ft_wr_page_dbg = u_native.write_page_active_dbg && u_native.page_we_dbg;
-  assign native_ft_wr_hit_len_dbg = u_native.page_wdata_dbg[23:8];
-  assign native_ft_drop_valid_dbg = u_native.ft_drop_valid_dbg;
-  assign native_ft_drop_hdr_dbg = u_native.ft_drop_hdr_cnt_dbg;
-  assign native_ft_drop_shd_dbg = u_native.ft_drop_shd_cnt_dbg;
-  assign native_ft_drop_hit_dbg = u_native.ft_drop_hit_cnt_dbg;
-  for (genvar g_ft = 0; g_ft < OPQ_N_LANE_LOCAL; g_ft++) begin : g_ft_drop_lane_dbg
-    assign native_ft_drop_lane_shd_dbg[g_ft] = u_native.ft_drop_lane_shd_cnt_dbg[g_ft];
-    assign native_ft_drop_lane_hit_dbg[g_ft] = u_native.ft_drop_lane_hit_cnt_dbg[g_ft];
-  end
-  assign native_page_allocator_active_dbg = u_native.fetch_ticket_active_dbg ||
-    u_native.write_head_active_dbg || u_native.write_tail_active_dbg || u_native.write_page_active_dbg;
-  assign native_arbiter_active_dbg = |native_drr_req_dbg || |u_native.block_path_i.b2p_arb.sel_mask;
   assign avs_csr_waitrequest = 1'b0;
 
   always_ff @(posedge d_clk) begin : proc_native_csr
