@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_page_allocator
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.4.8
+// Version : 26.4.9
 // Date    : 20260427
-// Change  : Block fetch-ready leakage only while missing lanes can still join
+// Change  : Hold partial frames until delayed join SOPs arrive or window expires
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_page_allocator #(
@@ -1018,8 +1018,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
     if ((page_allocator.frame_join_wait != '0) &&
         (page_allocator.frame_lane_active != '0) &&
         (page_allocator.frame_lane_active != '1) &&
-        !any_pending_sop_ticket &&
-        (inactive_frame_join_pending_lane != '0)) begin
+        !any_pending_sop_ticket) begin
       frame_join_hold = 1'b1;
     end
     idle_tail_flush_base =

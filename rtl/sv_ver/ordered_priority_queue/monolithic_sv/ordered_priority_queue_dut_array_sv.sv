@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_dut_array_sv
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.4.7
+// Version : 26.4.9
 // Date    : 20260427
-// Change  : Expose N_HIT to the native SV wrapper
+// Change  : Align native-array identity to the partial-frame join-hold fix
 //------------------------------------------------------------------------------
 
 `ifndef OPQ_N_SHD
@@ -135,7 +135,7 @@ module ordered_priority_queue_dut_array_sv #(
   localparam logic [31:0] UID_CONST = 32'h4F50_514D;
   localparam int unsigned VERSION_MAJOR_CONST = 26;
   localparam int unsigned VERSION_MINOR_CONST = 4;
-  localparam int unsigned VERSION_PATCH_CONST = 7;
+  localparam int unsigned VERSION_PATCH_CONST = 9;
   localparam int unsigned VERSION_BUILD_CONST = 427;
   localparam logic [31:0] VERSION_DATE_CONST = 32'd20260427;
   localparam logic [31:0] VERSION_GIT_CONST = 32'h087E_4710;
