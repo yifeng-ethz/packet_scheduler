@@ -14,6 +14,10 @@
 `define OPQ_PAGE_RAM_DEPTH 65536
 `endif
 
+`ifndef OPQ_N_HIT
+`define OPQ_N_HIT 2047
+`endif
+
 module opq_native_sv_4lane_signoff_top (
   input  logic        clk,
   input  logic        reset_n,
@@ -21,6 +25,7 @@ module opq_native_sv_4lane_signoff_top (
 );
   localparam int unsigned N_LANE = `OPQ_N_LANE;
   localparam int unsigned N_SHD = `OPQ_N_SHD;
+  localparam int unsigned N_HIT = `OPQ_N_HIT;
   localparam int unsigned TICKET_FIFO_DEPTH = `OPQ_TICKET_FIFO_DEPTH;
   localparam int unsigned PAGE_RAM_DEPTH = `OPQ_PAGE_RAM_DEPTH;
   localparam int unsigned CHANNEL_WIDTH = 2;
@@ -287,7 +292,8 @@ module opq_native_sv_4lane_signoff_top (
     .CHANNEL_WIDTH(CHANNEL_WIDTH),
     .TICKET_FIFO_DEPTH(TICKET_FIFO_DEPTH),
     .PAGE_RAM_DEPTH(PAGE_RAM_DEPTH),
-    .N_SHD(N_SHD)
+    .N_SHD(N_SHD),
+    .N_HIT(N_HIT)
   ) dut_i (
     .asi_ingress_data(asi_ingress_data),
     .asi_ingress_valid(asi_ingress_valid),

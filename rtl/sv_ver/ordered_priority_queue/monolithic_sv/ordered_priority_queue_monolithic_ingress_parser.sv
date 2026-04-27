@@ -1,8 +1,8 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_ingress_parser
-// Version : 26.4.6
+// Version : 26.4.7
 // Date    : 20260427
-// Change  : Export parser-idle debug port so synthesis wrappers avoid hierarchy references
+// Change  : Decode the subheader hit count from the 16-bit packet field
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_ingress_parser #(
@@ -85,6 +85,8 @@ module ordered_priority_queue_monolithic_ingress_parser #(
   localparam logic [7:0] K285 = 8'hBC;
   localparam logic [7:0] K284 = 8'h9C;
   localparam logic [7:0] K237 = 8'hF7;
+  localparam int unsigned SUBHEADER_HIT_LO = 8;
+  localparam int unsigned SUBHEADER_HIT_HI = 23;
 
   localparam int unsigned TICKET_TS_LO = 0;
   localparam int unsigned TICKET_TS_HI = 47;
@@ -218,7 +220,8 @@ module ordered_priority_queue_monolithic_ingress_parser #(
       ingress_parser.running_shd_cnt,
       asi_ingress_data[31:24]
     );
-    ingress_parser_if_subheader_hit_cnt = asi_ingress_data[15:8];
+    ingress_parser_if_subheader_hit_cnt =
+      pkt_length_t'(asi_ingress_data[SUBHEADER_HIT_HI:SUBHEADER_HIT_LO]);
     ingress_parser_if_subheader_shd_ts = asi_ingress_data[31:24];
     ingress_parser_if_preamble_dt_type = asi_ingress_data[31:26];
     ingress_parser_if_preamble_feb_id = asi_ingress_data[23:8];
@@ -374,7 +377,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
               credit_drop_lane_decision_dbg_oss <= 1'b1;
 `endif
               credit_drop_shd_cnt_o <= 16'd1;
-              credit_drop_hit_cnt_o <= {8'd0, ingress_parser_if_subheader_hit_cnt};
+              credit_drop_hit_cnt_o <= 16'(ingress_parser_if_subheader_hit_cnt);
               ingress_parser_state <= INGRESS_PARSER_MASK_PKT;
             end else if (ingress_parser.ticket_credit == '0) begin
               credit_drop_valid_o <= 1'b1;
@@ -385,7 +388,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
               credit_drop_ticket_decision_dbg_oss <= 1'b1;
 `endif
               credit_drop_shd_cnt_o <= 16'd1;
-              credit_drop_hit_cnt_o <= {8'd0, ingress_parser_if_subheader_hit_cnt};
+              credit_drop_hit_cnt_o <= 16'(ingress_parser_if_subheader_hit_cnt);
               ingress_parser_state <= INGRESS_PARSER_MASK_PKT;
             end else if (ingress_parser_if_subheader_hit_cnt != '0) begin
               ingress_parser_state <= INGRESS_PARSER_WR_HITS;
@@ -541,7 +544,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
               credit_drop_lane_decision_dbg_oss <= 1'b1;
 `endif
               credit_drop_shd_cnt_o <= 16'd1;
-              credit_drop_hit_cnt_o <= {8'd0, ingress_parser_if_subheader_hit_cnt};
+              credit_drop_hit_cnt_o <= 16'(ingress_parser_if_subheader_hit_cnt);
               ingress_parser_state <= INGRESS_PARSER_MASK_PKT;
             end else if (ingress_parser.ticket_credit == '0) begin
               credit_drop_valid_o <= 1'b1;
@@ -552,7 +555,7 @@ module ordered_priority_queue_monolithic_ingress_parser #(
               credit_drop_ticket_decision_dbg_oss <= 1'b1;
 `endif
               credit_drop_shd_cnt_o <= 16'd1;
-              credit_drop_hit_cnt_o <= {8'd0, ingress_parser_if_subheader_hit_cnt};
+              credit_drop_hit_cnt_o <= 16'(ingress_parser_if_subheader_hit_cnt);
               ingress_parser_state <= INGRESS_PARSER_MASK_PKT;
             end else if (ingress_parser_if_subheader_hit_cnt != '0) begin
               ingress_parser_state <= INGRESS_PARSER_WR_HITS;

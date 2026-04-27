@@ -121,7 +121,7 @@ class opq_ingress_driver extends uvm_driver #(opq_frame_item);
     drive_word(make_frame_debug_header1(tr.ingress_debug_ts), 4'b0000, 1'b0, 1'b0, tr.debug_header1_error_bits, tr.channel);
 
     foreach (tr.subheaders[i]) begin
-      bit [7:0] hit_cnt;
+      bit [15:0] hit_cnt;
       hit_cnt = tr.subheaders[i].hit_count();
       drive_word(make_subheader(tr.subheaders[i].shd_ts, hit_cnt), 4'b0001,
         tr.whole_frame_packet ? 1'b0 : 1'b1,
@@ -294,7 +294,7 @@ class opq_ingress_monitor extends uvm_component;
       shd.shd_ts = beat.data[31:24];
       curr_frame.subheaders.push_back(shd);
       active_subheader_idx = curr_frame.subheaders.size() - 1;
-      hit_words_left = beat.data[15:8];
+      hit_words_left = beat.data[23:8];
       if (beat.eop) begin
         note_frame_capture_err("subheader asserted eop before trailer");
       end

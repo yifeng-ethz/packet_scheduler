@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_page_allocator
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.4.4
+// Version : 26.4.7
 // Date    : 20260427
-// Change  : Align ticket FIFO read-valid timing with the staged RAM data and prevent same-serial future-frame rebase loops
+// Change  : Emit the subheader hit count in the 16-bit packet field
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_page_allocator #(
@@ -780,8 +780,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
 
     page_allocator_if_write_page_shr_data[35:32] = 4'b0001;
     page_allocator_if_write_page_shr_data[31:24] = page_allocator.running_ts[11:4];
-    page_allocator_if_write_page_shr_data[23:16] = 8'd0;
-    page_allocator_if_write_page_shr_data[15:8] = page_allocator.page_length[7:0];
+    page_allocator_if_write_page_shr_data[23:8] = 16'(page_allocator.page_length);
     page_allocator_if_write_page_shr_data[7:0] = K237;
 
     if (page_allocator.frame_lane_active != '0) begin

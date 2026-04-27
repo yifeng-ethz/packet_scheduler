@@ -101,7 +101,7 @@ module opq_native_frame_table_presenter_formal_sva #(
     (FRAME_HDR_AUX_WORDS <= 1) ? 1 : $clog2(FRAME_HDR_AUX_WORDS + 1);
   localparam logic [2:0] PRESENTER_RESETTING = 3'd6;
   logic                              frame_open;
-  logic [7:0]                        hit_words_left;
+  logic [15:0]                       hit_words_left;
   logic [FRAME_HDR_AUX_WORDS_WIDTH-1:0] frame_hdr_aux_words_left;
   logic                              saw_nonempty_subhdr;
   logic [31:0]                       frame_ts_hi32;
@@ -300,14 +300,14 @@ module opq_native_frame_table_presenter_formal_sva #(
         last_subhdr_abs_ts <= subheader_abs_ts_v;
         emitted_frame_subhdr_cnt <= emitted_frame_subhdr_cnt + 16'd1;
 
-        if (o_egress_data[15:8] != 8'h00) begin
+        if (o_egress_data[23:8] != 16'h0000) begin
           if (saw_nonempty_subhdr) begin
             assert (subheader_abs_ts_v > last_nonempty_subhdr_abs_ts)
               else $error("OPQ_NATIVE_FTABLE_PRESENTER_FORMAL non-empty sub-header absolute ts did not increase");
           end
           saw_nonempty_subhdr <= 1'b1;
           last_nonempty_subhdr_abs_ts <= subheader_abs_ts_v;
-          hit_words_left <= o_egress_data[15:8];
+          hit_words_left <= o_egress_data[23:8];
         end
       end else begin
         assert (!o_egress_startofpacket)
@@ -321,7 +321,7 @@ module opq_native_frame_table_presenter_formal_sva #(
         assert (emitted_frame_hit_cnt < expected_frame_hit_cnt)
           else $error("OPQ_NATIVE_FTABLE_PRESENTER_FORMAL hit count exceeded the frame header declaration");
 
-        hit_words_left <= hit_words_left - 8'd1;
+        hit_words_left <= hit_words_left - 16'd1;
         emitted_frame_hit_cnt <= emitted_frame_hit_cnt + 16'd1;
       end
     end

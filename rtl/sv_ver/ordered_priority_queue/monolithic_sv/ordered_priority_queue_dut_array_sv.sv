@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_dut_array_sv
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.4.6
+// Version : 26.4.7
 // Date    : 20260427
-// Change  : Use explicit native debug ports instead of hierarchy probes
+// Change  : Expose N_HIT to the native SV wrapper
 //------------------------------------------------------------------------------
 
 `ifndef OPQ_N_SHD
@@ -22,6 +22,10 @@
 `define OPQ_N_LANE 2
 `endif
 
+`ifndef OPQ_N_HIT
+`define OPQ_N_HIT 255
+`endif
+
 `ifndef OPQ_LANE_FIFO_DEPTH
 `define OPQ_LANE_FIFO_DEPTH 1024
 `endif
@@ -34,6 +38,7 @@
 module ordered_priority_queue_dut_array_sv #(
   parameter int unsigned OPQ_N_LANE_PARAM = `OPQ_N_LANE,
   parameter int unsigned OPQ_N_SHD_PARAM = `OPQ_N_SHD,
+  parameter int unsigned OPQ_N_HIT_PARAM = `OPQ_N_HIT,
   parameter int unsigned OPQ_PAGE_RAM_DEPTH_PARAM = `OPQ_PAGE_RAM_DEPTH,
   parameter int unsigned OPQ_LANE_FIFO_DEPTH_PARAM = `OPQ_LANE_FIFO_DEPTH,
   parameter int unsigned OPQ_TICKET_FIFO_DEPTH_PARAM = `OPQ_TICKET_FIFO_DEPTH,
@@ -70,6 +75,7 @@ module ordered_priority_queue_dut_array_sv #(
 `ifdef OPQ_USE_NATIVE_SV
   localparam int unsigned OPQ_N_LANE_LOCAL = OPQ_N_LANE_PARAM;
   localparam int unsigned OPQ_N_SHD_LOCAL = OPQ_N_SHD_PARAM;
+  localparam int unsigned OPQ_N_HIT_LOCAL = OPQ_N_HIT_PARAM;
   localparam int unsigned CHANNEL_WIDTH_CONST = CHANNEL_WIDTH_PARAM;
   localparam int unsigned PAGE_RAM_RD_WIDTH_CONST = PAGE_RAM_RD_WIDTH_PARAM;
   localparam int unsigned EGRESS_SYMBOLS_PER_BEAT_CONST = EGRESS_SYMBOLS_PER_BEAT_PARAM;
@@ -85,7 +91,7 @@ module ordered_priority_queue_dut_array_sv #(
   localparam int unsigned PAGE_RAM_DEPTH_CONST = OPQ_PAGE_RAM_DEPTH_PARAM;
   localparam int unsigned PAGE_RAM_ADDR_WIDTH_CONST = $clog2(PAGE_RAM_DEPTH_CONST);
   localparam int unsigned FRAME_SERIAL_SIZE_CONST = 16;
-  localparam int unsigned MAX_PKT_LENGTH_CONST = 255;
+  localparam int unsigned MAX_PKT_LENGTH_CONST = OPQ_N_HIT_LOCAL;
   localparam int unsigned MAX_PKT_LENGTH_BITS_CONST = (MAX_PKT_LENGTH_CONST <= 1) ? 1 : $clog2(MAX_PKT_LENGTH_CONST);
   localparam int unsigned TICKET_FIFO_DATA_WIDTH_A_CONST =
     48 + LANE_FIFO_ADDR_WIDTH_CONST + MAX_PKT_LENGTH_BITS_CONST + FRAME_SERIAL_SIZE_CONST + 2;
@@ -128,11 +134,11 @@ module ordered_priority_queue_dut_array_sv #(
   localparam logic [3:0] CSR_LANE_WORD_DRR_DEFER_CNT_CONST = 4'hF;
   localparam logic [31:0] UID_CONST = 32'h4F50_514D;
   localparam int unsigned VERSION_MAJOR_CONST = 26;
-  localparam int unsigned VERSION_MINOR_CONST = 3;
-  localparam int unsigned VERSION_PATCH_CONST = 6;
+  localparam int unsigned VERSION_MINOR_CONST = 4;
+  localparam int unsigned VERSION_PATCH_CONST = 7;
   localparam int unsigned VERSION_BUILD_CONST = 427;
   localparam logic [31:0] VERSION_DATE_CONST = 32'd20260427;
-  localparam logic [31:0] VERSION_GIT_CONST = 32'h0826_4CB0;
+  localparam logic [31:0] VERSION_GIT_CONST = 32'h087E_4710;
   localparam logic [31:0] INSTANCE_ID_CONST = 32'd0;
   localparam logic [9:0] DRR_DEFAULT_ALLOWANCE_CONST = 10'd256;
 
@@ -171,7 +177,7 @@ module ordered_priority_queue_dut_array_sv #(
   logic [31:0] csr_ft_drop_hit_cnt;
   logic        csr_ft_rd_in_packet;
   logic [2:0]  csr_ft_rd_header_idx;
-  logic [7:0]  csr_ft_rd_hits_pending;
+  logic [15:0] csr_ft_rd_hits_pending;
 
   logic        csr_read_d;
   logic [8:0]  csr_read_addr_d;
@@ -449,7 +455,8 @@ module ordered_priority_queue_dut_array_sv #(
     .TICKET_FIFO_DEPTH(TICKET_FIFO_DEPTH_CONST),
     .PAGE_RAM_DEPTH(PAGE_RAM_DEPTH_CONST),
     .PAGE_RAM_RD_WIDTH(PAGE_RAM_RD_WIDTH_CONST),
-    .N_SHD(OPQ_N_SHD_LOCAL)
+    .N_SHD(OPQ_N_SHD_LOCAL),
+    .N_HIT(MAX_PKT_LENGTH_CONST)
   ) u_native (
     .asi_ingress_data(asi_ingress_data_bus),
     .asi_ingress_valid(asi_ingress_valid_eff_bus),
@@ -541,7 +548,7 @@ module ordered_priority_queue_dut_array_sv #(
     logic clear_counters_v;
     logic csr_ft_rd_in_packet_v;
     logic [2:0] csr_ft_rd_header_idx_v;
-    logic [7:0] csr_ft_rd_hits_pending_v;
+    logic [15:0] csr_ft_rd_hits_pending_v;
 
     avs_csr_readdatavalid <= 1'b0;
     if (csr_read_d) begin
@@ -929,14 +936,14 @@ module ordered_priority_queue_dut_array_sv #(
                   ft_rd_hdr_delta_v = ft_rd_hdr_delta_v + 32'd1;
                 end
                 csr_ft_rd_header_idx_v = csr_ft_rd_header_idx_v + 3'd1;
-              end else if (csr_ft_rd_hits_pending_v != 8'd0) begin
+              end else if (csr_ft_rd_hits_pending_v != 16'd0) begin
                 if (egress_word_v[35:32] == 4'b0000) begin
                   ft_rd_hit_delta_v = ft_rd_hit_delta_v + 32'd1;
                 end
-                csr_ft_rd_hits_pending_v = csr_ft_rd_hits_pending_v - 8'd1;
+                csr_ft_rd_hits_pending_v = csr_ft_rd_hits_pending_v - 16'd1;
               end else if (is_subheader_word(egress_word_v)) begin
                 ft_rd_shd_delta_v = ft_rd_shd_delta_v + 32'd1;
-                csr_ft_rd_hits_pending_v = egress_word_v[15:8];
+                csr_ft_rd_hits_pending_v = egress_word_v[23:8];
               end else if (is_trailer_word(egress_word_v) ||
                            (aso_egress_endofpacket && (symbol_idx == (valid_symbols_v - 1)))) begin
                 csr_ft_rd_in_packet_v = 1'b0;

@@ -680,7 +680,7 @@ class opq_scoreboard extends uvm_component;
         data32[31:24]
       );
       ingress_subheaders_seen[lane_id] = 1'b1;
-      ingress_hits_pending[lane_id] = data32[15:8];
+      ingress_hits_pending[lane_id] = data32[23:8];
       ingress_ignore_hits_pending[lane_id] = beat.error[1];
     end
   endfunction
@@ -760,7 +760,7 @@ class opq_scoreboard extends uvm_component;
         data32[31:24]
       );
       egress_subheaders_seen = 1'b1;
-      egress_hits_pending = data32[15:8];
+      egress_hits_pending = data32[23:8];
       actual_egress_shd_cnt++;
       return;
     end

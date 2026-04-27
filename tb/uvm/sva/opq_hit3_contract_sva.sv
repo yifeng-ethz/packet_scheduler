@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 // IP Name   : opq_hit3_contract_sva
 // Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
-// Revision  : 0.5 - allow same-timestamp emitted frames while catching regressions
+// Revision  : 0.6 - track 16-bit subheader hit counts
 // Description:
 //   Checks the active egress frame/subheader/hit contract used by the UVM
 //   scoreboard: an implicit 5-word frame header, then K237 subheaders, hit
@@ -18,7 +18,7 @@ module opq_hit3_contract_sva (
   localparam int unsigned FRAME_HDR_AUX_WORDS = 4;
 
   logic frame_open;
-  logic [7:0] hit_words_left;
+  logic [15:0] hit_words_left;
   logic [2:0] frame_hdr_aux_words_left;
   logic saw_nonempty_subhdr;
   logic [31:0] frame_ts_hi32;
@@ -184,7 +184,7 @@ module opq_hit3_contract_sva (
         last_subhdr_abs_ts <= subheader_abs_ts_v;
         emitted_frame_subhdr_cnt <= emitted_frame_subhdr_cnt + 16'd1;
 
-        if (data[15:8] != 8'h00) begin
+        if (data[23:8] != 16'h0000) begin
           if (saw_nonempty_subhdr) begin
             assert (subheader_abs_ts_v > last_nonempty_subhdr_abs_ts)
               else $error("[opq_hit3_contract] non-empty sub-header absolute ts did not increase: prev=0x%012h new=0x%012h",
@@ -192,7 +192,7 @@ module opq_hit3_contract_sva (
           end
           saw_nonempty_subhdr         <= 1'b1;
           last_nonempty_subhdr_abs_ts <= subheader_abs_ts_v;
-          hit_words_left              <= data[15:8];
+          hit_words_left              <= data[23:8];
         end
       end else if (pkt_is_hit(data)) begin
         assert (hit_words_left != 0)
@@ -201,7 +201,7 @@ module opq_hit3_contract_sva (
           else $error("[opq_hit3_contract] hit count exceeded header promise: expected=%0d actual=%0d",
             expected_frame_hit_cnt, emitted_frame_hit_cnt + 16'd1);
         if (hit_words_left != 0) begin
-          hit_words_left <= hit_words_left - 1'b1;
+          hit_words_left <= hit_words_left - 16'd1;
         end
         emitted_frame_hit_cnt <= emitted_frame_hit_cnt + 16'd1;
       end
