@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_sv
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.56-syn
-// Date    : 20260422
-// Change  : Quartus synthesis compatibility copy aligned to the live resident-protect and per-packet lane-count handoff plumbing while preserving the standalone synth-observe taps
+// Version : 26.4.4-syn
+// Date    : 20260427
+// Change  : Align signoff copy with the canonical page-RAM-to-presenter boundary register and preserve standalone synth-observe taps
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_sv #(
@@ -157,6 +157,7 @@ module ordered_priority_queue_monolithic_sv #(
   logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_wr_data_dbg;
   logic [PAGE_RAM_ADDR_WIDTH-1:0] page_ram_rd_addr_dbg;
   logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_rd_data_dbg;
+  logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_rd_data_presenter_dbg;
   logic presenter_resident_hold_dbg;
   logic presenter_resident_head_valid_dbg;
   logic [PAGE_RAM_ADDR_WIDTH-1:0] presenter_resident_head_addr_dbg;
@@ -424,6 +425,14 @@ module ordered_priority_queue_monolithic_sv #(
     .q(page_ram_rd_data_dbg)
   );
 
+  always_ff @(posedge d_clk) begin : proc_presenter_page_ram_read_pipe
+    if (d_reset) begin
+      page_ram_rd_data_presenter_dbg <= '0;
+    end else begin
+      page_ram_rd_data_presenter_dbg <= page_ram_rd_data_dbg;
+    end
+  end
+
   always_ff @(posedge d_clk) begin : proc_presenter_packet_complete_delay
     if (d_reset) begin
       packet_complete_presenter_delay_dbg <= '0;
@@ -496,7 +505,7 @@ module ordered_priority_queue_monolithic_sv #(
     .packet_complete_hit_cnt_i(packet_complete_hit_cnt_presenter_dbg),
     .payload_commit_idle_i(payload_commit_idle_dbg),
     .page_ram_rd_addr_o(page_ram_rd_addr_dbg),
-    .page_ram_rd_data_i(page_ram_rd_data_dbg),
+    .page_ram_rd_data_i(page_ram_rd_data_presenter_dbg),
     .resident_backpressure_hold_o(presenter_resident_hold_dbg),
     .resident_head_valid_o(presenter_resident_head_valid_dbg),
     .resident_head_addr_o(presenter_resident_head_addr_dbg),

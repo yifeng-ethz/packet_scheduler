@@ -13,7 +13,7 @@ Target build:
   - `OPQ_USE_NATIVE_SV`
   - `OPQ_N_LANE=4`
   - `OPQ_N_SHD=128`
-  - `OPQ_TICKET_FIFO_DEPTH=256`
+  - `OPQ_TICKET_FIFO_DEPTH=1024`
   - `OPQ_PAGE_RAM_DEPTH=65536`
 
 Key commands:
@@ -38,7 +38,7 @@ Compatibility layer:
 Current closure scope:
 
 - this standalone point now matches the active DV closure preset
-  `OPQ_N_LANE=4`, `OPQ_N_SHD=128`, `OPQ_TICKET_FIFO_DEPTH=256`
+  `OPQ_N_LANE=4`, `OPQ_N_SHD=128`, `OPQ_TICKET_FIFO_DEPTH=1024`
 - the older `4-lane / 256-subheader / ticket512` point remains a later
   expanded signoff target rather than the current closure gate
 

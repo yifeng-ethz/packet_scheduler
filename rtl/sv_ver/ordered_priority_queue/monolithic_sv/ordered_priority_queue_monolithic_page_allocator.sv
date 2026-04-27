@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_page_allocator
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.4.3
-// Date    : 20260425
-// Change  : Pipeline allocator fetch and page-commit reductions for timing
+// Version : 26.4.4
+// Date    : 20260427
+// Change  : Align ticket FIFO read-valid timing with the staged RAM data and prevent same-serial future-frame rebase loops
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_page_allocator #(
@@ -514,7 +514,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
   page_allocator_state_t page_allocator_state;
   page_allocator_reg_t page_allocator;
   logic [N_LANE-1:0][FIFO_RAW_DELAY:1] page_allocator_is_pending_ticket_d;
-  ticket_rptr_t page_allocator_ticket_rptr_d;
+  logic [N_LANE-1:0][FIFO_RAW_DELAY:1][TICKET_FIFO_ADDR_WIDTH-1:0] page_allocator_ticket_rptr_d;
   ticket_raws_t ticket_fifos_rd_data_stage_q;
   (* preserve *) logic [N_LANE-1:0] fetch_pending_q;
   (* preserve *) tickets_t fetch_ticket_q;
@@ -621,6 +621,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
   logic [PAGE_RAM_DATA_WIDTH-1:0] page_allocator_if_write_page_hdr_data;
   logic [PAGE_RAM_DATA_WIDTH-1:0] page_allocator_if_write_page_trl_data;
   logic all_lanes_fetch_ready;
+  logic all_lanes_fetch_ready_live;
   logic [N_LANE-1:0] idle_fetch_ready_lane;
   logic [N_LANE-1:0] idle_fetch_ready_lane_q;
   logic [FETCH_READY_PAIR_COUNT-1:0] idle_fetch_ready_pair;
@@ -735,6 +736,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
     total_subh_v = 0;
     total_hit_v = 0;
     all_lanes_fetch_ready = 1'b1;
+    all_lanes_fetch_ready_live = 1'b1;
     all_present_tk_sop = 1'b1;
     any_pending_ticket = 1'b0;
     any_pending_curr_sop_ticket = 1'b0;
@@ -896,7 +898,8 @@ module ordered_priority_queue_monolithic_page_allocator #(
       end
 
       page_allocator_is_pending_ticket_lane[i] = &page_allocator_is_pending_ticket_d[i];
-      page_allocator_ticket_q_valid[i] = (page_allocator_ticket_rptr_d[i] == page_allocator.ticket_rptr[i]);
+      page_allocator_ticket_q_valid[i] =
+        (page_allocator_ticket_rptr_d[i][FIFO_RAW_DELAY] == page_allocator.ticket_rptr[i]);
       any_pending_ticket_lane |= page_allocator_is_pending_ticket_lane[i];
       idle_fetch_ready_lane[i] =
         !page_allocator_is_pending_ticket[i] ||
@@ -989,6 +992,8 @@ module ordered_priority_queue_monolithic_page_allocator #(
       ticket_fifos_rd_addr_o[i] = page_allocator.ticket_rptr[i];
       tk_future_o[i] = page_allocator_is_tk_future[i];
     end
+
+    all_lanes_fetch_ready_live = &idle_fetch_ready_lane;
 
     for (int i = 0; i < FETCH_READY_PAIR_COUNT; i++) begin
       idle_fetch_ready_pair[i] = idle_fetch_ready_lane_q[2*i];
@@ -1187,7 +1192,9 @@ module ordered_priority_queue_monolithic_page_allocator #(
         end
 
       PAGE_ALLOCATOR_FETCH_TICKET: begin
-        if (!all_lanes_fetch_ready_q || !any_pending_ticket_q) begin
+        // Use the live FIFO-read validity interlock so an rptr update from the
+        // previous apply step cannot be followed by a stale ticket snapshot.
+        if (!all_lanes_fetch_ready_live || !any_pending_ticket) begin
           page_allocator_state <= PAGE_ALLOCATOR_FETCH_TICKET;
         end else begin
           for (int i = 0; i < N_LANE; i++) begin
@@ -1578,6 +1585,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
           !fetch_any_pending_curr_sop_q &&
           fetch_future_frame_seen_q &&
           serial_reached_or_passed(fetch_future_frame_serial_q, page_allocator.frame_serial) &&
+          (fetch_future_frame_serial_q != page_allocator.frame_serial) &&
           (fetch_future_frame_ts_q > page_allocator.frame_ts);
         fetch_rebase_future_frame_q <= rebase_future_frame_v;
         fetch_rebase_future_frame_lane_q <= {N_LANE{rebase_future_frame_v}};
@@ -2285,12 +2293,13 @@ module ordered_priority_queue_monolithic_page_allocator #(
         page_allocator_is_pending_ticket_d[i] <= '0;
         page_allocator_ticket_rptr_d[i] <= '0;
       end else begin
-        page_allocator_ticket_rptr_d[i] <= page_allocator.ticket_rptr[i];
         for (int j = 1; j <= FIFO_RAW_DELAY; j++) begin
           if (j == 1) begin
             page_allocator_is_pending_ticket_d[i][j] <= page_allocator_is_pending_ticket[i];
+            page_allocator_ticket_rptr_d[i][j] <= page_allocator.ticket_rptr[i];
           end else begin
             page_allocator_is_pending_ticket_d[i][j] <= page_allocator_is_pending_ticket_d[i][j-1];
+            page_allocator_ticket_rptr_d[i][j] <= page_allocator_ticket_rptr_d[i][j-1];
           end
         end
       end
