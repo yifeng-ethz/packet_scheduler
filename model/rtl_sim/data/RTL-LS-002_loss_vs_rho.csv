@@ -1,0 +1,4 @@
+run_tag,case,sim_pass,n_lane,n_shd,egress_symbols_per_beat,ready_duty,rho_lane,burstiness,expected_hits,accepted_hits,dropped_hits,delivered_hits,unexplained_hits,loss_probability,loss_ppm
+ls002_rho005,RTL-LS-002,1,4,128,1,1.0,0.005,0.0,2,2,0,2,0,0.0,0
+ls002_rho050,RTL-LS-002,1,4,128,1,1.0,0.05,0.0,8,8,0,6,2,0.0,0
+ls002_rho150,RTL-LS-002,1,4,128,1,1.0,0.15,0.0,16,16,0,12,4,0.0,0

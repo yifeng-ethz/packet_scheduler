@@ -1,0 +1,7 @@
+run_tag,case,sim_pass,burstiness,memory_index,traffic_regime,rho_lane,loss_probability
+ls001_ready070,RTL-LS-001,1,0.0,0.0,periodic_whole_frame,0.0075,0.0
+ls002_rho005,RTL-LS-002,1,0.0,0.0,periodic_whole_frame,0.005,0.0
+ls002_rho050,RTL-LS-002,1,0.0,0.0,periodic_whole_frame,0.05,0.0
+ls002_rho150,RTL-LS-002,1,0.0,0.0,periodic_whole_frame,0.15,0.0
+ls005_n4_e2,RTL-LS-005,1,0.0,0.0,periodic_whole_frame,0.0075,0.0
+ls005_n8_e1,RTL-LS-005,1,0.0,0.0,periodic_whole_frame,0.0075,0.0

@@ -1,0 +1,492 @@
+----------------------------------------------------------------
+Running opq_model_publish_loss_sweep_test
+[run_uvm] DUT_IMPL=native_sv TEST=opq_model_publish_loss_sweep_test ARTIFACT=opq_model_publish_loss_sweep_test OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=4096 OPQ_PAGE_RAM_DEPTH=65536 COV_ENABLE=0 VSIM_PLUSARGS= +OPQ_MODEL_CASE=RTL-LS-002 +OPQ_MODEL_PROFILE=0 +OPQ_MODEL_FRAME_COUNT=8 +OPQ_MODEL_SUBHEADERS=32 +OPQ_MODEL_HIT_PERIOD=8 +OPQ_MODEL_HIT_COUNT=2 +OPQ_MODEL_RHO_PPM=50000 +OPQ_MODEL_BURSTINESS_MILLI=0 +OPQ_MODEL_READY_DUTY_PPM=1000000 +OPQ_MODEL_READY_HIGH=0 +OPQ_MODEL_READY_LOW=0 +OPQ_MODEL_REQUIRE_DRAIN=0 +OPQ_MODEL_DWELL_US=220 +OPQ_DWELL_US=220 +OPQ_MODEL_DRAIN_TIMEOUT_US=500 +OPQ_MODEL_CREDIT_SAMPLES=4 +OPQ_MODEL_CREDIT_INTERVAL_US=5 +OPQ_STAY_TRACE
+[run_uvm] OPQ_PAGE_RAM_RD_WIDTH=36
+[run_uvm] BUILD_DIR=/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/build_runs/dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0 BUILD_KEY=dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0 TARGET=run_no_compile
+[run_uvm] COMPILE_TARGET=compile
+make: Entering directory '/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm'
+rm -rf /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/build_runs/dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0
+mkdir -p /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/build_runs/dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0
+cd /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/build_runs/dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0 && \
+	cp /data1/questaone_sim/questasim/modelsim.ini /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/build_runs/dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0/modelsim.ini && \
+	chmod u+w /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/build_runs/dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0/modelsim.ini && \
+	/data1/questaone_sim/questasim/bin/vlib work && \
+	/data1/questaone_sim/questasim/bin/vlib altera_mf && \
+	/data1/questaone_sim/questasim/linux_x86_64/vmap -modelsimini /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/build_runs/dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0/modelsim.ini work /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/build_runs/dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0/work >/dev/null && \
+	/data1/questaone_sim/questasim/linux_x86_64/vmap -modelsimini /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/build_runs/dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0/modelsim.ini altera_mf /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/build_runs/dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0/altera_mf >/dev/null
+cd /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/build_runs/dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0 && \
+	/data1/questaone_sim/questasim/bin/vcom -ini /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/build_runs/dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0/modelsim.ini -2008 -work altera_mf /data1/intelFPGA_pro/23.1/quartus/eda/sim_lib/altera_mf_components.vhd >/dev/null && \
+	/data1/questaone_sim/questasim/bin/vcom -ini /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/build_runs/dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0/modelsim.ini -2008 -work altera_mf /data1/intelFPGA_pro/23.1/quartus/eda/sim_lib/altera_mf.vhd >/dev/null
+/data1/questaone_sim/questasim/bin/vlog -ini /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/build_runs/dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0/modelsim.ini -sv -work /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/build_runs/dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0/work  +define+OPQ_PAGE_RAM_DEPTH=65536 +define+OPQ_N_SHD=128 +define+OPQ_TICKET_FIFO_DEPTH=4096 +define+OPQ_N_LANE=4 +define+OPQ_LANE_FIFO_DEPTH=2048 +define+OPQ_CHANNEL_WIDTH=2 +define+OPQ_PAGE_RAM_RD_WIDTH=36 +define+OPQ_EGRESS_SYMBOLS_PER_BEAT=1 +define+OPQ_EGRESS_EMPTY_WIDTH=1 +define+OPQ_USE_NATIVE_SV +incdir+/data1/questaone_sim/questasim/verilog_src/uvm-1.2/src +incdir+/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/vendor/alt_ram/frame_table.v /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/vendor/alt_ram/handle_fifo.v /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/vendor/alt_ram/lane_fifo.v /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/vendor/alt_ram/page_ram.v /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/vendor/alt_ram/ticket_fifo.v /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/vendor/alt_ram/tile_fifo.v
+QuestaSim-64 vlog 2026.1_1 Compiler 2026.03 Mar  2 2026
+Start time: 00:06:31 on Apr 26,2026
+vlog -ini /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/build_runs/dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0/modelsim.ini -sv -work /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/build_runs/dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0/work "+define+OPQ_PAGE_RAM_DEPTH=65536" "+define+OPQ_N_SHD=128" "+define+OPQ_TICKET_FIFO_DEPTH=4096" "+define+OPQ_N_LANE=4" "+define+OPQ_LANE_FIFO_DEPTH=2048" "+define+OPQ_CHANNEL_WIDTH=2" "+define+OPQ_PAGE_RAM_RD_WIDTH=36" "+define+OPQ_EGRESS_SYMBOLS_PER_BEAT=1" "+define+OPQ_EGRESS_EMPTY_WIDTH=1" "+define+OPQ_USE_NATIVE_SV" "+incdir+/data1/questaone_sim/questasim/verilog_src/uvm-1.2/src" "+incdir+/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm" /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/vendor/alt_ram/frame_table.v /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/vendor/alt_ram/handle_fifo.v /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/vendor/alt_ram/lane_fifo.v /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/vendor/alt_ram/page_ram.v /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/vendor/alt_ram/ticket_fifo.v /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/vendor/alt_ram/tile_fifo.v 
+** Note: (vlog-220) '/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/build_runs/dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0/modelsim.ini' is used as the ini file.
+-- Compiling module frame_table
+-- Compiling module handle_fifo
+-- Compiling module lane_fifo
+-- Compiling module page_ram
+-- Compiling module ticket_fifo
+-- Compiling module tile_fifo
+
+Top level modules:
+	frame_table
+	handle_fifo
+	lane_fifo
+	page_ram
+	ticket_fifo
+	tile_fifo
+End time: 00:06:31 on Apr 26,2026, Elapsed time: 0:00:00
+Errors: 0, Warnings: 0
+/data1/questaone_sim/questasim/bin/vlog -ini /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/build_runs/dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0/modelsim.ini -sv -work /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/build_runs/dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0/work  +define+OPQ_PAGE_RAM_DEPTH=65536 +define+OPQ_N_SHD=128 +define+OPQ_TICKET_FIFO_DEPTH=4096 +define+OPQ_N_LANE=4 +define+OPQ_LANE_FIFO_DEPTH=2048 +define+OPQ_CHANNEL_WIDTH=2 +define+OPQ_PAGE_RAM_RD_WIDTH=36 +define+OPQ_EGRESS_SYMBOLS_PER_BEAT=1 +define+OPQ_EGRESS_EMPTY_WIDTH=1 +define+OPQ_USE_NATIVE_SV +incdir+/data1/questaone_sim/questasim/verilog_src/uvm-1.2/src +incdir+/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm /data1/questaone_sim/questasim/verilog_src/uvm-1.2/src/uvm_pkg.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_dut_array_sv.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_block_path.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_tracker.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_presenter.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_egress_packer.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/opq_if.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/opq_pkg.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/opq_env_pkg.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_avst_ingress_sva.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_avst_egress_sva.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_hit3_contract_sva.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_csr_sva.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_drr_sva.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_native_ingress_formal_sva.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_native_block_path_formal_sva.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_native_basic_presenter_formal_sva.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_native_frame_table_formal_sva.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/formal/opq_formal_ingress_tb.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/formal/opq_formal_ftable_tb.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/tb_top.sv
+QuestaSim-64 vlog 2026.1_1 Compiler 2026.03 Mar  2 2026
+Start time: 00:06:31 on Apr 26,2026
+vlog -ini /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/build_runs/dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0/modelsim.ini -sv -work /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/build_runs/dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0/work "+define+OPQ_PAGE_RAM_DEPTH=65536" "+define+OPQ_N_SHD=128" "+define+OPQ_TICKET_FIFO_DEPTH=4096" "+define+OPQ_N_LANE=4" "+define+OPQ_LANE_FIFO_DEPTH=2048" "+define+OPQ_CHANNEL_WIDTH=2" "+define+OPQ_PAGE_RAM_RD_WIDTH=36" "+define+OPQ_EGRESS_SYMBOLS_PER_BEAT=1" "+define+OPQ_EGRESS_EMPTY_WIDTH=1" "+define+OPQ_USE_NATIVE_SV" "+incdir+/data1/questaone_sim/questasim/verilog_src/uvm-1.2/src" "+incdir+/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm" /data1/questaone_sim/questasim/verilog_src/uvm-1.2/src/uvm_pkg.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_dut_array_sv.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_block_path.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_tracker.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_presenter.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_egress_packer.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/opq_if.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/opq_pkg.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/opq_env_pkg.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_avst_ingress_sva.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_avst_egress_sva.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_hit3_contract_sva.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_csr_sva.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_drr_sva.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_native_ingress_formal_sva.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_native_block_path_formal_sva.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_native_basic_presenter_formal_sva.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_native_frame_table_formal_sva.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/formal/opq_formal_ingress_tb.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/formal/opq_formal_ftable_tb.sv /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/tb_top.sv 
+** Note: (vlog-220) '/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/build_runs/dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0/modelsim.ini' is used as the ini file.
+-- Compiling package uvm_pkg (uvm-1.2 Built-in)
+-- Compiling module ordered_priority_queue_dut_array_sv
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_dut_array_sv.sv(47): (vlog-13314) Defaulting port 'asi_ingress_data' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_dut_array_sv.sv(49): (vlog-13314) Defaulting port 'asi_ingress_channel' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_dut_array_sv.sv(52): (vlog-13314) Defaulting port 'asi_ingress_error' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+-- Compiling module ordered_priority_queue_monolithic_ingress_parser
+-- Compiling module ordered_priority_queue_monolithic_page_allocator
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv(49): (vlog-13314) Defaulting port 'ingress_ticket_wptr' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv(50): (vlog-13314) Defaulting port 'ticket_fifos_rd_data_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv(51): (vlog-13314) Defaulting port 'ingress_dt_type_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv(52): (vlog-13314) Defaulting port 'ingress_feb_id_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv(53): (vlog-13314) Defaulting port 'ingress_frame_ts_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv(54): (vlog-13314) Defaulting port 'ingress_running_ts_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv(58): (vlog-13314) Defaulting port 'ingress_tail_bypass_serial_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv(59): (vlog-13314) Defaulting port 'ingress_tail_bypass_ts_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+-- Compiling module ordered_priority_queue_monolithic_block_path
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_block_path.sv(30): (vlog-13314) Defaulting port 'handle_wptr_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_block_path.sv(32): (vlog-13314) Defaulting port 'handle_fifos_rd_data_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_block_path.sv(33): (vlog-13314) Defaulting port 'lane_fifos_rd_data_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_block_path.sv(43): (vlog-13314) Defaulting port 'drr_allowance_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+-- Compiling module ordered_priority_queue_monolithic_frame_table_tracker
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_tracker.sv(17): (vlog-13314) Defaulting port 'i_update_ftable_tindex' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_tracker.sv(19): (vlog-13314) Defaulting port 'i_update_ftable_meta' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_tracker.sv(21): (vlog-13314) Defaulting port 'i_update_ftable_trltl' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_tracker.sv(23): (vlog-13314) Defaulting port 'i_update_ftable_bdytl' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_tracker.sv(26): (vlog-13314) Defaulting port 'i_tile_rptr' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_tracker.sv(27): (vlog-13314) Defaulting port 'i_tile_pkt_rcnt' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+-- Compiling module ordered_priority_queue_monolithic_frame_table_presenter
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_presenter.sv(20): (vlog-13314) Defaulting port 'i_wseg_tile_index' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_presenter.sv(24): (vlog-13314) Defaulting port 'i_tile_wptr' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_presenter.sv(25): (vlog-13314) Defaulting port 'i_tile_pkt_wcnt' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_presenter.sv(26): (vlog-13314) Defaulting port 'i_trail_tid' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_presenter.sv(27): (vlog-13314) Defaulting port 'i_body_tid' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_presenter.sv(28): (vlog-13314) Defaulting port 'i_tile_fifo_rd_data' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_presenter.sv(29): (vlog-13314) Defaulting port 'i_page_tile_rd_data' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+-- Compiling module ordered_priority_queue_monolithic_basic_presenter
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv(32): (vlog-13314) Defaulting port 'frame_lane_shd_cnt_this_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv(33): (vlog-13314) Defaulting port 'frame_lane_hit_cnt_this_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+-- Compiling module ordered_priority_queue_monolithic_basic_presenter_native
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv(787): (vlog-13314) Defaulting port 'frame_lane_shd_cnt_this_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv(788): (vlog-13314) Defaulting port 'frame_lane_hit_cnt_this_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+-- Compiling module ordered_priority_queue_monolithic_egress_packer
+-- Compiling module ordered_priority_queue_monolithic_sv
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic.sv(51): (vlog-13314) Defaulting port 'asi_ingress_data' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic.sv(53): (vlog-13314) Defaulting port 'asi_ingress_channel' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic.sv(56): (vlog-13314) Defaulting port 'asi_ingress_error' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic.sv(64): (vlog-13314) Defaulting port 'cfg_drr_allowance_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+-- Compiling interface opq_ingress_if
+-- Compiling interface opq_egress_if
+-- Compiling interface opq_csr_if
+-- Compiling interface opq_drop_if
+-- Compiling package opq_pkg
+-- Importing package uvm_pkg (uvm-1.2 Built-in)
+-- Compiling package opq_env_pkg
+-- Importing package opq_pkg
+-- Compiling module opq_avst_ingress_sva
+-- Compiling module opq_avst_egress_sva
+-- Compiling module opq_hit3_contract_sva
+-- Compiling module opq_csr_sva
+-- Compiling module opq_drr_sva
+-- Compiling module opq_native_ingress_formal_sva
+-- Compiling module opq_native_block_path_formal_sva
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_native_block_path_formal_sva.sv(26): (vlog-13314) Defaulting port 'lane_fifos_rd_data_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+-- Compiling module opq_native_basic_presenter_formal_sva
+-- Compiling module opq_native_frame_table_tracker_formal_sva
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_native_frame_table_formal_sva.sv(20): (vlog-13314) Defaulting port 'i_update_ftable_tindex' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_native_frame_table_formal_sva.sv(22): (vlog-13314) Defaulting port 'i_tile_rptr' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_native_frame_table_formal_sva.sv(23): (vlog-13314) Defaulting port 'i_tile_pkt_rcnt' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_native_frame_table_formal_sva.sv(25): (vlog-13314) Defaulting port 'o_tile_wptr' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_native_frame_table_formal_sva.sv(26): (vlog-13314) Defaulting port 'o_tile_pkt_wcnt' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_native_frame_table_formal_sva.sv(27): (vlog-13314) Defaulting port 'o_trail_tid' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_native_frame_table_formal_sva.sv(28): (vlog-13314) Defaulting port 'o_body_tid' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+-- Compiling module opq_native_frame_table_presenter_formal_sva
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_native_frame_table_formal_sva.sv(85): (vlog-13314) Defaulting port 'o_tile_rptr' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_native_frame_table_formal_sva.sv(86): (vlog-13314) Defaulting port 'o_tile_pkt_rcnt' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm/sva/opq_native_frame_table_formal_sva.sv(93): (vlog-13314) Defaulting port 'page_ram_rptr' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+-- Compiling module opq_formal_ingress_tb
+-- Compiling module opq_formal_ftable_tb
+-- Compiling module tb_top
+-- Importing package opq_env_pkg
+
+Top level modules:
+	opq_drr_sva
+	opq_native_ingress_formal_sva
+	opq_native_block_path_formal_sva
+	opq_native_basic_presenter_formal_sva
+	opq_native_frame_table_tracker_formal_sva
+	opq_native_frame_table_presenter_formal_sva
+	opq_formal_ingress_tb
+	opq_formal_ftable_tb
+	tb_top
+End time: 00:06:32 on Apr 26,2026, Elapsed time: 0:00:01
+Errors: 0, Warnings: 47
+make: Leaving directory '/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm'
+make: Entering directory '/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm'
+cd /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/build_runs/dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0 && /data1/questaone_sim/questasim/linux_x86_64/vsim -ini /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/build_runs/dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0/modelsim.ini -L altera_mf -voptargs=+acc -dpicpppath /usr/bin/gcc -sv_lib /data1/questaone_sim/questasim/uvm-1.2/linux_x86_64/uvm_dpi -c work.tb_top +UVM_TESTNAME=opq_model_publish_loss_sweep_test +OPQ_MODEL_CASE=RTL-LS-002 +OPQ_MODEL_PROFILE=0 +OPQ_MODEL_FRAME_COUNT=8 +OPQ_MODEL_SUBHEADERS=32 +OPQ_MODEL_HIT_PERIOD=8 +OPQ_MODEL_HIT_COUNT=2 +OPQ_MODEL_RHO_PPM=50000 +OPQ_MODEL_BURSTINESS_MILLI=0 +OPQ_MODEL_READY_DUTY_PPM=1000000 +OPQ_MODEL_READY_HIGH=0 +OPQ_MODEL_READY_LOW=0 +OPQ_MODEL_REQUIRE_DRAIN=0 +OPQ_MODEL_DWELL_US=220 +OPQ_DWELL_US=220 +OPQ_MODEL_DRAIN_TIMEOUT_US=500 +OPQ_MODEL_CREDIT_SAMPLES=4 +OPQ_MODEL_CREDIT_INTERVAL_US=5 +OPQ_STAY_TRACE -do "run -all; quit -f"
+Reading pref.tcl
+
+# 2026.1_1
+
+# ** Note: (vsim-220) '/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/build_runs/dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0/modelsim.ini' is used as the ini file.
+# vsim -ini /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/build_runs/dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0/modelsim.ini -L altera_mf -voptargs="+acc" -dpicpppath /usr/bin/gcc -sv_lib /data1/questaone_sim/questasim/uvm-1.2/linux_x86_64/uvm_dpi -c work.tb_top "+UVM_TESTNAME=opq_model_publish_loss_sweep_test" "+OPQ_MODEL_CASE=RTL-LS-002" "+OPQ_MODEL_PROFILE=0" "+OPQ_MODEL_FRAME_COUNT=8" "+OPQ_MODEL_SUBHEADERS=32" "+OPQ_MODEL_HIT_PERIOD=8" "+OPQ_MODEL_HIT_COUNT=2" "+OPQ_MODEL_RHO_PPM=50000" "+OPQ_MODEL_BURSTINESS_MILLI=0" "+OPQ_MODEL_READY_DUTY_PPM=1000000" "+OPQ_MODEL_READY_HIGH=0" "+OPQ_MODEL_READY_LOW=0" "+OPQ_MODEL_REQUIRE_DRAIN=0" "+OPQ_MODEL_DWELL_US=220" "+OPQ_DWELL_US=220" "+OPQ_MODEL_DRAIN_TIMEOUT_US=500" "+OPQ_MODEL_CREDIT_SAMPLES=4" "+OPQ_MODEL_CREDIT_INTERVAL_US=5" "+OPQ_STAY_TRACE" -do "run -all; quit -f" 
+# Start time: 00:06:32 on Apr 26,2026
+# Loading /tmp/yifeng@teferi.ethz.ch_dpi_23088/linux_x86_64_gcc-12/export_tramp.so
+# ** Note: (vsim-3812) Design is being optimized...
+# ** Warning: (vopt-10587) Some optimizations are turned off because the +acc switch is in effect. This will cause your simulation to run slowly. Please use -access/-debug to maintain needed visibility. The +acc switch would be deprecated in a future release.
+# ** Note: (vopt-220) '/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/build_runs/dutnative_sv_lane4_nshd128_ticket4096_page65536_rd36_cov0/modelsim.ini' is used as the ini file.
+# ** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv(49): (vopt-13314) Defaulting port 'ingress_ticket_wptr' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+# ** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv(50): (vopt-13314) Defaulting port 'ticket_fifos_rd_data_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+# ** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv(51): (vopt-13314) Defaulting port 'ingress_dt_type_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+# ** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv(52): (vopt-13314) Defaulting port 'ingress_feb_id_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+# ** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv(53): (vopt-13314) Defaulting port 'ingress_frame_ts_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+# ** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv(54): (vopt-13314) Defaulting port 'ingress_running_ts_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+# ** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv(58): (vopt-13314) Defaulting port 'ingress_tail_bypass_serial_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+# ** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv(59): (vopt-13314) Defaulting port 'ingress_tail_bypass_ts_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+# ** Note: (vopt-143) Recognized 1 FSM in module "ordered_priority_queue_monolithic_page_allocator(fast)".
+# ** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv(787): (vopt-13314) Defaulting port 'frame_lane_shd_cnt_this_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+# ** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv(788): (vopt-13314) Defaulting port 'frame_lane_hit_cnt_this_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+# ** Note: (vopt-143) Recognized 1 FSM in module "ordered_priority_queue_monolithic_basic_presenter_native(fast)".
+# ** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_dut_array_sv.sv(47): (vopt-13314) Defaulting port 'asi_ingress_data' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+# ** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_dut_array_sv.sv(49): (vopt-13314) Defaulting port 'asi_ingress_channel' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+# ** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_dut_array_sv.sv(52): (vopt-13314) Defaulting port 'asi_ingress_error' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+# ** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_block_path.sv(30): (vopt-13314) Defaulting port 'handle_wptr_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+# ** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_block_path.sv(32): (vopt-13314) Defaulting port 'handle_fifos_rd_data_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+# ** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_block_path.sv(33): (vopt-13314) Defaulting port 'lane_fifos_rd_data_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+# ** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_block_path.sv(43): (vopt-13314) Defaulting port 'drr_allowance_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+# ** Note: (vopt-143) Recognized 1 FSM in module "ordered_priority_queue_monolithic_block_path(fast)".
+# ** Note: (vopt-143) Recognized 2 FSMs in module "ordered_priority_queue_monolithic_ingress_parser(fast)".
+# ** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic.sv(51): (vopt-13314) Defaulting port 'asi_ingress_data' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+# ** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic.sv(53): (vopt-13314) Defaulting port 'asi_ingress_channel' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+# ** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic.sv(56): (vopt-13314) Defaulting port 'asi_ingress_error' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+# ** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic.sv(64): (vopt-13314) Defaulting port 'cfg_drr_allowance_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+# ** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv(32): (vopt-13314) Defaulting port 'frame_lane_shd_cnt_this_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+# ** Warning: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv(33): (vopt-13314) Defaulting port 'frame_lane_hit_cnt_this_i' kind to 'var' rather than 'wire' due to default compile option setting of -svinputport=relaxed.
+# ** Note: (vsim-12126) Error and warning message counts have been restored: Errors=0, Warnings=24.
+# //  Questa Sim-64
+# //  Version 2026.1_1 linux_x86_64 Mar  2 2026
+# //
+# // Unpublished work. Copyright 2026 Siemens
+# //
+# // This material contains trade secrets or otherwise confidential information
+# // owned by Siemens Industry Software Inc. or its affiliates (collectively,
+# // "SISW"), or its licensors. Access to and use of this information is strictly
+# // limited as set forth in the Customer's applicable agreements with SISW.
+# //
+# // This material may not be copied, distributed, or otherwise disclosed outside
+# // of the Customer's facilities without the express written permission of SISW,
+# // and may not be used in any way not expressly authorized by SISW.
+# //
+# ** Note: (vsim-8785) UVM-aware debugging capabilities will be disabled since no compiled "questa_uvm_pkg" can be found.
+# This also means that later if you turn on UVM-aware debugging your debug simulations may have
+# different random seeds from your non-debug simulations.
+# Loading sv_std.std
+# Loading work.opq_ingress_if(fast)
+# Loading work.opq_egress_if(fast)
+# Loading work.opq_drop_if(fast)
+# Loading work.opq_csr_if(fast)
+# Loading work.uvm_pkg(fast)
+# Loading work.opq_pkg(fast)
+# Loading work.opq_env_pkg(fast)
+# Loading work.tb_top(fast)
+# Loading work.opq_egress_if(fast__2)
+# Loading work.opq_csr_if(fast__2)
+# Loading work.opq_drop_if(fast__2)
+# Loading work.ordered_priority_queue_dut_array_sv(fast)
+# Loading work.ordered_priority_queue_monolithic_sv(fast)
+# Loading work.ticket_fifo(fast)
+# Loading work.lane_fifo(fast)
+# Loading work.handle_fifo(fast)
+# Loading work.ordered_priority_queue_monolithic_ingress_parser(fast)
+# Loading work.ordered_priority_queue_monolithic_page_allocator(fast)
+# Loading work.tile_fifo(fast)
+# Loading work.tile_fifo(fast__1)
+# Loading work.ordered_priority_queue_monolithic_block_path(fast)
+# Loading work.page_ram(fast)
+# Loading work.ordered_priority_queue_monolithic_basic_presenter(fast)
+# Loading work.ordered_priority_queue_monolithic_basic_presenter_native(fast)
+# Loading work.tile_fifo(fast__2)
+# Loading work.ordered_priority_queue_monolithic_egress_packer(fast)
+# Loading work.opq_avst_ingress_sva(fast)
+# Loading work.opq_avst_egress_sva(fast)
+# Loading work.opq_csr_sva(fast)
+# Loading work.opq_hit3_contract_sva(fast)
+# Loading work.opq_ingress_if(fast__2)
+# Compiling /tmp/yifeng@teferi.ethz.ch_dpi_23088/linux_x86_64_gcc-12/exportwrapper.c
+# Loading /tmp/yifeng@teferi.ethz.ch_dpi_23088/linux_x86_64_gcc-12/vsim_auto_compile.so
+# Loading /data1/questaone_sim/questasim/uvm-1.2/linux_x86_64/uvm_dpi.so
+# run -all
+# UVM_INFO /data1/questaone_sim/questasim/verilog_src/uvm-1.2/src/base/uvm_root.svh(392) @ 0: reporter [UVM/RELNOTES] 
+# ----------------------------------------------------------------
+# UVM-1.2
+# (C) 2007-2014 Mentor Graphics Corporation
+# (C) 2007-2014 Cadence Design Systems, Inc.
+# (C) 2006-2014 Synopsys, Inc.
+# (C) 2011-2013 Cypress Semiconductor Corp.
+# (C) 2013-2014 NVIDIA Corporation
+# ----------------------------------------------------------------
+# 
+#   ***********       IMPORTANT RELEASE NOTES         ************
+# 
+#   You are using a version of the UVM library that has been compiled
+#   with `UVM_NO_DEPRECATED undefined.
+#   See http://www.eda.org/svdb/view.php?id=3313 for more details.
+# 
+#   You are using a version of the UVM library that has been compiled
+#   with `UVM_OBJECT_DO_NOT_NEED_CONSTRUCTOR undefined.
+#   See http://www.eda.org/svdb/view.php?id=3770 for more details.
+# 
+#       (Specify +UVM_NO_RELNOTES to turn off this notice)
+# 
+# UVM_INFO @ 0: reporter [RNTST] Running test opq_model_publish_loss_sweep_test...
+# UVM_INFO tests/prof/opq_model_publish_tests.sv(129) @ 98000: uvm_test_top [opq_model_publish_loss_sweep_test] MODEL_PUBLISH_CONFIG case=RTL-LS-002 profile=0 n_lane=4 n_shd=128 egress_symbols_per_beat=1 frame_count=8 subheaders_per_frame=32 hit_period=8 hit_count=2 ready_duty_ppm=1000000 rho_ppm=50000 burstiness_milli=0
+# UVM_INFO opq_ingress_agent.sv(149) @ 98000: uvm_test_top.env.ingress_agent_0.drv [opq_ingress_driver] Driving lane 0 frame pkg_cnt=0 subh=32 hits=2 abs=1 launch_cycle=84 slot_id=0
+# UVM_INFO opq_ingress_agent.sv(149) @ 98000: uvm_test_top.env.ingress_agent_1.drv [opq_ingress_driver] Driving lane 1 frame pkg_cnt=0 subh=32 hits=0 abs=1 launch_cycle=116 slot_id=0
+# UVM_INFO opq_ingress_agent.sv(149) @ 98000: uvm_test_top.env.ingress_agent_2.drv [opq_ingress_driver] Driving lane 2 frame pkg_cnt=0 subh=32 hits=0 abs=1 launch_cycle=148 slot_id=0
+# UVM_INFO opq_ingress_agent.sv(149) @ 98000: uvm_test_top.env.ingress_agent_3.drv [opq_ingress_driver] Driving lane 3 frame pkg_cnt=0 subh=32 hits=0 abs=1 launch_cycle=180 slot_id=0
+# UVM_INFO opq_ingress_agent.sv(342) @ 354000: uvm_test_top.env.ingress_agent_0.mon [opq_ingress_monitor] lane0 ingress[0] data=0x1040001bc datak=0x1 sop=1 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 358000: uvm_test_top.env.ingress_agent_0.mon [opq_ingress_monitor] lane0 ingress[1] data=0x000000000 datak=0x0 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 362000: uvm_test_top.env.ingress_agent_0.mon [opq_ingress_monitor] lane0 ingress[2] data=0x000000000 datak=0x0 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 366000: uvm_test_top.env.ingress_agent_0.mon [opq_ingress_monitor] lane0 ingress[3] data=0x000200002 datak=0x0 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 370000: uvm_test_top.env.ingress_agent_0.mon [opq_ingress_monitor] lane0 ingress[4] data=0x000001000 datak=0x0 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 374000: uvm_test_top.env.ingress_agent_0.mon [opq_ingress_monitor] lane0 ingress[5] data=0x1010002f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 378000: uvm_test_top.env.ingress_agent_0.mon [opq_ingress_monitor] lane0 ingress[6] data=0x050000000 datak=0x0 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 382000: uvm_test_top.env.ingress_agent_0.mon [opq_ingress_monitor] lane0 ingress[7] data=0x060000000 datak=0x0 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 386000: uvm_test_top.env.ingress_agent_0.mon [opq_ingress_monitor] lane0 ingress[8] data=0x1020000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 390000: uvm_test_top.env.ingress_agent_0.mon [opq_ingress_monitor] lane0 ingress[9] data=0x1030000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 394000: uvm_test_top.env.ingress_agent_0.mon [opq_ingress_monitor] lane0 ingress[10] data=0x1040000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 398000: uvm_test_top.env.ingress_agent_0.mon [opq_ingress_monitor] lane0 ingress[11] data=0x1050000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 402000: uvm_test_top.env.ingress_agent_0.mon [opq_ingress_monitor] lane0 ingress[12] data=0x1060000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 406000: uvm_test_top.env.ingress_agent_0.mon [opq_ingress_monitor] lane0 ingress[13] data=0x1070000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 410000: uvm_test_top.env.ingress_agent_0.mon [opq_ingress_monitor] lane0 ingress[14] data=0x1080000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 414000: uvm_test_top.env.ingress_agent_0.mon [opq_ingress_monitor] lane0 ingress[15] data=0x1090000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 482000: uvm_test_top.env.ingress_agent_1.mon [opq_ingress_monitor] lane1 ingress[0] data=0x1040001bc datak=0x1 sop=1 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 486000: uvm_test_top.env.ingress_agent_1.mon [opq_ingress_monitor] lane1 ingress[1] data=0x000000000 datak=0x0 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 490000: uvm_test_top.env.ingress_agent_1.mon [opq_ingress_monitor] lane1 ingress[2] data=0x000000000 datak=0x0 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 494000: uvm_test_top.env.ingress_agent_1.mon [opq_ingress_monitor] lane1 ingress[3] data=0x000200000 datak=0x0 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 498000: uvm_test_top.env.ingress_agent_1.mon [opq_ingress_monitor] lane1 ingress[4] data=0x000001020 datak=0x0 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 502000: uvm_test_top.env.ingress_agent_1.mon [opq_ingress_monitor] lane1 ingress[5] data=0x1020000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 506000: uvm_test_top.env.ingress_agent_1.mon [opq_ingress_monitor] lane1 ingress[6] data=0x1030000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 510000: uvm_test_top.env.ingress_agent_1.mon [opq_ingress_monitor] lane1 ingress[7] data=0x1040000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(149) @ 510000: uvm_test_top.env.ingress_agent_0.drv [opq_ingress_driver] Driving lane 0 frame pkg_cnt=1 subh=32 hits=0 abs=1 launch_cycle=4218 slot_id=1
+# UVM_INFO opq_ingress_agent.sv(342) @ 514000: uvm_test_top.env.ingress_agent_1.mon [opq_ingress_monitor] lane1 ingress[8] data=0x1050000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 518000: uvm_test_top.env.ingress_agent_1.mon [opq_ingress_monitor] lane1 ingress[9] data=0x1060000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 522000: uvm_test_top.env.ingress_agent_1.mon [opq_ingress_monitor] lane1 ingress[10] data=0x1070000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 526000: uvm_test_top.env.ingress_agent_1.mon [opq_ingress_monitor] lane1 ingress[11] data=0x1080000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 530000: uvm_test_top.env.ingress_agent_1.mon [opq_ingress_monitor] lane1 ingress[12] data=0x1090000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 534000: uvm_test_top.env.ingress_agent_1.mon [opq_ingress_monitor] lane1 ingress[13] data=0x10a0000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 538000: uvm_test_top.env.ingress_agent_1.mon [opq_ingress_monitor] lane1 ingress[14] data=0x10b0000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 542000: uvm_test_top.env.ingress_agent_1.mon [opq_ingress_monitor] lane1 ingress[15] data=0x10c0000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 610000: uvm_test_top.env.ingress_agent_2.mon [opq_ingress_monitor] lane2 ingress[0] data=0x1040002bc datak=0x1 sop=1 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 614000: uvm_test_top.env.ingress_agent_2.mon [opq_ingress_monitor] lane2 ingress[1] data=0x000000000 datak=0x0 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 618000: uvm_test_top.env.ingress_agent_2.mon [opq_ingress_monitor] lane2 ingress[2] data=0x000000000 datak=0x0 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 622000: uvm_test_top.env.ingress_agent_2.mon [opq_ingress_monitor] lane2 ingress[3] data=0x000200000 datak=0x0 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 626000: uvm_test_top.env.ingress_agent_2.mon [opq_ingress_monitor] lane2 ingress[4] data=0x000001040 datak=0x0 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 630000: uvm_test_top.env.ingress_agent_2.mon [opq_ingress_monitor] lane2 ingress[5] data=0x1030000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(149) @ 630000: uvm_test_top.env.ingress_agent_1.drv [opq_ingress_driver] Driving lane 1 frame pkg_cnt=1 subh=32 hits=0 abs=1 launch_cycle=4250 slot_id=1
+# UVM_INFO opq_ingress_agent.sv(342) @ 634000: uvm_test_top.env.ingress_agent_2.mon [opq_ingress_monitor] lane2 ingress[6] data=0x1040000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 638000: uvm_test_top.env.ingress_agent_2.mon [opq_ingress_monitor] lane2 ingress[7] data=0x1050000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 642000: uvm_test_top.env.ingress_agent_2.mon [opq_ingress_monitor] lane2 ingress[8] data=0x1060000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 646000: uvm_test_top.env.ingress_agent_2.mon [opq_ingress_monitor] lane2 ingress[9] data=0x1070000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 650000: uvm_test_top.env.ingress_agent_2.mon [opq_ingress_monitor] lane2 ingress[10] data=0x1080000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 654000: uvm_test_top.env.ingress_agent_2.mon [opq_ingress_monitor] lane2 ingress[11] data=0x1090000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 658000: uvm_test_top.env.ingress_agent_2.mon [opq_ingress_monitor] lane2 ingress[12] data=0x10a0000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 662000: uvm_test_top.env.ingress_agent_2.mon [opq_ingress_monitor] lane2 ingress[13] data=0x10b0000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 666000: uvm_test_top.env.ingress_agent_2.mon [opq_ingress_monitor] lane2 ingress[14] data=0x10c0000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 670000: uvm_test_top.env.ingress_agent_2.mon [opq_ingress_monitor] lane2 ingress[15] data=0x10d0000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 738000: uvm_test_top.env.ingress_agent_3.mon [opq_ingress_monitor] lane3 ingress[0] data=0x1040002bc datak=0x1 sop=1 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 742000: uvm_test_top.env.ingress_agent_3.mon [opq_ingress_monitor] lane3 ingress[1] data=0x000000000 datak=0x0 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 746000: uvm_test_top.env.ingress_agent_3.mon [opq_ingress_monitor] lane3 ingress[2] data=0x000000000 datak=0x0 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 750000: uvm_test_top.env.ingress_agent_3.mon [opq_ingress_monitor] lane3 ingress[3] data=0x000200000 datak=0x0 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 754000: uvm_test_top.env.ingress_agent_3.mon [opq_ingress_monitor] lane3 ingress[4] data=0x000001060 datak=0x0 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 758000: uvm_test_top.env.ingress_agent_3.mon [opq_ingress_monitor] lane3 ingress[5] data=0x1040000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(149) @ 758000: uvm_test_top.env.ingress_agent_2.drv [opq_ingress_driver] Driving lane 2 frame pkg_cnt=1 subh=32 hits=0 abs=1 launch_cycle=4282 slot_id=1
+# UVM_INFO opq_ingress_agent.sv(342) @ 762000: uvm_test_top.env.ingress_agent_3.mon [opq_ingress_monitor] lane3 ingress[6] data=0x1050000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 766000: uvm_test_top.env.ingress_agent_3.mon [opq_ingress_monitor] lane3 ingress[7] data=0x1060000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 770000: uvm_test_top.env.ingress_agent_3.mon [opq_ingress_monitor] lane3 ingress[8] data=0x1070000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 774000: uvm_test_top.env.ingress_agent_3.mon [opq_ingress_monitor] lane3 ingress[9] data=0x1080000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 778000: uvm_test_top.env.ingress_agent_3.mon [opq_ingress_monitor] lane3 ingress[10] data=0x1090000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 782000: uvm_test_top.env.ingress_agent_3.mon [opq_ingress_monitor] lane3 ingress[11] data=0x10a0000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 786000: uvm_test_top.env.ingress_agent_3.mon [opq_ingress_monitor] lane3 ingress[12] data=0x10b0000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 790000: uvm_test_top.env.ingress_agent_3.mon [opq_ingress_monitor] lane3 ingress[13] data=0x10c0000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 794000: uvm_test_top.env.ingress_agent_3.mon [opq_ingress_monitor] lane3 ingress[14] data=0x10d0000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(342) @ 798000: uvm_test_top.env.ingress_agent_3.mon [opq_ingress_monitor] lane3 ingress[15] data=0x10e0000f7 datak=0x1 sop=0 eop=0 err=0x0
+# UVM_INFO opq_ingress_agent.sv(149) @ 886000: uvm_test_top.env.ingress_agent_3.drv [opq_ingress_driver] Driving lane 3 frame pkg_cnt=1 subh=32 hits=0 abs=1 launch_cycle=4314 slot_id=1
+# UVM_INFO opq_egress_agent.sv(171) @ 4562000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[0] symbol=0/1 data=0x1040001bc datak=0x1 sop=1 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 4566000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[1] symbol=0/1 data=0x000000000 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 4570000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[2] symbol=0/1 data=0x000000000 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 4574000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[3] symbol=0/1 data=0x000010002 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 4578000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[4] symbol=0/1 data=0x000000240 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_scoreboard.sv(390) @ 4578000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=0 sample_idx=0 frame_ts=0x000000000000 proxy_ingress_ts=0x00000000 ingress_debug_ts=0x00001000 egress_debug_ts=0x00000240 proxy_cycles=576 debug_delta_cycles=-3520
+# UVM_INFO opq_scoreboard.sv(390) @ 4578000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=1 sample_idx=0 frame_ts=0x000000000000 proxy_ingress_ts=0x00000000 ingress_debug_ts=0x00001020 egress_debug_ts=0x00000240 proxy_cycles=576 debug_delta_cycles=-3552
+# UVM_INFO opq_scoreboard.sv(390) @ 4578000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=2 sample_idx=0 frame_ts=0x000000000000 proxy_ingress_ts=0x00000000 ingress_debug_ts=0x00001040 egress_debug_ts=0x00000240 proxy_cycles=576 debug_delta_cycles=-3584
+# UVM_INFO opq_scoreboard.sv(390) @ 4578000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=3 sample_idx=0 frame_ts=0x000000000000 proxy_ingress_ts=0x00000000 ingress_debug_ts=0x00001060 egress_debug_ts=0x00000240 proxy_cycles=576 debug_delta_cycles=-3616
+# UVM_INFO opq_egress_agent.sv(171) @ 4582000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[5] symbol=0/1 data=0x1010002f7 datak=0x1 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 4586000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[6] symbol=0/1 data=0x050000000 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 4590000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[7] symbol=0/1 data=0x060000000 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 4594000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[8] symbol=0/1 data=0x10000009c datak=0x1 sop=0 eop=1 err=0x0 empty=0
+# UVM_INFO opq_ingress_agent.sv(149) @ 17038000: uvm_test_top.env.ingress_agent_0.drv [opq_ingress_driver] Driving lane 0 frame pkg_cnt=2 subh=32 hits=0 abs=1 launch_cycle=8352 slot_id=2
+# UVM_INFO opq_ingress_agent.sv(149) @ 17166000: uvm_test_top.env.ingress_agent_1.drv [opq_ingress_driver] Driving lane 1 frame pkg_cnt=2 subh=32 hits=0 abs=1 launch_cycle=8384 slot_id=2
+# UVM_INFO opq_ingress_agent.sv(149) @ 17294000: uvm_test_top.env.ingress_agent_2.drv [opq_ingress_driver] Driving lane 2 frame pkg_cnt=2 subh=32 hits=0 abs=1 launch_cycle=8416 slot_id=2
+# UVM_INFO opq_ingress_agent.sv(149) @ 17422000: uvm_test_top.env.ingress_agent_3.drv [opq_ingress_driver] Driving lane 3 frame pkg_cnt=2 subh=32 hits=0 abs=1 launch_cycle=8448 slot_id=2
+# UVM_INFO opq_ingress_agent.sv(149) @ 33574000: uvm_test_top.env.ingress_agent_0.drv [opq_ingress_driver] Driving lane 0 frame pkg_cnt=3 subh=32 hits=0 abs=1 launch_cycle=12486 slot_id=3
+# UVM_INFO opq_ingress_agent.sv(149) @ 33702000: uvm_test_top.env.ingress_agent_1.drv [opq_ingress_driver] Driving lane 1 frame pkg_cnt=3 subh=32 hits=0 abs=1 launch_cycle=12518 slot_id=3
+# UVM_INFO opq_ingress_agent.sv(149) @ 33830000: uvm_test_top.env.ingress_agent_2.drv [opq_ingress_driver] Driving lane 2 frame pkg_cnt=3 subh=32 hits=0 abs=1 launch_cycle=12550 slot_id=3
+# UVM_INFO opq_ingress_agent.sv(149) @ 33958000: uvm_test_top.env.ingress_agent_3.drv [opq_ingress_driver] Driving lane 3 frame pkg_cnt=3 subh=32 hits=0 abs=1 launch_cycle=12582 slot_id=3
+# UVM_INFO opq_egress_agent.sv(171) @ 34582000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[9] symbol=0/1 data=0x1040001bc datak=0x1 sop=1 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 34586000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[10] symbol=0/1 data=0x000000000 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 34590000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[11] symbol=0/1 data=0x008000001 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 34594000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[12] symbol=0/1 data=0x000000000 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 34598000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[13] symbol=0/1 data=0x000001250 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_scoreboard.sv(390) @ 34598000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=0 sample_idx=1 frame_ts=0x000000000800 proxy_ingress_ts=0x00000800 ingress_debug_ts=0x00001800 egress_debug_ts=0x00001250 proxy_cycles=2640 debug_delta_cycles=-1456
+# UVM_INFO opq_scoreboard.sv(390) @ 34598000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=1 sample_idx=1 frame_ts=0x000000000800 proxy_ingress_ts=0x00000800 ingress_debug_ts=0x00001820 egress_debug_ts=0x00001250 proxy_cycles=2640 debug_delta_cycles=-1488
+# UVM_INFO opq_scoreboard.sv(390) @ 34598000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=2 sample_idx=1 frame_ts=0x000000000800 proxy_ingress_ts=0x00000800 ingress_debug_ts=0x00001840 egress_debug_ts=0x00001250 proxy_cycles=2640 debug_delta_cycles=-1520
+# UVM_INFO opq_scoreboard.sv(390) @ 34598000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=3 sample_idx=1 frame_ts=0x000000000800 proxy_ingress_ts=0x00000800 ingress_debug_ts=0x00001860 egress_debug_ts=0x00001250 proxy_cycles=2640 debug_delta_cycles=-1552
+# UVM_INFO opq_egress_agent.sv(171) @ 34602000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[14] symbol=0/1 data=0x10000009c datak=0x1 sop=0 eop=1 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 38566000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[15] symbol=0/1 data=0x1040001bc datak=0x1 sop=1 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 38570000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[16] symbol=0/1 data=0x000000000 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 38574000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[17] symbol=0/1 data=0x010000002 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 38578000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[18] symbol=0/1 data=0x000000000 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 38582000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[19] symbol=0/1 data=0x000001260 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_scoreboard.sv(390) @ 38582000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=0 sample_idx=2 frame_ts=0x000000001000 proxy_ingress_ts=0x00001000 ingress_debug_ts=0x00002000 egress_debug_ts=0x00001260 proxy_cycles=608 debug_delta_cycles=-3488
+# UVM_INFO opq_scoreboard.sv(390) @ 38582000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=1 sample_idx=2 frame_ts=0x000000001000 proxy_ingress_ts=0x00001000 ingress_debug_ts=0x00002020 egress_debug_ts=0x00001260 proxy_cycles=608 debug_delta_cycles=-3520
+# UVM_INFO opq_scoreboard.sv(390) @ 38582000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=2 sample_idx=2 frame_ts=0x000000001000 proxy_ingress_ts=0x00001000 ingress_debug_ts=0x00002040 egress_debug_ts=0x00001260 proxy_cycles=608 debug_delta_cycles=-3552
+# UVM_INFO opq_scoreboard.sv(390) @ 38582000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=3 sample_idx=2 frame_ts=0x000000001000 proxy_ingress_ts=0x00001000 ingress_debug_ts=0x00002060 egress_debug_ts=0x00001260 proxy_cycles=608 debug_delta_cycles=-3584
+# UVM_INFO opq_egress_agent.sv(171) @ 38586000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[20] symbol=0/1 data=0x10000009c datak=0x1 sop=0 eop=1 err=0x0 empty=0
+# UVM_INFO opq_ingress_agent.sv(149) @ 50110000: uvm_test_top.env.ingress_agent_0.drv [opq_ingress_driver] Driving lane 0 frame pkg_cnt=4 subh=32 hits=0 abs=1 launch_cycle=16620 slot_id=4
+# UVM_INFO opq_ingress_agent.sv(149) @ 50238000: uvm_test_top.env.ingress_agent_1.drv [opq_ingress_driver] Driving lane 1 frame pkg_cnt=4 subh=32 hits=0 abs=1 launch_cycle=16652 slot_id=4
+# UVM_INFO opq_ingress_agent.sv(149) @ 50366000: uvm_test_top.env.ingress_agent_2.drv [opq_ingress_driver] Driving lane 2 frame pkg_cnt=4 subh=32 hits=0 abs=1 launch_cycle=16684 slot_id=4
+# UVM_INFO opq_ingress_agent.sv(149) @ 50494000: uvm_test_top.env.ingress_agent_3.drv [opq_ingress_driver] Driving lane 3 frame pkg_cnt=4 subh=32 hits=0 abs=1 launch_cycle=16716 slot_id=4
+# UVM_INFO opq_ingress_agent.sv(149) @ 66646000: uvm_test_top.env.ingress_agent_0.drv [opq_ingress_driver] Driving lane 0 frame pkg_cnt=5 subh=32 hits=0 abs=1 launch_cycle=20754 slot_id=5
+# UVM_INFO opq_ingress_agent.sv(149) @ 66774000: uvm_test_top.env.ingress_agent_1.drv [opq_ingress_driver] Driving lane 1 frame pkg_cnt=5 subh=32 hits=0 abs=1 launch_cycle=20786 slot_id=5
+# UVM_INFO opq_ingress_agent.sv(149) @ 66902000: uvm_test_top.env.ingress_agent_2.drv [opq_ingress_driver] Driving lane 2 frame pkg_cnt=5 subh=32 hits=0 abs=1 launch_cycle=20818 slot_id=5
+# UVM_INFO opq_ingress_agent.sv(149) @ 67030000: uvm_test_top.env.ingress_agent_3.drv [opq_ingress_driver] Driving lane 3 frame pkg_cnt=5 subh=32 hits=2 abs=1 launch_cycle=20850 slot_id=5
+# UVM_INFO opq_egress_agent.sv(171) @ 67862000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[21] symbol=0/1 data=0x1040001bc datak=0x1 sop=1 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 67866000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[22] symbol=0/1 data=0x000000000 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 67870000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[23] symbol=0/1 data=0x018000003 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 67874000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[24] symbol=0/1 data=0x000000000 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 67878000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[25] symbol=0/1 data=0x000002270 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_scoreboard.sv(390) @ 67878000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=0 sample_idx=3 frame_ts=0x000000001800 proxy_ingress_ts=0x00001800 ingress_debug_ts=0x00002800 egress_debug_ts=0x00002270 proxy_cycles=2672 debug_delta_cycles=-1424
+# UVM_INFO opq_scoreboard.sv(390) @ 67878000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=1 sample_idx=3 frame_ts=0x000000001800 proxy_ingress_ts=0x00001800 ingress_debug_ts=0x00002820 egress_debug_ts=0x00002270 proxy_cycles=2672 debug_delta_cycles=-1456
+# UVM_INFO opq_scoreboard.sv(390) @ 67878000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=2 sample_idx=3 frame_ts=0x000000001800 proxy_ingress_ts=0x00001800 ingress_debug_ts=0x00002840 egress_debug_ts=0x00002270 proxy_cycles=2672 debug_delta_cycles=-1488
+# UVM_INFO opq_scoreboard.sv(390) @ 67878000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=3 sample_idx=3 frame_ts=0x000000001800 proxy_ingress_ts=0x00001800 ingress_debug_ts=0x00002860 egress_debug_ts=0x00002270 proxy_cycles=2672 debug_delta_cycles=-1520
+# UVM_INFO opq_egress_agent.sv(171) @ 67882000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[26] symbol=0/1 data=0x10000009c datak=0x1 sop=0 eop=1 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 72054000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[27] symbol=0/1 data=0x1040001bc datak=0x1 sop=1 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 72058000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[28] symbol=0/1 data=0x000000000 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 72062000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[29] symbol=0/1 data=0x020000004 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 72066000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[30] symbol=0/1 data=0x000000000 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 72070000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[31] symbol=0/1 data=0x000002280 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_scoreboard.sv(390) @ 72070000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=0 sample_idx=4 frame_ts=0x000000002000 proxy_ingress_ts=0x00002000 ingress_debug_ts=0x00003000 egress_debug_ts=0x00002280 proxy_cycles=640 debug_delta_cycles=-3456
+# UVM_INFO opq_scoreboard.sv(390) @ 72070000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=1 sample_idx=4 frame_ts=0x000000002000 proxy_ingress_ts=0x00002000 ingress_debug_ts=0x00003020 egress_debug_ts=0x00002280 proxy_cycles=640 debug_delta_cycles=-3488
+# UVM_INFO opq_scoreboard.sv(390) @ 72070000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=2 sample_idx=4 frame_ts=0x000000002000 proxy_ingress_ts=0x00002000 ingress_debug_ts=0x00003040 egress_debug_ts=0x00002280 proxy_cycles=640 debug_delta_cycles=-3520
+# UVM_INFO opq_scoreboard.sv(390) @ 72070000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=3 sample_idx=4 frame_ts=0x000000002000 proxy_ingress_ts=0x00002000 ingress_debug_ts=0x00003060 egress_debug_ts=0x00002280 proxy_cycles=640 debug_delta_cycles=-3552
+# UVM_INFO opq_egress_agent.sv(171) @ 72074000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[32] symbol=0/1 data=0x10000009c datak=0x1 sop=0 eop=1 err=0x0 empty=0
+# UVM_INFO opq_ingress_agent.sv(149) @ 83182000: uvm_test_top.env.ingress_agent_0.drv [opq_ingress_driver] Driving lane 0 frame pkg_cnt=6 subh=32 hits=0 abs=1 launch_cycle=24890 slot_id=6
+# UVM_INFO opq_ingress_agent.sv(149) @ 83310000: uvm_test_top.env.ingress_agent_1.drv [opq_ingress_driver] Driving lane 1 frame pkg_cnt=6 subh=32 hits=0 abs=1 launch_cycle=24922 slot_id=6
+# UVM_INFO opq_ingress_agent.sv(149) @ 83438000: uvm_test_top.env.ingress_agent_2.drv [opq_ingress_driver] Driving lane 2 frame pkg_cnt=6 subh=32 hits=2 abs=1 launch_cycle=24954 slot_id=6
+# UVM_INFO opq_ingress_agent.sv(149) @ 83574000: uvm_test_top.env.ingress_agent_3.drv [opq_ingress_driver] Driving lane 3 frame pkg_cnt=6 subh=32 hits=0 abs=1 launch_cycle=24986 slot_id=6
+# UVM_INFO opq_ingress_agent.sv(149) @ 99726000: uvm_test_top.env.ingress_agent_0.drv [opq_ingress_driver] Driving lane 0 frame pkg_cnt=7 subh=32 hits=0 abs=1 launch_cycle=29024 slot_id=7
+# UVM_INFO opq_ingress_agent.sv(149) @ 99854000: uvm_test_top.env.ingress_agent_1.drv [opq_ingress_driver] Driving lane 1 frame pkg_cnt=7 subh=32 hits=2 abs=1 launch_cycle=29056 slot_id=7
+# UVM_INFO opq_ingress_agent.sv(149) @ 99990000: uvm_test_top.env.ingress_agent_2.drv [opq_ingress_driver] Driving lane 2 frame pkg_cnt=7 subh=32 hits=0 abs=1 launch_cycle=29088 slot_id=7
+# UVM_INFO opq_ingress_agent.sv(149) @ 100110000: uvm_test_top.env.ingress_agent_3.drv [opq_ingress_driver] Driving lane 3 frame pkg_cnt=7 subh=32 hits=0 abs=1 launch_cycle=29120 slot_id=7
+# UVM_INFO opq_egress_agent.sv(171) @ 101142000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[33] symbol=0/1 data=0x1040001bc datak=0x1 sop=1 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 101146000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[34] symbol=0/1 data=0x000000000 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 101150000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[35] symbol=0/1 data=0x028000005 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 101154000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[36] symbol=0/1 data=0x000000000 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 101158000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[37] symbol=0/1 data=0x000003290 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_scoreboard.sv(390) @ 101158000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=0 sample_idx=5 frame_ts=0x000000002800 proxy_ingress_ts=0x00002800 ingress_debug_ts=0x00003800 egress_debug_ts=0x00003290 proxy_cycles=2704 debug_delta_cycles=-1392
+# UVM_INFO opq_scoreboard.sv(390) @ 101158000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=1 sample_idx=5 frame_ts=0x000000002800 proxy_ingress_ts=0x00002800 ingress_debug_ts=0x00003820 egress_debug_ts=0x00003290 proxy_cycles=2704 debug_delta_cycles=-1424
+# UVM_INFO opq_scoreboard.sv(390) @ 101158000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=2 sample_idx=5 frame_ts=0x000000002800 proxy_ingress_ts=0x00002800 ingress_debug_ts=0x00003840 egress_debug_ts=0x00003290 proxy_cycles=2704 debug_delta_cycles=-1456
+# UVM_INFO opq_scoreboard.sv(390) @ 101158000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=3 sample_idx=5 frame_ts=0x000000002800 proxy_ingress_ts=0x00002800 ingress_debug_ts=0x00003860 egress_debug_ts=0x00003290 proxy_cycles=2704 debug_delta_cycles=-1488
+# UVM_INFO opq_egress_agent.sv(171) @ 101162000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[38] symbol=0/1 data=0x10000009c datak=0x1 sop=0 eop=1 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 105546000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[39] symbol=0/1 data=0x1040001bc datak=0x1 sop=1 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 105550000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[40] symbol=0/1 data=0x000000000 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 105554000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[41] symbol=0/1 data=0x030000006 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 105558000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[42] symbol=0/1 data=0x000010002 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 105562000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[43] symbol=0/1 data=0x0000032a0 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_scoreboard.sv(390) @ 105562000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=0 sample_idx=6 frame_ts=0x000000003000 proxy_ingress_ts=0x00003000 ingress_debug_ts=0x00004000 egress_debug_ts=0x000032a0 proxy_cycles=672 debug_delta_cycles=-3424
+# UVM_INFO opq_scoreboard.sv(390) @ 105562000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=1 sample_idx=6 frame_ts=0x000000003000 proxy_ingress_ts=0x00003000 ingress_debug_ts=0x00004020 egress_debug_ts=0x000032a0 proxy_cycles=672 debug_delta_cycles=-3456
+# UVM_INFO opq_scoreboard.sv(390) @ 105562000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=2 sample_idx=6 frame_ts=0x000000003000 proxy_ingress_ts=0x00003000 ingress_debug_ts=0x00004040 egress_debug_ts=0x000032a0 proxy_cycles=672 debug_delta_cycles=-3488
+# UVM_INFO opq_scoreboard.sv(390) @ 105562000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=3 sample_idx=6 frame_ts=0x000000003000 proxy_ingress_ts=0x00003000 ingress_debug_ts=0x00004060 egress_debug_ts=0x000032a0 proxy_cycles=672 debug_delta_cycles=-3520
+# UVM_INFO opq_egress_agent.sv(171) @ 105566000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[44] symbol=0/1 data=0x1090002f7 datak=0x1 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 105570000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[45] symbol=0/1 data=0x052000006 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 105574000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[46] symbol=0/1 data=0x062000006 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 105578000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[47] symbol=0/1 data=0x10000009c datak=0x1 sop=0 eop=1 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 134362000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[48] symbol=0/1 data=0x1040001bc datak=0x1 sop=1 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 134366000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[49] symbol=0/1 data=0x000000000 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 134370000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[50] symbol=0/1 data=0x038000007 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 134374000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[51] symbol=0/1 data=0x000010002 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 134378000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[52] symbol=0/1 data=0x0000042b0 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_scoreboard.sv(390) @ 134378000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=0 sample_idx=7 frame_ts=0x000000003800 proxy_ingress_ts=0x00003800 ingress_debug_ts=0x00004800 egress_debug_ts=0x000042b0 proxy_cycles=2736 debug_delta_cycles=-1360
+# UVM_INFO opq_scoreboard.sv(390) @ 134378000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=1 sample_idx=7 frame_ts=0x000000003800 proxy_ingress_ts=0x00003800 ingress_debug_ts=0x00004820 egress_debug_ts=0x000042b0 proxy_cycles=2736 debug_delta_cycles=-1392
+# UVM_INFO opq_scoreboard.sv(390) @ 134378000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=2 sample_idx=7 frame_ts=0x000000003800 proxy_ingress_ts=0x00003800 ingress_debug_ts=0x00004840 egress_debug_ts=0x000042b0 proxy_cycles=2736 debug_delta_cycles=-1424
+# UVM_INFO opq_scoreboard.sv(390) @ 134378000: uvm_test_top.env.scoreboard [opq_scoreboard] OPQ_RESIDENCY_PROXY_SAMPLE lane=3 sample_idx=7 frame_ts=0x000000003800 proxy_ingress_ts=0x00003800 ingress_debug_ts=0x00004860 egress_debug_ts=0x000042b0 proxy_cycles=2736 debug_delta_cycles=-1456
+# UVM_INFO opq_egress_agent.sv(171) @ 134382000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[53] symbol=0/1 data=0x1090002f7 datak=0x1 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 134386000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[54] symbol=0/1 data=0x051000007 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 134390000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[55] symbol=0/1 data=0x061000007 datak=0x0 sop=0 eop=0 err=0x0 empty=0
+# UVM_INFO opq_egress_agent.sv(171) @ 134394000: uvm_test_top.env.egress_agent.mon [opq_egress_monitor] egress[56] symbol=0/1 data=0x10000009c datak=0x1 sop=0 eop=1 err=0x0 empty=0
+# UVM_INFO opq_base_test.sv(434) @ 337970000: uvm_test_top [opq_model_publish_loss_sweep_test] model_publish_final frame_table_ledger wr_hdr=8 rd_hdr=8 drop_hdr=0 wr_shd=3 rd_shd=3 drop_shd=0 wr_hit=6 rd_hit=6 drop_hit=0
+# UVM_INFO opq_base_test.sv(346) @ 338002000: uvm_test_top [opq_model_publish_loss_sweep_test] model_publish_final lane0 hit_ledger expected=2 accepted=2 dropped=0 delivered=2 unexplained=0 drop_pct=0. 0
+# UVM_INFO opq_base_test.sv(346) @ 338034000: uvm_test_top [opq_model_publish_loss_sweep_test] model_publish_final lane1 hit_ledger expected=2 accepted=2 dropped=0 delivered=2 unexplained=0 drop_pct=0. 0
+# UVM_INFO opq_base_test.sv(346) @ 338066000: uvm_test_top [opq_model_publish_loss_sweep_test] model_publish_final lane2 hit_ledger expected=2 accepted=2 dropped=0 delivered=2 unexplained=0 drop_pct=0. 0
+# UVM_INFO opq_base_test.sv(346) @ 338098000: uvm_test_top [opq_model_publish_loss_sweep_test] model_publish_final lane3 hit_ledger expected=2 accepted=2 dropped=0 delivered=0 unexplained=2 drop_pct=0. 0
+# UVM_INFO opq_base_test.sv(392) @ 338098000: uvm_test_top [opq_model_publish_loss_sweep_test] model_publish_final aggregate_hit_ledger accepted=8 dropped=0 delivered=6 unexplained=2
+# UVM_INFO opq_base_test.sv(566) @ 338226000: uvm_test_top [opq_model_publish_loss_sweep_test] model_publish_final core_principles first_break=clean ft_ownership= ok hit_conservation= ok accepted_delivery= ok drained= ok
+# UVM_INFO tests/prof/opq_model_publish_tests.sv(233) @ 338306000: uvm_test_top [opq_model_publish_loss_sweep_test] MODEL_PUBLISH_RESULT case=RTL-LS-002 profile=0 lane=0 n_lane=4 n_shd=128 egress_symbols_per_beat=1 ready_duty_ppm=1000000 rho_ppm=50000 burstiness_milli=0 frame_count=8 subheaders_per_frame=32 hit_period=8 hit_count=2 expected_hits=2 accepted_hits=2 dropped_hits=0 delivered_hits=2 unexplained_hits=0 loss_ppm=0 drr_allowance=256 drr_quantum=254 drr_grants=2 drr_beats=3 drr_defers=0
+# UVM_INFO tests/prof/opq_model_publish_tests.sv(233) @ 338386000: uvm_test_top [opq_model_publish_loss_sweep_test] MODEL_PUBLISH_RESULT case=RTL-LS-002 profile=0 lane=1 n_lane=4 n_shd=128 egress_symbols_per_beat=1 ready_duty_ppm=1000000 rho_ppm=50000 burstiness_milli=0 frame_count=8 subheaders_per_frame=32 hit_period=8 hit_count=2 expected_hits=2 accepted_hits=2 dropped_hits=0 delivered_hits=2 unexplained_hits=0 loss_ppm=0 drr_allowance=256 drr_quantum=254 drr_grants=2 drr_beats=3 drr_defers=0
+# UVM_INFO tests/prof/opq_model_publish_tests.sv(233) @ 338466000: uvm_test_top [opq_model_publish_loss_sweep_test] MODEL_PUBLISH_RESULT case=RTL-LS-002 profile=0 lane=2 n_lane=4 n_shd=128 egress_symbols_per_beat=1 ready_duty_ppm=1000000 rho_ppm=50000 burstiness_milli=0 frame_count=8 subheaders_per_frame=32 hit_period=8 hit_count=2 expected_hits=2 accepted_hits=2 dropped_hits=0 delivered_hits=2 unexplained_hits=0 loss_ppm=0 drr_allowance=256 drr_quantum=254 drr_grants=2 drr_beats=3 drr_defers=0
+# UVM_INFO tests/prof/opq_model_publish_tests.sv(233) @ 338546000: uvm_test_top [opq_model_publish_loss_sweep_test] MODEL_PUBLISH_RESULT case=RTL-LS-002 profile=0 lane=3 n_lane=4 n_shd=128 egress_symbols_per_beat=1 ready_duty_ppm=1000000 rho_ppm=50000 burstiness_milli=0 frame_count=8 subheaders_per_frame=32 hit_period=8 hit_count=2 expected_hits=2 accepted_hits=2 dropped_hits=0 delivered_hits=0 unexplained_hits=2 loss_ppm=0 drr_allowance=256 drr_quantum=256 drr_grants=0 drr_beats=0 drr_defers=0
+# UVM_INFO tests/prof/opq_model_publish_tests.sv(267) @ 338594000: uvm_test_top [opq_model_publish_loss_sweep_test] MODEL_PUBLISH_AGG case=RTL-LS-002 profile=0 n_lane=4 n_shd=128 egress_symbols_per_beat=1 ready_duty_ppm=1000000 rho_ppm=50000 burstiness_milli=0 expected_hits=8 accepted_hits=8 dropped_hits=0 delivered_hits=6 unexplained_hits=2 loss_ppm=0 ft_wr_hit=6 ft_rd_hit=6 ft_drop_hit=0
+# UVM_INFO /data1/questaone_sim/questasim/verilog_src/uvm-1.2/src/base/uvm_objection.svh(1270) @ 338594000: reporter [TEST_DONE] 'run' phase is ready to proceed to the 'extract' phase
+# UVM_INFO opq_coverage.sv(412) @ 338594000: uvm_test_top.env.coverage [opq_coverage] Coverage cfg=42.86 frame=55.00 subh=23.61 bp=0.00 csr=92.26 credit=68.33 drop=48.61 drr=49.00 ingress=100.00 egress=100.00
+# UVM_INFO opq_drop_monitor.sv(76) @ 338594000: uvm_test_top.env.drop_monitor [opq_drop_monitor] lane0 observed drop events=0 hdr=0 pre_hits=0 dropped_hits=0 post_hits=0
+# UVM_INFO opq_drop_monitor.sv(76) @ 338594000: uvm_test_top.env.drop_monitor [opq_drop_monitor] lane1 observed drop events=0 hdr=0 pre_hits=0 dropped_hits=0 post_hits=0
+# UVM_INFO opq_drop_monitor.sv(76) @ 338594000: uvm_test_top.env.drop_monitor [opq_drop_monitor] lane2 observed drop events=0 hdr=0 pre_hits=0 dropped_hits=0 post_hits=0
+# UVM_INFO opq_drop_monitor.sv(76) @ 338594000: uvm_test_top.env.drop_monitor [opq_drop_monitor] lane3 observed drop events=0 hdr=0 pre_hits=0 dropped_hits=0 post_hits=0
+# UVM_INFO opq_ingress_agent.sv(356) @ 338594000: uvm_test_top.env.ingress_agent_0.mon [opq_ingress_monitor] lane0 monitored_frames=8 orphan_beats=0 capture_err=0
+# UVM_INFO opq_ingress_agent.sv(356) @ 338594000: uvm_test_top.env.ingress_agent_1.mon [opq_ingress_monitor] lane1 monitored_frames=8 orphan_beats=0 capture_err=0
+# UVM_INFO opq_ingress_agent.sv(356) @ 338594000: uvm_test_top.env.ingress_agent_2.mon [opq_ingress_monitor] lane2 monitored_frames=8 orphan_beats=0 capture_err=0
+# UVM_INFO opq_ingress_agent.sv(356) @ 338594000: uvm_test_top.env.ingress_agent_3.mon [opq_ingress_monitor] lane3 monitored_frames=8 orphan_beats=0 capture_err=0
+# UVM_INFO /data1/questaone_sim/questasim/verilog_src/uvm-1.2/src/base/uvm_report_server.svh(847) @ 338594000: reporter [UVM/REPORT/SERVER] 
+# --- UVM Report Summary ---
+# 
+# ** Report counts by severity
+# UVM_INFO :  210
+# UVM_WARNING :    0
+# UVM_ERROR :    0
+# UVM_FATAL :    0
+# ** Report counts by id
+# [RNTST]     1
+# [TEST_DONE]     1
+# [UVM/RELNOTES]     1
+# [opq_coverage]     1
+# [opq_drop_monitor]     4
+# [opq_egress_monitor]    57
+# [opq_ingress_driver]    32
+# [opq_ingress_monitor]    68
+# [opq_model_publish_loss_sweep_test]    13
+# [opq_scoreboard]    32
+# 
+# ** Note: $finish    : /data1/questaone_sim/questasim/verilog_src/uvm-1.2/src/base/uvm_root.svh(517)
+#    Time: 338594 ns  Iteration: 69  Instance: /tb_top
+# End time: 00:06:37 on Apr 26,2026, Elapsed time: 0:00:05
+# Errors: 0, Warnings: 24
+make: Leaving directory '/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/tb/uvm'
+[PASS] opq_model_publish_loss_sweep_test
+----------------------------------------------------------------
+UVM summary: pass=1 fail=0 total=1

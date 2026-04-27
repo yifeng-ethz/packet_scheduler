@@ -24,7 +24,7 @@ set_module_property INTERNAL false
 set_module_property OPAQUE_ADDRESS_MAP true
 set_module_property GROUP "Mu3e Data Plane/Modules"
 set_module_property AUTHOR "Yifeng Wang"
-set_module_property ICON_PATH ../quartus_system/logo/mu3e_logo.png
+set_module_property ICON_PATH ../../quartus_system/misc/logo/mu3e_logo.png
 set_module_property DISPLAY_NAME "Ordered Priority Queue (v2 split)"
 set_module_property INSTANTIATE_IN_SYSTEM_MODULE true
 set_module_property EDITABLE false

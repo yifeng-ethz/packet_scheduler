@@ -18,6 +18,7 @@ package opq_env_pkg;
   `include "tests/edge/opq_edge_shape_tests.sv"
   `include "tests/prof/opq_prof_stress_tests.sv"
   `include "tests/prof/opq_prof_skew_tests.sv"
+  `include "tests/prof/opq_model_publish_tests.sv"
   `include "tests/opq_error_tests.sv"
   `include "tests/opq_cross_tests.sv"
   `include "tests/opq_formal_like_tests.sv"

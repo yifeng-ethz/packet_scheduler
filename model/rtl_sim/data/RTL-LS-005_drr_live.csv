@@ -1,0 +1,13 @@
+run_tag,case,sim_pass,n_lane,lane,sample,allowance,quantum,grants,beats,defers
+ls005_n4_e2,RTL-LS-005,1,4,0,final,256,252,4,6,0
+ls005_n4_e2,RTL-LS-005,1,4,1,final,256,252,4,6,0
+ls005_n4_e2,RTL-LS-005,1,4,2,final,256,252,4,6,0
+ls005_n4_e2,RTL-LS-005,1,4,3,final,256,256,0,0,0
+ls005_n8_e1,RTL-LS-005,1,8,0,final,256,252,4,6,0
+ls005_n8_e1,RTL-LS-005,1,8,1,final,256,254,2,3,0
+ls005_n8_e1,RTL-LS-005,1,8,2,final,256,510,3,5,1
+ls005_n8_e1,RTL-LS-005,1,8,3,final,256,510,3,4,1
+ls005_n8_e1,RTL-LS-005,1,8,4,final,256,252,4,6,0
+ls005_n8_e1,RTL-LS-005,1,8,5,final,256,254,2,3,0
+ls005_n8_e1,RTL-LS-005,1,8,6,final,256,254,2,3,0
+ls005_n8_e1,RTL-LS-005,1,8,7,final,256,256,0,0,0

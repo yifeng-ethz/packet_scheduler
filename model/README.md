@@ -15,3 +15,10 @@ This tree follows the `modeling-rtl` evidence sequence:
 Do not copy analytical or TLM plots into lower evidence tiers. Lower tiers must
 be generated from their own raw observables and use the same axis definitions:
 `B=(SCV-1)/(SCV+1)`, `rho_lane`, `ready_duty`, `N_LANE`, and egress width.
+
+The chief-architect-facing publication-grade figure catalog (28 DISLIN figure
+sets, codex `scientific-plotting`-enforced) lives at
+[`MODEL_PUBLISH.md`](MODEL_PUBLISH.md). Every entry there names the source CSV,
+the renderer, the architectural claim, the `rtl_sim/CASE_CATALOG.md` case that
+supplies the data, and the chief-architect acceptance criteria. The publish
+bundle freezes golden references under `publish/golden/`.

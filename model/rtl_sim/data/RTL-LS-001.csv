@@ -1,0 +1,5 @@
+run_tag,case,sim_pass,profile,lane,n_lane,n_shd,egress_symbols_per_beat,ready_duty_ppm,rho_ppm,burstiness_milli,frame_count,subheaders_per_frame,hit_period,hit_count,expected_hits,accepted_hits,dropped_hits,delivered_hits,unexplained_hits,loss_ppm,drr_allowance,drr_quantum,drr_grants,drr_beats,drr_defers
+ls001_ready070,RTL-LS-001,1,0,0,4,128,1,700000,7500,0,8,32,4,2,4,4,0,4,0,0,256,252,4,6,0
+ls001_ready070,RTL-LS-001,1,0,1,4,128,1,700000,7500,0,8,32,4,2,4,4,0,4,0,0,256,252,4,6,0
+ls001_ready070,RTL-LS-001,1,0,2,4,128,1,700000,7500,0,8,32,4,2,4,4,0,4,0,0,256,252,4,6,0
+ls001_ready070,RTL-LS-001,1,0,3,4,128,1,700000,7500,0,8,32,4,2,4,4,0,0,4,0,256,256,0,0,0
