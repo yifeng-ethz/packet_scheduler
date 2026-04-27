@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_page_allocator
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.4.9
+// Version : 26.4.10
 // Date    : 20260427
-// Change  : Hold partial frames until delayed join SOPs arrive or window expires
+// Change  : Hold partial frames and tail flush until delayed join SOPs arrive or window expires
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_page_allocator #(
@@ -691,7 +691,9 @@ module ordered_priority_queue_monolithic_page_allocator #(
   genvar tail_status_lane_idx;
 
   assign idle_tail_flush_ready_decision =
-    idle_tail_flush_base && (active_frame_pending_nonfuture_lane_q == '0);
+    idle_tail_flush_base &&
+    (active_frame_pending_nonfuture_lane_q == '0) &&
+    !frame_join_hold;
   assign idle_fetch_ready =
     all_lanes_fetch_ready_q &&
     any_pending_ticket_q &&
@@ -1025,7 +1027,10 @@ module ordered_priority_queue_monolithic_page_allocator #(
       (page_allocator.frame_lane_active != '0) &&
       (&idle_active_tail_ready_lane_q) &&
       (page_allocator.frame_cnt != '0);
-    idle_tail_flush_ready = idle_tail_flush_base && !active_frame_pending_nonfuture_ticket;
+    idle_tail_flush_ready =
+      idle_tail_flush_base &&
+      !active_frame_pending_nonfuture_ticket &&
+      !frame_join_hold;
     page_allocator_if_read_ticket_ticket_sop.n_subh = frame_shr_cnt_t'(total_subh_v);
     page_allocator_if_read_ticket_ticket_sop.n_hit = frame_hit_cnt_t'(total_hit_v);
 
