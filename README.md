@@ -6,7 +6,7 @@ lane, merges lane-local packet streams into shared page storage, and emits a
 single ordered Avalon-ST egress stream with explicit per-lane and frame-table
 drop accounting.
 
-**Version:** 26.4.12.0428
+**Version:** 26.4.13.0428
 **Module name:** `ordered_priority_queue`
 **Platform Designer group:** Mu3e Data Plane / Modules
 

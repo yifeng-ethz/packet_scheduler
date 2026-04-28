@@ -1,6 +1,6 @@
 # ✅ DV Report — packet_scheduler ordered_priority_queue native_sv
 
-**DUT:** `ordered_priority_queue_monolithic_sv` &nbsp; **Date:** `2026-04-23` &nbsp; **RTL variant:** `after` &nbsp; **Seed:** `1`
+**DUT:** `ordered_priority_queue_monolithic_sv` &nbsp; **Date:** `2026-04-28` &nbsp; **RTL variant:** `after` &nbsp; **Seed:** `1`
 
 This page is the chief-architect dashboard. All per-case evidence lives under [`REPORT/`](REPORT/README.md).
 
@@ -15,7 +15,7 @@ This page is the chief-architect dashboard. All per-case evidence lives under [`
 | ✅ | failed_cases | `0` |
 | ✅ | signoff_runs_with_failures | `0` |
 | ✅ | catalog_backlog_cases | `0` |
-| ⚠️ | unimplemented_cases | `516` |
+| ⚠️ | unimplemented_cases | `507` |
 | ✅ | stale_artifacts | `0` |
 
 ## Signoff Scope
@@ -39,39 +39,39 @@ This page is the chief-architect dashboard. All per-case evidence lives under [`
 | status | bucket | catalog_planned | promoted | evidenced | backlog | merged | promoted functional |
 |:---:|---|---:|---:|---:|---:|---|---|
 | ⚠️ | [`BASIC`](REPORT/buckets/BASIC.md) | 129 | 129 | 0 | 0 | stmt=n/a, branch=n/a, cond=n/a, expr=n/a, fsm_state=n/a, fsm_trans=n/a, toggle=n/a | 0.0% (0/129) |
-| ⚠️ | [`EDGE`](REPORT/buckets/EDGE.md) | 129 | 129 | 0 | 0 | stmt=n/a, branch=n/a, cond=n/a, expr=n/a, fsm_state=n/a, fsm_trans=n/a, toggle=n/a | 0.0% (0/129) |
+| ⚠️ | [`EDGE`](REPORT/buckets/EDGE.md) | 129 | 129 | 1 | 0 | stmt=72.51, branch=60.33, cond=26.28, expr=48.67, fsm_state=76.71, fsm_trans=36.53, toggle=17.98 | 60.78% (1/129) |
 | ⚠️ | [`PROF`](REPORT/buckets/PROF.md) | 129 | 129 | 0 | 0 | stmt=n/a, branch=n/a, cond=n/a, expr=n/a, fsm_state=n/a, fsm_trans=n/a, toggle=n/a | 0.0% (0/129) |
-| ⚠️ | [`ERROR`](REPORT/buckets/ERROR.md) | 129 | 129 | 0 | 0 | stmt=n/a, branch=n/a, cond=n/a, expr=n/a, fsm_state=n/a, fsm_trans=n/a, toggle=n/a | 0.0% (0/129) |
+| ⚠️ | [`ERROR`](REPORT/buckets/ERROR.md) | 129 | 129 | 8 | 0 | stmt=72.25, branch=60.77, cond=30.63, expr=56.67, fsm_state=76.71, fsm_trans=36.53, toggle=18.79 | 63.23% (8/129) |
 
 ## Totals
 
 | status | metric | pct | target |
 |:---:|---|---|---|
-| ❓ | stmt | n/a | 95.0 |
-| ❓ | branch | n/a | 90.0 |
-| ❓ | cond | n/a | - |
-| ❓ | expr | n/a | - |
-| ❓ | fsm_state | n/a | 95.0 |
-| ❓ | fsm_trans | n/a | 90.0 |
-| ❓ | toggle | n/a | 80.0 |
+| ⚠️ | stmt | 72.98 | 95.0 |
+| ⚠️ | branch | 61.81 | 90.0 |
+| ℹ️ | cond | 31.03 | - |
+| ℹ️ | expr | 56.67 | - |
+| ⚠️ | fsm_state | 76.71 | 95.0 |
+| ⚠️ | fsm_trans | 36.53 | 90.0 |
+| ⚠️ | toggle | 18.79 | 80.0 |
 
 - catalog_planned_cases: `516`
 - promoted_signoff_cases: `516`
-- evidenced_promoted_cases: `0`
-- promoted functional coverage: `0.0% (0/516)`
+- evidenced_promoted_cases: `9`
+- promoted functional coverage: `63.23% (9/516)`
 
 ## Signoff Runs
 
 | status | run_id | kind | build | seq | txns | cross_pct |
 |:---:|---|---|---|---|---:|---:|
-| ✅ | [`opq_bucket_frame_native_sv_test`](REPORT/cross/opq_bucket_frame_native_sv_test.md) | bucket_frame | after | run_promoted_default_build_matrix | 764 | 76.86 |
-| ✅ | [`opq_all_buckets_frame_native_sv_test`](REPORT/cross/opq_all_buckets_frame_native_sv_test.md) | all_buckets_frame | after | run_promoted_default_build_matrix_plus_tail | 820 | 76.66 |
+| ✅ | [`opq_bucket_frame_native_sv_test`](REPORT/cross/opq_bucket_frame_native_sv_test.md) | bucket_frame | after | run_promoted_default_build_matrix | 738 | 76.72 |
+| ✅ | [`opq_all_buckets_frame_native_sv_test`](REPORT/cross/opq_all_buckets_frame_native_sv_test.md) | all_buckets_frame | after | run_promoted_default_build_matrix_plus_tail | 794 | 76.52 |
 | ✅ | [`opq_cross_bp_predrop_boundary_test`](REPORT/cross/opq_cross_bp_predrop_boundary_test.md) | cross | after | opq_cross_bp_predrop_boundary_test | 208 | 61.71 |
-| ✅ | [`opq_cross_drr_bursty_frame2_boundary_test`](REPORT/cross/opq_cross_drr_bursty_frame2_boundary_test.md) | cross | after | opq_cross_drr_bursty_frame2_boundary_test | 8 | 58.94 |
-| ✅ | [`opq_cross_mixed_bucket_random_soak_test`](REPORT/cross/opq_cross_mixed_bucket_random_soak_test.md) | cross | after | opq_cross_mixed_bucket_random_soak_test | 2096 | 72.39 |
+| ✅ | [`opq_cross_drr_bursty_frame2_boundary_test`](REPORT/cross/opq_cross_drr_bursty_frame2_boundary_test.md) | cross | after | opq_cross_drr_bursty_frame2_boundary_test | 8 | 59.27 |
+| ✅ | [`opq_cross_mixed_bucket_random_soak_test`](REPORT/cross/opq_cross_mixed_bucket_random_soak_test.md) | cross | after | opq_cross_mixed_bucket_random_soak_test | 2038 | 72.05 |
 | ✅ | [`opq_cross_random_ready_overflow_step2_boundary_test`](REPORT/cross/opq_cross_random_ready_overflow_step2_boundary_test.md) | cross | after | opq_cross_random_ready_overflow_step2_boundary_test | 20 | 63.48 |
 | ⚠️ | [`opq_error_counter_clear_test`](REPORT/cross/opq_error_counter_clear_test.md) | cross | after | opq_error_counter_clear_test | 4 | 38.24 |
-| ✅ | [`opq_error_ftable_overflow_test`](REPORT/cross/opq_error_ftable_overflow_test.md) | cross | after | opq_error_ftable_overflow_test | 64 | 59.95 |
+| ✅ | [`opq_error_ftable_overflow_test`](REPORT/cross/opq_error_ftable_overflow_test.md) | cross | after | opq_error_ftable_overflow_test | 64 | 60.78 |
 
 ## Index
 

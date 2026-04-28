@@ -9,6 +9,24 @@ Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 > `qverify` / `znformal` with simulation stress fallback only when the
 > Siemens formal binaries are not present on the host.
 
+## 26.4.13.0428
+
+- **RTL / Native-SV Presenter Timing**: preserved the existing native
+  presenter metadata and head staging registers and disabled advanced netlist
+  optimization on those cuts. This keeps frame-length/count arithmetic behind
+  the intended register boundary before page-RAM pointer launch control in
+  MuSiP integration builds without adding latency or changing queue order.
+- **RTL / Page Allocator Recovery**: allowed same-frame-timestamp forward
+  serial rebase after masked/drop-only frames. This restores no-restart
+  4-lane mixed-soak progress when the allocator timestamp has already advanced
+  but serial ownership must reopen at the same frame timestamp.
+- **Verification**: aligned the native presenter startup-backpressure SVA with
+  the two quiet prime cycles in the registered page-RAM handoff, then refreshed
+  directed native-SV and 4-lane mixed-soak/report evidence for
+  `26.4.13.0428`.
+- **Packaging**: advanced the Platform Designer identity and `VERSION` file to
+  `26.4.13.0428` for the refreshed MuSiP timing-closure candidate.
+
 ## 26.4.12.0428
 
 - **RTL / Native-SV Presenter Timing**: registered completed-frame metadata at

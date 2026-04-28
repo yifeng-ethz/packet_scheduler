@@ -1,6 +1,6 @@
 # ⚠️ ERROR bucket
 
-**Catalog planned:** `129` &nbsp; **Promoted:** `129` &nbsp; **Evidenced:** `0` &nbsp; **Catalog backlog:** `0` &nbsp; **Status:** ⚠️
+**Catalog planned:** `129` &nbsp; **Promoted:** `129` &nbsp; **Evidenced:** `8` &nbsp; **Catalog backlog:** `0` &nbsp; **Status:** ⚠️
 
 ## Catalog Inventory
 
@@ -15,13 +15,13 @@
 
 | status | metric | merged_pct | target |
 |:---:|---|---|---|
-| ❓ | stmt | n/a | 95.0 |
-| ❓ | branch | n/a | 90.0 |
-| ❓ | cond | n/a | - |
-| ❓ | expr | n/a | - |
-| ❓ | fsm_state | n/a | 95.0 |
-| ❓ | fsm_trans | n/a | 90.0 |
-| ❓ | toggle | n/a | 80.0 |
+| ⚠️ | stmt | 72.25 | 95.0 |
+| ⚠️ | branch | 60.77 | 90.0 |
+| ℹ️ | cond | 30.63 | - |
+| ℹ️ | expr | 56.67 | - |
+| ⚠️ | fsm_state | 76.71 | 95.0 |
+| ⚠️ | fsm_trans | 36.53 | 90.0 |
+| ⚠️ | toggle | 18.79 | 80.0 |
 
 ## Ordered merge trace
 
@@ -31,6 +31,14 @@ merge. The continuous-frame sequential runs are separate evidence and live under
 
 | status | step | report_case_id | legacy_test_name | standalone_case_cov | bucket_gain | ordered_isolated_merged_total | detail |
 |:---:|---:|---|---|---|---|---|---|
+| ✅ | 9 | `X009` | `opq_error_counter_clear_test` | stmt=44.02, branch=28.42, cond=8.30, expr=12.67, fsm_state=24.66, fsm_trans=4.19, toggle=3.27 | stmt=44.02, branch=28.42, cond=8.30, expr=12.67, fsm_state=24.66, fsm_trans=4.19, toggle=3.27 | stmt=44.02, branch=28.42, cond=8.30, expr=12.67, fsm_state=24.66, fsm_trans=4.19, toggle=3.27 | [case](../cases/X009.md) |
+| ✅ | 10 | `X010` | `opq_error_ftable_overflow_test` | stmt=72.51, branch=60.33, cond=26.28, expr=48.67, fsm_state=76.71, fsm_trans=36.53, toggle=17.98 | stmt=28.23, branch=32.35, cond=22.33, expr=44.00, fsm_state=52.05, fsm_trans=32.34, toggle=15.52 | stmt=72.25, branch=60.77, cond=30.63, expr=56.67, fsm_state=76.71, fsm_trans=36.53, toggle=18.79 | [case](../cases/X010.md) |
+| ✅ | 66 | `X066` | `opq_error_ftable_overflow_test` | stmt=72.51, branch=60.33, cond=26.28, expr=48.67, fsm_state=76.71, fsm_trans=36.53, toggle=17.98 | stmt=0.00, branch=0.00, cond=0.00, expr=0.00, fsm_state=0.00, fsm_trans=0.00, toggle=0.00 | stmt=72.25, branch=60.77, cond=30.63, expr=56.67, fsm_state=76.71, fsm_trans=36.53, toggle=18.79 | [case](../cases/X066.md) |
+| ✅ | 71 | `X071` | `opq_error_ftable_overflow_test` | stmt=72.51, branch=60.33, cond=26.28, expr=48.67, fsm_state=76.71, fsm_trans=36.53, toggle=17.98 | stmt=0.00, branch=0.00, cond=0.00, expr=0.00, fsm_state=0.00, fsm_trans=0.00, toggle=0.00 | stmt=72.25, branch=60.77, cond=30.63, expr=56.67, fsm_state=76.71, fsm_trans=36.53, toggle=18.79 | [case](../cases/X071.md) |
+| ✅ | 72 | `X072` | `opq_error_ftable_overflow_test` | stmt=72.51, branch=60.33, cond=26.28, expr=48.67, fsm_state=76.71, fsm_trans=36.53, toggle=17.98 | stmt=0.00, branch=0.00, cond=0.00, expr=0.00, fsm_state=0.00, fsm_trans=0.00, toggle=0.00 | stmt=72.25, branch=60.77, cond=30.63, expr=56.67, fsm_state=76.71, fsm_trans=36.53, toggle=18.79 | [case](../cases/X072.md) |
+| ✅ | 73 | `X073` | `opq_error_ftable_overflow_test` | stmt=72.51, branch=60.33, cond=26.28, expr=48.67, fsm_state=76.71, fsm_trans=36.53, toggle=17.98 | stmt=0.00, branch=0.00, cond=0.00, expr=0.00, fsm_state=0.00, fsm_trans=0.00, toggle=0.00 | stmt=72.25, branch=60.77, cond=30.63, expr=56.67, fsm_state=76.71, fsm_trans=36.53, toggle=18.79 | [case](../cases/X073.md) |
+| ✅ | 74 | `X074` | `opq_error_ftable_overflow_test` | stmt=72.51, branch=60.33, cond=26.28, expr=48.67, fsm_state=76.71, fsm_trans=36.53, toggle=17.98 | stmt=0.00, branch=0.00, cond=0.00, expr=0.00, fsm_state=0.00, fsm_trans=0.00, toggle=0.00 | stmt=72.25, branch=60.77, cond=30.63, expr=56.67, fsm_state=76.71, fsm_trans=36.53, toggle=18.79 | [case](../cases/X074.md) |
+| ✅ | 91 | `X091` | `opq_error_ftable_overflow_test` | stmt=72.51, branch=60.33, cond=26.28, expr=48.67, fsm_state=76.71, fsm_trans=36.53, toggle=17.98 | stmt=0.00, branch=0.00, cond=0.00, expr=0.00, fsm_state=0.00, fsm_trans=0.00, toggle=0.00 | stmt=72.25, branch=60.77, cond=30.63, expr=56.67, fsm_state=76.71, fsm_trans=36.53, toggle=18.79 | [case](../cases/X091.md) |
 
 ---
 _Back to [dashboard](../../DV_REPORT.md)_

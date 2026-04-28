@@ -8,8 +8,8 @@
 |:---:|---|---|
 | ℹ️ | case_count | `39` |
 | ℹ️ | effort | `high` |
-| ℹ️ | txns | `764` |
-| ✅ | functional_cross_pct | `76.86` |
+| ℹ️ | txns | `738` |
+| ✅ | functional_cross_pct | `76.72` |
 | ✅ | counter_checks_failed | `0` |
 | ✅ | unexpected_outputs | `0` |
 
@@ -65,13 +65,13 @@
 
 | metric | pct |
 |---|---|
-| stmt | 79.55 |
-| branch | 79.12 |
-| cond | 54.94 |
-| expr | 70.37 |
+| stmt | 82.73 |
+| branch | 80.82 |
+| cond | 50.40 |
+| expr | 78.67 |
 | fsm_state | 100.00 |
-| fsm_trans | 62.84 |
-| toggle | 42.76 |
+| fsm_trans | 61.68 |
+| toggle | 45.17 |
 
 ## Transaction growth curve
 

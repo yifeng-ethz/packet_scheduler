@@ -1,6 +1,6 @@
 # ⚠️ EDGE bucket
 
-**Catalog planned:** `129` &nbsp; **Promoted:** `129` &nbsp; **Evidenced:** `0` &nbsp; **Catalog backlog:** `0` &nbsp; **Status:** ⚠️
+**Catalog planned:** `129` &nbsp; **Promoted:** `129` &nbsp; **Evidenced:** `1` &nbsp; **Catalog backlog:** `0` &nbsp; **Status:** ⚠️
 
 ## Catalog Inventory
 
@@ -15,13 +15,13 @@
 
 | status | metric | merged_pct | target |
 |:---:|---|---|---|
-| ❓ | stmt | n/a | 95.0 |
-| ❓ | branch | n/a | 90.0 |
-| ❓ | cond | n/a | - |
-| ❓ | expr | n/a | - |
-| ❓ | fsm_state | n/a | 95.0 |
-| ❓ | fsm_trans | n/a | 90.0 |
-| ❓ | toggle | n/a | 80.0 |
+| ⚠️ | stmt | 72.51 | 95.0 |
+| ⚠️ | branch | 60.33 | 90.0 |
+| ℹ️ | cond | 26.28 | - |
+| ℹ️ | expr | 48.67 | - |
+| ⚠️ | fsm_state | 76.71 | 95.0 |
+| ⚠️ | fsm_trans | 36.53 | 90.0 |
+| ⚠️ | toggle | 17.98 | 80.0 |
 
 ## Ordered merge trace
 
@@ -31,6 +31,7 @@ merge. The continuous-frame sequential runs are separate evidence and live under
 
 | status | step | report_case_id | legacy_test_name | standalone_case_cov | bucket_gain | ordered_isolated_merged_total | detail |
 |:---:|---:|---|---|---|---|---|---|
+| ✅ | 10 | `E010` | `opq_error_ftable_overflow_test` | stmt=72.51, branch=60.33, cond=26.28, expr=48.67, fsm_state=76.71, fsm_trans=36.53, toggle=17.98 | stmt=72.51, branch=60.33, cond=26.28, expr=48.67, fsm_state=76.71, fsm_trans=36.53, toggle=17.98 | stmt=72.51, branch=60.33, cond=26.28, expr=48.67, fsm_state=76.71, fsm_trans=36.53, toggle=17.98 | [case](../cases/E010.md) |
 
 ---
 _Back to [dashboard](../../DV_REPORT.md)_

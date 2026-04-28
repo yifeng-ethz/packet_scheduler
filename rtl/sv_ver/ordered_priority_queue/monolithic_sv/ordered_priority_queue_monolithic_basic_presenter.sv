@@ -1,12 +1,11 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_basic_presenter
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.4.12
+// Version : 26.4.13
 // Date    : 20260428
-// Change  : Register native-presenter new-frame metadata before queue
-//           ownership updates to cut the MuSiP completion-count timing cone
-//           into page-RAM pointer launch control; align tail-lookahead
-//           assertions with the actual one-entry capture condition.
+// Change  : Preserve the native-presenter metadata staging registers so
+//           frame-length arithmetic terminates before page-RAM pointer launch
+//           control in MuSiP integration builds without changing queue order.
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_basic_presenter #(
@@ -861,12 +860,19 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
   logic meta_read_pending;
   logic meta_read_armed;
   meta_data_t meta_rd_data;
+  (* preserve, altera_attribute = "-name ADV_NETLIST_OPT_ALLOWED NEVER_ALLOW; -name PRESERVE_REGISTER ON" *)
   logic head_meta_valid;
+  (* preserve, altera_attribute = "-name ADV_NETLIST_OPT_ALLOWED NEVER_ALLOW; -name PRESERVE_REGISTER ON" *)
   page_ram_addr_t head_addr_q;
+  (* preserve, altera_attribute = "-name ADV_NETLIST_OPT_ALLOWED NEVER_ALLOW; -name PRESERVE_REGISTER ON" *)
   page_ram_addr_t head_len_q;
+  (* preserve, altera_attribute = "-name ADV_NETLIST_OPT_ALLOWED NEVER_ALLOW; -name PRESERVE_REGISTER ON" *)
   logic [MAX_SHR_CNT_BITS-1:0] head_shd_cnt_q;
+  (* preserve, altera_attribute = "-name ADV_NETLIST_OPT_ALLOWED NEVER_ALLOW; -name PRESERVE_REGISTER ON" *)
   logic [MAX_HIT_CNT_BITS-1:0] head_hit_cnt_q;
+  (* preserve, altera_attribute = "-name ADV_NETLIST_OPT_ALLOWED NEVER_ALLOW; -name PRESERVE_REGISTER ON" *)
   logic [N_LANE-1:0][MAX_SHR_CNT_BITS-1:0] head_lane_shd_cnt_q;
+  (* preserve, altera_attribute = "-name ADV_NETLIST_OPT_ALLOWED NEVER_ALLOW; -name PRESERVE_REGISTER ON" *)
   logic [N_LANE-1:0][MAX_HIT_CNT_BITS-1:0] head_lane_hit_cnt_q;
   logic pending_overlap_check_valid;
   page_ram_addr_t pending_overlap_addr_q;
@@ -951,13 +957,21 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
   logic [FRAME_LEN_WIDTH-1:0] new_frame_length_full_d;
   page_ram_addr_t new_frame_length_d;
   logic new_frame_oversize_d;
+  (* preserve, altera_attribute = "-name ADV_NETLIST_OPT_ALLOWED NEVER_ALLOW; -name PRESERVE_REGISTER ON" *)
   logic new_frame_valid_q;
+  (* preserve, altera_attribute = "-name ADV_NETLIST_OPT_ALLOWED NEVER_ALLOW; -name PRESERVE_REGISTER ON" *)
   page_ram_addr_t new_frame_raw_addr_q;
+  (* preserve, altera_attribute = "-name ADV_NETLIST_OPT_ALLOWED NEVER_ALLOW; -name PRESERVE_REGISTER ON" *)
   logic [MAX_SHR_CNT_BITS-1:0] frame_shr_cnt_this_q;
+  (* preserve, altera_attribute = "-name ADV_NETLIST_OPT_ALLOWED NEVER_ALLOW; -name PRESERVE_REGISTER ON" *)
   logic [MAX_HIT_CNT_BITS-1:0] frame_hit_cnt_this_q;
+  (* preserve, altera_attribute = "-name ADV_NETLIST_OPT_ALLOWED NEVER_ALLOW; -name PRESERVE_REGISTER ON" *)
   logic [N_LANE-1:0][MAX_SHR_CNT_BITS-1:0] frame_lane_shd_cnt_this_q;
+  (* preserve, altera_attribute = "-name ADV_NETLIST_OPT_ALLOWED NEVER_ALLOW; -name PRESERVE_REGISTER ON" *)
   logic [N_LANE-1:0][MAX_HIT_CNT_BITS-1:0] frame_lane_hit_cnt_this_q;
+  (* preserve, altera_attribute = "-name ADV_NETLIST_OPT_ALLOWED NEVER_ALLOW; -name PRESERVE_REGISTER ON" *)
   page_ram_addr_t new_frame_length_q;
+  (* preserve, altera_attribute = "-name ADV_NETLIST_OPT_ALLOWED NEVER_ALLOW; -name PRESERVE_REGISTER ON" *)
   logic new_frame_oversize_q;
   logic overwrite_head_accepted_or_accepting;
   logic overlap_request_pending;
@@ -2085,7 +2099,13 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
 
   property p_startup_backpressure_captures_head;
     @(posedge d_clk) disable iff (d_reset)
-      page_ram_prime_pending ##1 (!pkt_accept_started && !aso_egress_ready) |=> page_ram_skid_valid;
+      (presenter_state == FTABLE_PRESENTER_PRESENTING) &&
+      !page_ram_prime_pending &&
+      !pkt_accept_started &&
+      !aso_egress_ready &&
+      !page_ram_skid_valid &&
+      page_ram_rsp_valid_pipe[PAGE_RAM_RSP_LATENCY-1] &&
+      (pkt_fetch_word_cnt != packet_length) |=> page_ram_skid_valid;
   endproperty
   ap_startup_backpressure_captures_head: assert property (p_startup_backpressure_captures_head)
     else $error("OPQ_NATIVE_BASIC_PRESENTER lost the primed head word before the first launch under startup backpressure");
@@ -2186,8 +2206,13 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
   );
 
   cover property (@(posedge d_clk) disable iff (d_reset)
-    page_ram_prime_pending
-    ##1 !pkt_accept_started && !aso_egress_ready
+    (presenter_state == FTABLE_PRESENTER_PRESENTING) &&
+    !page_ram_prime_pending &&
+    !pkt_accept_started &&
+    !aso_egress_ready &&
+    !page_ram_skid_valid &&
+    page_ram_rsp_valid_pipe[PAGE_RAM_RSP_LATENCY-1] &&
+    (pkt_fetch_word_cnt != packet_length)
     ##1 page_ram_skid_valid
     ##[1:EGRESS_DELAY+4] aso_egress_valid && aso_egress_startofpacket && aso_egress_ready
   );
