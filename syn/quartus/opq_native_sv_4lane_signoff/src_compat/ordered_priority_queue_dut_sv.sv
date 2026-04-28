@@ -28,7 +28,15 @@
 `endif
 
 module ordered_priority_queue_dut_sv #(
-  parameter int unsigned N_HIT = `OPQ_N_HIT
+  parameter int unsigned N_HIT = `OPQ_N_HIT,
+  parameter int unsigned IP_UID = 32'h4F50_514D,
+  parameter int unsigned VERSION_MAJOR = 26,
+  parameter int unsigned VERSION_MINOR = 4,
+  parameter int unsigned VERSION_PATCH = 13,
+  parameter int unsigned BUILD = 428,
+  parameter int unsigned VERSION_DATE = 20260428,
+  parameter int unsigned VERSION_GIT = 32'h7301_5F57,
+  parameter int unsigned INSTANCE_ID = 0
 ) (
   input  logic [35:0] asi_ingress_0_data,
   input  logic [0:0]  asi_ingress_0_valid,
@@ -130,14 +138,14 @@ module ordered_priority_queue_dut_sv #(
   localparam logic [3:0] CSR_LANE_WORD_DRR_GRANT_CNT_CONST = 4'hD;
   localparam logic [3:0] CSR_LANE_WORD_DRR_BEAT_CNT_CONST = 4'hE;
   localparam logic [3:0] CSR_LANE_WORD_DRR_DEFER_CNT_CONST = 4'hF;
-  localparam logic [31:0] UID_CONST = 32'h4F50_514D;
-  localparam int unsigned VERSION_MAJOR_CONST = 26;
-  localparam int unsigned VERSION_MINOR_CONST = 4;
-  localparam int unsigned VERSION_PATCH_CONST = 13;
-  localparam int unsigned VERSION_BUILD_CONST = 428;
-  localparam logic [31:0] VERSION_DATE_CONST = 32'd20260428;
-  localparam logic [31:0] VERSION_GIT_CONST = 32'h7301_5F57;
-  localparam logic [31:0] INSTANCE_ID_CONST = 32'd0;
+  localparam logic [31:0] UID_CONST = IP_UID;
+  localparam int unsigned VERSION_MAJOR_CONST = VERSION_MAJOR;
+  localparam int unsigned VERSION_MINOR_CONST = VERSION_MINOR;
+  localparam int unsigned VERSION_PATCH_CONST = VERSION_PATCH;
+  localparam int unsigned VERSION_BUILD_CONST = BUILD;
+  localparam logic [31:0] VERSION_DATE_CONST = VERSION_DATE;
+  localparam logic [31:0] VERSION_GIT_CONST = VERSION_GIT;
+  localparam logic [31:0] INSTANCE_ID_CONST = INSTANCE_ID;
   localparam logic [9:0] DRR_DEFAULT_ALLOWANCE_CONST = 10'd256;
 
   logic [3:0][35:0] asi_ingress_data_bus;
