@@ -25,7 +25,8 @@ Author: Yifeng Wang (yifenwan@phys.ethz.ch)
   directed native-SV and 4-lane mixed-soak/report evidence for
   `26.4.13.0428`.
 - **Packaging**: advanced the Platform Designer identity and `VERSION` file to
-  `26.4.13.0428` for the refreshed MuSiP timing-closure candidate.
+  `26.4.13.0428` for the refreshed MuSiP timing-closure candidate, including
+  the native-SV UVM and fixed4 synthesis-wrapper CSR META identity constants.
 
 ## 26.4.12.0428
 
