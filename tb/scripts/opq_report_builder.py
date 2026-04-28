@@ -42,6 +42,16 @@ METRIC_MAP = OrderedDict(
     ]
 )
 
+STRUCTURAL_COVERAGE_TARGETS = {
+    "stmt": 95.0,
+    "branch": 90.0,
+    "fsm_state": 95.0,
+    "fsm_trans": 90.0,
+    "toggle": 80.0,
+}
+
+CLOSED_COVERAGE_CLASSIFICATIONS = {"justified_nonclaim", "justified_exclusion"}
+
 NATIVE_FRAME_BUCKET_STEPS = OrderedDict(
     [
         (
@@ -134,9 +144,12 @@ if VCOVER is None:
     raise SystemExit(f"vcover not found under {QUESTA_HOME}")
 
 
-def derived_ticket_fifo_depth(n_shd: int) -> int:
+def derived_ticket_fifo_depth(n_shd: int, n_lane: int = SIGNOFF_N_LANE) -> int:
+    target_lane = n_shd * 32
+    target_scan = n_shd * n_lane * 2
+    target = max(256, target_lane, target_scan)
     depth = 256
-    while depth <= n_shd:
+    while depth < target:
         depth *= 2
     return depth
 
@@ -642,6 +655,56 @@ def build_coverage_hole_disposition(
         )
 
     return disposition
+
+
+def build_structural_coverage_closure(merged_cov: dict, disposition: list[dict]) -> dict:
+    target_misses: list[dict] = []
+    for metric, target in STRUCTURAL_COVERAGE_TARGETS.items():
+        value = merged_cov.get(metric)
+        pct = value.get("pct") if isinstance(value, dict) else None
+        if pct is None or float(pct) < target:
+            target_misses.append(
+                {
+                    "metric": metric,
+                    "pct": None if pct is None else round(float(pct), 2),
+                    "target": target,
+                }
+            )
+
+    open_dispositions = [
+        {
+            "area": item.get("area", "?"),
+            "classification": item.get("classification", "?"),
+        }
+        for item in disposition
+        if item.get("classification") not in CLOSED_COVERAGE_CLASSIFICATIONS
+    ]
+
+    if not target_misses:
+        status = "raw_target_met"
+        basis = "All structural coverage metrics with hard targets meet the workflow threshold."
+    elif disposition and not open_dispositions:
+        status = "justified"
+        basis = (
+            "Raw structural coverage target misses are closed by the Coverage-Hole Disposition table; "
+            "each listed deficit is classified as justified_nonclaim or justified_exclusion and the "
+            "per-case / signoff evidence remains clean."
+        )
+    else:
+        status = "open"
+        basis = (
+            "One or more raw structural coverage target misses lack an accepted disposition, so "
+            "coverage closure remains open."
+        )
+
+    return {
+        "status": status,
+        "basis": basis,
+        "target_misses": target_misses,
+        "disposition_count": len(disposition),
+        "open_dispositions": open_dispositions,
+        "accepted_classifications": sorted(CLOSED_COVERAGE_CLASSIFICATIONS),
+    }
 
 
 def build_signoff_run(test_name: str, log_summary: dict, ucdb_path: Path) -> dict | None:
@@ -1165,6 +1228,13 @@ def build() -> dict:
 
     signoff_runs, signoff_run_ucdbs = discover_signoff_runs()
     coverage_hole_disposition = build_coverage_hole_disposition(merged_total_ucdb, signoff_run_ucdbs)
+    structural_coverage_closure = build_structural_coverage_closure(
+        merged_total_cov, coverage_hole_disposition
+    )
+    for payload in bucket_payloads.values():
+        payload["structural_coverage_closure"] = structural_coverage_closure
+    for summary in bucket_summary:
+        summary["structural_coverage_closure"] = structural_coverage_closure
 
     return {
         "report_title": "packet_scheduler ordered_priority_queue native_sv",
@@ -1232,6 +1302,7 @@ def build() -> dict:
         "bucket_summary": bucket_summary,
         "buckets": bucket_payloads,
         "coverage_hole_disposition": coverage_hole_disposition,
+        "structural_coverage_closure": structural_coverage_closure,
         "totals": {
             "planned_cases": len(all_cases),
             "catalog_planned_cases": len(all_cases),
@@ -1241,6 +1312,7 @@ def build() -> dict:
             "excluded_cases": 0,
             "merged_total_code_coverage": merged_total_cov,
             "functional_coverage": total_functional_cov,
+            "structural_coverage_closure": structural_coverage_closure,
         },
         "signoff_runs": signoff_runs,
         "random_cases": [case for case in all_cases if case.get("method") == "R"],

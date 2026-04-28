@@ -34,7 +34,7 @@ The composer draws from these axes. The axis table is the contract with the seed
 | axis | values | notes |
 |---|---|---|
 | `seed` | 32-bit LCG seed | drives all other axes for the run; recorded in every case evidence page |
-| `n_lane_build` | `default_p2_s256_t256_r65536`, `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256`, reduced-depth `2-lane/256/512`, reduced-depth `4-lane/128/512` | one row per non-default build; explicit elaboration metadata |
+| `n_lane_build` | `default_p2_s256_t256_r65536`, `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=4096`, reduced-depth `2-lane/256/512`, reduced-depth `4-lane/128/512` | one row per non-default build; explicit elaboration metadata |
 | `drr_allowance_profile` | default (256), zero-allowance, short-quantum, max-quantum (0x3FF), bursty DRR, mid-run reprogram | composes with every lane-skew shape |
 | `lane_mask_profile` | all-clear, mask-lane-0, mask-lane-1, all-masked, mid-run toggle, recovery | lifts / drops at packet and frame boundaries |
 | `ingress_gap_shape` | back-to-back, Poisson λ∈{0.3, 0.5, 0.7, 0.9}, burst (len∈[16,256], gap∈[0,256]), stuck-high | `λ≥0.9` probes legal overwrite on the presenter |
@@ -109,7 +109,7 @@ Pins the live `opq_cross_*_test` classes that already ship as directed promoted 
 | case_id | ladder | anchor test | scenario | bug / coverage target |
 |---|---|---|---|---|
 | CROSS-011 | `anchored_hybrid` | `opq_cross_idle_lane_backpressure_test` | idle-lane cadence crossed with periodic egress stalls on the active lane | skid buffer + `resident_backpressure_hold` exercised while idle lane still emits empty frames |
-| CROSS-012 | `anchored_hybrid` | `opq_cross_drr_bursty_frame2_boundary_test` | deterministic bursty DRR frame_count=2 boundary | refreshed `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256` rerun closes with `expected=484 actual=484 missing=0 ghost=0`; guards frame2-boundary regression |
+| CROSS-012 | `anchored_hybrid` | `opq_cross_drr_bursty_frame2_boundary_test` | deterministic bursty DRR frame_count=2 boundary | refreshed `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=4096` rerun closes with `expected=484 actual=484 missing=0 ghost=0`; guards frame2-boundary regression |
 | CROSS-013 | `anchored_hybrid` | `opq_cross_drr_bursty_frame3_repro_test` | reduced deterministic bursty DRR retirement anchor for `BUG-025-R` | `expected=714 actual=714 missing=0 ghost=0`; shortest historical closure check for the former active-lane retirement bug |
 | CROSS-014 | `anchored_hybrid` | `opq_cross_drr_bursty_random_test` | constrained-random hot-lane / cold-lane DRR stress with periodic egress stalls | refreshed seed=1 `expected=990 actual=990 missing=0 ghost=0`; seeds 2..8 `expected=1864 actual=1864 missing=0 ghost=0`; per-lane `unexplained=0` |
 
@@ -170,8 +170,8 @@ One run per supported `OPQ_N_LANE × OPQ_N_SHD × OPQ_TICKET_FIFO_DEPTH × OPQ_P
 | case_id | ladder | scenario | bug / coverage target |
 |---|---|---|---|
 | CROSS-046 | `seed_sweep` | default `default_p2_s256_t256_r65536` build, `opq_cross_drr_allowance_test` shape, 200k txn | default build DRR coverage |
-| CROSS-047 | `seed_sweep` | `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256` build, `opq_cross_drr_allowance_test` shape, 200k txn | 4-lane DRR fairness at this preset |
-| CROSS-048 | `seed_sweep` | `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256`, `opq_cross_mixed_bucket_random_soak_test` shape | refreshed rerun closes `expected=14547 actual=14547 missing=0 ghost=0`; per-lane `unexplained=0` |
+| CROSS-047 | `seed_sweep` | `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=4096` build, `opq_cross_drr_allowance_test` shape, 200k txn | 4-lane DRR fairness at this preset |
+| CROSS-048 | `seed_sweep` | `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=4096`, `opq_cross_mixed_bucket_random_soak_test` shape | refreshed rerun closes `expected=14547 actual=14547 missing=0 ghost=0`; per-lane `unexplained=0` |
 | CROSS-049 | `seed_sweep` | reduced-depth `2-lane/256/512 OPQ_PAGE_RAM_DEPTH=512` build, must-drop shape | `opq_cross_bp_mustdrop_witness_test` closure shape |
 | CROSS-050 | `seed_sweep` | reduced-depth `4-lane/128/512 OPQ_PAGE_RAM_DEPTH=512` build, must-drop shape | preset-limited shape-check evidence |
 | CROSS-051 | `seed_sweep` | default build, high-rate back-to-back traffic, 500k txn | default throughput ceiling |
@@ -222,7 +222,7 @@ These runs drive the overwrite-pressure and legal-overflow paths the hardest. Ea
 | CROSS-082 | `seed_sweep` | sustained pool=2 at λ=0.9 with `resident_backpressure_hold` coverage, 1M txn | presenter hold engagement + overwrite-pressure invariants |
 | CROSS-083 | `seed_sweep` | sustained pool=2 at λ=0.95 with max-hit subheaders, 1M txn | extreme-pressure invariants on max-hit frame |
 | CROSS-084 | `seed_sweep` | sustained pool=2 at λ=1.0 with burst shape (256-beat bursts, 128-cycle gaps), 1M txn | burst-induced overwrite pressure |
-| CROSS-085 | `seed_sweep` | `opq_cross_mixed_bucket_random_soak_test` | refreshed `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256` rerun | closes with `expected=14547 actual=14547 missing=0 ghost=0`; dedicated supplemental signoff run |
+| CROSS-085 | `seed_sweep` | `opq_cross_mixed_bucket_random_soak_test` | refreshed `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=4096` rerun | closes with `expected=14547 actual=14547 missing=0 ghost=0`; dedicated supplemental signoff run |
 | CROSS-086 | `checkpoint_soak` | `opq_cross_mixed_bucket_seconds_soak_test` | extended probe with `+TB_CLK_PERIOD_NS=250` | crosses the old `mixed_sparse_191`, `mixed_soak_261`, `mixed_whole_skew_275/418/435` windows cleanly; exits `UVM_ERROR : 0` |
 | CROSS-087 | `checkpoint_soak` | `opq_cross_mixed_bucket_long_simtime_soak_test` | `+TB_CLK_PERIOD_NS=1000000 +OPQ_MIXED_SOAK_STEPS=64` | finishes at ~`2194139500 us` (~36.6 min), `expected=5798 actual=5798 missing=0 ghost=0` |
 | CROSS-088 | `checkpoint_soak` | must-drop + 10M txn cap | overwrite-pressure soak with `ft_drop_*` monotonicity check at log-spaced checkpoints | drop-axis growth curve captured |

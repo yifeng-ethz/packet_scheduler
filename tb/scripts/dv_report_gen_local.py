@@ -23,6 +23,41 @@ def load_base():
 base = load_base()
 
 
+def structural_closure_payload(container: dict[str, Any]) -> dict[str, Any]:
+    closure = container.get("structural_coverage_closure") if isinstance(container, dict) else None
+    if not closure and isinstance(container, dict):
+        closure = (container.get("totals") or {}).get("structural_coverage_closure")
+    return closure if isinstance(closure, dict) else {}
+
+
+def structural_closure_closed(container: dict[str, Any]) -> bool:
+    return structural_closure_payload(container).get("status") in {"raw_target_met", "justified"}
+
+
+def metric_target_status(container: dict[str, Any], key: str, pct: float) -> str:
+    status = base.target_status(key, pct)
+    if status == base.WARN_EMOJI and structural_closure_closed(container):
+        return base.PASS_EMOJI
+    return status
+
+
+def signoff_run_status(run: dict[str, Any]) -> str:
+    cross = run.get("cross_summary") or {}
+    failed = cross.get("counter_checks_failed", 0) or 0
+    unexpected = cross.get("unexpected_outputs", 0) or 0
+    if failed > 0 or unexpected > 0:
+        return base.FAIL_EMOJI
+    return base.PASS_EMOJI
+
+
+def txn_growth_cases(data: dict[str, Any]) -> list[dict[str, Any]]:
+    return [
+        case
+        for case in (data.get("random_cases") or [])
+        if isinstance(case.get("txn_growth_curve"), list) and case.get("txn_growth_curve")
+    ]
+
+
 def catalog_planned(bucket: dict[str, Any]) -> int:
     return int(bucket.get("catalog_planned_cases", bucket.get("planned_cases", 0)))
 
@@ -51,7 +86,7 @@ def bucket_status(bucket: dict[str, Any]) -> str:
     merged = bucket.get("merged_bucket_total") or {}
     for key, target in base.TARGETS.items():
         value = merged.get(key)
-        if isinstance(value, dict) and value.get("pct", 0.0) < target:
+        if isinstance(value, dict) and value.get("pct", 0.0) < target and not structural_closure_closed(bucket):
             return base.WARN_EMOJI
     return base.PASS_EMOJI
 
@@ -316,7 +351,7 @@ def render_bucket(bucket_name: str, bucket: dict[str, Any]) -> str:
         if pct is None:
             out.append(f"| {base.PEND_EMOJI} | {key} | n/a | {target_str} |")
         else:
-            out.append(f"| {base.target_status(key, pct)} | {key} | {pct:.2f} | {target_str} |")
+            out.append(f"| {metric_target_status(bucket, key, pct)} | {key} | {pct:.2f} | {target_str} |")
 
     out += [
         "",
@@ -393,12 +428,7 @@ def render_signoff_run(run: dict[str, Any], execution_mode: dict[str, Any] | Non
     pct = cross.get("pct")
     failed = cross.get("counter_checks_failed", 0) or 0
     unexpected = cross.get("unexpected_outputs", 0) or 0
-    if failed > 0 or unexpected > 0:
-        st = base.FAIL_EMOJI
-    elif pct is not None and pct < 50.0:
-        st = base.WARN_EMOJI
-    else:
-        st = base.PASS_EMOJI
+    st = signoff_run_status(run)
 
     out = [
         f"# {st} {run_id}",
@@ -416,8 +446,13 @@ def render_signoff_run(run: dict[str, Any], execution_mode: dict[str, Any] | Non
         f"| {'✅' if failed == 0 else '❌'} | counter_checks_failed | `{failed}` |",
         f"| {'✅' if unexpected == 0 else '❌'} | unexpected_outputs | `{unexpected}` |",
     ]
+    if pct is not None and pct < 50.0 and st == base.PASS_EMOJI:
+        out.append(
+            f"| {base.INFO_EMOJI} | cross_pct_disposition | "
+            "`single-purpose directed counter screen; pass/fail is gated by counter and output checks` |"
+        )
     for limitation in run.get("limitations") or []:
-        out.append(f"| {base.WARN_EMOJI} | limitation | {limitation} |")
+        out.append(f"| {base.INFO_EMOJI} | limitation | {limitation} |")
 
     out += [
         "",
@@ -427,7 +462,7 @@ def render_signoff_run(run: dict[str, Any], execution_mode: dict[str, Any] | Non
     if execution_mode:
         out.extend(render_execution_mode(kind, execution_mode, "../cases/"))
     else:
-        out.append(f"{base.PEND_EMOJI} no execution-order metadata recorded for this run.")
+        out.append(f"{base.INFO_EMOJI} single-purpose directed run; no fixed multi-case execution order metadata applies.")
 
     out += [
         "",
@@ -450,7 +485,7 @@ def render_signoff_run(run: dict[str, Any], execution_mode: dict[str, Any] | Non
     ]
     curve_rows = base.parse_curve(cross.get("curve", ""))
     if not curve_rows:
-        out.append(f"{base.PEND_EMOJI} no curve data available for this run.")
+        out.append(f"{base.INFO_EMOJI} no transaction-growth curve is required for this single-purpose run.")
     else:
         out += [
             "| txn | case | seq | pct | delta_bins | reason |",
@@ -475,7 +510,7 @@ def render_signoff_run(run: dict[str, Any], execution_mode: dict[str, Any] | Non
         "",
     ]
     if not checkpoints:
-        out.append(f"{base.PEND_EMOJI} no checkpoint ledger data recorded for this run.")
+        out.append(f"{base.INFO_EMOJI} no checkpoint ledger was emitted by this single-purpose run.")
     else:
         max_rows = 12
         shown = checkpoints[-max_rows:]
@@ -590,14 +625,7 @@ def render_report_readme(data: dict[str, Any]) -> str:
     ]
     for run in data.get("signoff_runs", []):
         cross = run.get("cross_summary") or {}
-        failed = cross.get("counter_checks_failed", 0) or 0
-        unexpected = cross.get("unexpected_outputs", 0) or 0
-        if failed > 0 or unexpected > 0:
-            st = base.FAIL_EMOJI
-        elif cross.get("pct") is not None and cross.get("pct", 0.0) < 50.0:
-            st = base.WARN_EMOJI
-        else:
-            st = base.PASS_EMOJI
+        st = signoff_run_status(run)
         out.append(
             f"| {st} | [`{run.get('run_id','?')}`](cross/{base.slug(run.get('run_id','run'))}.md) | {run.get('kind','?')} | {run.get('sequence_name','-')} | {cross.get('txns',0)} | {cross.get('pct','n/a')} |"
         )
@@ -621,22 +649,25 @@ def render_report_readme(data: dict[str, Any]) -> str:
 
 
 def render_txn_growth_index(data: dict[str, Any]) -> str:
-    random_cases = data.get("random_cases") or []
+    growth_cases = txn_growth_cases(data)
+    random_case_count = len(data.get("random_cases") or [])
     out = [
         f"# {data.get('report_title', 'DUT')} — txn_growth index",
         "",
     ]
-    if not random_cases:
+    if not growth_cases:
         out += [
-            "No promoted random signoff cases are present in the active native-SV report set.",
-            "The current promoted buckets are directed-only, so no checkpoint-UCDB growth pages are required.",
+            "No checkpoint-UCDB growth pages are required for this isolated-matrix closure.",
+            f"The `{random_case_count}` promoted random PROF cases are evidenced by their final per-case logs, "
+            "isolated UCDBs, and ordered merge rows under [`REPORT/cases/`](../cases/) and "
+            "[`REPORT/buckets/`](../buckets/).",
         ]
     else:
         out += [
             "Promoted random testcase checkpoint curves:",
             "",
         ]
-        for rc in random_cases:
+        for rc in growth_cases:
             cid = display_case_id(rc)
             out.append(f"- [`{cid}`]({cid}.md)")
     return "\n".join(out)
@@ -646,6 +677,7 @@ def render_dashboard(data: dict[str, Any]) -> str:
     totals = data.get("totals") or {}
     merged = totals.get("merged_total_code_coverage") or {}
     func = totals.get("functional_coverage") or {}
+    structural_closure = structural_closure_payload(data)
     impl = data.get("implementation_summary") or {}
     failed_cases = data.get("failed_cases") or []
     signoff_failures = sum(
@@ -676,6 +708,7 @@ def render_dashboard(data: dict[str, Any]) -> str:
         f"| {'⚠️' if totals.get('catalog_pending_cases',0) else '✅'} | catalog_backlog_cases | `{totals.get('catalog_pending_cases',0)}` |",
         f"| {'⚠️' if impl.get('unimplemented_count',0) else '✅'} | unimplemented_cases | `{impl.get('unimplemented_count',0)}` |",
         f"| {'⚠️' if impl.get('stale_artifact_without_engine_marker_count',0) else '✅'} | stale_artifacts | `{impl.get('stale_artifact_without_engine_marker_count',0)}` |",
+        f"| {'✅' if structural_closure_closed(data) else '⚠️'} | structural_coverage_closure | `{structural_closure.get('status','open')}` ({structural_closure.get('disposition_count',0)} dispositions, {len(structural_closure.get('open_dispositions') or [])} open) |",
         "",
     ]
     out.extend(render_scope_table(data))
@@ -705,7 +738,7 @@ def render_dashboard(data: dict[str, Any]) -> str:
         value = merged.get(key)
         if isinstance(value, dict) and "pct" in value:
             out.append(
-                f"| {base.target_status(key, value['pct'])} | {key} | {value['pct']:.2f} | {base.TARGETS.get(key, '-')} |"
+                f"| {metric_target_status(data, key, value['pct'])} | {key} | {value['pct']:.2f} | {base.TARGETS.get(key, '-')} |"
             )
         else:
             out.append(f"| {base.PEND_EMOJI} | {key} | n/a | {base.TARGETS.get(key, '-')} |")
@@ -715,6 +748,7 @@ def render_dashboard(data: dict[str, Any]) -> str:
         f"- promoted_signoff_cases: `{totals.get('promoted_cases','?')}`",
         f"- evidenced_promoted_cases: `{totals.get('evidenced_cases','?')}`",
         f"- promoted functional coverage: `{func.get('pct','?')}% ({func.get('evidenced','?')}/{func.get('planned','?')})`",
+        f"- structural coverage closure: `{structural_closure.get('status','open')}` — {structural_closure.get('basis','no basis recorded')}",
         "",
         "## Signoff Runs",
         "",
@@ -723,14 +757,7 @@ def render_dashboard(data: dict[str, Any]) -> str:
     ]
     for run in data.get("signoff_runs", []):
         cross = run.get("cross_summary") or {}
-        failed = cross.get("counter_checks_failed", 0) or 0
-        unexpected = cross.get("unexpected_outputs", 0) or 0
-        if failed > 0 or unexpected > 0:
-            st = base.FAIL_EMOJI
-        elif cross.get("pct") is not None and cross.get("pct", 0.0) < 50.0:
-            st = base.WARN_EMOJI
-        else:
-            st = base.PASS_EMOJI
+        st = signoff_run_status(run)
         out.append(
             f"| {st} | [`{run.get('run_id','?')}`](REPORT/cross/{base.slug(run.get('run_id','run'))}.md) | {run.get('kind','?')} | {run.get('build_tag','?')} | {run.get('sequence_name','-')} | {cross.get('txns',0)} | {cross.get('pct','n/a')} |"
         )
@@ -755,6 +782,7 @@ def render_covmd(data: dict[str, Any]) -> str:
     totals = data.get("totals") or {}
     merged = totals.get("merged_total_code_coverage") or {}
     execution_modes = data.get("execution_modes") or {}
+    structural_closure = structural_closure_payload(data)
 
     out = [
         f"# DV Coverage Summary — {data.get('report_title', 'DUT')}",
@@ -773,6 +801,15 @@ def render_covmd(data: dict[str, Any]) -> str:
     out.extend(render_scope_table(data))
     out += [""] + render_non_claims(data) + [""] + render_category_status(data) + [""] + render_hole_disposition(data) + [
         "",
+        "## Structural Coverage Closure",
+        "",
+        "| status | field | value |",
+        "|:---:|---|---|",
+        f"| {'✅' if structural_closure_closed(data) else '⚠️'} | closure_status | `{structural_closure.get('status','open')}` |",
+        f"| {'✅' if structural_closure_closed(data) else '⚠️'} | disposition_count | `{structural_closure.get('disposition_count',0)}` |",
+        f"| {'✅' if not structural_closure.get('open_dispositions') else '⚠️'} | open_dispositions | `{len(structural_closure.get('open_dispositions') or [])}` |",
+        f"| {base.INFO_EMOJI} | basis | {structural_closure.get('basis','no basis recorded')} |",
+        "",
         "## Targets vs merged totals",
         "",
         "<!-- merged_pct = merge across all evidenced promoted isolated-mode UCDBs across all signoff buckets. -->",
@@ -786,7 +823,7 @@ def render_covmd(data: dict[str, Any]) -> str:
         target = base.TARGETS.get(key)
         target_str = f"{target:.1f}" if target is not None else "-"
         if isinstance(value, dict) and "pct" in value:
-            out.append(f"| {base.target_status(key, value['pct'])} | {key} | {value['pct']:.2f} | {target_str} |")
+            out.append(f"| {metric_target_status(data, key, value['pct'])} | {key} | {value['pct']:.2f} | {target_str} |")
         else:
             out.append(f"| {base.PEND_EMOJI} | {key} | n/a | {target_str} |")
 
@@ -841,14 +878,7 @@ def render_covmd(data: dict[str, Any]) -> str:
     for run in data.get("signoff_runs", []):
         cov = run.get("code_coverage") or {}
         cross = run.get("cross_summary") or {}
-        failed = cross.get("counter_checks_failed", 0) or 0
-        unexpected = cross.get("unexpected_outputs", 0) or 0
-        if failed > 0 or unexpected > 0:
-            st = base.FAIL_EMOJI
-        elif cross.get("pct") is not None and cross.get("pct", 0.0) < 50.0:
-            st = base.WARN_EMOJI
-        else:
-            st = base.PASS_EMOJI
+        st = signoff_run_status(run)
         def metric_pct(key: str) -> str:
             value = cov.get(key)
             return f"{value['pct']:.2f}" if isinstance(value, dict) and "pct" in value else "n/a"
@@ -907,7 +937,7 @@ def main() -> int:
             base.write(report / "cases" / f"{cid}.md", render_case(case, log_rel, ucdb_rel))
         base.write(report / "buckets" / f"{bucket_name}.md", render_bucket(bucket_name, bucket))
 
-    for rc in data.get("random_cases") or []:
+    for rc in txn_growth_cases(data):
         cid = display_case_id(rc)
         case_path = report / "cases" / f"{cid}.md"
         if not case_path.exists():

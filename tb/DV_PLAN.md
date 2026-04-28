@@ -101,7 +101,7 @@ current implementation scope is intentionally narrower than the archived plan:
 - DUT implementation under signoff is the native monolithic SystemVerilog core
 - mixed-language UVM harness in `packet_scheduler/tb/uvm`
 - active generated standalone dashboard slice is
-  `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256 DUT_IMPL=native_sv`
+  `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=4096 DUT_IMPL=native_sv`
 - historical 2-lane closure remains useful evidence, but the current deliverable
   feature-range evidence is the `4/8/16` lane and `1x/2x/4x/8x` egress-width
   matrix below
@@ -113,7 +113,7 @@ current implementation scope is intentionally narrower than the archived plan:
 
 The following compile / elaboration-time sweep is part of signoff intent and
 must remain in the plan, even though the current generated dashboard is frozen
-to the canonical `4-lane/128/256` rerun slice:
+to the canonical `4-lane/128/4096` rerun slice:
 
 - randomize `N_SHD` across `64 / 128 / 256` at build time
 - derive a safe `TICKET_FIFO_DEPTH` from `N_SHD`
