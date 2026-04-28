@@ -45,9 +45,9 @@ Signoff evidence in this tree is required to come from `DUT_IMPL=native_sv`.
 - The active generated standalone dashboard is the canonical
   `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256 DUT_IMPL=native_sv`
   rerun slice on QuestaOne 2026.
-- That current-scope dashboard is now fully populated: `516/516` isolated
-  catalog cases are evidenced, `failed_cases=0`, `unimplemented_cases=0`, and
-  `8/8` maintained signoff runs are green in the generated report tree.
+- That current-scope dashboard now reports `failed_cases=0`,
+  `evidenced_promoted_cases=9`, `unimplemented_cases=507`, and `8/8`
+  maintained signoff runs discovered with no signoff-run failures.
 - Historical 2-lane closure, bounded matrix extensions, and supplemental
   long-run evidence remain useful and are tracked in `doc/SIGNOFF.md`,
   `doc/CONFIG_SIGNOFF.md`, and `tb/BUG_HISTORY.md`, but they are no longer
@@ -69,12 +69,12 @@ Signoff evidence in this tree is required to come from `DUT_IMPL=native_sv`.
   current-scope evidence only. Out-of-scope historical artifacts are preserved
   on disk for reference but are not credited into the active canonical report
   slice.
-- The active standalone signoff claim is no longer blocked on testcase
-  presence. The current merged isolated totals are
-  `stmt=74.41`, `branch=70.36`, `fsm_state=94.39`, `fsm_trans=54.47`, and
-  `toggle=33.37`, and those raw structural deltas are now explicitly
-  dispositioned in the generated [`DV_COV.md`](DV_COV.md) table rather than
-  hidden behind a partial dashboard.
+- The active standalone signoff claim is tied to the maintained signoff-run
+  slice, not a hidden full-catalog claim. The current merged isolated totals
+  are `stmt=73.06`, `branch=61.81`, `fsm_state=76.71`, `fsm_trans=36.53`, and
+  `toggle=18.58`, and those raw structural deltas are explicitly dispositioned
+  in the generated [`DV_COV.md`](DV_COV.md) table rather than hidden behind an
+  overbroad dashboard.
 - The live `opq_basic_smoke_test` now passes on the active monolithic harness with scoreboard hit-integrity
   checks enabled: same hits in, same hits out, and the first merged subheader lands in the correct time slot.
 - Post-signoff follow-on work is expansion rather than current-scope closure:

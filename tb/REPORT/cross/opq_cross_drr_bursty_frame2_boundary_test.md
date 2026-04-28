@@ -21,13 +21,13 @@
 
 | metric | pct |
 |---|---|
-| stmt | 74.09 |
+| stmt | 74.17 |
 | branch | 66.17 |
 | cond | 33.00 |
 | expr | 62.00 |
 | fsm_state | 89.04 |
 | fsm_trans | 44.31 |
-| toggle | 22.08 |
+| toggle | 21.83 |
 
 ## Transaction growth curve
 

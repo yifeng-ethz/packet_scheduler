@@ -9,6 +9,22 @@ Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 > `qverify` / `znformal` with simulation stress fallback only when the
 > Siemens formal binaries are not present on the host.
 
+## 26.4.15.0428
+
+- **Synthesis / Fixed4 Block-Path Closure**: re-aligned the 4-lane
+  `src_compat/ordered_priority_queue_monolithic_block_path.sv` synthesis copy
+  to the maintained native-SV registered mover page-write stage. This removes
+  the stale direct lane-FIFO-to-page-RAM data cone that MuSiP integration was
+  closing through.
+- **Synthesis Evidence**: refreshed the 4-lane standalone Arria 10 signoff
+  compile at the tightened `275 MHz` clock. The rerun closes with slow-100
+  setup `+0.155 ns`, hold `+0.040 ns`, Fmax `287.27 MHz`, `6,944` ALMs,
+  `7,977` registers, and `159` M20Ks.
+- **Verification / Packaging**: reran the directed native-SV lane-mask and
+  counter-clear tests, refreshed the maintained 8-run frame signoff dashboard,
+  and advanced the delivered OPQ Platform Designer identity / CSR META version
+  to `26.4.15.0428`.
+
 ## 26.4.13.0428
 
 - **RTL / Native-SV Presenter Timing**: preserved the existing native

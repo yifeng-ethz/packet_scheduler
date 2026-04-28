@@ -47,7 +47,7 @@ number.
 | page allocator reset / fast-close arcs | stmt=84.35, branch=72.01, cond=36.69, fsm_trans=54.55, toggle=19.88 (min across 1 instance) | justified_nonclaim: the allocator improves from stmt=84.35, branch=72.01, fsm_trans=54.55, toggle=19.88 to stmt=90.02, branch=82.59, fsm_trans=54.55, toggle=55.68 once maintained signoff runs are merged, and the remaining FSM misses are dominated by active-state -> RESET fanout plus the WRITE_HEAD -> WRITE_TAIL empty-frame fast-close path rather than unexplained hit loss | `DV_ERROR.md` X081-X086; `DV_FORMAL.md` B23/B32 | Add a true mid-state reset / zero-hit fast-close stress only if raw allocator transition closure is promoted from a bounded non-claim to a release gate. |
 | presenter overwrite / must-drop scan | stmt=59.61, branch=62.88, cond=34.85, fsm_trans=50.00, toggle=15.60 (min across 1 instance) | justified_nonclaim: isolated presenter coverage remains low at stmt=59.61, branch=62.88, fsm_trans=50.00, toggle=15.60 because the overwrite-scan and must-drop logic is only forced by the named overflow witnesses; maintained signoff runs lift it to stmt=61.36, branch=72.73, fsm_trans=50.00, toggle=35.22 while hit-conservation screens stay clean, so the raw deficit maps to the explicit must-drop non-claim rather than a silent datapath failure | `DV_CROSS.md` CROSS-078/CROSS-079; `BUG_HISTORY.md` BUG-029-R/BUG-030-R | Keep `opq_cross_bp_mustdrop_witness_test` green and do not remove the non-claim until a default-build must-drop baseline is promoted into the published scope. |
 | block path reset-only arcs | stmt=85.10, branch=74.75, cond=39.47, fsm_trans=37.50, toggle=29.46 (min across 1 instance) | justified_exclusion: statement coverage is already 85.10 and signoff runs lift block-path toggle to 85.78; the remaining uncovered FSM transitions are the three ARBITER_* -> RESET arcs only | `DV_FORMAL.md` B23/B32 reset / flush invariants | Leave this as a reset-only exclusion unless mid-state hard reset becomes part of the release contract. |
-| wrapper-only toggle bookkeeping | stmt=77.88, branch=68.65, cond=42.11, toggle=14.10 (min across 3 instances) | justified_exclusion: top-level DUT and wrapper shells depress raw toggle through duplicated aggregation, probe, and bookkeeping nets without indicating missing testcase evidence in the core owner modules | `DV_REPORT.md` Signoff Runs; `doc/SIGNOFF.md` current-scope note | Do not spend testcase budget on wrapper toggles until owner-module functional gaps change. |
+| wrapper-only toggle bookkeeping | stmt=78.45, branch=68.65, cond=42.11, toggle=13.47 (min across 3 instances) | justified_exclusion: top-level DUT and wrapper shells depress raw toggle through duplicated aggregation, probe, and bookkeeping nets without indicating missing testcase evidence in the core owner modules | `DV_REPORT.md` Signoff Runs; `doc/SIGNOFF.md` current-scope note | Do not spend testcase budget on wrapper toggles until owner-module functional gaps change. |
 
 ## Targets vs merged totals
 
@@ -56,13 +56,13 @@ number.
 
 | status | metric | merged_pct | target |
 |:---:|---|---|---|
-| ⚠️ | stmt | 72.98 | 95.0 |
+| ⚠️ | stmt | 73.06 | 95.0 |
 | ⚠️ | branch | 61.81 | 90.0 |
 | ℹ️ | cond | 31.03 | - |
 | ℹ️ | expr | 56.67 | - |
 | ⚠️ | fsm_state | 76.71 | 95.0 |
 | ⚠️ | fsm_trans | 36.53 | 90.0 |
-| ⚠️ | toggle | 18.79 | 80.0 |
+| ⚠️ | toggle | 18.58 | 80.0 |
 
 ## Per-bucket merged totals
 
@@ -71,9 +71,9 @@ _These are ordered isolated merged totals, not continuous-frame sequential-run t
 | status | bucket | catalog_planned | promoted | evidenced | stmt | branch | cond | expr | fsm_state | fsm_trans | toggle |
 |:---:|---|---:|---:|---:|---|---|---|---|---|---|---|
 | ⚠️ | [`BASIC`](REPORT/buckets/BASIC.md) | 129 | 129 | 0 | n/a | n/a | n/a | n/a | n/a | n/a | n/a |
-| ⚠️ | [`EDGE`](REPORT/buckets/EDGE.md) | 129 | 129 | 1 | 72.51 | 60.33 | 26.28 | 48.67 | 76.71 | 36.53 | 17.98 |
+| ⚠️ | [`EDGE`](REPORT/buckets/EDGE.md) | 129 | 129 | 1 | 72.60 | 60.33 | 26.28 | 48.67 | 76.71 | 36.53 | 17.75 |
 | ⚠️ | [`PROF`](REPORT/buckets/PROF.md) | 129 | 129 | 0 | n/a | n/a | n/a | n/a | n/a | n/a | n/a |
-| ⚠️ | [`ERROR`](REPORT/buckets/ERROR.md) | 129 | 129 | 8 | 72.25 | 60.77 | 30.63 | 56.67 | 76.71 | 36.53 | 18.79 |
+| ⚠️ | [`ERROR`](REPORT/buckets/ERROR.md) | 129 | 129 | 8 | 72.33 | 60.77 | 30.63 | 56.67 | 76.71 | 36.53 | 18.58 |
 
 ## Isolated execution order and traceability
 
@@ -91,14 +91,14 @@ _These rows are for continuous-frame sequential runs such as `bucket_frame` and
 
 | status | run_id | kind | build | case_count | stmt | branch | toggle | functional_cross_pct | txns |
 |:---:|---|---|---|---:|---|---|---|---:|---:|
-| ✅ | [`opq_bucket_frame_native_sv_test`](REPORT/cross/opq_bucket_frame_native_sv_test.md) | bucket_frame | after | 39 | 82.73 | 80.82 | 45.17 | 76.72 | 738 |
-| ✅ | [`opq_all_buckets_frame_native_sv_test`](REPORT/cross/opq_all_buckets_frame_native_sv_test.md) | all_buckets_frame | after | 41 | 82.73 | 80.82 | 45.21 | 76.52 | 794 |
-| ✅ | [`opq_cross_bp_predrop_boundary_test`](REPORT/cross/opq_cross_bp_predrop_boundary_test.md) | cross | after | 1 | 73.72 | 64.17 | 32.81 | 61.71 | 208 |
-| ✅ | [`opq_cross_drr_bursty_frame2_boundary_test`](REPORT/cross/opq_cross_drr_bursty_frame2_boundary_test.md) | cross | after | 1 | 74.09 | 66.17 | 22.08 | 59.27 | 8 |
-| ✅ | [`opq_cross_mixed_bucket_random_soak_test`](REPORT/cross/opq_cross_mixed_bucket_random_soak_test.md) | cross | after | 1 | 81.72 | 77.86 | 47.77 | 72.05 | 2038 |
-| ✅ | [`opq_cross_random_ready_overflow_step2_boundary_test`](REPORT/cross/opq_cross_random_ready_overflow_step2_boundary_test.md) | cross | after | 1 | 79.68 | 72.19 | 35.49 | 63.48 | 20 |
-| ⚠️ | [`opq_error_counter_clear_test`](REPORT/cross/opq_error_counter_clear_test.md) | cross | after | 1 | 44.02 | 28.42 | 3.27 | 38.24 | 4 |
-| ✅ | [`opq_error_ftable_overflow_test`](REPORT/cross/opq_error_ftable_overflow_test.md) | cross | after | 1 | 72.51 | 60.33 | 17.98 | 60.78 | 64 |
+| ✅ | [`opq_bucket_frame_native_sv_test`](REPORT/cross/opq_bucket_frame_native_sv_test.md) | bucket_frame | after | 39 | 82.78 | 80.82 | 44.68 | 76.72 | 738 |
+| ✅ | [`opq_all_buckets_frame_native_sv_test`](REPORT/cross/opq_all_buckets_frame_native_sv_test.md) | all_buckets_frame | after | 41 | 82.78 | 80.82 | 44.72 | 76.52 | 794 |
+| ✅ | [`opq_cross_bp_predrop_boundary_test`](REPORT/cross/opq_cross_bp_predrop_boundary_test.md) | cross | after | 1 | 73.80 | 64.17 | 32.41 | 61.71 | 208 |
+| ✅ | [`opq_cross_drr_bursty_frame2_boundary_test`](REPORT/cross/opq_cross_drr_bursty_frame2_boundary_test.md) | cross | after | 1 | 74.17 | 66.17 | 21.83 | 59.27 | 8 |
+| ✅ | [`opq_cross_mixed_bucket_random_soak_test`](REPORT/cross/opq_cross_mixed_bucket_random_soak_test.md) | cross | after | 1 | 81.78 | 77.86 | 47.20 | 72.05 | 2038 |
+| ✅ | [`opq_cross_random_ready_overflow_step2_boundary_test`](REPORT/cross/opq_cross_random_ready_overflow_step2_boundary_test.md) | cross | after | 1 | 79.74 | 72.19 | 35.15 | 63.48 | 20 |
+| ⚠️ | [`opq_error_counter_clear_test`](REPORT/cross/opq_error_counter_clear_test.md) | cross | after | 1 | 44.19 | 28.42 | 3.27 | 38.24 | 4 |
+| ✅ | [`opq_error_ftable_overflow_test`](REPORT/cross/opq_error_ftable_overflow_test.md) | cross | after | 1 | 72.60 | 60.33 | 17.75 | 60.78 | 64 |
 
 ## Fixed baseline execution order
 

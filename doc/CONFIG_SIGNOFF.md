@@ -171,11 +171,13 @@ future width axes remains tracked only by the generator script.
 
 - The active generated standalone dashboard is now the canonical current-scope
   `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256 DUT_IMPL=native_sv`
-  rerun slice, and it currently carries `516/516` isolated catalog cases with
-  `8/8` maintained signoff runs and no signoff-run failures.
+  rerun slice, and it currently carries `9` evidenced promoted isolated rows,
+  `507` unimplemented rows, `8/8` maintained signoff runs, and no signoff-run
+  failures.
 - That current standalone dashboard is still not full package-space signoff:
   later lane/width expansion remains future work, but the active 4-lane/128
-  slice is no longer blocked on missing testcase implementation. The remaining
+  maintained signoff-run slice is no longer blocked on missing testcase
+  implementation for those promoted runs. The remaining
   raw structural deltas are documented in `tb/DV_COV.md` as explicit
   coverage-hole dispositions rather than treated as hidden evidence gaps.
 - Historical 2-lane closure, bounded `N_SHD=64`, and bounded 4-lane points

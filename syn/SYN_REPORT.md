@@ -1,7 +1,7 @@
 # ✅ SYN Report — packet_scheduler ordered_priority_queue
 
 **Measured revisions:** `opq_native_sv_2lane_signoff`, `opq_native_sv_4lane_signoff` &nbsp;
-**Date:** `2026-04-22` &nbsp; **Device:** `10AX115N2F45E1SG` (`online_sc/a10_board`) &nbsp;
+**Date:** `2026-04-28` &nbsp; **Device:** `10AX115N2F45E1SG` (`online_sc/a10_board`) &nbsp;
 **Quartus:** `18.1 Standard`
 
 This file is the detailed standalone synthesis and timing report for the active
@@ -10,10 +10,10 @@ This file is the detailed standalone synthesis and timing report for the active
 [`../doc/CONFIG_SIGNOFF.md`](../doc/CONFIG_SIGNOFF.md).
 
 The measured numbers below are the active standalone synthesis evidence as of
-`2026-04-22`. The current 4-lane point was refreshed after re-aligning the
-stale local compatibility wrapper to the live resident-protect and per-packet
-lane-count handoff plumbing, then rerunning the standalone A10 fit on that
-corrected baseline.
+`2026-04-28`. The current 4-lane point was refreshed after re-aligning the
+stale local compatibility block-path copy to the maintained registered mover
+page-write stage, then rerunning the standalone A10 fit on that corrected
+baseline.
 
 ## Build Intent
 
@@ -55,15 +55,15 @@ Signoff target:
 | status | revision | lane point | setup WNS (ns) | hold WNS (ns) | Fmax | ALMs | registers | M20Ks | MLAB bits |
 |:---:|---|---:|---:|---:|---:|---:|---:|---:|---:|
 | ✅ | `opq_native_sv_2lane_signoff` | `2` | `+0.172` | `+0.044` | `288.68 MHz` | `3,235` | `3,132` | `129` | `0` |
-| ✅ | `opq_native_sv_4lane_signoff` | `4` | `+0.077` | `+0.039` | `280.98 MHz` | `10,245` | `10,353` | `147` | `0` |
+| ✅ | `opq_native_sv_4lane_signoff` | `4` | `+0.155` | `+0.040` | `287.27 MHz` | `6,944` | `7,977` | `159` | `0` |
 
 Key conclusions:
 
 - standalone lane-2 timing closes at the `275 MHz` signoff target on the live
   `10AX115N2F45E1SG` harness with comfortable positive slack
 - standalone lane-4 timing closes at the `275 MHz` signoff target on the live
-  `10AX115N2F45E1SG` harness with the corrected compatibility wrapper and
-  additional fitter physical-optimization settings enabled
+  `10AX115N2F45E1SG` harness with the fixed4 synthesis copy aligned to the
+  registered block-mover page write used by maintained RTL
 - the active 4-lane standalone point is now comfortably past the tightened
   `275 MHz` margin gate instead of only barely meeting it
 - lane-scaled timing closure for `N_LANE={8,16}` remains a later phase and will
@@ -73,12 +73,12 @@ Key conclusions:
 
 | item | 2-lane | 4-lane |
 |---|---:|---:|
-| Logic utilization | `3,235 ALMs / 427,200 (<1%)` | `10,245 ALMs / 427,200 (2%)` |
-| Registers | `3,132` | `10,353` |
+| Logic utilization | `3,235 ALMs / 427,200 (<1%)` | `6,944 ALMs / 427,200 (2%)` |
+| Registers | `3,132` | `7,977` |
 | Pins | `0 physical, 18 virtual` | `0 physical, 18 virtual` |
-| Block memory bits | `2,098,560 / 55,562,240 (4%)` | `2,316,672 / 55,562,240 (4%)` |
-| RAM blocks | `129 / 2,713 (5%)` | `147 / 2,713 (5%)` |
-| M20K blocks | `129 / 2,713 (5%)` | `147 / 2,713 (5%)` |
+| Block memory bits | `2,098,560 / 55,562,240 (4%)` | `2,579,072 / 55,562,240 (5%)` |
+| RAM blocks | `129 / 2,713 (5%)` | `159 / 2,713 (6%)` |
+| M20K blocks | `129 / 2,713 (5%)` | `159 / 2,713 (6%)` |
 | MLAB memory bits | `0` | `0` |
 | DSP blocks | `0 / 1,518` | `0 / 1,518` |
 | PLLs | `0 / 112` | `0 / 112` |
@@ -87,11 +87,11 @@ Key conclusions:
 
 | module | 2-lane elapsed / CPU | 4-lane elapsed / CPU |
 |---|---|---|
-| Analysis & Synthesis | `00:00:23 / 00:00:40` | `00:01:01 / 00:01:20` |
-| Fitter | `00:02:58 / 00:13:23` | `00:04:20 / 00:24:47` |
-| Assembler | `00:00:46 / 00:00:46` | `00:00:48 / 00:00:48` |
-| Timing Analyzer | `00:00:09 / 00:00:26` | `00:00:12 / 00:00:53` |
-| Total | `00:04:16 / 00:15:15` | `00:06:21 / 00:27:48` |
+| Analysis & Synthesis | `00:00:23 / 00:00:40` | `00:01:00 / 00:01:16` |
+| Fitter | `00:02:58 / 00:13:23` | `00:03:41 / 00:19:56` |
+| Assembler | `00:00:46 / 00:00:46` | `00:00:45 / 00:00:46` |
+| Timing Analyzer | `00:00:09 / 00:00:26` | `00:00:11 / 00:00:42` |
+| Total | `00:04:16 / 00:15:15` | `00:05:37 / 00:22:40` |
 
 ## Constraint Caveats
 
@@ -109,9 +109,10 @@ Key conclusions:
   into MLAB
 - the refreshed 4-lane harness needed one additional collateral repair before
   the numbers became trustworthy:
-  - stale `src_compat/ordered_priority_queue_monolithic.sv` had drifted from
-    the live wrapper's resident-protect and per-packet lane-count handoff
-    plumbing and was re-aligned before the final timing-clean rerun
+  - stale `src_compat/ordered_priority_queue_monolithic_block_path.sv` still
+    used the older direct lane-FIFO-to-page-RAM write cone and was re-aligned
+    to the registered mover page-write stage before the final timing-clean
+    rerun
 - the refreshed 2-lane harness needed two collateral repairs before it could
   become a trustworthy signoff point:
   - stale `src_compat/` local copies were aligned to the live 4-lane synthesis
@@ -141,7 +142,7 @@ Key conclusions:
 The refreshed standalone Arria 10 harnesses under
 `syn/quartus/opq_native_sv_{2,4}lane_signoff/` both close the `275 MHz` target.
 The 2-lane point closes with `+0.172 ns` slow-corner setup slack and `3,235`
-ALMs; the corrected 4-lane point closes with `+0.077 ns` slow-corner setup
-slack, `+0.039 ns` hold slack, `280.98 MHz` slow-corner Fmax, and `10,245`
+ALMs; the corrected 4-lane point closes with `+0.155 ns` slow-corner setup
+slack, `+0.040 ns` hold slack, `287.27 MHz` slow-corner Fmax, and `6,944`
 ALMs. Both measured points keep all fitted memory on `M20K` blocks with `0`
 MLAB memory bits.

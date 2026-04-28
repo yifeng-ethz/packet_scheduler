@@ -1,5 +1,5 @@
 Flow report for opq_native_sv_4lane_signoff
-Tue Apr 28 18:53:03 2026
+Tue Apr 28 21:53:11 2026
 Quartus Prime Version 18.1.0 Build 625 09/12/2018 SJ Standard Edition
 
 
@@ -40,15 +40,15 @@ refer to the applicable agreement for further details.
 +-------------------------------------------------------------------------------+
 ; Flow Summary                                                                  ;
 +-----------------------------+-------------------------------------------------+
-; Flow Status                 ; Successful - Tue Apr 28 18:52:50 2026           ;
+; Flow Status                 ; Successful - Tue Apr 28 21:52:58 2026           ;
 ; Quartus Prime Version       ; 18.1.0 Build 625 09/12/2018 SJ Standard Edition ;
 ; Revision Name               ; opq_native_sv_4lane_signoff                     ;
 ; Top-level Entity Name       ; opq_native_sv_4lane_signoff_top                 ;
 ; Family                      ; Arria 10                                        ;
 ; Device                      ; 10AX115N2F45E1SG                                ;
 ; Timing Models               ; Final                                           ;
-; Logic utilization (in ALMs) ; 6,929 / 427,200 ( 2 % )                         ;
-; Total registers             ; 7751                                            ;
+; Logic utilization (in ALMs) ; 6,944 / 427,200 ( 2 % )                         ;
+; Total registers             ; 7977                                            ;
 ; Total pins                  ; 0 / 992 ( 0 % )                                 ;
 ; Total virtual pins          ; 18                                              ;
 ; Total block memory bits     ; 2,579,072 / 55,562,240 ( 5 % )                  ;
@@ -64,7 +64,7 @@ refer to the applicable agreement for further details.
 +-------------------+-----------------------------+
 ; Option            ; Setting                     ;
 +-------------------+-----------------------------+
-; Start date & time ; 04/28/2026 18:47:28         ;
+; Start date & time ; 04/28/2026 21:47:27         ;
 ; Main task         ; Compilation                 ;
 ; Revision Name     ; opq_native_sv_4lane_signoff ;
 +-------------------+-----------------------------+
@@ -80,7 +80,7 @@ refer to the applicable agreement for further details.
 ; ALLOW_REGISTER_RETIMING          ; Off                             ; On                          ; --          ; --         ;
 ; AUTO_PARALLEL_SYNTHESIS          ; Off                             ; On                          ; --          ; --         ;
 ; AUTO_SHIFT_REGISTER_RECOGNITION  ; Off                             ; Auto                        ; --          ; --         ;
-; COMPILER_SIGNATURE_ID            ; 253928495809887.177739484826907 ; --                          ; --          ; --         ;
+; COMPILER_SIGNATURE_ID            ; 213545211222775.177740564712366 ; --                          ; --          ; --         ;
 ; FINAL_PLACEMENT_OPTIMIZATION     ; Always                          ; Automatically               ; --          ; --         ;
 ; FITTER_EFFORT                    ; Standard Fit                    ; Auto Fit                    ; --          ; --         ;
 ; NUM_PARALLEL_PROCESSORS          ; 16                              ; --                          ; --          ; --         ;
@@ -109,11 +109,11 @@ refer to the applicable agreement for further details.
 +----------------------+--------------+-------------------------+---------------------+------------------------------------+
 ; Module Name          ; Elapsed Time ; Average Processors Used ; Peak Virtual Memory ; Total CPU Time (on all processors) ;
 +----------------------+--------------+-------------------------+---------------------+------------------------------------+
-; Analysis & Synthesis ; 00:00:50     ; 1.1                     ; 1326 MB             ; 00:01:07                           ;
-; Fitter               ; 00:03:42     ; 1.8                     ; 8306 MB             ; 00:19:41                           ;
-; Assembler            ; 00:00:46     ; 1.0                     ; 6941 MB             ; 00:00:46                           ;
-; Timing Analyzer      ; 00:00:11     ; 1.5                     ; 3324 MB             ; 00:00:41                           ;
-; Total                ; 00:05:29     ; --                      ; --                  ; 00:22:15                           ;
+; Analysis & Synthesis ; 00:01:00     ; 1.0                     ; 1554 MB             ; 00:01:16                           ;
+; Fitter               ; 00:03:41     ; 1.8                     ; 8292 MB             ; 00:19:56                           ;
+; Assembler            ; 00:00:45     ; 1.0                     ; 6937 MB             ; 00:00:46                           ;
+; Timing Analyzer      ; 00:00:11     ; 1.6                     ; 3327 MB             ; 00:00:42                           ;
+; Total                ; 00:05:37     ; --                      ; --                  ; 00:22:40                           ;
 +----------------------+--------------+-------------------------+---------------------+------------------------------------+
 
 

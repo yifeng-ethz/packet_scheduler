@@ -21,7 +21,7 @@
 
 | metric | pct |
 |---|---|
-| stmt | 44.02 |
+| stmt | 44.19 |
 | branch | 28.42 |
 | cond | 8.30 |
 | expr | 12.67 |

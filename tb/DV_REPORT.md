@@ -39,21 +39,21 @@ This page is the chief-architect dashboard. All per-case evidence lives under [`
 | status | bucket | catalog_planned | promoted | evidenced | backlog | merged | promoted functional |
 |:---:|---|---:|---:|---:|---:|---|---|
 | ⚠️ | [`BASIC`](REPORT/buckets/BASIC.md) | 129 | 129 | 0 | 0 | stmt=n/a, branch=n/a, cond=n/a, expr=n/a, fsm_state=n/a, fsm_trans=n/a, toggle=n/a | 0.0% (0/129) |
-| ⚠️ | [`EDGE`](REPORT/buckets/EDGE.md) | 129 | 129 | 1 | 0 | stmt=72.51, branch=60.33, cond=26.28, expr=48.67, fsm_state=76.71, fsm_trans=36.53, toggle=17.98 | 60.78% (1/129) |
+| ⚠️ | [`EDGE`](REPORT/buckets/EDGE.md) | 129 | 129 | 1 | 0 | stmt=72.60, branch=60.33, cond=26.28, expr=48.67, fsm_state=76.71, fsm_trans=36.53, toggle=17.75 | 60.78% (1/129) |
 | ⚠️ | [`PROF`](REPORT/buckets/PROF.md) | 129 | 129 | 0 | 0 | stmt=n/a, branch=n/a, cond=n/a, expr=n/a, fsm_state=n/a, fsm_trans=n/a, toggle=n/a | 0.0% (0/129) |
-| ⚠️ | [`ERROR`](REPORT/buckets/ERROR.md) | 129 | 129 | 8 | 0 | stmt=72.25, branch=60.77, cond=30.63, expr=56.67, fsm_state=76.71, fsm_trans=36.53, toggle=18.79 | 63.23% (8/129) |
+| ⚠️ | [`ERROR`](REPORT/buckets/ERROR.md) | 129 | 129 | 8 | 0 | stmt=72.33, branch=60.77, cond=30.63, expr=56.67, fsm_state=76.71, fsm_trans=36.53, toggle=18.58 | 63.23% (8/129) |
 
 ## Totals
 
 | status | metric | pct | target |
 |:---:|---|---|---|
-| ⚠️ | stmt | 72.98 | 95.0 |
+| ⚠️ | stmt | 73.06 | 95.0 |
 | ⚠️ | branch | 61.81 | 90.0 |
 | ℹ️ | cond | 31.03 | - |
 | ℹ️ | expr | 56.67 | - |
 | ⚠️ | fsm_state | 76.71 | 95.0 |
 | ⚠️ | fsm_trans | 36.53 | 90.0 |
-| ⚠️ | toggle | 18.79 | 80.0 |
+| ⚠️ | toggle | 18.58 | 80.0 |
 
 - catalog_planned_cases: `516`
 - promoted_signoff_cases: `516`

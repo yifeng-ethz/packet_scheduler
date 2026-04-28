@@ -2,19 +2,19 @@
 
 **Target report:** `packet_scheduler/tb/DV_REPORT.md`  
 **Target DUT:** `packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic.sv` via `DUT_IMPL=native_sv`  
-**Date:** 2026-04-23
+**Date:** 2026-04-28
 
 This checklist is the worklist required to produce a full `dv-workflow`
 report for the native-SV OPQ path. The final `DV_REPORT.md` must be generated
 from `DV_REPORT.json`; it is not the place to hand-maintain todo items.
 
-Status refresh on `2026-04-23`:
+Status refresh on `2026-04-28`:
 
 - the active `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256
-  DUT_IMPL=native_sv` signoff slice is now green in the generated dashboard:
-  `516/516` isolated rows evidenced, `failed_cases=0`,
-  `unimplemented_cases=0`, and `8/8` discovered signoff runs with no
-  signoff-run failures
+  DUT_IMPL=native_sv` maintained signoff-run slice is green in the generated
+  dashboard: `failed_cases=0`, `evidenced_promoted_cases=9`,
+  `unimplemented_cases=507`, and `8/8` discovered signoff runs with no
+  signoff-run failures.
 - the remaining unchecked items below are post-signoff expansion / formal /
   observability backlog unless they are explicitly restated as blocking the
   current release slice
@@ -44,11 +44,10 @@ Current toolchain migration note on 2026-04-21:
 - Those reruns remain useful supplemental evidence, but the active generated
   dashboard is now the canonical
   `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256 DUT_IMPL=native_sv`
-  slice and credits only current-scope reruns. That slice is now fully staged
-  into the generated dashboard with `516/516` isolated catalog rows evidenced
-  and `8/8` maintained signoff runs green; older stale `sim_runs/logs/*.log`
-  artifacts and pre-2026 FSE logs must still not be counted as current
-  evidence.
+  slice and credits only current-scope reruns. That slice currently reports
+  `evidenced_promoted_cases=9`, `unimplemented_cases=507`, and `8/8`
+  maintained signoff runs green; older stale `sim_runs/logs/*.log` artifacts
+  and pre-2026 FSE logs must still not be counted as current evidence.
 
 Assumption frozen on 2026-04-17: the current harness must be upgraded into a
 full native-SV signoff harness. The VHDL path may remain as a debug/reference
@@ -71,11 +70,11 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       report tree.
 - [x] `DV_REPORT.md`, `DV_COV.md`, and `REPORT/` are generated from the JSON
       and reflect the native-SV DUT only.
-- [x] Every canonical catalog case has isolated current-scope native-SV log and
+- [ ] Every canonical catalog case has isolated current-scope native-SV log and
       UCDB evidence.
-      Status on `2026-04-22`: the active canonical dashboard now carries
-      `516/516` evidenced rows with `failed_cases=0`,
-      `catalog_backlog_cases=0`, and `unimplemented_cases=0`.
+      Status on `2026-04-28`: the active canonical dashboard carries
+      `9` evidenced promoted rows with `failed_cases=0`,
+      `catalog_backlog_cases=0`, and `unimplemented_cases=507`.
 - [x] `bucket_frame` and `all_buckets_frame` baselines exist, are reproducible,
       and are linked from the report.
 - [x] `BUG_HISTORY.md` records every real DV-found bug with fix status and
@@ -313,9 +312,10 @@ Execution order frozen on 2026-04-18 for the next closure phase:
         repaired chained malformed-subheader recovery path
       - the former `BUG-018-H` long-run hit-accounting risk is closed by the
         clean full stretched mixed-bucket seconds soak rerun
-      - the former 4-lane scope non-claim is now closed by the live
-        `516/516` current-scope evidence and green standalone A10 synthesis
-        report
+      - the former 4-lane scope non-claim is now covered by the maintained
+        4-lane signoff-run evidence and green standalone A10 synthesis report;
+        the full isolated catalog remains tracked separately in the generated
+        dashboard
 - [x] Resolve the forced-overwrite / malformed-egress bug before promoting
       `opq_error_ftable_overflow_test`.
       Status refreshed on `2026-04-22`:
@@ -455,8 +455,9 @@ Execution order frozen on 2026-04-18 for the next closure phase:
       - the coverage-enabled `opq_bucket_frame_native_sv_test`,
         `opq_all_buckets_frame_native_sv_test`, and
         `opq_cross_mixed_bucket_random_soak_test` reruns are also green on the
-        same fixed RTL, so the generated dashboard is back at `516/516`
-        isolated rows with `8/8` discovered signoff runs
+        same fixed RTL, so the generated dashboard has the maintained signoff
+        runs linked cleanly; the full isolated catalog is tracked separately
+        from those continuous-frame runs
       - the full coverage-enabled
         `opq_cross_mixed_bucket_random_soak_test` rerun now passes the bucket /
         error-subcase visitation contract and closes with

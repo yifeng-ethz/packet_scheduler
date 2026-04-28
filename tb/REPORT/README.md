@@ -21,9 +21,9 @@
 | status | bucket | catalog_planned | promoted | evidenced | backlog | merged |
 |:---:|---|---:|---:|---:|---:|---|
 | ⚠️ | [`BASIC`](buckets/BASIC.md) | 129 | 129 | 0 | 0 | stmt=n/a, branch=n/a, cond=n/a, expr=n/a, fsm_state=n/a, fsm_trans=n/a, toggle=n/a |
-| ⚠️ | [`EDGE`](buckets/EDGE.md) | 129 | 129 | 1 | 0 | stmt=72.51, branch=60.33, cond=26.28, expr=48.67, fsm_state=76.71, fsm_trans=36.53, toggle=17.98 |
+| ⚠️ | [`EDGE`](buckets/EDGE.md) | 129 | 129 | 1 | 0 | stmt=72.60, branch=60.33, cond=26.28, expr=48.67, fsm_state=76.71, fsm_trans=36.53, toggle=17.75 |
 | ⚠️ | [`PROF`](buckets/PROF.md) | 129 | 129 | 0 | 0 | stmt=n/a, branch=n/a, cond=n/a, expr=n/a, fsm_state=n/a, fsm_trans=n/a, toggle=n/a |
-| ⚠️ | [`ERROR`](buckets/ERROR.md) | 129 | 129 | 8 | 0 | stmt=72.25, branch=60.77, cond=30.63, expr=56.67, fsm_state=76.71, fsm_trans=36.53, toggle=18.79 |
+| ⚠️ | [`ERROR`](buckets/ERROR.md) | 129 | 129 | 8 | 0 | stmt=72.33, branch=60.77, cond=30.63, expr=56.67, fsm_state=76.71, fsm_trans=36.53, toggle=18.58 |
 
 ## Signoff runs
 
@@ -46,7 +46,7 @@
 - evidenced_promoted_cases: `9`
 - excluded_cases: `0`
 - promoted_random_cases: `129`
-- merged total code coverage across promoted isolated evidence: `stmt=72.98, branch=61.81, cond=31.03, expr=56.67, fsm_state=76.71, fsm_trans=36.53, toggle=18.79`
+- merged total code coverage across promoted isolated evidence: `stmt=73.06, branch=61.81, cond=31.03, expr=56.67, fsm_state=76.71, fsm_trans=36.53, toggle=18.58`
 - promoted functional coverage: `63.23% (9/516)`
 
 ---

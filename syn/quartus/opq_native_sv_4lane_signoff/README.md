@@ -40,6 +40,12 @@ Current closure scope:
 
 - this standalone point now matches the active DV closure preset
   `OPQ_N_LANE=4`, `OPQ_N_SHD=128`, `OPQ_TICKET_FIFO_DEPTH=1024`
+- the `2026-04-28` rerun closes the 275 MHz signoff clock with slow-100 setup
+  slack `+0.155 ns`, hold slack `+0.040 ns`, Fmax `287.27 MHz`, `6,944` ALMs,
+  `7,977` registers, and `159` M20Ks
+- the rerun specifically re-aligns `src_compat/ordered_priority_queue_monolithic_block_path.sv`
+  to the maintained registered mover page-write stage so fixed4/Qsys synthesis
+  does not use the stale direct lane-FIFO-to-page-RAM data cone
 - the older `4-lane / 256-subheader / ticket512` point remains a later
   expanded signoff target rather than the current closure gate
 
