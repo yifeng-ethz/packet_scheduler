@@ -1,5 +1,5 @@
 Fitter report for opq_native_sv_4lane_signoff
-Tue Apr 28 16:12:44 2026
+Tue Apr 28 18:52:02 2026
 Quartus Prime Version 18.1.0 Build 625 09/12/2018 SJ Standard Edition
 
 
@@ -58,7 +58,7 @@ refer to the applicable agreement for further details.
 +-------------------------------------------------------------------------------+
 ; Fitter Summary                                                                ;
 +-----------------------------+-------------------------------------------------+
-; Fitter Status               ; Successful - Tue Apr 28 16:12:43 2026           ;
+; Fitter Status               ; Successful - Tue Apr 28 18:52:01 2026           ;
 ; Quartus Prime Version       ; 18.1.0 Build 625 09/12/2018 SJ Standard Edition ;
 ; Revision Name               ; opq_native_sv_4lane_signoff                     ;
 ; Top-level Entity Name       ; opq_native_sv_4lane_signoff_top                 ;
@@ -152,16 +152,16 @@ refer to the applicable agreement for further details.
 ;                            ;             ;
 ; Usage by Processor         ; % Time Used ;
 ;     Processor 1            ; 100.0%      ;
-;     Processor 2            ;  13.1%      ;
-;     Processor 3            ;   5.9%      ;
-;     Processor 4            ;   5.6%      ;
+;     Processor 2            ;  13.0%      ;
+;     Processor 3            ;   5.8%      ;
+;     Processor 4            ;   5.5%      ;
 ;     Processor 5            ;   5.4%      ;
 ;     Processor 6            ;   5.2%      ;
 ;     Processor 7            ;   5.0%      ;
-;     Processor 8            ;   4.8%      ;
+;     Processor 8            ;   4.9%      ;
 ;     Processor 9            ;   4.5%      ;
 ;     Processor 10           ;   4.5%      ;
-;     Processor 11           ;   4.4%      ;
+;     Processor 11           ;   4.5%      ;
 ;     Processor 12           ;   4.4%      ;
 ;     Processor 13           ;   4.4%      ;
 ;     Processor 14           ;   4.4%      ;
@@ -2986,7 +2986,7 @@ Info (21076): Low junction temperature operating condition is not set. Assuming 
 Info (171004): Fitter is performing a Standard Fit compilation using maximum Fitter effort to optimize design performance
 Info (176045): Design uses memory blocks. Violating setup or hold times of memory block address registers for either read or write operations could cause memory contents to be corrupted. Make sure that all memory block address registers meet the setup and hold time requirements.
 Info (12290): Loading the periphery placement data.
-Info (12291): Periphery placement data loaded: elapsed time is 00:00:19
+Info (12291): Periphery placement data loaded: elapsed time is 00:00:20
 Info (12627): Pin ~ALTERA_DATA0~ is reserved at location BD19
 Info (176045): Design uses memory blocks. Violating setup or hold times of memory block address registers for either read or write operations could cause memory contents to be corrupted. Make sure that all memory block address registers meet the setup and hold time requirements.
 Info (16210): Plan updated with currently enabled project assignments.
@@ -3000,7 +3000,7 @@ Info (176233): Starting register packing
 Info (176235): Finished register packing
     Extra Info (176219): No registers were packed into other blocks
 Info (12263): Fitter periphery placement operations ending: elapsed time is 00:00:36
-Info (11165): Fitter preparation operations ending: elapsed time is 00:00:35
+Info (11165): Fitter preparation operations ending: elapsed time is 00:00:36
 Info (18252): The Fitter is using Physical Synthesis.
 Info (332104): Reading SDC File: 'opq_native_sv_4lane_signoff.sdc'
 Warning (114001): Time value "3.636364 ns" truncated to "3.636 ns"
@@ -3014,11 +3014,11 @@ Info (332111): Found 1 clocks
     Info (332111):    3.636          clk
 Info (170189): Fitter placement preparation operations beginning
 Info (14951): The Fitter is using Advanced Physical Optimization.
-Info (170190): Fitter placement preparation operations ending: elapsed time is 00:00:16
+Info (170190): Fitter placement preparation operations ending: elapsed time is 00:00:17
 Info (170191): Fitter placement operations beginning
 Info (170137): Fitter placement was successful
 Info (170192): Fitter placement operations ending: elapsed time is 00:00:24
-Info (11888): Total time spent on timing analysis during Global Placement is 5.58 seconds.
+Info (11888): Total time spent on timing analysis during Global Placement is 5.86 seconds.
 Info (18258): Fitter Physical Synthesis operations beginning
 Info (18259): Fitter Physical Synthesis operations ending: elapsed time is 00:00:02
 Info (11888): Total time spent on timing analysis during Physical Synthesis is 0.00 seconds.
@@ -3030,17 +3030,17 @@ Info (11888): Total time spent on timing analysis during Placement is 0.07 secon
 Info (170193): Fitter routing operations beginning
 Info (170195): Router estimated average interconnect usage is 0% of the available device resources
     Info (170196): Router estimated peak interconnect usage is 28% of the available device resources in the region that extends from location X142_Y118 to location X152_Y129
-Info (11888): Total time spent on timing analysis during Routing is 5.53 seconds.
+Info (11888): Total time spent on timing analysis during Routing is 5.62 seconds.
 Info (16607): Fitter routing operations ending: elapsed time is 00:00:54
 Info (11888): Total time spent on timing analysis during Post-Routing is 0.32 seconds.
 Info (16557): Fitter post-fit operations ending: elapsed time is 00:00:29
 Info (144001): Generated suppressed messages file /home/yifeng/packages/mu3e_ip_dev/.worktrees/mu3e_ip_cores_opq_presenter_timing_20260428/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/output_files/opq_native_sv_4lane_signoff.fit.smsg
 Info (11793): Fitter databases successfully split.
 Info: Quartus Prime Fitter was successful. 0 errors, 4 warnings
-    Info: Peak virtual memory: 8288 megabytes
-    Info: Processing ended: Tue Apr 28 16:12:45 2026
-    Info: Elapsed time: 00:03:39
-    Info: Total CPU time (on all processors): 00:19:10
+    Info: Peak virtual memory: 8306 megabytes
+    Info: Processing ended: Tue Apr 28 18:52:02 2026
+    Info: Elapsed time: 00:03:43
+    Info: Total CPU time (on all processors): 00:19:42
 
 
 +----------------------------+

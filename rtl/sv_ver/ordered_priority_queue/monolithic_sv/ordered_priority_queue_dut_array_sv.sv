@@ -1,10 +1,10 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_dut_array_sv
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.4.13
+// Version : 26.4.14
 // Date    : 20260428
-// Change  : Align native-array CSR META identity to the 26.4.13
-//           MuSiP timing-closure source package.
+// Change  : Register OPQ drop-counter deltas before saturating CSR updates to
+//           remove the lane-mask decode path from the 250 MHz counter adder.
 //------------------------------------------------------------------------------
 
 `ifndef OPQ_N_SHD
@@ -136,7 +136,7 @@ module ordered_priority_queue_dut_array_sv #(
   localparam logic [31:0] UID_CONST = 32'h4F50_514D;
   localparam int unsigned VERSION_MAJOR_CONST = 26;
   localparam int unsigned VERSION_MINOR_CONST = 4;
-  localparam int unsigned VERSION_PATCH_CONST = 13;
+  localparam int unsigned VERSION_PATCH_CONST = 14;
   localparam int unsigned VERSION_BUILD_CONST = 428;
   localparam logic [31:0] VERSION_DATE_CONST = 32'd20260428;
   localparam logic [31:0] VERSION_GIT_CONST = 32'h7301_5F57;
@@ -164,6 +164,9 @@ module ordered_priority_queue_dut_array_sv #(
   logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_drop_hdr_cnt;
   logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_drop_shd_cnt;
   logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_drop_hit_cnt;
+  logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_drop_hdr_delta_q;
+  logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_drop_shd_delta_q;
+  logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_drop_hit_delta_q;
   logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_drr_grant_cnt;
   logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_drr_beat_cnt;
   logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_drr_defer_cnt;
@@ -579,6 +582,9 @@ module ordered_priority_queue_dut_array_sv #(
       csr_drop_hdr_cnt <= '0;
       csr_drop_shd_cnt <= '0;
       csr_drop_hit_cnt <= '0;
+      csr_drop_hdr_delta_q <= '0;
+      csr_drop_shd_delta_q <= '0;
+      csr_drop_hit_delta_q <= '0;
       csr_drr_grant_cnt <= '0;
       csr_drr_beat_cnt <= '0;
       csr_drr_defer_cnt <= '0;
@@ -682,6 +688,9 @@ module ordered_priority_queue_dut_array_sv #(
         csr_drop_hdr_cnt <= '0;
         csr_drop_shd_cnt <= '0;
         csr_drop_hit_cnt <= '0;
+        csr_drop_hdr_delta_q <= '0;
+        csr_drop_shd_delta_q <= '0;
+        csr_drop_hit_delta_q <= '0;
         csr_drr_grant_cnt <= '0;
         csr_drr_beat_cnt <= '0;
         csr_drr_defer_cnt <= '0;
@@ -719,6 +728,16 @@ module ordered_priority_queue_dut_array_sv #(
           drop_post_hit_delta_v = '0;
           masked_exact_pre_ts_v =
             {native_ingress_running_ts_dbg[lane][47:12], asi_ingress_data_bus[lane][31:24], 4'b0000};
+
+          if (csr_drop_hdr_delta_q[lane] != '0) begin
+            csr_drop_hdr_cnt[lane] <= sat_add32(csr_drop_hdr_cnt[lane], csr_drop_hdr_delta_q[lane]);
+          end
+          if (csr_drop_shd_delta_q[lane] != '0) begin
+            csr_drop_shd_cnt[lane] <= sat_add32(csr_drop_shd_cnt[lane], csr_drop_shd_delta_q[lane]);
+          end
+          if (csr_drop_hit_delta_q[lane] != '0) begin
+            csr_drop_hit_cnt[lane] <= sat_add32(csr_drop_hit_cnt[lane], csr_drop_hit_delta_q[lane]);
+          end
 
           if (csr_lane_mask_effective[lane] && asi_ingress_valid_bus[lane]) begin
             if (asi_ingress_startofpacket_bus[lane] && is_preamble_word(asi_ingress_data_bus[lane])) begin
@@ -863,15 +882,9 @@ module ordered_priority_queue_dut_array_sv #(
             drop_post_hit_delta_v = drop_post_hit_delta_v + {{16{1'b0}}, native_ft_drop_lane_hit_dbg[lane]};
           end
 
-          if (drop_hdr_delta_v != '0) begin
-            csr_drop_hdr_cnt[lane] <= sat_add32(csr_drop_hdr_cnt[lane], drop_hdr_delta_v);
-          end
-          if (drop_shd_delta_v != '0) begin
-            csr_drop_shd_cnt[lane] <= sat_add32(csr_drop_shd_cnt[lane], drop_shd_delta_v);
-          end
-          if (drop_hit_delta_v != '0) begin
-            csr_drop_hit_cnt[lane] <= sat_add32(csr_drop_hit_cnt[lane], drop_hit_delta_v);
-          end
+          csr_drop_hdr_delta_q[lane] <= drop_hdr_delta_v;
+          csr_drop_shd_delta_q[lane] <= drop_shd_delta_v;
+          csr_drop_hit_delta_q[lane] <= drop_hit_delta_v;
           if ((drop_hdr_delta_v != '0) || (drop_shd_delta_v != '0) || (drop_hit_delta_v != '0)) begin
             native_drop_evt_valid_dbg[lane] <= 1'b1;
             native_drop_evt_hdr_dbg[lane] <= drop_hdr_delta_v[15:0];
