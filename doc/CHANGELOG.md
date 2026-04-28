@@ -9,6 +9,21 @@ Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 > `qverify` / `znformal` with simulation stress fallback only when the
 > Siemens formal binaries are not present on the host.
 
+## 26.4.12.0428
+
+- **RTL / Native-SV Presenter Timing**: registered completed-frame metadata at
+  the presenter boundary before metadata writes, overlap requests, and
+  presentation launch gating. This cuts the MuSiP critical path from
+  frame-count arithmetic through `block_present_start_v` into the page-RAM
+  read-pointer launch enable while preserving one-new-frame-per-cycle intake.
+- **Verification / Native-SV Assertions**: tightened the tail-lookahead
+  presenter assertion so it only fires on cycles where the one-entry
+  lookahead/pending capture path is actually free. The reduced-depth overflow
+  directed case already fell back through the normal restart path cleanly, but
+  the older assertion still flagged those cycles as tool errors.
+- **Packaging**: advanced the delivered OPQ Platform Designer identity and
+  `VERSION` file to `26.4.12.0428` for the MuSiP integration image.
+
 ## 26.4.3.0425
 
 - **RTL / Feature Timing Closure**: closed the focused

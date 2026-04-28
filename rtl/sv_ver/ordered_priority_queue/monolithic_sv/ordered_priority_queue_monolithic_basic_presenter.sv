@@ -1,11 +1,12 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_basic_presenter
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.4.1
-// Date    : 20260425
-// Change  : Tighten resident response preservation assertions so trailer-drain
-//           padding is not treated as an unread page-RAM word; keep trace and
-//           unpacked-array clears compatible with OSS formal parsing
+// Version : 26.4.12
+// Date    : 20260428
+// Change  : Register native-presenter new-frame metadata before queue
+//           ownership updates to cut the MuSiP completion-count timing cone
+//           into page-RAM pointer launch control; align tail-lookahead
+//           assertions with the actual one-entry capture condition.
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_basic_presenter #(
@@ -947,9 +948,17 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
   logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_lookahead_pending_data;
   page_ram_addr_t page_ram_lookahead_pending_addr;
   logic page_ram_lookahead_pending_valid;
-  logic [FRAME_LEN_WIDTH-1:0] new_frame_length_full;
-  page_ram_addr_t new_frame_length;
-  logic new_frame_oversize;
+  logic [FRAME_LEN_WIDTH-1:0] new_frame_length_full_d;
+  page_ram_addr_t new_frame_length_d;
+  logic new_frame_oversize_d;
+  logic new_frame_valid_q;
+  page_ram_addr_t new_frame_raw_addr_q;
+  logic [MAX_SHR_CNT_BITS-1:0] frame_shr_cnt_this_q;
+  logic [MAX_HIT_CNT_BITS-1:0] frame_hit_cnt_this_q;
+  logic [N_LANE-1:0][MAX_SHR_CNT_BITS-1:0] frame_lane_shd_cnt_this_q;
+  logic [N_LANE-1:0][MAX_HIT_CNT_BITS-1:0] frame_lane_hit_cnt_this_q;
+  page_ram_addr_t new_frame_length_q;
+  logic new_frame_oversize_q;
   logic overwrite_head_accepted_or_accepting;
   logic overlap_request_pending;
 
@@ -1092,10 +1101,10 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
     .DATA_WIDTH(META_DATA_WIDTH),
     .ADDR_WIDTH(META_ADDR_WIDTH)
   ) meta_ram_i (
-    .data(pack_meta(new_frame_raw_addr_i, new_frame_length, frame_shr_cnt_this_i, frame_hit_cnt_this_i)),
+    .data(pack_meta(new_frame_raw_addr_q, new_frame_length_q, frame_shr_cnt_this_q, frame_hit_cnt_this_q)),
     .read_addr(meta_rd_addr),
     .write_addr(meta_wptr),
-    .we(new_frame_valid_i && !new_frame_oversize),
+    .we(new_frame_valid_q && !new_frame_oversize_q),
     .clk(d_clk),
     .q(meta_rd_data)
   );
@@ -1104,9 +1113,9 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
     is_new_pkt_head = (meta_wptr != meta_rptr);
     is_new_pkt_complete = is_new_pkt_head;
     packet_length = head_len_q;
-    new_frame_length_full = frame_length_from_counts(frame_shr_cnt_this_i, frame_hit_cnt_this_i);
-    new_frame_length = new_frame_length_full[PAGE_RAM_ADDR_WIDTH-1:0];
-    new_frame_oversize = (new_frame_length_full >= PAGE_RAM_DEPTH);
+    new_frame_length_full_d = frame_length_from_counts(frame_shr_cnt_this_i, frame_hit_cnt_this_i);
+    new_frame_length_d = new_frame_length_full_d[PAGE_RAM_ADDR_WIDTH-1:0];
+    new_frame_oversize_d = (new_frame_length_full_d >= PAGE_RAM_DEPTH);
     output_data = output_data_pipe[EGRESS_DELAY-1];
     output_is_trailer = 1'b0;
     if ((output_data[35:32] == 4'b0001) && (output_data[7:0] == K284)) begin
@@ -1189,6 +1198,32 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
       resident_head_len_o = head_len_q;
       resident_head_full_ring_o = frame_length_spans_full_ring(head_shd_cnt_q, head_hit_cnt_q);
       resident_head_has_successor_o = (meta_wptr != (meta_rptr + META_PTR_ONE_CONST));
+    end
+  end
+
+  always_ff @(posedge d_clk) begin : proc_new_frame_stage
+    if (d_reset) begin
+      new_frame_valid_q <= 1'b0;
+      new_frame_raw_addr_q <= '0;
+      frame_shr_cnt_this_q <= '0;
+      frame_hit_cnt_this_q <= '0;
+      for (int lane_clear_idx = 0; lane_clear_idx < N_LANE; lane_clear_idx = lane_clear_idx + 1) begin
+        frame_lane_shd_cnt_this_q[lane_clear_idx] <= '0;
+        frame_lane_hit_cnt_this_q[lane_clear_idx] <= '0;
+      end
+      new_frame_length_q <= '0;
+      new_frame_oversize_q <= 1'b0;
+    end else begin
+      new_frame_valid_q <= new_frame_valid_i;
+      if (new_frame_valid_i) begin
+        new_frame_raw_addr_q <= new_frame_raw_addr_i;
+        frame_shr_cnt_this_q <= frame_shr_cnt_this_i;
+        frame_hit_cnt_this_q <= frame_hit_cnt_this_i;
+        frame_lane_shd_cnt_this_q <= frame_lane_shd_cnt_this_i;
+        frame_lane_hit_cnt_this_q <= frame_lane_hit_cnt_this_i;
+        new_frame_length_q <= new_frame_length_d;
+        new_frame_oversize_q <= new_frame_oversize_d;
+      end
     end
   end
 
@@ -1548,23 +1583,23 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
         end
       end
 
-      if (new_frame_valid_i) begin
-        if (new_frame_oversize) begin
+      if (new_frame_valid_q) begin
+        if (new_frame_oversize_q) begin
           ft_drop_valid_o <= 1'b1;
           ft_drop_hdr_cnt_o <= 32'd1;
-          ft_drop_shd_cnt_o <= extend32_shd(frame_shr_cnt_this_i);
-          ft_drop_hit_cnt_o <= extend32_hit(frame_hit_cnt_this_i);
-          ft_drop_lane_shd_cnt_o <= frame_lane_shd_cnt_this_i;
-          ft_drop_lane_hit_cnt_o <= frame_lane_hit_cnt_this_i;
+          ft_drop_shd_cnt_o <= extend32_shd(frame_shr_cnt_this_q);
+          ft_drop_hit_cnt_o <= extend32_hit(frame_hit_cnt_this_q);
+          ft_drop_lane_shd_cnt_o <= frame_lane_shd_cnt_this_q;
+          ft_drop_lane_hit_cnt_o <= frame_lane_hit_cnt_this_q;
         end else begin
           if ((meta_wptr == meta_rptr) && !head_meta_valid) begin
             head_meta_valid <= 1'b1;
-            head_addr_q <= new_frame_raw_addr_i;
-            head_len_q <= new_frame_length;
-            head_shd_cnt_q <= frame_shr_cnt_this_i;
-            head_hit_cnt_q <= frame_hit_cnt_this_i;
-            head_lane_shd_cnt_q <= frame_lane_shd_cnt_this_i;
-            head_lane_hit_cnt_q <= frame_lane_hit_cnt_this_i;
+            head_addr_q <= new_frame_raw_addr_q;
+            head_len_q <= new_frame_length_q;
+            head_shd_cnt_q <= frame_shr_cnt_this_q;
+            head_hit_cnt_q <= frame_hit_cnt_this_q;
+            head_lane_shd_cnt_q <= frame_lane_shd_cnt_this_q;
+            head_lane_hit_cnt_q <= frame_lane_hit_cnt_this_q;
           end
 
           if (meta_wptr != meta_rptr) begin
@@ -1574,12 +1609,12 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
                 !overwrite_scan_process_head &&
                 (overlap_req_count == '0)) begin
               pending_overlap_check_valid <= 1'b1;
-              pending_overlap_addr_q <= new_frame_raw_addr_i;
-              pending_overlap_len_q <= new_frame_length;
+              pending_overlap_addr_q <= new_frame_raw_addr_q;
+              pending_overlap_len_q <= new_frame_length_q;
               pending_overlap_stop_ptr_q <= meta_wptr;
             end else if (overlap_req_count < OVERLAP_REQ_DEPTH) begin
-              overlap_req_addr_q[overlap_req_wptr] <= new_frame_raw_addr_i;
-              overlap_req_len_q[overlap_req_wptr] <= new_frame_length;
+              overlap_req_addr_q[overlap_req_wptr] <= new_frame_raw_addr_q;
+              overlap_req_len_q[overlap_req_wptr] <= new_frame_length_q;
               overlap_req_stop_ptr_q[overlap_req_wptr] <= meta_wptr;
               overlap_req_wptr <= overlap_req_wptr + OVERLAP_REQ_PTR_WIDTH'(1);
               overlap_req_count <= overlap_req_count + OVERLAP_REQ_COUNT_WIDTH'(1);
@@ -1589,8 +1624,8 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
 
           meta_wptr <= meta_wptr + META_PTR_ONE_CONST;
           for (int lane_idx = 0; lane_idx < N_LANE; lane_idx++) begin
-            meta_lane_shd_cnt[meta_wptr][lane_idx] <= frame_lane_shd_cnt_this_i[lane_idx];
-            meta_lane_hit_cnt[meta_wptr][lane_idx] <= frame_lane_hit_cnt_this_i[lane_idx];
+            meta_lane_shd_cnt[meta_wptr][lane_idx] <= frame_lane_shd_cnt_this_q[lane_idx];
+            meta_lane_hit_cnt[meta_wptr][lane_idx] <= frame_lane_hit_cnt_this_q[lane_idx];
           end
 `ifndef SYNTHESIS
 `ifndef OPQ_OSS_FORMAL
@@ -1599,10 +1634,10 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
               "[opq_native_meta] t=%0t evt=write slot=0x%0h addr=0x%0h len=0x%0h shd=%0d hit=%0d",
               $time,
               meta_wptr,
-              new_frame_raw_addr_i,
-              new_frame_length,
-              frame_shr_cnt_this_i,
-              frame_hit_cnt_this_i
+              new_frame_raw_addr_q,
+              new_frame_length_q,
+              frame_shr_cnt_this_q,
+              frame_hit_cnt_this_q
             );
           end
 `endif
@@ -2058,6 +2093,8 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
   property p_tail_lookahead_preamble_is_buffered;
     @(posedge d_clk) disable iff (d_reset)
       (presenter_state == FTABLE_PRESENTER_PRESENTING) &&
+      !page_ram_lookahead_valid &&
+      !page_ram_lookahead_pending_valid &&
       (pkt_fetch_word_cnt == packet_length) &&
       (meta_wptr != (meta_rptr + META_PTR_ONE_CONST)) &&
       (page_ram_rd_data_i[35:32] == 4'b0001) &&
@@ -2157,6 +2194,8 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
 
   cover property (@(posedge d_clk) disable iff (d_reset)
     (presenter_state == FTABLE_PRESENTER_PRESENTING) &&
+    !page_ram_lookahead_valid &&
+    !page_ram_lookahead_pending_valid &&
     (pkt_fetch_word_cnt == packet_length) &&
     (meta_wptr != (meta_rptr + META_PTR_ONE_CONST)) &&
     (page_ram_rd_data_i[35:32] == 4'b0001) &&
