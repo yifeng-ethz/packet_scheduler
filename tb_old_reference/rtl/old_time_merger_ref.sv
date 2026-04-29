@@ -35,7 +35,10 @@ module old_time_merger_ref_node2 #(
   output logic                       data_merge_o,
   output logic [31:0]                header_count_o,
   output logic [31:0]                subheader_count_o,
-  output logic [31:0]                hit_count_o
+  output logic [31:0]                hit_count_o,
+  output logic [31:0]                debug_join_wait_cycles_o,
+  output logic [31:0]                debug_role_mismatch_cycles_o,
+  output logic [31:0]                debug_node_blocked_cycles_o
 );
 
   localparam logic [7:0] K285 = 8'hBC;
@@ -77,6 +80,8 @@ module old_time_merger_ref_node2 #(
   logic [DATA_WIDTH-1:0] plan_data_c;
   logic selected_lane_c;
   logic rr_ptr_q;
+  logic role_mismatch_stall_c;
+  logic node_blocked_c;
 
   function automatic logic is_preamble(
     input logic [DATA_WIDTH-1:0] data,
@@ -269,6 +274,10 @@ module old_time_merger_ref_node2 #(
   assign join_wait_o =
     enable_i && both_active_c && !plan_valid_c &&
     ((lane_valid_i & active_mask_c) != active_mask_c);
+  assign role_mismatch_stall_c =
+    enable_i && both_active_c && (&lane_valid_i) && !plan_valid_c &&
+    (lane_role_c[0] != lane_role_c[1]);
+  assign node_blocked_c = out_valid_o && !out_ready_i;
   assign data_merge_o =
     (plan_valid_c && ((lane_role_c[0] == ROLE_DATA) || (lane_role_c[1] == ROLE_DATA))) ||
     (out_valid_o && (out_data_o[35:32] == 4'b0000));
@@ -283,12 +292,18 @@ module old_time_merger_ref_node2 #(
       header_count_o <= '0;
       subheader_count_o <= '0;
       hit_count_o <= '0;
+      debug_join_wait_cycles_o <= '0;
+      debug_role_mismatch_cycles_o <= '0;
+      debug_node_blocked_cycles_o <= '0;
       for (int lane = 0; lane < 2; lane++) begin
         lane_parse_q[lane] <= PARSE_SOP;
       end
     end else if (!enable_i) begin
       out_valid_o <= 1'b0;
       rr_ptr_q <= 1'b0;
+      debug_join_wait_cycles_o <= '0;
+      debug_role_mismatch_cycles_o <= '0;
+      debug_node_blocked_cycles_o <= '0;
       for (int lane = 0; lane < 2; lane++) begin
         lane_parse_q[lane] <= PARSE_SOP;
       end
@@ -322,6 +337,16 @@ module old_time_merger_ref_node2 #(
           (lane_role_c[selected_lane_c] == ROLE_DATA) && ROUND_ROBIN) begin
         rr_ptr_q <= ~selected_lane_c;
       end
+
+      if (join_wait_o) begin
+        debug_join_wait_cycles_o <= debug_join_wait_cycles_o + 32'd1;
+      end
+      if (role_mismatch_stall_c) begin
+        debug_role_mismatch_cycles_o <= debug_role_mismatch_cycles_o + 32'd1;
+      end
+      if (node_blocked_c) begin
+        debug_node_blocked_cycles_o <= debug_node_blocked_cycles_o + 32'd1;
+      end
     end
   end
 
@@ -340,6 +365,9 @@ module old_time_merger_ref_node2 #(
     header_count_o = '0;
     subheader_count_o = '0;
     hit_count_o = '0;
+    debug_join_wait_cycles_o = '0;
+    debug_role_mismatch_cycles_o = '0;
+    debug_node_blocked_cycles_o = '0;
     for (int lane = 0; lane < 2; lane++) begin
       lane_parse_q[lane] = PARSE_SOP;
     end
@@ -392,7 +420,9 @@ module old_time_merger_ref_fifo #(
   input  logic [DATA_WIDTH-1:0] in_data_i,
   output logic                  out_valid_o,
   input  logic                  out_ready_i,
-  output logic [DATA_WIDTH-1:0] out_data_o
+  output logic [DATA_WIDTH-1:0] out_data_o,
+  output logic [31:0]           debug_full_stall_cycles_o,
+  output logic [31:0]           debug_max_occupancy_o
 );
   logic [DATA_WIDTH-1:0] mem_q [DEPTH];
   logic [ADDR_WIDTH-1:0] wr_ptr_q;
@@ -418,12 +448,16 @@ module old_time_merger_ref_fifo #(
       wr_ptr_q <= '0;
       rd_ptr_q <= '0;
       count_q <= '0;
+      debug_full_stall_cycles_o <= '0;
+      debug_max_occupancy_o <= '0;
     end else begin
       logic do_write_v;
       logic do_read_v;
+      logic [ADDR_WIDTH:0] next_count_v;
 
       do_write_v = in_valid_i && in_ready_o;
       do_read_v = out_valid_o && out_ready_i;
+      next_count_v = count_q;
 
       if (do_write_v) begin
         mem_q[wr_ptr_q] <= in_data_i;
@@ -434,11 +468,18 @@ module old_time_merger_ref_fifo #(
       end
 
       unique case ({do_write_v, do_read_v})
-        2'b10: count_q <= count_q + 1'b1;
-        2'b01: count_q <= count_q - 1'b1;
+        2'b10: next_count_v = count_q + 1'b1;
+        2'b01: next_count_v = count_q - 1'b1;
         default: begin
         end
       endcase
+      count_q <= next_count_v;
+      if (next_count_v > debug_max_occupancy_o) begin
+        debug_max_occupancy_o <= {{(32-(ADDR_WIDTH+1)){1'b0}}, next_count_v};
+      end
+      if (in_valid_i && !in_ready_o) begin
+        debug_full_stall_cycles_o <= debug_full_stall_cycles_o + 32'd1;
+      end
     end
   end
 
@@ -452,6 +493,8 @@ module old_time_merger_ref_fifo #(
     wr_ptr_q = '0;
     rd_ptr_q = '0;
     count_q = '0;
+    debug_full_stall_cycles_o = '0;
+    debug_max_occupancy_o = '0;
   end
 
   always_ff @(posedge clk) begin
@@ -504,7 +547,12 @@ module old_time_merger_ref #(
   output logic                                           data_merge_o,
   output logic [31:0]                                    header_count_o,
   output logic [31:0]                                    subheader_count_o,
-  output logic [31:0]                                    hit_count_o
+  output logic [31:0]                                    hit_count_o,
+  output logic [31:0]                                    debug_join_wait_cycles_o,
+  output logic [31:0]                                    debug_role_mismatch_cycles_o,
+  output logic [31:0]                                    debug_node_blocked_cycles_o,
+  output logic [31:0]                                    debug_fifo_full_stall_cycles_o,
+  output logic [31:0]                                    debug_fifo_max_occupancy_o
 );
 
   localparam int STAGE_COUNT = $clog2(LANE_COUNT);
@@ -521,6 +569,11 @@ module old_time_merger_ref #(
   logic [STAGE_COUNT-1:0][PADDED_LANE_COUNT/2-1:0][31:0] node_header_count;
   logic [STAGE_COUNT-1:0][PADDED_LANE_COUNT/2-1:0][31:0] node_subheader_count;
   logic [STAGE_COUNT-1:0][PADDED_LANE_COUNT/2-1:0][31:0] node_hit_count;
+  logic [STAGE_COUNT-1:0][PADDED_LANE_COUNT/2-1:0][31:0] node_debug_join_wait_cycles;
+  logic [STAGE_COUNT-1:0][PADDED_LANE_COUNT/2-1:0][31:0] node_debug_role_mismatch_cycles;
+  logic [STAGE_COUNT-1:0][PADDED_LANE_COUNT/2-1:0][31:0] node_debug_blocked_cycles;
+  logic [STAGE_COUNT-1:0][PADDED_LANE_COUNT/2-1:0][31:0] fifo_debug_full_stall_cycles;
+  logic [STAGE_COUNT-1:0][PADDED_LANE_COUNT/2-1:0][31:0] fifo_debug_max_occupancy;
   logic [STAGE_COUNT-1:0][PADDED_LANE_COUNT/2-1:0] node_out_valid;
   logic [STAGE_COUNT-1:0][PADDED_LANE_COUNT/2-1:0] node_out_ready;
   logic [STAGE_COUNT-1:0][PADDED_LANE_COUNT/2-1:0] node_out_sop;
@@ -601,7 +654,10 @@ module old_time_merger_ref #(
           .data_merge_o(node_data_merge[stage][node]),
           .header_count_o(node_header_count[stage][node]),
           .subheader_count_o(node_subheader_count[stage][node]),
-          .hit_count_o(node_hit_count[stage][node])
+          .hit_count_o(node_hit_count[stage][node]),
+          .debug_join_wait_cycles_o(node_debug_join_wait_cycles[stage][node]),
+          .debug_role_mismatch_cycles_o(node_debug_role_mismatch_cycles[stage][node]),
+          .debug_node_blocked_cycles_o(node_debug_blocked_cycles[stage][node])
         );
         old_time_merger_ref_fifo #(
           .DATA_WIDTH(DATA_WIDTH + 2),
@@ -618,7 +674,9 @@ module old_time_merger_ref #(
           }),
           .out_valid_o(stage_valid[stage + 1][node]),
           .out_ready_i(stage_ready[stage + 1][node]),
-          .out_data_o(stage_fifo_out_data[stage][node])
+          .out_data_o(stage_fifo_out_data[stage][node]),
+          .debug_full_stall_cycles_o(fifo_debug_full_stall_cycles[stage][node]),
+          .debug_max_occupancy_o(fifo_debug_max_occupancy[stage][node])
         );
         assign {
           stage_sop[stage + 1][node],
@@ -651,11 +709,23 @@ module old_time_merger_ref #(
     header_count_o = '0;
     subheader_count_o = '0;
     hit_count_o = '0;
+    debug_join_wait_cycles_o = '0;
+    debug_role_mismatch_cycles_o = '0;
+    debug_node_blocked_cycles_o = '0;
+    debug_fifo_full_stall_cycles_o = '0;
+    debug_fifo_max_occupancy_o = '0;
     for (int stage = 0; stage < STAGE_COUNT; stage++) begin
       for (int node = 0; node < (PADDED_LANE_COUNT >> (stage + 1)); node++) begin
         header_count_o += node_header_count[stage][node];
         subheader_count_o += node_subheader_count[stage][node];
         hit_count_o += node_hit_count[stage][node];
+        debug_join_wait_cycles_o += node_debug_join_wait_cycles[stage][node];
+        debug_role_mismatch_cycles_o += node_debug_role_mismatch_cycles[stage][node];
+        debug_node_blocked_cycles_o += node_debug_blocked_cycles[stage][node];
+        debug_fifo_full_stall_cycles_o += fifo_debug_full_stall_cycles[stage][node];
+        if (fifo_debug_max_occupancy[stage][node] > debug_fifo_max_occupancy_o) begin
+          debug_fifo_max_occupancy_o = fifo_debug_max_occupancy[stage][node];
+        end
       end
     end
   end

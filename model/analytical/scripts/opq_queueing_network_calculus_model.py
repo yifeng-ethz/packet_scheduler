@@ -59,12 +59,14 @@ def linspace(start: float, stop: float, count: int) -> np.ndarray:
 def burstiness_to_scv(burstiness: np.ndarray | float) -> np.ndarray | float:
     if isinstance(burstiness, np.ndarray):
         clipped = np.clip(burstiness, -0.999999, 0.999999)
-        return (1.0 + clipped) / (1.0 - clipped)
+        cv = (1.0 + clipped) / (1.0 - clipped)
+        return np.clip(cv * cv, 0.0, MAX_ENDPOINT_SCV)
     if burstiness <= -0.999999:
         return 0.0
     if burstiness >= 0.999999:
         return MAX_ENDPOINT_SCV
-    return (1.0 + burstiness) / (1.0 - burstiness)
+    cv = (1.0 + burstiness) / (1.0 - burstiness)
+    return min(MAX_ENDPOINT_SCV, cv * cv)
 
 
 def variability_factor(scv: np.ndarray | float) -> np.ndarray | float:
@@ -280,7 +282,7 @@ def plot_opq_loss_surface(args: argparse.Namespace, output_dir: Path) -> None:
         ax.grid(True, alpha=0.22, linewidth=0.6)
 
     for ax in axes[-1, :]:
-        ax.set_xlabel("burstiness B = (SCV - 1) / (SCV + 1)")
+        ax.set_xlabel("burstiness B = (CV - 1) / (CV + 1)")
     for ax in axes[:, 0]:
         ax.set_ylabel("per-lane offered rate rho_lane")
 
@@ -369,7 +371,7 @@ def plot_ratio_surface(args: argparse.Namespace, output_dir: Path) -> dict[str, 
         }
 
     for ax in axes[-1, :]:
-        ax.set_xlabel("burstiness B = (SCV - 1) / (SCV + 1)")
+        ax.set_xlabel("burstiness B = (CV - 1) / (CV + 1)")
     for ax in axes[:, 0]:
         ax.set_ylabel("egress ready duty")
 
@@ -684,6 +686,7 @@ def write_dislin_grids(
     loss_dat: dict[str, str] = {}
     opq_loss_dat: dict[str, str] = {}
     time_merger_loss_dat: dict[str, str] = {}
+    time_merger_surface_dat: dict[str, str] = {}
     ratio_dat: dict[str, str] = {}
     loss_curve_dat: dict[str, str] = {}
     published_png: dict[str, str] = {}
@@ -691,6 +694,9 @@ def write_dislin_grids(
     for n_lane, egress_symbols in PUBLISHED_FEATURES:
         key = f"N_LANE={n_lane},EGRESS={egress_symbols}x"
         loss_stem = f"opq_loss_surface_nlane{n_lane:02d}_egress{egress_symbols:02d}x"
+        tm_loss_stem = (
+            f"time_merger_loss_surface_nlane{n_lane:02d}_egress{egress_symbols:02d}x"
+        )
         overlay_stem = (
             f"opq_vs_time_merger_loss_contour_nlane{n_lane:02d}_egress{egress_symbols:02d}x"
         )
@@ -723,15 +729,21 @@ def write_dislin_grids(
         )
 
         loss_dat_path = dislin_dir / f"{loss_stem}.dat"
+        tm_loss_dat_path = dislin_dir / f"{tm_loss_stem}.dat"
         opq_dat_path = dislin_dir / f"{overlay_stem}_opq.dat"
         tm_dat_path = dislin_dir / f"{overlay_stem}_time_merger.dat"
         write_dat_matrix(loss_dat_path, b_values, rho_values, opq_loss)
+        write_dat_matrix(tm_loss_dat_path, b_values, rho_values, tm_loss)
         write_dat_matrix(opq_dat_path, b_values, rho_values, opq_loss)
         write_dat_matrix(tm_dat_path, b_values, rho_values, tm_loss)
         loss_dat[key] = str(loss_dat_path)
         opq_loss_dat[key] = str(opq_dat_path)
         time_merger_loss_dat[key] = str(tm_dat_path)
+        time_merger_surface_dat[key] = str(tm_loss_dat_path)
         published_png[f"{key},OPQ_LOSS_SURFACE"] = str(plot_output_dir / f"{loss_stem}.png")
+        published_png[f"{key},TIME_MERGER_LOSS_SURFACE"] = str(
+            plot_output_dir / f"{tm_loss_stem}.png"
+        )
         published_png[f"{key},LOSS_CONTOUR_OVERLAY"] = str(plot_output_dir / f"{overlay_stem}.png")
 
         curve_b = np.full_like(rho_values, args.scaling_burstiness)
@@ -830,6 +842,7 @@ def write_dislin_grids(
         "dislin_dir": str(dislin_dir),
         "published_plot_dir": str(plot_output_dir),
         "opq_loss_surface_dat": loss_dat,
+        "time_merger_loss_surface_dat": time_merger_surface_dat,
         "opq_loss_overlay_dat": opq_loss_dat,
         "time_merger_loss_overlay_dat": time_merger_loss_dat,
         "loss_curve_dat": loss_curve_dat,
@@ -926,11 +939,11 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--plot-output-dir", type=Path, default=DEFAULT_PLOT_OUTPUT_DIR)
-    parser.add_argument("--burstiness-min", type=float, default=-0.25)
-    parser.add_argument("--burstiness-max", type=float, default=0.95)
+    parser.add_argument("--burstiness-min", type=float, default=-1.0)
+    parser.add_argument("--burstiness-max", type=float, default=1.0)
     parser.add_argument("--burstiness-count", type=int, default=DEFAULT_BURSTINESS_COUNT)
-    parser.add_argument("--rho-min", type=float, default=0.005)
-    parser.add_argument("--rho-max", type=float, default=0.30)
+    parser.add_argument("--rho-min", type=float, default=0.0)
+    parser.add_argument("--rho-max", type=float, default=1.0)
     parser.add_argument("--rate-count", type=int, default=DEFAULT_RATE_COUNT)
     parser.add_argument("--ready-min", type=float, default=0.45)
     parser.add_argument("--ready-max", type=float, default=1.0)
@@ -996,7 +1009,7 @@ def main() -> None:
             "Analytical model only.  It supports architecture comparison and "
             "report equations, but it is not direct RTL loss evidence."
         ),
-        "burstiness_definition": "B = (SCV - 1) / (SCV + 1)",
+        "burstiness_definition": "B = (CV - 1) / (CV + 1), CV=sigma_tau/m_tau",
         "arrival_curve": "A(t) <= sigma(B,rho) + N_LANE*rho_lane*t",
         "opq_service_curve": "beta_opq(t) = EGRESS_SYMBOLS_PER_BEAT*ready_duty*[t-T_opq]^+",
         "time_merger_service_curve": (

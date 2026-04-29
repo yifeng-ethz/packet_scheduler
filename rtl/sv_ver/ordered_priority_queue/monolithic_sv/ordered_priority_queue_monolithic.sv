@@ -361,6 +361,7 @@ module ordered_priority_queue_monolithic_sv #(
     .handle_waddr_o(handle_waddr_dbg),
     .handle_we_o(handle_we_dbg),
     .handle_wptr_o(handle_wptr_dbg),
+    .handle_credit_update_valid_i(block_path_lane_credit_update_valid),
     .eop_flush_ack_o(ingress_eop_flush_ack_dbg),
     .late_frame_drop_valid_o(late_frame_drop_valid_dbg),
     .late_frame_drop_hdr_cnt_o(late_frame_drop_hdr_cnt_dbg),

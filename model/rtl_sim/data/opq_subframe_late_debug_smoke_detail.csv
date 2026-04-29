@@ -1,0 +1,121 @@
+run_tag,mode,component,rank,frame,lane,shd,rtl_hits,tlm_hits,delta_hits,is_first_by_frame,notes
+component_b000_rho0750_f0261_seed7101,normal,ingress_accept_hits,1,110,2,40,6,0,-6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=1252 | tlm_ing_rows=1 tlm_lane_credit_min=1 tlm_effective_min=1 tlm_ticket_credit_min=883 tlm_reasons=lane_credit
+component_b000_rho0750_f0261_seed7101,normal,ingress_accept_hits,2,111,2,68,6,0,-6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=58 rtl_lane_credit_max=58 rtl_ticket_credit_min=1286 | tlm_ing_rows=1 tlm_lane_credit_min=5 tlm_effective_min=5 tlm_ticket_credit_min=880 tlm_reasons=lane_credit
+component_b000_rho0750_f0261_seed7101,normal,ingress_accept_hits,3,145,2,23,6,0,-6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=514 | tlm_ing_rows=1 tlm_lane_credit_min=6 tlm_effective_min=6 tlm_ticket_credit_min=305 tlm_reasons=lane_credit
+component_b000_rho0750_f0261_seed7101,normal,ingress_accept_hits,4,156,3,102,6,0,-6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=244 | tlm_ing_rows=1 tlm_lane_credit_min=1 tlm_effective_min=1 tlm_ticket_credit_min=140 tlm_reasons=lane_credit
+component_b000_rho0750_f0261_seed7101,normal,ingress_accept_hits,5,159,2,110,6,0,-6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=163 | tlm_ing_rows=1 tlm_lane_credit_min=1 tlm_effective_min=1 tlm_ticket_credit_min=93 tlm_reasons=lane_credit
+component_b000_rho0750_f0261_seed7101,normal,ingress_accept_hits,6,169,3,9,6,0,-6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=66 rtl_lane_credit_max=66 rtl_ticket_credit_min=85 | tlm_ing_rows=1 tlm_lane_credit_min=1 tlm_effective_min=1 tlm_ticket_credit_min=48 tlm_reasons=lane_credit
+component_b000_rho0750_f0261_seed7101,normal,ingress_accept_hits,7,198,0,98,6,0,-6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=2 rtl_lane_credit_max=2 rtl_ticket_credit_min=0 | tlm_ing_rows=1 tlm_lane_credit_min=1 tlm_effective_min=1 tlm_ticket_credit_min=80 tlm_reasons=lane_credit
+component_b000_rho0750_f0261_seed7101,normal,ingress_accept_hits,8,203,1,54,6,0,-6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=16 rtl_lane_credit_max=16 rtl_ticket_credit_min=22 | tlm_ing_rows=1 tlm_lane_credit_min=1 tlm_effective_min=1 tlm_ticket_credit_min=6 tlm_reasons=lane_credit
+component_b000_rho0750_f0261_seed7101,normal,ingress_predrop_flag_hits,1,110,2,40,0,6,6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=1252 | tlm_ing_rows=1 tlm_lane_credit_min=1 tlm_effective_min=1 tlm_ticket_credit_min=883 tlm_reasons=lane_credit
+component_b000_rho0750_f0261_seed7101,normal,ingress_predrop_flag_hits,2,111,2,68,0,6,6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=58 rtl_lane_credit_max=58 rtl_ticket_credit_min=1286 | tlm_ing_rows=1 tlm_lane_credit_min=5 tlm_effective_min=5 tlm_ticket_credit_min=880 tlm_reasons=lane_credit
+component_b000_rho0750_f0261_seed7101,normal,ingress_predrop_flag_hits,3,145,2,23,0,6,6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=514 | tlm_ing_rows=1 tlm_lane_credit_min=6 tlm_effective_min=6 tlm_ticket_credit_min=305 tlm_reasons=lane_credit
+component_b000_rho0750_f0261_seed7101,normal,ingress_predrop_flag_hits,4,156,3,102,0,6,6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=244 | tlm_ing_rows=1 tlm_lane_credit_min=1 tlm_effective_min=1 tlm_ticket_credit_min=140 tlm_reasons=lane_credit
+component_b000_rho0750_f0261_seed7101,normal,ingress_predrop_flag_hits,5,159,2,110,0,6,6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=163 | tlm_ing_rows=1 tlm_lane_credit_min=1 tlm_effective_min=1 tlm_ticket_credit_min=93 tlm_reasons=lane_credit
+component_b000_rho0750_f0261_seed7101,normal,ingress_predrop_flag_hits,6,169,3,9,0,6,6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=66 rtl_lane_credit_max=66 rtl_ticket_credit_min=85 | tlm_ing_rows=1 tlm_lane_credit_min=1 tlm_effective_min=1 tlm_ticket_credit_min=48 tlm_reasons=lane_credit
+component_b000_rho0750_f0261_seed7101,normal,ingress_predrop_flag_hits,7,198,0,98,0,6,6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=2 rtl_lane_credit_max=2 rtl_ticket_credit_min=0 | tlm_ing_rows=1 tlm_lane_credit_min=1 tlm_effective_min=1 tlm_ticket_credit_min=80 tlm_reasons=lane_credit
+component_b000_rho0750_f0261_seed7101,normal,ingress_predrop_flag_hits,8,203,1,54,0,6,6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=16 rtl_lane_credit_max=16 rtl_ticket_credit_min=22 | tlm_ing_rows=1 tlm_lane_credit_min=1 tlm_effective_min=1 tlm_ticket_credit_min=6 tlm_reasons=lane_credit
+component_b000_rho0750_f0261_seed7101,normal,controlled_predrop_exact_hits,1,111,2,68,0,6,6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=58 rtl_lane_credit_max=58 rtl_ticket_credit_min=1286 | tlm_ing_rows=1 tlm_lane_credit_min=5 tlm_effective_min=5 tlm_ticket_credit_min=880 tlm_reasons=lane_credit
+component_b000_rho0750_f0261_seed7101,normal,controlled_predrop_exact_hits,2,120,2,42,6,0,-6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=6 rtl_lane_credit_max=6 rtl_ticket_credit_min=1122 | tlm_ing_rows=1 tlm_lane_credit_min=93 tlm_effective_min=93 tlm_ticket_credit_min=771 tlm_reasons=accept
+component_b000_rho0750_f0261_seed7101,normal,controlled_predrop_exact_hits,3,123,0,21,6,0,-6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=4 rtl_lane_credit_max=4 rtl_ticket_credit_min=1061 | tlm_ing_rows=1 tlm_lane_credit_min=47 tlm_effective_min=47 tlm_ticket_credit_min=712 tlm_reasons=accept
+component_b000_rho0750_f0261_seed7101,normal,controlled_predrop_exact_hits,4,155,3,59,6,0,-6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=269 | tlm_ing_rows=1 tlm_lane_credit_min=13 tlm_effective_min=13 tlm_ticket_credit_min=164 tlm_reasons=accept
+component_b000_rho0750_f0261_seed7101,normal,controlled_predrop_exact_hits,5,169,3,9,0,6,6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=66 rtl_lane_credit_max=66 rtl_ticket_credit_min=85 | tlm_ing_rows=1 tlm_lane_credit_min=1 tlm_effective_min=1 tlm_ticket_credit_min=48 tlm_reasons=lane_credit
+component_b000_rho0750_f0261_seed7101,normal,controlled_predrop_exact_hits,6,193,3,105,6,0,-6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=9 | tlm_ing_rows=1 tlm_lane_credit_min=8 tlm_effective_min=8 tlm_ticket_credit_min=9 tlm_reasons=accept
+component_b000_rho0750_f0261_seed7101,normal,controlled_predrop_exact_hits,7,203,1,54,0,6,6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=16 rtl_lane_credit_max=16 rtl_ticket_credit_min=22 | tlm_ing_rows=1 tlm_lane_credit_min=1 tlm_effective_min=1 tlm_ticket_credit_min=6 tlm_reasons=lane_credit
+component_b000_rho0750_f0261_seed7101,normal,controlled_predrop_exact_hits,8,76,3,89,0,5,5,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=444 rtl_lane_credit_max=444 rtl_ticket_credit_min=2026 | tlm_ing_rows=1 tlm_lane_credit_min=1 tlm_effective_min=1 tlm_ticket_credit_min=1546 tlm_reasons=lane_credit
+component_b000_rho0750_f0261_seed7101,normal,pa_load_hits,1,18,3,50,6,0,-6,0,
+component_b000_rho0750_f0261_seed7101,normal,pa_load_hits,2,111,2,68,6,0,-6,0,
+component_b000_rho0750_f0261_seed7101,normal,pa_load_hits,3,120,2,42,0,6,6,0,
+component_b000_rho0750_f0261_seed7101,normal,pa_load_hits,4,123,0,21,0,6,6,0,
+component_b000_rho0750_f0261_seed7101,normal,pa_load_hits,5,155,3,59,0,6,6,0,
+component_b000_rho0750_f0261_seed7101,normal,pa_load_hits,6,193,3,105,0,6,6,0,
+component_b000_rho0750_f0261_seed7101,normal,pa_load_hits,7,6,1,26,5,0,-5,0,
+component_b000_rho0750_f0261_seed7101,normal,pa_load_hits,8,30,2,85,5,0,-5,0,
+component_b000_rho0750_f0261_seed7101,normal,late_drop_pa_action_hits,1,18,3,50,0,6,6,0,
+component_b000_rho0750_f0261_seed7101,normal,late_drop_pa_action_hits,2,169,3,9,6,0,-6,0,
+component_b000_rho0750_f0261_seed7101,normal,late_drop_pa_action_hits,3,171,3,27,0,6,6,0,
+component_b000_rho0750_f0261_seed7101,normal,late_drop_pa_action_hits,4,203,1,54,6,0,-6,0,
+component_b000_rho0750_f0261_seed7101,normal,late_drop_pa_action_hits,5,6,1,26,0,5,5,0,
+component_b000_rho0750_f0261_seed7101,normal,late_drop_pa_action_hits,6,30,2,85,0,5,5,0,
+component_b000_rho0750_f0261_seed7101,normal,late_drop_pa_action_hits,7,42,3,88,0,5,5,0,
+component_b000_rho0750_f0261_seed7101,normal,late_drop_pa_action_hits,8,54,1,38,0,5,5,0,
+component_b000_rho0750_f0261_seed7101,normal,late_drop_control_exact_hits,1,18,3,50,0,6,6,0,
+component_b000_rho0750_f0261_seed7101,normal,late_drop_control_exact_hits,2,169,3,9,6,0,-6,0,
+component_b000_rho0750_f0261_seed7101,normal,late_drop_control_exact_hits,3,171,3,27,0,6,6,0,
+component_b000_rho0750_f0261_seed7101,normal,late_drop_control_exact_hits,4,203,1,54,6,0,-6,0,
+component_b000_rho0750_f0261_seed7101,normal,late_drop_control_exact_hits,5,6,1,26,0,5,5,0,
+component_b000_rho0750_f0261_seed7101,normal,late_drop_control_exact_hits,6,30,2,85,0,5,5,0,
+component_b000_rho0750_f0261_seed7101,normal,late_drop_control_exact_hits,7,42,3,88,0,5,5,0,
+component_b000_rho0750_f0261_seed7101,normal,late_drop_control_exact_hits,8,54,1,38,0,5,5,0,
+component_b000_rho0750_f0261_seed7101,normal,transaction_deliver_hits,1,76,-1,89,13,1,-12,0,
+component_b000_rho0750_f0261_seed7101,normal,transaction_deliver_hits,2,54,-1,38,11,1,-10,0,
+component_b000_rho0750_f0261_seed7101,normal,transaction_deliver_hits,3,152,-1,54,0,10,10,0,
+component_b000_rho0750_f0261_seed7101,normal,transaction_deliver_hits,4,181,-1,43,0,10,10,0,
+component_b000_rho0750_f0261_seed7101,normal,transaction_deliver_hits,5,181,-1,50,0,10,10,0,
+component_b000_rho0750_f0261_seed7101,normal,transaction_deliver_hits,6,184,-1,48,0,10,10,0,
+component_b000_rho0750_f0261_seed7101,normal,transaction_deliver_hits,7,199,-1,20,0,10,10,0,
+component_b000_rho0750_f0261_seed7101,normal,transaction_deliver_hits,8,42,-1,88,10,1,-9,0,
+component_b000_rho0750_f0261_seed7101,normal,ingress_decision_ticket,1,73,1,108,1,0,-1,1,decision=accept | rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=520 rtl_lane_credit_max=520 rtl_ticket_credit_min=2063 | tlm_ing_rows=1 tlm_lane_credit_min=2 tlm_effective_min=2 tlm_ticket_credit_min=1559 tlm_reasons=lane_credit
+component_b000_rho0750_f0261_seed7101,normal,ingress_decision_ticket,2,73,1,108,0,1,1,0,decision=drop | rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=520 rtl_lane_credit_max=520 rtl_ticket_credit_min=2063 | tlm_ing_rows=1 tlm_lane_credit_min=2 tlm_effective_min=2 tlm_ticket_credit_min=1559 tlm_reasons=lane_credit
+component_b000_rho0750_f0261_seed7101,normal,ingress_decision_ticket,3,73,1,112,1,0,-1,0,decision=accept | rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=517 rtl_lane_credit_max=517 rtl_ticket_credit_min=2059 | tlm_ing_rows=1 tlm_lane_credit_min=2 tlm_effective_min=2 tlm_ticket_credit_min=1557 tlm_reasons=lane_credit
+component_b000_rho0750_f0261_seed7101,normal,ingress_decision_ticket,4,73,1,112,0,1,1,0,decision=drop | rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=517 rtl_lane_credit_max=517 rtl_ticket_credit_min=2059 | tlm_ing_rows=1 tlm_lane_credit_min=2 tlm_effective_min=2 tlm_ticket_credit_min=1557 tlm_reasons=lane_credit
+component_b000_rho0750_f0261_seed7101,normal,ingress_decision_ticket,5,73,1,113,1,0,-1,0,decision=accept | rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=515 rtl_lane_credit_max=515 rtl_ticket_credit_min=2058 | tlm_ing_rows=1 tlm_lane_credit_min=2 tlm_effective_min=2 tlm_ticket_credit_min=1557 tlm_reasons=lane_credit
+component_b000_rho0750_f0261_seed7101,normal,ingress_decision_ticket,6,73,1,113,0,1,1,0,decision=drop | rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=515 rtl_lane_credit_max=515 rtl_ticket_credit_min=2058 | tlm_ing_rows=1 tlm_lane_credit_min=2 tlm_effective_min=2 tlm_ticket_credit_min=1557 tlm_reasons=lane_credit
+component_b000_rho0750_f0261_seed7101,normal,ingress_decision_ticket,7,73,1,117,1,0,-1,0,decision=accept | rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=514 rtl_lane_credit_max=514 rtl_ticket_credit_min=2054 | tlm_ing_rows=1 tlm_lane_credit_min=1 tlm_effective_min=1 tlm_ticket_credit_min=1554 tlm_reasons=lane_credit
+component_b000_rho0750_f0261_seed7101,normal,ingress_decision_ticket,8,73,1,117,0,1,1,0,decision=drop | rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=514 rtl_lane_credit_max=514 rtl_ticket_credit_min=2054 | tlm_ing_rows=1 tlm_lane_credit_min=1 tlm_effective_min=1 tlm_ticket_credit_min=1554 tlm_reasons=lane_credit
+component_b000_rho0750_f0261_seed7101,forced_ingress,ingress_accept_hits,1,110,2,40,6,0,-6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=1252 | tlm_ing_rows=1 tlm_lane_credit_min=-556 tlm_effective_min=0 tlm_ticket_credit_min=485 tlm_reasons=rtl_forced_pre
+component_b000_rho0750_f0261_seed7101,forced_ingress,ingress_accept_hits,2,120,2,42,6,0,-6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=6 rtl_lane_credit_max=6 rtl_ticket_credit_min=1122 | tlm_ing_rows=1 tlm_lane_credit_min=-568 tlm_effective_min=0 tlm_ticket_credit_min=319 tlm_reasons=rtl_forced_pre
+component_b000_rho0750_f0261_seed7101,forced_ingress,ingress_accept_hits,3,123,0,21,6,0,-6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=4 rtl_lane_credit_max=4 rtl_ticket_credit_min=1061 | tlm_ing_rows=1 tlm_lane_credit_min=-578 tlm_effective_min=0 tlm_ticket_credit_min=261 tlm_reasons=rtl_forced_pre
+component_b000_rho0750_f0261_seed7101,forced_ingress,ingress_accept_hits,4,145,2,23,6,0,-6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=514 | tlm_ing_rows=1 tlm_lane_credit_min=-259 tlm_effective_min=0 tlm_ticket_credit_min=126 tlm_reasons=rtl_forced_pre
+component_b000_rho0750_f0261_seed7101,forced_ingress,ingress_accept_hits,5,155,3,59,6,0,-6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=269 | tlm_ing_rows=1 tlm_lane_credit_min=-139 tlm_effective_min=0 tlm_ticket_credit_min=25 tlm_reasons=rtl_forced_pre
+component_b000_rho0750_f0261_seed7101,forced_ingress,ingress_accept_hits,6,156,3,102,6,0,-6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=244 | tlm_ing_rows=1 tlm_lane_credit_min=-159 tlm_effective_min=0 tlm_ticket_credit_min=-17 tlm_reasons=rtl_forced_pre
+component_b000_rho0750_f0261_seed7101,forced_ingress,ingress_accept_hits,7,159,2,110,6,0,-6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=163 | tlm_ing_rows=1 tlm_lane_credit_min=-173 tlm_effective_min=0 tlm_ticket_credit_min=-95 tlm_reasons=rtl_forced_pre
+component_b000_rho0750_f0261_seed7101,forced_ingress,ingress_accept_hits,8,193,3,105,6,0,-6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=9 | tlm_ing_rows=1 tlm_lane_credit_min=-158 tlm_effective_min=0 tlm_ticket_credit_min=-481 tlm_reasons=rtl_forced_pre
+component_b000_rho0750_f0261_seed7101,forced_ingress,ingress_predrop_flag_hits,1,110,2,40,0,6,6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=1252 | tlm_ing_rows=1 tlm_lane_credit_min=-556 tlm_effective_min=0 tlm_ticket_credit_min=485 tlm_reasons=rtl_forced_pre
+component_b000_rho0750_f0261_seed7101,forced_ingress,ingress_predrop_flag_hits,2,120,2,42,0,6,6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=6 rtl_lane_credit_max=6 rtl_ticket_credit_min=1122 | tlm_ing_rows=1 tlm_lane_credit_min=-568 tlm_effective_min=0 tlm_ticket_credit_min=319 tlm_reasons=rtl_forced_pre
+component_b000_rho0750_f0261_seed7101,forced_ingress,ingress_predrop_flag_hits,3,123,0,21,0,6,6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=4 rtl_lane_credit_max=4 rtl_ticket_credit_min=1061 | tlm_ing_rows=1 tlm_lane_credit_min=-578 tlm_effective_min=0 tlm_ticket_credit_min=261 tlm_reasons=rtl_forced_pre
+component_b000_rho0750_f0261_seed7101,forced_ingress,ingress_predrop_flag_hits,4,145,2,23,0,6,6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=514 | tlm_ing_rows=1 tlm_lane_credit_min=-259 tlm_effective_min=0 tlm_ticket_credit_min=126 tlm_reasons=rtl_forced_pre
+component_b000_rho0750_f0261_seed7101,forced_ingress,ingress_predrop_flag_hits,5,155,3,59,0,6,6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=269 | tlm_ing_rows=1 tlm_lane_credit_min=-139 tlm_effective_min=0 tlm_ticket_credit_min=25 tlm_reasons=rtl_forced_pre
+component_b000_rho0750_f0261_seed7101,forced_ingress,ingress_predrop_flag_hits,6,156,3,102,0,6,6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=244 | tlm_ing_rows=1 tlm_lane_credit_min=-159 tlm_effective_min=0 tlm_ticket_credit_min=-17 tlm_reasons=rtl_forced_pre
+component_b000_rho0750_f0261_seed7101,forced_ingress,ingress_predrop_flag_hits,7,159,2,110,0,6,6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=163 | tlm_ing_rows=1 tlm_lane_credit_min=-173 tlm_effective_min=0 tlm_ticket_credit_min=-95 tlm_reasons=rtl_forced_pre
+component_b000_rho0750_f0261_seed7101,forced_ingress,ingress_predrop_flag_hits,8,193,3,105,0,6,6,0,rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=9 | tlm_ing_rows=1 tlm_lane_credit_min=-158 tlm_effective_min=0 tlm_ticket_credit_min=-481 tlm_reasons=rtl_forced_pre
+component_b000_rho0750_f0261_seed7101,forced_ingress,pa_load_hits,1,18,3,50,6,0,-6,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,pa_load_hits,2,169,3,9,0,6,6,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,pa_load_hits,3,171,3,27,0,6,6,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,pa_load_hits,4,203,1,54,0,6,6,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,pa_load_hits,5,6,1,26,5,0,-5,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,pa_load_hits,6,30,2,85,5,0,-5,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,pa_load_hits,7,42,3,88,5,0,-5,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,pa_load_hits,8,54,1,38,5,0,-5,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,late_drop_pa_action_hits,1,18,3,50,0,6,6,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,late_drop_pa_action_hits,2,169,3,9,6,0,-6,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,late_drop_pa_action_hits,3,203,1,54,6,0,-6,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,late_drop_pa_action_hits,4,6,1,26,0,5,5,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,late_drop_pa_action_hits,5,30,2,85,0,5,5,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,late_drop_pa_action_hits,6,42,3,88,0,5,5,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,late_drop_pa_action_hits,7,54,1,38,0,5,5,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,late_drop_pa_action_hits,8,78,1,60,0,5,5,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,late_drop_control_exact_hits,1,18,3,50,0,6,6,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,late_drop_control_exact_hits,2,169,3,9,6,0,-6,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,late_drop_control_exact_hits,3,203,1,54,6,0,-6,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,late_drop_control_exact_hits,4,6,1,26,0,5,5,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,late_drop_control_exact_hits,5,30,2,85,0,5,5,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,late_drop_control_exact_hits,6,42,3,88,0,5,5,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,late_drop_control_exact_hits,7,54,1,38,0,5,5,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,late_drop_control_exact_hits,8,78,1,60,0,5,5,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,transaction_deliver_hits,1,54,-1,38,11,1,-10,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,transaction_deliver_hits,2,181,-1,43,0,10,10,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,transaction_deliver_hits,3,181,-1,50,0,10,10,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,transaction_deliver_hits,4,189,-1,40,0,10,10,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,transaction_deliver_hits,5,199,-1,20,0,10,10,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,transaction_deliver_hits,6,231,-1,38,0,10,10,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,transaction_deliver_hits,7,42,-1,88,10,1,-9,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,transaction_deliver_hits,8,182,-1,22,0,9,9,0,
+component_b000_rho0750_f0261_seed7101,forced_ingress,ingress_decision_ticket,1,97,3,118,1,0,-1,1,decision=accept | rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=1396 | tlm_ing_rows=1 tlm_lane_credit_min=-581 tlm_effective_min=0 tlm_ticket_credit_min=739 tlm_reasons=rtl_forced_pre
+component_b000_rho0750_f0261_seed7101,forced_ingress,ingress_decision_ticket,2,97,3,118,0,1,1,0,decision=drop | rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=1396 | tlm_ing_rows=1 tlm_lane_credit_min=-581 tlm_effective_min=0 tlm_ticket_credit_min=739 tlm_reasons=rtl_forced_pre
+component_b000_rho0750_f0261_seed7101,forced_ingress,ingress_decision_ticket,3,97,3,119,1,0,-1,0,decision=accept | rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=1396 | tlm_ing_rows=1 tlm_lane_credit_min=-581 tlm_effective_min=0 tlm_ticket_credit_min=739 tlm_reasons=rtl_forced_pre
+component_b000_rho0750_f0261_seed7101,forced_ingress,ingress_decision_ticket,4,97,3,119,0,1,1,0,decision=drop | rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=1396 | tlm_ing_rows=1 tlm_lane_credit_min=-581 tlm_effective_min=0 tlm_ticket_credit_min=739 tlm_reasons=rtl_forced_pre
+component_b000_rho0750_f0261_seed7101,forced_ingress,ingress_decision_ticket,5,97,3,120,1,0,-1,0,decision=accept | rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=1396 | tlm_ing_rows=1 tlm_lane_credit_min=-581 tlm_effective_min=0 tlm_ticket_credit_min=739 tlm_reasons=rtl_forced_pre
+component_b000_rho0750_f0261_seed7101,forced_ingress,ingress_decision_ticket,6,97,3,120,0,1,1,0,decision=drop | rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=1396 | tlm_ing_rows=1 tlm_lane_credit_min=-581 tlm_effective_min=0 tlm_ticket_credit_min=739 tlm_reasons=rtl_forced_pre
+component_b000_rho0750_f0261_seed7101,forced_ingress,ingress_decision_ticket,7,97,3,124,1,0,-1,0,decision=accept | rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=1393 | tlm_ing_rows=1 tlm_lane_credit_min=-581 tlm_effective_min=0 tlm_ticket_credit_min=736 tlm_reasons=rtl_forced_pre
+component_b000_rho0750_f0261_seed7101,forced_ingress,ingress_decision_ticket,8,97,3,124,0,1,1,0,decision=drop | rtl_ing_rows=1 rtl_drop_rows=0 rtl_lane_credit_min=1 rtl_lane_credit_max=1 rtl_ticket_credit_min=1393 | tlm_ing_rows=1 tlm_lane_credit_min=-581 tlm_effective_min=0 tlm_ticket_credit_min=736 tlm_reasons=rtl_forced_pre

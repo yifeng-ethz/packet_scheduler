@@ -47,9 +47,13 @@ QUARTUS_SIM_LIB ?= $(QUARTUS_ROOTDIR)/eda/sim_lib
 UVM_DPI_SO := $(firstword $(wildcard $(QUESTA_HOME)/uvm-1.2/linux_x86_64/uvm_dpi.so $(QUESTA_HOME)/verilog_src/uvm-1.2/linux_x86_64/uvm_dpi.so))
 UVM_DPI_LIB := $(basename $(UVM_DPI_SO))
 UVM_DEFINES ?=
+TB_SVA_ENABLE ?= 1
 FORMAL_SVA ?= 0
 FORMAL_STRICT ?= 0
 FORMAL_PLANE ?= all
+ifeq ($(TB_SVA_ENABLE),0)
+UVM_DEFINES += +define+OPQ_DISABLE_TB_SVA
+endif
 ifeq ($(FORMAL_SVA),1)
 UVM_DEFINES += +define+OPQ_ENABLE_NATIVE_FORMAL_SVA
 ifeq ($(FORMAL_PLANE),ingress)

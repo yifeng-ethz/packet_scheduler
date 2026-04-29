@@ -12,7 +12,7 @@
 
 typedef struct {
   int count;
-  float *rho_pct;
+  float *rho_lane;
   float *opq_log_loss;
   float *tm_log_loss;
 } loss_curve_t;
@@ -71,10 +71,10 @@ static int read_curve(const char *path, loss_curve_t *curve_data) {
     fclose(handle);
     return 0;
   }
-  curve_data->rho_pct = (float *) calloc((size_t) curve_data->count, sizeof(float));
+  curve_data->rho_lane = (float *) calloc((size_t) curve_data->count, sizeof(float));
   curve_data->opq_log_loss = (float *) calloc((size_t) curve_data->count, sizeof(float));
   curve_data->tm_log_loss = (float *) calloc((size_t) curve_data->count, sizeof(float));
-  if (curve_data->rho_pct == NULL ||
+  if (curve_data->rho_lane == NULL ||
       curve_data->opq_log_loss == NULL ||
       curve_data->tm_log_loss == NULL) {
     fprintf(stderr, "Out of memory while reading %s\n", path);
@@ -82,11 +82,10 @@ static int read_curve(const char *path, loss_curve_t *curve_data) {
     return 0;
   }
   for (int idx = 0; idx < curve_data->count; idx++) {
-    if (fscanf(handle, "%f", &curve_data->rho_pct[idx]) != 1) {
+    if (fscanf(handle, "%f", &curve_data->rho_lane[idx]) != 1) {
       fclose(handle);
       return 0;
     }
-    curve_data->rho_pct[idx] *= 100.0f;
   }
   for (int idx = 0; idx < curve_data->count; idx++) {
     float value;
@@ -111,31 +110,49 @@ static int read_curve(const char *path, loss_curve_t *curve_data) {
 }
 
 static void free_curve(loss_curve_t *curve_data) {
-  free(curve_data->rho_pct);
+  free(curve_data->rho_lane);
   free(curve_data->opq_log_loss);
   free(curve_data->tm_log_loss);
-  curve_data->rho_pct = NULL;
+  curve_data->rho_lane = NULL;
   curve_data->opq_log_loss = NULL;
   curve_data->tm_log_loss = NULL;
 }
 
-static void draw_loss_legend(float xmax) {
+static void draw_real_box(float x0, float y0, float x1, float y1) {
+  float x[5] = {x0, x1, x1, x0, x0};
+  float y[5] = {y0, y0, y1, y1, y0};
+
+  setrgb(0.96f, 0.96f, 0.96f);
+  shdpat(16);
+  rlarea(x, y, 5);
+  color("fore");
+  linwid(1);
+  solid();
+  curve(x, y, 5);
+}
+
+static void draw_loss_legend(float xmin, float xmax) {
   float xs[2];
   float ys[2];
-  float x0 = xmax - 10.5f;
-  float x1 = xmax - 7.5f;
+  float xspan = fmaxf(fabsf(xmax - xmin), 1.0e-6f);
+  float x0 = xmax - 0.20f * xspan;
+  float x1 = x0 + 0.080f * xspan;
+  float text_gap = 0.012f * xspan;
 
-  height(18);
+  draw_real_box(x0 - 0.020f * xspan, -10.35f,
+                xmax - 0.004f * xspan, -7.05f);
+
+  height(16);
   color("fore");
-  rlmess("implementation", x0, -1.1f);
+  rlmess("implementation", x0, -7.60f);
   linwid(8);
-  xs[0] = x0; xs[1] = x1; ys[0] = -2.0f; ys[1] = -2.0f;
-  setrgb(0.10f, 0.30f, 0.78f); solid(); curve(xs, ys, 2);
-  color("fore"); linwid(1); rlmess("OPQ", x1 + 0.7f, -1.8f);
-  linwid(8);
-  xs[0] = x0; xs[1] = x1; ys[0] = -3.1f; ys[1] = -3.1f;
+  xs[0] = x0; xs[1] = x1; ys[0] = -8.45f; ys[1] = -8.45f;
   setrgb(0.82f, 0.20f, 0.10f); dashm(); curve(xs, ys, 2);
-  solid(); color("fore"); linwid(1); rlmess("Time-Merger", x1 + 0.7f, -2.9f);
+  color("fore"); linwid(1); rlmess("Time-Merger", x1 + text_gap, -8.25f);
+  linwid(8);
+  xs[0] = x0; xs[1] = x1; ys[0] = -9.55f; ys[1] = -9.55f;
+  setrgb(0.10f, 0.30f, 0.78f); solid(); curve(xs, ys, 2);
+  solid(); color("fore"); linwid(1); rlmess("OPQ", x1 + text_gap, -9.35f);
 }
 
 static void draw_log_loss_axis_labels(float xmin, float ymax_log, float ymin_log) {
@@ -163,15 +180,15 @@ static void render_curve(const loss_curve_t *curve_data, const char *output_path
   const char *output_format = output_format_from_path(output_path);
   const char *plot_title = getenv("OPQ_LOSS_CURVE_TITLE");
   const char *plot_note = getenv("OPQ_LOSS_CURVE_NOTE");
-  float xmin = curve_data->rho_pct[0];
-  float xmax = curve_data->rho_pct[curve_data->count - 1];
+  float xmin = curve_data->rho_lane[0];
+  float xmax = curve_data->rho_lane[curve_data->count - 1];
 
   metafl(output_format);
   setfil(output_path);
   filmod("delete");
   setpag("da4l");
   if (strcasecmp(output_format, "PNG") == 0) {
-    winsiz(2048, 1448);
+    winsiz(4096, 2896);
   }
   scrmod("reverse");
   disini();
@@ -181,14 +198,14 @@ static void render_curve(const loss_curve_t *curve_data, const char *output_path
     plot_title = "OPQ vs Time-Merger Loss Curve";
   }
   titlin(plot_title, 2);
-  name("per-lane offered rate [%]", "x");
+  name("per-lane offered rate rho", "x");
   name("", "y");
   intax();
-  labdig(0, "x");
+  labdig(2, "x");
   labels("none", "y");
   axspos(420, 1750);
   axslen(2050, 1100);
-  graf(xmin, xmax, 5.0f, 5.0f, LOSS_LOG_MIN, LOSS_LOG_MAX, LOSS_LOG_MIN, 2.0f);
+  graf(xmin, xmax, 0.0f, 0.2f, LOSS_LOG_MIN, LOSS_LOG_MAX, LOSS_LOG_MIN, 2.0f);
   setrgb(0.82f, 0.82f, 0.82f);
   grid(1, 1);
   draw_log_loss_axis_labels(xmin, LOSS_LOG_MAX, LOSS_LOG_MIN);
@@ -196,13 +213,13 @@ static void render_curve(const loss_curve_t *curve_data, const char *output_path
   linwid(9);
   setrgb(0.10f, 0.30f, 0.78f);
   solid();
-  curve(curve_data->rho_pct, curve_data->opq_log_loss, curve_data->count);
+  curve(curve_data->rho_lane, curve_data->opq_log_loss, curve_data->count);
   setrgb(0.82f, 0.20f, 0.10f);
   dashm();
-  curve(curve_data->rho_pct, curve_data->tm_log_loss, curve_data->count);
+  curve(curve_data->rho_lane, curve_data->tm_log_loss, curve_data->count);
   solid();
   linwid(1);
-  draw_loss_legend(xmax);
+  draw_loss_legend(xmin, xmax);
 
   height(48);
   color("fore");

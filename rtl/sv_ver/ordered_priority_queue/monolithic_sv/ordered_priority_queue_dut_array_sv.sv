@@ -94,6 +94,13 @@ module ordered_priority_queue_dut_array_sv #(
   localparam int unsigned TICKET_FIFO_DATA_WIDTH_CONST =
     (TICKET_FIFO_DATA_WIDTH_A_CONST > TICKET_FIFO_DATA_WIDTH_B_CONST) ?
       TICKET_FIFO_DATA_WIDTH_A_CONST : TICKET_FIFO_DATA_WIDTH_B_CONST;
+  localparam int unsigned TICKET_TS_LO_CONST = 0;
+  localparam int unsigned TICKET_TS_HI_CONST = 47;
+  localparam int unsigned TICKET_LANE_RD_OFST_LO_CONST = 48;
+  localparam int unsigned TICKET_LANE_RD_OFST_HI_CONST = 48 + LANE_FIFO_ADDR_WIDTH_CONST - 1;
+  localparam int unsigned TICKET_BLOCK_LEN_LO_CONST = 48 + LANE_FIFO_ADDR_WIDTH_CONST;
+  localparam int unsigned TICKET_BLOCK_LEN_HI_CONST =
+    48 + LANE_FIFO_ADDR_WIDTH_CONST + MAX_PKT_LENGTH_BITS_CONST - 1;
   localparam int unsigned HANDLE_LENGTH_CONST =
     LANE_FIFO_ADDR_WIDTH_CONST + PAGE_RAM_ADDR_WIDTH_CONST + MAX_PKT_LENGTH_BITS_CONST;
   localparam int unsigned HANDLE_LEN_LO_CONST = LANE_FIFO_ADDR_WIDTH_CONST + PAGE_RAM_ADDR_WIDTH_CONST;
@@ -191,6 +198,10 @@ module ordered_priority_queue_dut_array_sv #(
   logic [OPQ_N_LANE_LOCAL-1:0][47:0] native_ingress_credit_drop_ts_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][15:0] native_ingress_credit_drop_shd_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][15:0] native_ingress_credit_drop_hit_dbg;
+  logic [OPQ_N_LANE_LOCAL-1:0] native_ingress_tail_bypass_valid_dbg;
+  logic [OPQ_N_LANE_LOCAL-1:0] native_ingress_tail_bypass_drop_dbg;
+  logic [OPQ_N_LANE_LOCAL-1:0][FRAME_SERIAL_SIZE_CONST-1:0] native_ingress_tail_bypass_serial_dbg;
+  logic [OPQ_N_LANE_LOCAL-1:0][47:0] native_ingress_tail_bypass_ts_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][FRAME_SERIAL_SIZE_CONST-1:0] native_ingress_pkg_cnt_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0] native_handle_we_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0] native_handle_flag_dbg;
@@ -487,6 +498,10 @@ module ordered_priority_queue_dut_array_sv #(
     assign native_ingress_credit_drop_ts_dbg[g] = u_native.ingress_credit_drop_ts_dbg[g];
     assign native_ingress_credit_drop_shd_dbg[g] = u_native.ingress_credit_drop_shd_cnt_dbg[g];
     assign native_ingress_credit_drop_hit_dbg[g] = u_native.ingress_credit_drop_hit_cnt_dbg[g];
+    assign native_ingress_tail_bypass_valid_dbg[g] = u_native.ingress_tail_bypass_valid_dbg[g];
+    assign native_ingress_tail_bypass_drop_dbg[g] = u_native.ingress_tail_bypass_drop_dbg[g];
+    assign native_ingress_tail_bypass_serial_dbg[g] = u_native.ingress_tail_bypass_serial_dbg[g];
+    assign native_ingress_tail_bypass_ts_dbg[g] = u_native.ingress_tail_bypass_ts_dbg[g];
     assign native_handle_we_dbg[g] = u_native.handle_we_dbg[g];
     assign native_handle_flag_dbg[g] = u_native.handle_wdata_dbg[g][HANDLE_LENGTH_CONST];
     assign native_handle_block_len_dbg[g] =
@@ -541,6 +556,45 @@ module ordered_priority_queue_dut_array_sv #(
     u_native.write_head_active_dbg || u_native.write_tail_active_dbg || u_native.write_page_active_dbg;
   assign native_arbiter_active_dbg = |native_drr_req_dbg || |u_native.block_path_i.b2p_arb.sel_mask;
   assign avs_csr_waitrequest = 1'b0;
+
+`ifndef SYNTHESIS
+`ifndef OPQ_OSS_FORMAL
+  bit opq_trace_boundary_lane_en;
+  time opq_trace_boundary_lane_after_ps;
+
+  initial begin
+    opq_trace_boundary_lane_en = $test$plusargs("OPQ_NATIVE_TRACE_BOUNDARY");
+    opq_trace_boundary_lane_after_ps = 0;
+    void'($value$plusargs("OPQ_TRACE_AFTER_PS=%d", opq_trace_boundary_lane_after_ps));
+  end
+
+  always_ff @(posedge d_clk) begin : proc_native_ticket_write_trace
+    if (!d_reset && opq_trace_boundary_lane_en && ($time >= opq_trace_boundary_lane_after_ps)) begin
+      for (int lane = 0; lane < OPQ_N_LANE_LOCAL; lane++) begin
+        if (native_ingress_ticket_we_dbg[lane]) begin
+          $display("[opq_boundary_lane] t=%0t parser_ticket_we lane=%0d pkg=%0d ts=0x%0h lane_start=0x%0h len=%0d sop=%0b eop=%0b",
+            $time,
+            lane,
+            native_ingress_pkg_cnt_dbg[lane],
+            native_ingress_ticket_wdata_dbg[lane][TICKET_TS_HI_CONST:TICKET_TS_LO_CONST],
+            native_ingress_ticket_wdata_dbg[lane][TICKET_LANE_RD_OFST_HI_CONST:TICKET_LANE_RD_OFST_LO_CONST],
+            native_ingress_ticket_wdata_dbg[lane][TICKET_BLOCK_LEN_HI_CONST:TICKET_BLOCK_LEN_LO_CONST],
+            native_ingress_ticket_wdata_dbg[lane][TICKET_ALT_SOP_LOC_CONST],
+            native_ingress_ticket_wdata_dbg[lane][TICKET_ALT_EOP_LOC_CONST]);
+        end
+        if (native_ingress_tail_bypass_valid_dbg[lane]) begin
+          $display("[opq_boundary_lane] t=%0t parser_tail lane=%0d pkg=%0d ts=0x%0h drop=%0b",
+            $time,
+            lane,
+            native_ingress_tail_bypass_serial_dbg[lane],
+            native_ingress_tail_bypass_ts_dbg[lane],
+            native_ingress_tail_bypass_drop_dbg[lane]);
+        end
+      end
+    end
+  end
+`endif
+`endif
 
   always_ff @(posedge d_clk) begin : proc_native_csr
     logic clear_counters_v;

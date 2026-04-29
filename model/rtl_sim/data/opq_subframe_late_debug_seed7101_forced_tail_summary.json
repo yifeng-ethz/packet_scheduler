@@ -1,0 +1,119 @@
+[
+  {
+    "run_tag": "component_b000_rho0750_f0261_seed7101",
+    "log": "model/rtl_sim/runs/component_replay_100k_ingress_20260429/stdout/component_b000_rho0750_f0261_seed7101.stdout.log",
+    "config": {
+      "run_tag": "component_b000_rho0750_f0261_seed7101",
+      "case": "RTL-LS-002",
+      "profile": 3,
+      "n_lane": 4,
+      "n_shd": 128,
+      "egress_symbols_per_beat": 1,
+      "ready_duty_ppm": 1000000,
+      "rho_ppm": 750000,
+      "burstiness_milli": 0,
+      "frame_count": 261,
+      "subheaders_per_frame": 128,
+      "inter_frame_gap_cycles": 4096,
+      "noise_rho_ppm": 0,
+      "cluster_rho_ppm": 0,
+      "cluster_size_min": 4,
+      "cluster_size_max": 8,
+      "rng_seed": 1545535489,
+      "rtl_expected_hits": 100597,
+      "rtl_dropped_hits": 39339,
+      "lane_fifo_depth": 2048,
+      "ticket_fifo_depth": 4096,
+      "page_ram_depth": 65536,
+      "frame_ts_step_ticks": 2048,
+      "frame_launch_period_cycles": 4096,
+      "feb_header_latency_cycles": 4096
+    },
+    "ingress_stats": {
+      "rtl_ingress_rows": 133632,
+      "rtl_ingress_hits": 100597,
+      "rtl_ingress_duplicates": 0,
+      "rtl_ingress_ignored_rows": 0,
+      "rtl_ingress_ignored_hits": 0
+    },
+    "rtl_counts": {
+      "ingress_rows": 133632,
+      "predrops": 19844,
+      "postdrops": 4875,
+      "pa_actions": 187930,
+      "txn_deliver": 58090
+    },
+    "normal": {
+      "mode": "normal",
+      "tlm_stats": {
+        "offered_hits": 100597,
+        "accepted_hits": 62323,
+        "predrop_hits": 38274,
+        "postdrop_hits": 4155,
+        "ft_drop_hits": 0,
+        "delivered_hits": 58168,
+        "max_lane_fifo_used": 2045,
+        "max_ticket_fifo_used": 4095,
+        "max_handle_fifo_used": 64,
+        "max_page_frames": 2,
+        "max_page_words": 1078,
+        "max_cycle": 1248887,
+        "lane_predrop_hits": [
+          9617,
+          9559,
+          9484,
+          9614
+        ],
+        "lane_postdrop_hits": [
+          1109,
+          976,
+          1060,
+          1010
+        ],
+        "lane_ft_drop_hits": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "trace_events": 547746
+    },
+    "forced_ingress": {
+      "mode": "forced_ingress",
+      "tlm_stats": {
+        "offered_hits": 100597,
+        "accepted_hits": 68073,
+        "predrop_hits": 32524,
+        "postdrop_hits": 3127,
+        "ft_drop_hits": 0,
+        "delivered_hits": 64946,
+        "max_lane_fifo_used": 3225,
+        "max_ticket_fifo_used": 5364,
+        "max_handle_fifo_used": 64,
+        "max_page_frames": 2,
+        "max_page_words": 1078,
+        "max_cycle": 1332304,
+        "lane_predrop_hits": [
+          8080,
+          8158,
+          8187,
+          8099
+        ],
+        "lane_postdrop_hits": [
+          802,
+          733,
+          801,
+          791
+        ],
+        "lane_ft_drop_hits": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "trace_events": 580141
+    }
+  }
+]

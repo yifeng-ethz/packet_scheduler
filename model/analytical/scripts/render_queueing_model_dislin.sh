@@ -66,6 +66,7 @@ gcc -O2 -Wall -Wextra -std=c11 \
 for n_lane in 4 8 16; do
   for egress_symbols in 1 2 4 8; do
     loss_stem="$(printf 'opq_loss_surface_nlane%02d_egress%02dx' "${n_lane}" "${egress_symbols}")"
+    tm_loss_stem="$(printf 'time_merger_loss_surface_nlane%02d_egress%02dx' "${n_lane}" "${egress_symbols}")"
     overlay_stem="$(printf 'opq_vs_time_merger_loss_contour_nlane%02d_egress%02dx' "${n_lane}" "${egress_symbols}")"
     curve_stem="$(printf 'opq_vs_time_merger_loss_curve_nlane%02d_egress%02dx' "${n_lane}" "${egress_symbols}")"
     ratio_stem="$(printf 'opq_vs_time_merger_ready_burst_ratio_nlane%02d_egress%02dx' "${n_lane}" "${egress_symbols}")"
@@ -78,8 +79,17 @@ for n_lane in 4 8 16; do
       "${MODEL_DIR}/dislin/${loss_stem}.dat" \
       "${PLOT_DIR}/${loss_stem}.png"
 
+    title="Time-Merger Loss Surface N_LANE=${n_lane}, Egress=${egress_symbols}x"
+    note="analytical finite-buffer tree proxy; one-word merger service with tree/HoL penalty"
+    OPQ_LOSS_SURFACE_TITLE="${title}" \
+    OPQ_LOSS_SURFACE_NOTE="${note}" \
+    OPQ_MODELING_BOX_ANCHOR="upper_left" \
+      "${BUILD_DIR}/opq_loss_surface_plot" \
+      "${MODEL_DIR}/dislin/${tm_loss_stem}.dat" \
+      "${PLOT_DIR}/${tm_loss_stem}.png"
+
     title="OPQ vs Time-Merger Loss Contours N_LANE=${n_lane}, Egress=${egress_symbols}x"
-    note="x: B=(SCV-1)/(SCV+1), y: offered rate/lane; OPQ egress=${egress_symbols}x, time-merger one-word tree"
+    note="x: B=(CV-1)/(CV+1), y: offered rate/lane; OPQ egress=${egress_symbols}x, time-merger one-word tree"
     OPQ_TM_CONTOUR_TITLE="${title}" \
     OPQ_TM_CONTOUR_NOTE="${note}" \
       "${BUILD_DIR}/opq_vs_time_merger_contour_plot" \

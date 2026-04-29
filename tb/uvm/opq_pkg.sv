@@ -59,7 +59,13 @@ package opq_pkg;
   localparam int OPQ_N_SHD = `OPQ_N_SHD;
   localparam int OPQ_N_HIT = 255;
   localparam int OPQ_DRR_DEFAULT_ALLOWANCE = 256;
-  localparam int OPQ_MIN_SOP_GAP_CYCLES = 4000;
+  localparam int OPQ_TIMESTAMP_TICK_NS = 8;
+  localparam int OPQ_UVM_CLK_PERIOD_NS = 4;
+  localparam int OPQ_SUBHEADER_DURATION_TS_TICKS = 16;
+  localparam int OPQ_FRAME_DURATION_TS_TICKS = OPQ_N_SHD * OPQ_SUBHEADER_DURATION_TS_TICKS;
+  localparam int OPQ_FRAME_DURATION_SWB_CYCLES =
+    (OPQ_FRAME_DURATION_TS_TICKS * OPQ_TIMESTAMP_TICK_NS) / OPQ_UVM_CLK_PERIOD_NS;
+  localparam int OPQ_MIN_SOP_GAP_CYCLES = OPQ_FRAME_DURATION_SWB_CYCLES;
   localparam int OPQ_POST_RESET_SETTLE_CYCLES = 4;
   localparam int OPQ_ABSOLUTE_LAUNCH_GUARD_CYCLES = 64;
   localparam int OPQ_FRAME_HDR_AUX_WORDS = 4;

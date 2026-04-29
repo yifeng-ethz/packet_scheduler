@@ -10,7 +10,7 @@ not by reusing analytical or TLM loss values.
 |---|---:|---|
 | `N_LANE` | `4`, `8`, `16` | OPQ native-SV build and old time-merger lane-count define |
 | `egress_symbols_per_beat` | `1`, `2`, `4`, `8` | OPQ egress-width build; time-merger remains one-word |
-| `B` | sampled over `[-0.25, 0.95]` | `B=(SCV-1)/(SCV+1)` |
+| `B` | sampled over `[-0.25, 0.95]` | `B=(CV_tau-1)/(CV_tau+1)` from true hit interevent times |
 | `rho_lane` | sampled over `[0.005, 0.30]` | offered hit rate per lane |
 | `ready_duty` | sampled over `[0.45, 1.0]` | egress ready vacation profile |
 
@@ -23,7 +23,7 @@ not by reusing analytical or TLM loss values.
 | `n_lane` | HDL lane count |
 | `n_shd` | OPQ shadow-window point; `0` for time-merger if not applicable |
 | `egress_symbols_per_beat` | OPQ egress width in 36-bit ingress symbols, or `1` for time-merger |
-| `burstiness_b` | `B=(SCV-1)/(SCV+1)` |
+| `burstiness_b` | `B=(CV_tau-1)/(CV_tau+1)` |
 | `rho_lane` | offered rate per lane |
 | `ready_duty` | egress ready duty |
 | `offered_hit_count` | legal hit words driven into the tested RTL input side |

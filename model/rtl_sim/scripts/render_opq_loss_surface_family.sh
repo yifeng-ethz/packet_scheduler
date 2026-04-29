@@ -45,7 +45,7 @@ for n_lane in 4 8 16; do
       exit 2
     fi
     title="OPQ IP-Core Loss Contour N_LANE=${n_lane}, Egress=${egress_symbols}x"
-    note="x: B=(SCV-1)/(SCV+1), y: rate/lane; egress=${egress_symbols} symbol(s)/beat, N_LANE=${n_lane}"
+    note="x: B=(CV-1)/(CV+1), y: rate/lane; egress=${egress_symbols} symbol(s)/beat, N_LANE=${n_lane}"
     OPQ_LOSS_SURFACE_TITLE="${title}" \
     OPQ_LOSS_SURFACE_NOTE="${note}" \
       "${BUILD_DIR}/opq_loss_surface_plot" "${RTL_OPQ_FAMILY_DIR}/${stem}.dat" "${REPORT_DIR}/${stem}.png"

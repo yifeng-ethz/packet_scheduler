@@ -79,6 +79,7 @@ class opq_scoreboard extends uvm_component;
   int        egress_header_idx;
   int        egress_hits_pending;
   bit        enable_stay_time_trace;
+  bit        enable_txn_trace;
 
   bit        egress_preamble_seen;
   int unsigned sop_count;
@@ -179,6 +180,7 @@ class opq_scoreboard extends uvm_component;
       cfg = opq_scoreboard_cfg::type_id::create("cfg");
     end
     enable_stay_time_trace = $test$plusargs("OPQ_STAY_TRACE");
+    enable_txn_trace = $test$plusargs("OPQ_TRACE_TXN");
 
     foreach (ingress_header_idx[i]) begin
       reset_ingress_lane(i);
@@ -221,6 +223,25 @@ class opq_scoreboard extends uvm_component;
     bit [31:0] hit_word
   );
     return $sformatf("%0d_%04h_%012h_%08h", lane_id, pkg_cnt, hit_ts, hit_word);
+  endfunction
+
+  function automatic void emit_txn_trace(string event_name, opq_hit_trace_t trace);
+    if (!enable_txn_trace) begin
+      return;
+    end
+    $display("OPQ_TXN event=%s lane=%0d hit_id=0x%016h pkg_cnt=%0d bucket=%0d:0x%02h hit_ts=0x%012h accounting_ts=0x%012h word=0x%08h cycle=%0d time=%0t",
+      event_name,
+      trace.lane_id,
+      trace.hit_id,
+      trace.pkg_cnt,
+      trace.pkg_cnt,
+      trace.shd_ts,
+      trace.hit_ts,
+      trace.accounting_hit_ts,
+      trace.hit_word,
+      int'($time / 4),
+      $time
+    );
   endfunction
 
   function automatic bit [47:0] make_abs_hit_ts(bit [47:0] frame_ts, bit [7:0] shd_ts);
@@ -503,12 +524,14 @@ class opq_scoreboard extends uvm_component;
         trace.hit_word = frame.subheaders[i].hits[j].payload_word;
         trace.lane_id = frame.lane_id;
         trace.shd_ts = frame.subheaders[i].shd_ts;
+        emit_txn_trace("offer", trace);
         pending_ingress_hits[frame.lane_id].push_back(trace);
         if (cfg.allow_drop_accounting &&
             frame.subheaders[i].error_bits == '0 &&
             frame.subheaders[i].hits[j].error_bits == '0) begin
           accounting_trace = trace;
           lane_accounting_hits[frame.lane_id].push_back(accounting_trace);
+          emit_txn_trace("expected", trace);
         end
       end
     end
@@ -651,6 +674,7 @@ class opq_scoreboard extends uvm_component;
         end
         if (!drop_hit_from_integrity) begin
           expected_hits.push_back(trace);
+          emit_txn_trace("ingress_accept", trace);
         end else if (cfg.allow_drop_accounting) begin
           retire_lane_accounting_trace(
             lane_id,
@@ -743,6 +767,18 @@ class opq_scoreboard extends uvm_component;
       end else begin
         push_actual_hit(data32);
         matched_lane = retire_actual_from_lane_accounting(egress_pkg_cnt, egress_current_ts, data32);
+        if (enable_txn_trace) begin
+          opq_hit_trace_t actual_trace;
+
+          actual_trace.hit_id = '0;
+          actual_trace.pkg_cnt = egress_pkg_cnt;
+          actual_trace.hit_ts = egress_current_ts;
+          actual_trace.accounting_hit_ts = '0;
+          actual_trace.hit_word = data32;
+          actual_trace.lane_id = matched_lane;
+          actual_trace.shd_ts = egress_current_shd;
+          emit_txn_trace("deliver", actual_trace);
+        end
         if ((matched_lane >= 0) && (matched_lane < OPQ_N_LANE)) begin
           actual_lane_hit_cnt[matched_lane]++;
         end
@@ -965,6 +1001,7 @@ class opq_scoreboard extends uvm_component;
       trace = lane_accounting_hits[lane_id].pop_front();
       dropped_hit_id[hit_id_key(trace.hit_id)] = 1'b1;
       dropped_hit_sig[hit_sig_key(trace.lane_id, trace.pkg_cnt, trace.hit_ts, trace.hit_word)] = 1'b1;
+      emit_txn_trace("controlled_drop", trace);
       hit_cnt--;
     end
   endfunction
@@ -1074,6 +1111,7 @@ class opq_scoreboard extends uvm_component;
         lane_accounting_hits[lane_id].delete(idx);
         dropped_hit_id[hit_id_key(trace.hit_id)] = 1'b1;
         dropped_hit_sig[hit_sig_key(trace.lane_id, trace.pkg_cnt, trace.hit_ts, trace.hit_word)] = 1'b1;
+        emit_txn_trace("controlled_drop", trace);
         hit_cnt--;
       end else begin
         idx++;

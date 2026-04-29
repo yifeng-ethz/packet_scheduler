@@ -1,0 +1,28 @@
+[
+  {
+    "case_id": "opq_model_publish_loss_sweep_test",
+    "checkpoint": "per-subframe basic",
+    "impl": "opq",
+    "source": "UVM scoreboard OPQ_TXN trace",
+    "rtl_sim_clean": "1",
+    "offer_count": 128,
+    "ingress_accept_count": 128,
+    "controlled_drop_count": 0,
+    "deliver_count": 128,
+    "deliver_lane_known_count": 128,
+    "expected_count": 128,
+    "ingress_missing": 0,
+    "ingress_extra": 0,
+    "deliver_missing": 0,
+    "deliver_extra": 0,
+    "deliver_exact_checked": "1",
+    "deliver_exact_missing": 0,
+    "deliver_exact_extra": 0,
+    "bucket_missing": 0,
+    "bucket_extra": 0,
+    "deliver_bucket_order_violations": 0,
+    "loss_tier": "-",
+    "match": "PASS",
+    "log": "/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/rtl_sim/runs/opq_transaction_check_profile1_multiframe/logs/opq_model_publish_loss_sweep_test.log"
+  }
+]

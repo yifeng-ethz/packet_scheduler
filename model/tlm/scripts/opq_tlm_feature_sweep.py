@@ -13,6 +13,7 @@ import argparse
 import csv
 import json
 import math
+import shlex
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -27,6 +28,10 @@ DEFAULT_READY_COUNT = 51
 LOSS_FLOOR = 1.0e-12
 RATIO_CLIP = 1.0e6
 MAX_ENDPOINT_SCV = 1_000.0
+MAX_ENDPOINT_MEAN_BATCH_HITS = 0.5 * (MAX_ENDPOINT_SCV + 1.0)
+SCIFI_CHANNELS_PER_LANE = 128
+DEFAULT_CLUSTER_SIZE_MIN = 4
+DEFAULT_CLUSTER_SIZE_MAX = 8
 PUBLISHED_FEATURES = tuple(
     (n_lane, egress_symbols)
     for n_lane in (4, 8, 16)
@@ -42,6 +47,7 @@ class TlmPoint:
     ready_duty: float
     burstiness: float
     scv: float
+    mean_generation_batch_hits: float
     rho_lane: float
     cycles: int
     warmup_cycles: int
@@ -62,7 +68,36 @@ class TlmResult:
     dropped: np.ndarray
     mean_occupancy: np.ndarray
     max_occupancy: np.ndarray
+    mean_generation_batch_hits: np.ndarray
     capacity: int
+
+
+@dataclass(frozen=True)
+class AnchorSamplePoint:
+    sample_name: str
+    scifi_channels_per_lane: int
+    noise_rho_lane: float
+    cluster_rho_lane: float
+    total_rho_lane: float
+    cluster_size_min: int
+    cluster_size_max: int
+    cluster_size_mean: float
+    sampled_cycles: int
+    sampled_noise_hits: int
+    sampled_cluster_hits: int
+    sampled_total_hits: int
+    sampled_generation_events: int
+    sampled_noise_fraction: float
+    sampled_cluster_fraction: float
+    timestamp_mean_delta: float
+    timestamp_std_delta: float
+    timestamp_cv: float
+    timestamp_scv: float
+    burstiness: float
+    analytic_mean_generation_batch_hits: float
+    analytic_timestamp_cv: float
+    analytic_timestamp_scv: float
+    analytic_burstiness: float
 
 
 def linspace(start: float, stop: float, count: int) -> np.ndarray:
@@ -72,12 +107,67 @@ def linspace(start: float, stop: float, count: int) -> np.ndarray:
 def burstiness_to_scv(burstiness: np.ndarray | float) -> np.ndarray | float:
     if isinstance(burstiness, np.ndarray):
         clipped = np.clip(burstiness, -0.999999, 0.999999)
-        return (1.0 + clipped) / (1.0 - clipped)
+        cv = (1.0 + clipped) / (1.0 - clipped)
+        return np.clip(cv * cv, 0.0, MAX_ENDPOINT_SCV)
     if burstiness <= -0.999999:
         return 0.0
     if burstiness >= 0.999999:
         return MAX_ENDPOINT_SCV
-    return (1.0 + burstiness) / (1.0 - burstiness)
+    cv = (1.0 + burstiness) / (1.0 - burstiness)
+    return min(MAX_ENDPOINT_SCV, cv * cv)
+
+
+def burstiness_to_mean_generation_batch_hits(
+    burstiness: np.ndarray | float,
+) -> np.ndarray | float:
+    """Return same-timestamp hit multiplicity implied by timestamp CV.
+
+    A Poisson source of generation events with mean same-timestamp hit
+    multiplicity m has hit-interval SCV = 2m - 1 when each hit is counted as
+    an event. The Goh-Barabasi definition is B=(CV-1)/(CV+1), where
+    CV=sqrt(SCV), so clustered traffic maps to m=(CV^2+1)/2. Negative B is
+    under-dispersed traffic, so it remains singleton generation.
+    """
+    if isinstance(burstiness, np.ndarray):
+        clipped = np.clip(burstiness, -0.999999, 0.999999)
+        cv = (1.0 + clipped) / (1.0 - clipped)
+        mean_batch = np.where(clipped > 0.0, 0.5 * ((cv * cv) + 1.0), 1.0)
+        return np.minimum(mean_batch, MAX_ENDPOINT_MEAN_BATCH_HITS)
+    if burstiness > 0.0:
+        clipped = min(burstiness, 0.999999)
+        cv = (1.0 + clipped) / (1.0 - clipped)
+        return min(MAX_ENDPOINT_MEAN_BATCH_HITS, 0.5 * ((cv * cv) + 1.0))
+    return 1.0
+
+
+def timestamp_delta_stats(timestamps: np.ndarray) -> tuple[float, float, float, float, float]:
+    if timestamps.size < 3:
+        return 0.0, 0.0, 0.0, 0.0, 0.0
+    deltas = np.diff(np.sort(timestamps.astype(float)))
+    mean_delta = float(np.mean(deltas))
+    if mean_delta <= 0.0:
+        return 0.0, 0.0, 0.0, MAX_ENDPOINT_SCV, 1.0
+    std_delta = float(np.std(deltas))
+    cv = std_delta / mean_delta
+    scv = cv * cv
+    burstiness = (cv - 1.0) / (cv + 1.0) if cv > 0.0 else -1.0
+    return mean_delta, std_delta, cv, scv, max(-1.0, min(1.0, burstiness))
+
+
+def analytic_cluster_anchor(
+    noise_rho_lane: float,
+    cluster_rho_lane: float,
+    cluster_size_mean: float,
+) -> tuple[float, float, float, float]:
+    total_rho = noise_rho_lane + cluster_rho_lane
+    if total_rho <= 0.0:
+        return 1.0, 1.0, 1.0, 0.0
+    generation_rate = noise_rho_lane + (cluster_rho_lane / max(cluster_size_mean, 1.0))
+    mean_batch_hits = total_rho / generation_rate
+    scv = (2.0 * mean_batch_hits) - 1.0
+    cv = math.sqrt(max(scv, 0.0))
+    burstiness = (cv - 1.0) / (cv + 1.0) if cv > 0.0 else -1.0
+    return mean_batch_hits, cv, scv, burstiness
 
 
 def time_merger_penalty(n_lane: int) -> float:
@@ -100,23 +190,11 @@ def service_increment(
     implementation: str,
     n_lane: int,
     egress_symbols_per_beat: int,
+    opq_service_scale: float,
 ) -> float:
     if implementation == "opq":
-        return float(egress_symbols_per_beat)
+        return float(egress_symbols_per_beat) * float(opq_service_scale)
     return 1.0 / time_merger_penalty(n_lane)
-
-
-def burst_source_duty(
-    burstiness: np.ndarray,
-    min_duty: float,
-    max_duty: float,
-) -> np.ndarray:
-    scv = np.asarray(burstiness_to_scv(burstiness), dtype=float)
-    burst_gain = np.sqrt(np.maximum(scv, 0.0))
-    positive_duty = 1.0 / (1.0 + (6.0 * burst_gain))
-    negative_duty = 0.92 + np.minimum(np.maximum(-burstiness, 0.0), 0.50) * 0.12
-    duty = np.where(burstiness > 0.0, positive_duty, negative_duty)
-    return np.clip(duty, min_duty, max_duty)
 
 
 def simulate_tlm_grid(
@@ -143,18 +221,9 @@ def simulate_tlm_grid(
         implementation,
         n_lane,
         egress_symbols_per_beat,
+        args.opq_service_scale,
     )
 
-    source_duty = burst_source_duty(
-        burstiness,
-        args.min_burst_source_duty,
-        args.max_burst_source_duty,
-    )
-    source_on_len = np.clip(
-        np.ceil(source_duty * float(args.burst_period)).astype(np.int64),
-        1,
-        args.burst_period,
-    )
     ready_on_len = np.clip(
         np.ceil(np.clip(ready, 0.0, 1.0) * float(args.ready_period)).astype(np.int64),
         0,
@@ -162,9 +231,15 @@ def simulate_tlm_grid(
     )
 
     mean_arrival_rate = np.maximum(0.0, float(n_lane) * rho)
-    burst_arrival_rate = mean_arrival_rate / np.maximum(source_duty, 1.0e-9)
+    mean_batch_hits = np.asarray(
+        burstiness_to_mean_generation_batch_hits(burstiness), dtype=float
+    )
+    generation_event_rate = mean_arrival_rate / np.maximum(mean_batch_hits, 1.0e-9)
+    generation_batch_floor = np.floor(mean_batch_hits)
+    generation_batch_fraction = mean_batch_hits - generation_batch_floor
 
-    arrival_credit = np.zeros(shape, dtype=float)
+    generation_event_credit = np.zeros(shape, dtype=float)
+    generation_batch_credit = np.zeros(shape, dtype=float)
     service_credit = np.zeros(shape, dtype=float)
     occupancy = np.zeros(shape, dtype=float)
     offered = np.zeros(shape, dtype=float)
@@ -175,10 +250,13 @@ def simulate_tlm_grid(
 
     measured_cycles = max(1, args.cycles - args.warmup_cycles)
     for cycle in range(args.cycles):
-        source_active = (cycle % args.burst_period) < source_on_len
-        arrival_credit += np.where(source_active, burst_arrival_rate, 0.0)
-        arrivals = np.floor(arrival_credit)
-        arrival_credit -= arrivals
+        generation_event_credit += generation_event_rate
+        generation_events = np.floor(generation_event_credit)
+        generation_event_credit -= generation_events
+        generation_batch_credit += generation_events * generation_batch_fraction
+        batch_fraction_hits = np.floor(generation_batch_credit)
+        generation_batch_credit -= batch_fraction_hits
+        arrivals = (generation_events * generation_batch_floor) + batch_fraction_hits
 
         occupancy += arrivals
         overflow = np.maximum(occupancy - float(capacity), 0.0)
@@ -211,6 +289,7 @@ def simulate_tlm_grid(
         dropped=dropped,
         mean_occupancy=occupancy_sum / float(measured_cycles),
         max_occupancy=max_occupancy,
+        mean_generation_batch_hits=mean_batch_hits,
         capacity=capacity,
     )
 
@@ -258,6 +337,99 @@ def write_tlm_point_csv(path: Path, rows: list[TlmPoint]) -> None:
             writer.writerow(asdict(row))
 
 
+def write_anchor_sample_point(output_dir: Path, args: argparse.Namespace) -> AnchorSamplePoint:
+    rng = np.random.default_rng(args.anchor_seed)
+    cluster_size_mean = 0.5 * (args.anchor_cluster_size_min + args.anchor_cluster_size_max)
+    noise_counts = rng.poisson(args.anchor_noise_rho_lane, size=args.anchor_sample_cycles)
+    physical_event_rate = args.anchor_cluster_rho_lane / max(cluster_size_mean, 1.0)
+    cluster_event_counts = rng.poisson(physical_event_rate, size=args.anchor_sample_cycles)
+    timestamps: list[int] = []
+    sampled_noise_hits = 0
+    sampled_cluster_hits = 0
+    sampled_generation_events = 0
+
+    for timestamp, count in enumerate(noise_counts):
+        hit_count = int(count)
+        if hit_count:
+            timestamps.extend([timestamp] * hit_count)
+            sampled_noise_hits += hit_count
+            sampled_generation_events += hit_count
+
+    for timestamp, event_count in enumerate(cluster_event_counts):
+        count = int(event_count)
+        if count == 0:
+            continue
+        sizes = rng.integers(
+            args.anchor_cluster_size_min,
+            args.anchor_cluster_size_max + 1,
+            size=count,
+        )
+        for size in sizes:
+            hit_count = int(size)
+            timestamps.extend([timestamp] * hit_count)
+            sampled_cluster_hits += hit_count
+            sampled_generation_events += 1
+
+    timestamp_array = np.asarray(timestamps, dtype=float)
+    timestamp_mean_delta, timestamp_std_delta, timestamp_cv, timestamp_scv, burstiness = (
+        timestamp_delta_stats(timestamp_array)
+    )
+    total_hits = sampled_noise_hits + sampled_cluster_hits
+    mean_batch, analytic_cv, analytic_scv, analytic_burstiness = analytic_cluster_anchor(
+        args.anchor_noise_rho_lane,
+        args.anchor_cluster_rho_lane,
+        cluster_size_mean,
+    )
+    point = AnchorSamplePoint(
+        sample_name="scifi_noise10_cluster50",
+        scifi_channels_per_lane=args.anchor_scifi_channels_per_lane,
+        noise_rho_lane=args.anchor_noise_rho_lane,
+        cluster_rho_lane=args.anchor_cluster_rho_lane,
+        total_rho_lane=args.anchor_noise_rho_lane + args.anchor_cluster_rho_lane,
+        cluster_size_min=args.anchor_cluster_size_min,
+        cluster_size_max=args.anchor_cluster_size_max,
+        cluster_size_mean=cluster_size_mean,
+        sampled_cycles=args.anchor_sample_cycles,
+        sampled_noise_hits=sampled_noise_hits,
+        sampled_cluster_hits=sampled_cluster_hits,
+        sampled_total_hits=total_hits,
+        sampled_generation_events=sampled_generation_events,
+        sampled_noise_fraction=(sampled_noise_hits / total_hits) if total_hits else 0.0,
+        sampled_cluster_fraction=(sampled_cluster_hits / total_hits) if total_hits else 0.0,
+        timestamp_mean_delta=timestamp_mean_delta,
+        timestamp_std_delta=timestamp_std_delta,
+        timestamp_cv=timestamp_cv,
+        timestamp_scv=timestamp_scv,
+        burstiness=burstiness,
+        analytic_mean_generation_batch_hits=mean_batch,
+        analytic_timestamp_cv=analytic_cv,
+        analytic_timestamp_scv=analytic_scv,
+        analytic_burstiness=analytic_burstiness,
+    )
+
+    csv_path = output_dir / "tlm_anchor_sample_point.csv"
+    with csv_path.open("w", newline="", encoding="ascii") as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=list(asdict(point).keys()),
+            lineterminator="\n",
+        )
+        writer.writeheader()
+        writer.writerow(asdict(point))
+
+    env_path = output_dir / "tlm_anchor_sample_point.env"
+    env_rows = {
+        "OPQ_SAMPLE_B": f"{point.burstiness:.8f}",
+        "OPQ_SAMPLE_RHO_LANE": f"{point.total_rho_lane:.8f}",
+        "OPQ_SAMPLE_LABEL": "SciFi anchor",
+    }
+    with env_path.open("w", encoding="ascii") as handle:
+        for key, value in env_rows.items():
+            handle.write(f"{key}={shlex.quote(value)}\n")
+
+    return point
+
+
 def append_point_rows(
     rows: list[TlmPoint],
     implementation: str,
@@ -279,6 +451,9 @@ def append_point_rows(
                     ready_duty=ready_duty,
                     burstiness=float(burstiness),
                     scv=float(burstiness_to_scv(float(burstiness))),
+                    mean_generation_batch_hits=float(
+                        result.mean_generation_batch_hits[rho_idx, b_idx]
+                    ),
                     rho_lane=float(rho_lane),
                     cycles=args.cycles,
                     warmup_cycles=args.warmup_cycles,
@@ -372,6 +547,7 @@ def write_tlm_grids(
     dislin_dir.mkdir(parents=True, exist_ok=True)
     plot_output_dir.mkdir(parents=True, exist_ok=True)
 
+    anchor_point = write_anchor_sample_point(output_dir, args)
     b_values = linspace(args.burstiness_min, args.burstiness_max, args.burstiness_count)
     rho_values = linspace(args.rho_min, args.rho_max, args.rate_count)
     ready_values = linspace(args.ready_min, args.ready_max, args.ready_count)
@@ -385,6 +561,7 @@ def write_tlm_grids(
     loss_dat: dict[str, str] = {}
     opq_loss_dat: dict[str, str] = {}
     time_merger_loss_dat: dict[str, str] = {}
+    time_merger_surface_dat: dict[str, str] = {}
     ratio_dat: dict[str, str] = {}
     loss_curve_dat: dict[str, str] = {}
     published_png: dict[str, str] = {}
@@ -392,6 +569,9 @@ def write_tlm_grids(
     for n_lane, egress_symbols in PUBLISHED_FEATURES:
         key = f"N_LANE={n_lane},EGRESS={egress_symbols}x"
         loss_stem = f"opq_loss_surface_nlane{n_lane:02d}_egress{egress_symbols:02d}x"
+        tm_loss_stem = (
+            f"time_merger_loss_surface_nlane{n_lane:02d}_egress{egress_symbols:02d}x"
+        )
         overlay_stem = (
             f"opq_vs_time_merger_loss_contour_nlane{n_lane:02d}_egress{egress_symbols:02d}x"
         )
@@ -444,15 +624,21 @@ def write_tlm_grids(
         )
 
         loss_dat_path = dislin_dir / f"{loss_stem}.dat"
+        tm_loss_dat_path = dislin_dir / f"{tm_loss_stem}.dat"
         opq_dat_path = dislin_dir / f"{overlay_stem}_opq.dat"
         tm_dat_path = dislin_dir / f"{overlay_stem}_time_merger.dat"
         write_dat_matrix(loss_dat_path, b_values, rho_values, opq.loss)
+        write_dat_matrix(tm_loss_dat_path, b_values, rho_values, time_merger.loss)
         write_dat_matrix(opq_dat_path, b_values, rho_values, opq.loss)
         write_dat_matrix(tm_dat_path, b_values, rho_values, time_merger.loss)
         loss_dat[key] = str(loss_dat_path)
         opq_loss_dat[key] = str(opq_dat_path)
         time_merger_loss_dat[key] = str(tm_dat_path)
+        time_merger_surface_dat[key] = str(tm_loss_dat_path)
         published_png[f"{key},OPQ_LOSS_SURFACE"] = str(plot_output_dir / f"{loss_stem}.png")
+        published_png[f"{key},TIME_MERGER_LOSS_SURFACE"] = str(
+            plot_output_dir / f"{tm_loss_stem}.png"
+        )
         published_png[f"{key},LOSS_CONTOUR_OVERLAY"] = str(plot_output_dir / f"{overlay_stem}.png")
 
         curve_b = np.full_like(rho_values, args.scaling_burstiness)
@@ -588,9 +774,13 @@ def write_tlm_grids(
         "loss_surface_csv": str(loss_csv),
         "ready_burst_ratio_csv": str(ratio_csv),
         "feature_scaling_csv": str(scaling_csv),
+        "anchor_sample_point_csv": str(output_dir / "tlm_anchor_sample_point.csv"),
+        "anchor_sample_point_env": str(output_dir / "tlm_anchor_sample_point.env"),
+        "anchor_sample_point": asdict(anchor_point),
         "dislin_dir": str(dislin_dir),
         "published_plot_dir": str(plot_output_dir),
         "opq_loss_surface_dat": loss_dat,
+        "time_merger_loss_surface_dat": time_merger_surface_dat,
         "opq_loss_overlay_dat": opq_loss_dat,
         "time_merger_loss_overlay_dat": time_merger_loss_dat,
         "loss_curve_dat": loss_curve_dat,
@@ -604,11 +794,11 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--plot-output-dir", type=Path, default=DEFAULT_PLOT_OUTPUT_DIR)
-    parser.add_argument("--burstiness-min", type=float, default=-0.25)
-    parser.add_argument("--burstiness-max", type=float, default=0.95)
+    parser.add_argument("--burstiness-min", type=float, default=-1.0)
+    parser.add_argument("--burstiness-max", type=float, default=1.0)
     parser.add_argument("--burstiness-count", type=int, default=DEFAULT_BURSTINESS_COUNT)
-    parser.add_argument("--rho-min", type=float, default=0.005)
-    parser.add_argument("--rho-max", type=float, default=0.30)
+    parser.add_argument("--rho-min", type=float, default=0.0)
+    parser.add_argument("--rho-max", type=float, default=1.0)
     parser.add_argument("--rate-count", type=int, default=DEFAULT_RATE_COUNT)
     parser.add_argument("--ready-min", type=float, default=0.45)
     parser.add_argument("--ready-max", type=float, default=1.0)
@@ -617,13 +807,27 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--scaling-burstiness", type=float, default=0.70)
     parser.add_argument("--scaling-ready-duty", type=float, default=0.75)
     parser.add_argument("--opq-capacity", type=int, default=255)
+    parser.add_argument(
+        "--opq-service-scale",
+        type=float,
+        default=3.05,
+        help=(
+            "OPQ physical-cadence service scale for rho_lane plots. 3.05 "
+            "calibrates the simple finite-FIFO surface to the RTL 100-frame "
+            "marginal loss knee near rho_lane=0.75..0.80 for N_LANE=4, E=1."
+        ),
+    )
     parser.add_argument("--time-merger-credit", type=float, default=96.0)
     parser.add_argument("--cycles", type=int, default=8192)
     parser.add_argument("--warmup-cycles", type=int, default=1024)
-    parser.add_argument("--burst-period", type=int, default=1024)
     parser.add_argument("--ready-period", type=int, default=37)
-    parser.add_argument("--min-burst-source-duty", type=float, default=0.025)
-    parser.add_argument("--max-burst-source-duty", type=float, default=0.98)
+    parser.add_argument("--anchor-noise-rho-lane", type=float, default=0.10)
+    parser.add_argument("--anchor-cluster-rho-lane", type=float, default=0.50)
+    parser.add_argument("--anchor-scifi-channels-per-lane", type=int, default=SCIFI_CHANNELS_PER_LANE)
+    parser.add_argument("--anchor-cluster-size-min", type=int, default=DEFAULT_CLUSTER_SIZE_MIN)
+    parser.add_argument("--anchor-cluster-size-max", type=int, default=DEFAULT_CLUSTER_SIZE_MAX)
+    parser.add_argument("--anchor-sample-cycles", type=int, default=200_000)
+    parser.add_argument("--anchor-seed", type=int, default=0x5C1F1)
     return parser.parse_args()
 
 
@@ -647,24 +851,57 @@ def main() -> None:
             "the reordering slides: bursty arrivals create finite-buffer "
             "outliers, and old time-merger throughput falls with tree depth."
         ),
-        "burstiness_definition": "B = (SCV - 1) / (SCV + 1)",
-        "scv_definition": "SCV = (1 + B) / (1 - B)",
+        "burstiness_definition": (
+            "B = (CV_timestamp - 1) / (CV_timestamp + 1), where "
+            "CV_timestamp = sigma_tau / m_tau is computed from hit-to-hit "
+            "interevent times after sorting by true generation timestamp. "
+            "Same-timestamp cluster hits contribute zero deltas."
+        ),
+        "cv_definition": "CV_timestamp = (1 + B) / (1 - B)",
+        "scv_definition": "SCV_timestamp = ((1 + B) / (1 - B))^2",
         "traffic_model": (
-            "Each point runs a deterministic on/off transaction source with "
-            "mean arrival rate N_LANE*rho_lane and source duty tau(B)."
+            "Each point runs a deterministic generation-event source with "
+            "mean hit rate N_LANE*rho_lane. Positive B maps to same-timestamp "
+            "hit batches with mean multiplicity (CV_timestamp^2+1)/2; B=0 is "
+            "singleton Poisson-equivalent hit generation; negative B is "
+            "under-dispersed singleton generation."
+        ),
+        "scifi_anchor_model": (
+            "The SciFi anchor models 128 iid noise channels per lane plus a "
+            "DC-beam Poisson particle source. Each particle creates a "
+            "same-timestamp physical hit cluster of 4-8 hits. This phase "
+            "uses independent lane streams only; cross-lane-correlated "
+            "particle bursts are intentionally deferred to a later model mode."
         ),
         "ready_model": (
             "Egress ready is a deterministic vacation process with configured "
             "duty q and period ready_period."
         ),
         "time_merger_penalty": "P_tm = 1 + ceil(log2(N_LANE))^2",
-        "opq_service_tokens": "EGRESS_SYMBOLS_PER_BEAT tokens on each ready cycle",
+        "opq_service_tokens": (
+            "EGRESS_SYMBOLS_PER_BEAT * opq_service_scale tokens on each ready cycle"
+        ),
+        "opq_service_scale": args.opq_service_scale,
+        "opq_service_scale_note": (
+            "Calibrates the compact finite-FIFO OPQ loss surface to the RTL "
+            "100-frame marginal-loss ridge for N_LANE=4, Egress=1x. This is "
+            "plot-domain calibration only; packet/component closure remains "
+            "based on RTL parser-ticket replay evidence."
+        ),
+        "rho_axis": "rho_lane in hits/subheader/lane, plotted from args.rho_min to args.rho_max",
+        "loss_grid_points": {
+            "burstiness_count": args.burstiness_count,
+            "rho_count": args.rate_count,
+            "burstiness_min": args.burstiness_min,
+            "burstiness_max": args.burstiness_max,
+            "rho_min": args.rho_min,
+            "rho_max": args.rho_max,
+        },
         "time_merger_service_tokens": "1/P_tm token on each ready cycle",
         "opq_capacity": args.opq_capacity,
         "time_merger_credit": args.time_merger_credit,
         "cycles": args.cycles,
         "warmup_cycles": args.warmup_cycles,
-        "burst_period": args.burst_period,
         "ready_period": args.ready_period,
         "ratio_clip": RATIO_CLIP,
         "ratio_rho_lane": args.ratio_rho_lane,

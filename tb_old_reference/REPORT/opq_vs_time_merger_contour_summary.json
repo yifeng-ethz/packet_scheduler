@@ -8,7 +8,7 @@
   "time_merger_stage_bubble": 1.0,
   "time_merger_service_symbols_per_beat": 0.3333333333333333,
   "time_merger_capacity": 32,
-  "burstiness_definition": "B = (SCV - 1) / (SCV + 1)",
+  "burstiness_definition": "B = (CV - 1) / (CV + 1), CV=sigma_tau/m_tau",
   "effective_load": "rho_eff = rate_per_lane * N_LANE / service_symbols_per_beat * sqrt((1+SCV)/2)",
   "rate_range": [
     0.01,

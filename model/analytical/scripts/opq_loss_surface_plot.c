@@ -12,6 +12,7 @@
 #define MIN_FINE_X_COUNT 181
 #define MIN_FINE_Y_COUNT 141
 #define CONTOUR_MAX_CURVES 2048
+#define MAX_SAMPLE_PINS 128
 #define PLOT_PI 3.14159265358979323846
 
 typedef struct {
@@ -37,6 +38,14 @@ typedef struct {
   float zmin;
   float zmax;
 } opq_loss_grid_t;
+
+typedef struct {
+  float burstiness;
+  float rho_lane;
+  float rtl_loss;
+  float tlm_loss;
+  char label[160];
+} sample_pin_t;
 
 static void trim_ascii(char *text) {
   size_t start = 0;
@@ -237,6 +246,232 @@ static int loss_color_index(float log_loss, float log_min, float log_max) {
   float t = clamp_unit((log_loss - log_min) / (log_max - log_min));
 
   return 1 + (int) floorf((253.0f * t) + 0.5f);
+}
+
+static int parse_env_float(const char *name, float *value) {
+  const char *text = getenv(name);
+  char *end = NULL;
+  double parsed;
+
+  if (text == NULL || text[0] == '\0') {
+    return 0;
+  }
+  parsed = strtod(text, &end);
+  if (end == text) {
+    return 0;
+  }
+  *value = (float) parsed;
+  return 1;
+}
+
+static void draw_sample_point_if_present(
+    float gxmin,
+    float gxmax,
+    float gymin,
+    float gymax) {
+  const char *label = getenv("OPQ_SAMPLE_LABEL");
+  float burstiness;
+  float rho_lane;
+  float rho_axis;
+  float dx;
+  float dy;
+  int clipped_high = 0;
+  int clipped_low = 0;
+  char clipped_label[256];
+  float xs[2];
+  float ys[2];
+
+  if (!parse_env_float("OPQ_SAMPLE_B", &burstiness) ||
+      !parse_env_float("OPQ_SAMPLE_RHO_LANE", &rho_lane)) {
+    return;
+  }
+
+  rho_axis = rho_lane;
+  if (burstiness < gxmin || burstiness > gxmax) {
+    return;
+  }
+
+  dx = 0.012f * fmaxf(fabsf(gxmax - gxmin), 1.0e-6f);
+  dy = 0.012f * fmaxf(fabsf(gymax - gymin), 1.0e-6f);
+  if (rho_axis > gymax) {
+    rho_axis = gymax - (2.5f * dy);
+    clipped_high = 1;
+  } else if (rho_axis < gymin) {
+    rho_axis = gymin + (2.5f * dy);
+    clipped_low = 1;
+  }
+
+  linwid(7);
+  setrgb(0.00f, 0.82f, 0.36f);
+  xs[0] = burstiness - dx; xs[1] = burstiness + dx;
+  ys[0] = rho_axis - dy; ys[1] = rho_axis + dy;
+  curve(xs, ys, 2);
+  xs[0] = burstiness - dx; xs[1] = burstiness + dx;
+  ys[0] = rho_axis + dy; ys[1] = rho_axis - dy;
+  curve(xs, ys, 2);
+  linwid(1);
+
+  if (label != NULL && label[0] != '\0') {
+    if (clipped_high) {
+      snprintf(clipped_label, sizeof(clipped_label), "%s (rho above axis)", label);
+      label = clipped_label;
+    } else if (clipped_low) {
+      snprintf(clipped_label, sizeof(clipped_label), "%s (rho below axis)", label);
+      label = clipped_label;
+    }
+    height(14);
+    txtjus("LEFT");
+    if (clipped_high) {
+      setrgb(0.96f, 0.96f, 0.96f);
+    } else {
+      color("fore");
+    }
+    rlmess(label, burstiness + (1.6f * dx),
+           clipped_high ? (rho_axis - (3.5f * dy)) :
+           (clipped_low ? (rho_axis + (3.5f * dy)) : (rho_axis + (0.8f * dy))));
+    color("fore");
+  }
+}
+
+static int read_sample_pins(sample_pin_t *pins, int max_pins) {
+  const char *path = getenv("OPQ_SAMPLE_PINS_CSV");
+  FILE *handle;
+  char line[512];
+  int count = 0;
+
+  if (path == NULL || path[0] == '\0') {
+    return 0;
+  }
+  handle = fopen(path, "r");
+  if (handle == NULL) {
+    fprintf(stderr, "Warning: failed to open sample-pin CSV %s\n", path);
+    return 0;
+  }
+  while (fgets(line, sizeof(line), handle) != NULL && count < max_pins) {
+    char run_tag[192];
+    sample_pin_t pin;
+    memset(&pin, 0, sizeof(pin));
+    if (sscanf(line, "%191[^,],%f,%f,%f,%f,%159[^\n]",
+               run_tag, &pin.burstiness, &pin.rho_lane,
+               &pin.rtl_loss, &pin.tlm_loss, pin.label) != 6) {
+      continue;
+    }
+    trim_ascii(pin.label);
+    pins[count++] = pin;
+  }
+  fclose(handle);
+  return count;
+}
+
+static void draw_sample_pins_if_present(
+    float gxmin,
+    float gxmax,
+    float gymin,
+    float gymax) {
+  sample_pin_t pins[MAX_SAMPLE_PINS];
+  int count = read_sample_pins(pins, MAX_SAMPLE_PINS);
+  float dx = 0.008f * fmaxf(fabsf(gxmax - gxmin), 1.0e-6f);
+  float dy = 0.010f * fmaxf(fabsf(gymax - gymin), 1.0e-6f);
+
+  for (int idx = 0; idx < count; idx++) {
+    float x = pins[idx].burstiness;
+    float y = pins[idx].rho_lane;
+    float xs[2];
+    float ys[2];
+    int group_row = 0;
+    int group_count = 0;
+    float xspan = fmaxf(fabsf(gxmax - gxmin), 1.0e-6f);
+    float yspan = fmaxf(fabsf(gymax - gymin), 1.0e-6f);
+    int label_left;
+    float label_x;
+    float label_y;
+
+    if (x < gxmin || x > gxmax || y < gymin || y > gymax) {
+      continue;
+    }
+    for (int prev = 0; prev < count; prev++) {
+      if (fabsf(pins[prev].burstiness - x) < 1.0e-5f &&
+          fabsf(pins[prev].rho_lane - y) < 1.0e-5f) {
+        if (prev < idx) {
+          group_row++;
+        }
+        group_count++;
+      }
+    }
+
+    linwid(6);
+    setrgb(0.00f, 0.82f, 0.36f);
+    xs[0] = x - dx; xs[1] = x + dx;
+    ys[0] = y - dy; ys[1] = y + dy;
+    curve(xs, ys, 2);
+    xs[0] = x - dx; xs[1] = x + dx;
+    ys[0] = y + dy; ys[1] = y - dy;
+    curve(xs, ys, 2);
+    linwid(1);
+
+    label_left = (x > gxmin + (0.35f * xspan));
+    label_x = label_left ? x - (2.2f * dx) : x + (2.2f * dx);
+    label_y = y +
+      ((float) group_row - 0.5f * (float) (group_count - 1)) * (2.3f * dy) +
+      ((y > gymin + (0.77f * yspan)) ? (2.2f * dy) : (-2.2f * dy));
+    if (label_y > gymax - (1.5f * dy)) {
+      label_y = gymax - (1.5f * dy);
+    }
+    if (label_y < gymin + (1.5f * dy)) {
+      label_y = gymin + (1.5f * dy);
+    }
+
+    height(9);
+    txtjus(label_left ? "RIGHT" : "LEFT");
+    if (0.5f * (pins[idx].rtl_loss + pins[idx].tlm_loss) < 0.004f) {
+      setrgb(0.06f, 0.05f, 0.08f);
+    } else {
+      setrgb(0.96f, 0.96f, 0.96f);
+    }
+    rlmess(pins[idx].label, label_x, label_y);
+  }
+  txtjus("LEFT");
+  color("fore");
+}
+
+static void draw_real_box(float x0, float y0, float x1, float y1) {
+  float x[5] = {x0, x1, x1, x0, x0};
+  float y[5] = {y0, y0, y1, y1, y0};
+
+  setrgb(0.96f, 0.96f, 0.96f);
+  shdpat(16);
+  rlarea(x, y, 5);
+  color("fore");
+  linwid(1);
+  solid();
+  curve(x, y, 5);
+}
+
+static void draw_modeling_contract_box(float gxmin, float gymin, float gymax) {
+  const char *anchor = getenv("OPQ_MODELING_BOX_ANCHOR");
+  float yspan = fmaxf(fabsf(gymax - gymin), 1.0e-6f);
+  float line_gap = 0.040f * yspan;
+  float top_pad = 0.040f * yspan;
+  float box_height = 0.280f * yspan;
+  float x0 = gxmin + 0.035f;
+  float x1 = x0 + 0.74f;
+  float y0 = gymin + 0.070f * yspan;
+  float y1 = y0 + box_height;
+
+  if (anchor != NULL && strcmp(anchor, "upper_left") == 0) {
+    y1 = gymax - 0.050f * yspan;
+    y0 = y1 - box_height;
+  }
+
+  draw_real_box(x0, y0, x1, y1);
+  height(12);
+  color("fore");
+  rlmess("modeling gate", x0 + 0.02f, y1 - top_pad);
+  rlmess("loss tiers: controlled / asserted / inferred", x0 + 0.02f, y1 - top_pad - line_gap);
+  rlmess("checkpoints: per-subframe basic", x0 + 0.02f, y1 - top_pad - 2.0f * line_gap);
+  rlmess("  -> knee-zoom subframe stats", x0 + 0.02f, y1 - top_pad - 3.0f * line_gap);
+  rlmess("  -> high-performance collective soak", x0 + 0.02f, y1 - top_pad - 4.0f * line_gap);
+  rlmess("gate: RTL pin/UVM tx bucket match", x0 + 0.02f, y1 - top_pad - 5.0f * line_gap);
 }
 
 static void draw_loss_gradient_cells(
@@ -808,26 +1043,24 @@ static void render_plot(const opq_loss_grid_t *loss_grid, const char *output_pat
   float gxmax = xmax + xpad;
   float gymin = fmaxf(0.0f, ymin - ypad);
   float gymax = ymax + ypad;
-  float gymin_pct = gymin * 100.0f;
-  float gymax_pct = gymax * 100.0f;
   float zmin = 1.0e-6f;
   double xstep = nice_step((double) (gxmax - gxmin), 8);
-  double ystep = nice_step((double) (gymax_pct - gymin_pct), 7);
+  double ystep = nice_step((double) (gymax - gymin), 7);
   double xorigin = align_up(gxmin, xstep);
-  double yorigin = align_up(gymin_pct, ystep);
+  double yorigin = align_up(gymin, ystep);
   double zorigin = -6.0;
   double zstep = 1.0;
   const reference_contour_t base_ref_contours[REF_LEVEL_COUNT] = {
-      {0.000001f, "1e-6", -0.82f, 98.8f},
-      {0.010f, "1 %", -0.46f, 100.4f},
-      {0.050f, "5 %", 0.92f, 97.4f}};
+      {0.000001f, "1e-6", -0.82f, 0.988f},
+      {0.010f, "1 %", -0.46f, 1.004f},
+      {0.050f, "5 %", 0.92f, 0.974f}};
   int level_idx;
   size_t point_count = (size_t) loss_grid->nx * (size_t) loss_grid->ny;
   int fine_nx = max_int(loss_grid->nx, MIN_FINE_X_COUNT);
   int fine_ny = max_int(loss_grid->ny, MIN_FINE_Y_COUNT);
   size_t fine_point_count = (size_t) fine_nx * (size_t) fine_ny;
   size_t point_idx;
-  float zlabel_span = gymax_pct - gymin_pct;
+  float zlabel_span = gymax - gymin;
   float fine_zmin = 0.0f;
   float fine_zmax = 0.0f;
   const int zaxis_x = 2480;
@@ -868,7 +1101,7 @@ static void render_plot(const opq_loss_grid_t *loss_grid, const char *output_pat
     return;
   }
   fill_linspace(xfine, fine_nx, xmin, xmax);
-  fill_linspace(yfine, fine_ny, ymin * 100.0f, ymax * 100.0f);
+  fill_linspace(yfine, fine_ny, ymin, ymax);
   interpolate_regular_grid(zplot, loss_grid->nx, loss_grid->ny, zfine, fine_nx, fine_ny);
   for (point_idx = 0; point_idx < fine_point_count; point_idx++) {
     if (point_idx == 0 || zfine[point_idx] < fine_zmin) {
@@ -884,7 +1117,7 @@ static void render_plot(const opq_loss_grid_t *loss_grid, const char *output_pat
   filmod("delete");
   setpag("da4l");
   if (strcasecmp(output_format, "PNG") == 0) {
-    winsiz(2048, 1448);
+    winsiz(4096, 2896);
   }
   scrmod("reverse");
   disini();
@@ -898,15 +1131,15 @@ static void render_plot(const opq_loss_grid_t *loss_grid, const char *output_pat
   titlin(plot_title, 2);
 
   name("burstiness B", "x");
-  name("rate / lane [%]", "y");
+  name("rate / lane rho", "y");
 
   intax();
   labdig(2, "x");
-  labdig(0, "y");
+  labdig(2, "y");
   labels("none", "z");
   axspos(420, 1750);
   axslen(1950, 1100);
-  graf(gxmin, gxmax, (float) xorigin, (float) xstep, gymin_pct, gymax_pct,
+  graf(gxmin, gxmax, (float) xorigin, (float) xstep, gymin, gymax,
        (float) yorigin, (float) ystep);
 
   draw_loss_gradient_cells(xfine, fine_nx, yfine, fine_ny, zfine, (float) zorigin, 0.0f);
@@ -936,21 +1169,21 @@ static void render_plot(const opq_loss_grid_t *loss_grid, const char *output_pat
   zscale((float) zorigin, 0.0f);
   zaxis((float) zorigin, 0.0f, (float) zorigin, (float) zstep, zaxis_len,
         "", 1, 0, zaxis_x, zaxis_y);
-  ztick_y_top = (int) floorf(yposn(gymax_pct) + 0.5f);
-  ztick_y_bottom = (int) floorf(yposn(gymin_pct) + 0.5f);
+  ztick_y_top = (int) floorf(yposn(gymax) + 0.5f);
+  ztick_y_bottom = (int) floorf(yposn(gymin) + 0.5f);
   height(16);
   txtjus("RIGHT");
   messag("1", ztick_label_x, ztick_y_top - 8);
   messag("1e-1", ztick_label_x,
-         (int) floorf(yposn(gymax_pct - (1.0f / 6.0f) * zlabel_span) + 0.5f) - 8);
+         (int) floorf(yposn(gymax - (1.0f / 6.0f) * zlabel_span) + 0.5f) - 8);
   messag("1e-2", ztick_label_x,
-         (int) floorf(yposn(gymax_pct - (2.0f / 6.0f) * zlabel_span) + 0.5f) - 8);
+         (int) floorf(yposn(gymax - (2.0f / 6.0f) * zlabel_span) + 0.5f) - 8);
   messag("1e-3", ztick_label_x,
-         (int) floorf(yposn(gymax_pct - (3.0f / 6.0f) * zlabel_span) + 0.5f) - 8);
+         (int) floorf(yposn(gymax - (3.0f / 6.0f) * zlabel_span) + 0.5f) - 8);
   messag("1e-4", ztick_label_x,
-         (int) floorf(yposn(gymax_pct - (4.0f / 6.0f) * zlabel_span) + 0.5f) - 8);
+         (int) floorf(yposn(gymax - (4.0f / 6.0f) * zlabel_span) + 0.5f) - 8);
   messag("1e-5", ztick_label_x,
-         (int) floorf(yposn(gymax_pct - (5.0f / 6.0f) * zlabel_span) + 0.5f) - 8);
+         (int) floorf(yposn(gymax - (5.0f / 6.0f) * zlabel_span) + 0.5f) - 8);
   messag("1e-6", ztick_label_x, ztick_y_bottom - 8);
   txtjus("CENT");
   height(30);
@@ -959,16 +1192,21 @@ static void render_plot(const opq_loss_grid_t *loss_grid, const char *output_pat
   angle(0);
   txtjus("LEFT");
 
+  draw_sample_point_if_present(gxmin, gxmax, gymin, gymax);
+  draw_sample_pins_if_present(gxmin, gxmax, gymin, gymax);
+  draw_modeling_contract_box(gxmin, gymin, gymax);
+
   height(50);
   title();
   color("fore");
   height(14);
   if (plot_note == NULL || plot_note[0] == '\0') {
-    plot_note = "x: B=(SCV-1)/(SCV+1), y: offered rate / lane shown in percent";
+    plot_note = "x: B=(CV-1)/(CV+1), y: raw offered rate rho per lane";
   }
   messag(plot_note, 420, 1938);
-  messag("B=-1 periodic, B=0 Poisson, B=+1 bursty; fill: continuous log loss from 1e-6 to 1", 420, 1980);
-  messag("inline loss-probability labels: dot 1e-6, dash 1%, solid 5%", 420, 2022);
+  messag("loss tiers: controlled CSR/drop, asserted local hook, inferred E2E-after-drain", 420, 1980);
+  messag("checkpoints: per-subframe basic -> knee-zoom stats -> high-performance collective soak", 420, 2022);
+  messag("B=-1 periodic, B=0 Poisson, B=+1 bursty; inline labels: dot 1e-6, dash 1%, solid 5%", 420, 2064);
   disfin();
   free(zplot);
   free(xfine);

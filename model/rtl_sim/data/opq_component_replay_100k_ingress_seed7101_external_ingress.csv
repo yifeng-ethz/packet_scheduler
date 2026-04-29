@@ -1,0 +1,11 @@
+run_tag,component,status,metric,rtl_value,tlm_value,compared,mismatches,threshold,discrepancy,notes
+component_b000_rho0750_f0261_seed7101,ingress_lane_fifo,DEBUG,raw_subheader_ticket_decision,133632,133632,133632,44906,0.01,0,missing_tlm=22453 extra_tlm=22453 key_count=156085
+component_b000_rho0750_f0261_seed7101,ticket_drop_control,DEBUG,controlled_pre_post_drop_hits_by_serial_lane,39322,29827,850,28463,0.01,0.24146788,pre/post key_count=850 hit_delta_sum=28463
+component_b000_rho0750_f0261_seed7101,page_allocator_handle_fifo,DEBUG,handle_accept_hits_by_lane_timestamp,58090,70770,45447,128408,0.01,0.21828198,rtl_handles=41058 tlm_handle_events=49973
+component_b000_rho0750_f0261_seed7101,page_allocator_state_trace,PASS,rtl_wait_samples,1240693,241,1240693,0,0.01,0.99980575,"frame_wait=5 active_wait=0 ingress_busy=49436 future_only=791325 top_states=[(20, 186960), (21, 186960), (0, 47577), (2, 46994), (3, 46994)]"
+component_b000_rho0750_f0261_seed7101,frame_table_header_ledger,DEBUG,wr_hdr,192,241,1,49,0.01,0.25520833,rtl_rd_hdr=192 rtl_drop_hdr=0
+component_b000_rho0750_f0261_seed7101,frame_table_subheader_ledger,DEBUG,wr_shd,19206,30848,1,11642,0.01,0.60616474,rtl_rd_shd=19206 rtl_drop_shd=0
+component_b000_rho0750_f0261_seed7101,frame_table_hit_ledger,DEBUG,rd_plus_drop_hit,58090,70770,1,12680,0.01,0.21828198,rtl_ft_drop_hit=0 tlm_ft_drop_hit=0 tlm_wr_hit=70770
+component_b000_rho0750_f0261_seed7101,transaction_bucket_order,DEBUG,OPQ_TXN_deliver_bucket_count_and_order,58090,70770,58090,20116,0.01,0.21828198,missing_bucket=16398 extra_bucket=3718 bucket_order_violations=0
+component_b000_rho0750_f0261_seed7101,transaction_word_identity,DEBUG,OPQ_TXN_deliver_word_identity,58090,70770,58090,20330,0.01,0.21828198,missing_word=16505 extra_word=3825
+component_b000_rho0750_f0261_seed7101,collective_loss,DEBUG,dropped_hits,39339,29827,100597,9512,0.01,0.24179567,rtl_expected=100597 rtl_uvm_clean=0 tlm_pre=27290 tlm_post=2537 tlm_ft=0

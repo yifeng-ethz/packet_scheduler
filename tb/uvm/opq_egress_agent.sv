@@ -134,12 +134,14 @@ class opq_egress_monitor extends uvm_component;
   task run_phase(uvm_phase phase);
     opq_beat_item beat;
     bit trace_all_beats;
+    bit trace_first_beats;
     longint unsigned trace_after_ps;
     bit trace_after_ps_valid;
     int unsigned empty_count;
     int unsigned valid_symbols;
 
     trace_all_beats = $test$plusargs("OPQ_TRACE_EGRESS_ALL");
+    trace_first_beats = $test$plusargs("OPQ_TRACE_EGRESS_FIRST");
     trace_after_ps = 0;
     trace_after_ps_valid = $value$plusargs("OPQ_TRACE_AFTER_PS=%d", trace_after_ps);
     if (trace_after_ps_valid) begin
@@ -167,7 +169,8 @@ class opq_egress_monitor extends uvm_component;
           beat.sop = vif.mon_cb.startofpacket && (symbol_idx == 0);
           beat.eop = vif.mon_cb.endofpacket && (symbol_idx == (valid_symbols - 1));
           beat.error = vif.mon_cb.error;
-          if (((trace_all_beats && ($time >= trace_after_ps)) || (beat_count < 64))) begin
+          if ((trace_all_beats && ($time >= trace_after_ps)) ||
+              (trace_first_beats && beat_count < 64)) begin
             `uvm_info(get_type_name(), $sformatf(
               "egress[%0d] symbol=%0d/%0d data=0x%09h datak=0x%1h sop=%0b eop=%0b err=0x%0h empty=%0d",
               beat_count,

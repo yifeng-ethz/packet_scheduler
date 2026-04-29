@@ -328,7 +328,9 @@ class opq_ingress_monitor extends uvm_component;
 
   task run_phase(uvm_phase phase);
     opq_beat_item beat;
+    bit trace_first_beats;
 
+    trace_first_beats = $test$plusargs("OPQ_TRACE_INGRESS_FIRST");
     forever begin
       @(vif.mon_cb);
       if (!vif.mon_cb.reset && vif.mon_cb.valid[0]) begin
@@ -338,7 +340,7 @@ class opq_ingress_monitor extends uvm_component;
         beat.sop = vif.mon_cb.startofpacket[0];
         beat.eop = vif.mon_cb.endofpacket[0];
         beat.error = vif.mon_cb.error;
-        if (beat_count < 16) begin
+        if (trace_first_beats && beat_count < 16) begin
           `uvm_info(get_type_name(), $sformatf(
             "lane%0d ingress[%0d] data=0x%09h datak=0x%1h sop=%0b eop=%0b err=0x%0h",
             lane_id, beat_count, beat.data, beat.data[35:32], beat.sop, beat.eop, beat.error

@@ -67,13 +67,15 @@ def burstiness_to_scv(burstiness: float) -> float:
         # B=+1 maps to infinite SCV, so clamp the sampled endpoint to a large
         # but finite value and keep the visible axis range intact.
         return MAX_ENDPOINT_SCV
-    return (1.0 + burstiness) / (1.0 - burstiness)
+    cv = (1.0 + burstiness) / (1.0 - burstiness)
+    return min(MAX_ENDPOINT_SCV, cv * cv)
 
 
 def scv_to_burstiness(scv: float) -> float:
     if scv <= 0.0:
         return -1.0
-    return (scv - 1.0) / (scv + 1.0)
+    cv = math.sqrt(scv)
+    return (cv - 1.0) / (cv + 1.0)
 
 
 def make_interarrival_sampler(
@@ -347,7 +349,7 @@ def main() -> None:
         ),
         "buffer_capacity": args.buffer_capacity,
         "service_cycles_per_hit": 1.0,
-        "burstiness_definition": "B = (SCV - 1) / (SCV + 1)",
+        "burstiness_definition": "B = (CV - 1) / (CV + 1), CV=sigma_tau/m_tau",
         "rate_definition": "rho = lambda / mu",
         "burstiness_range": [args.burstiness_min, args.burstiness_max],
         "rate_range": [args.rate_min, args.rate_max],

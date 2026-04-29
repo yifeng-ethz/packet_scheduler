@@ -265,7 +265,7 @@ static void render_plot(const ratio_grid_t *ratio_grid, const char *output_path)
   filmod("delete");
   setpag("da4l");
   if (strcasecmp(output_format, "PNG") == 0) {
-    winsiz(2048, 1448);
+    winsiz(4096, 2896);
   }
   scrmod("reverse");
   disini();
@@ -320,7 +320,7 @@ static void render_plot(const ratio_grid_t *ratio_grid, const char *output_path)
   height(14);
   color("fore");
   if (plot_note == NULL || plot_note[0] == '\0') {
-    plot_note = "x: B=(SCV-1)/(SCV+1), y: egress ready duty; fill: clipped loss ratio 1x..1e6x";
+    plot_note = "x: B=(CV-1)/(CV+1), y: egress ready duty; fill: clipped loss ratio 1x..1e6x";
   }
   messag(plot_note, 420, 1938);
   messag("contours: dashed 1e3x, solid 1e6x; darker cells indicate stronger OPQ advantage", 420, 1980);

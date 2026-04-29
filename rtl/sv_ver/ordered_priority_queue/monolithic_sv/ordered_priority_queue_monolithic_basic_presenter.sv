@@ -2062,7 +2062,10 @@ module ordered_priority_queue_monolithic_basic_presenter_native #(
       (meta_wptr != (meta_rptr + META_PTR_ONE_CONST)) &&
       (page_ram_rd_data_i[35:32] == 4'b0001) &&
       (page_ram_rd_data_i[7:0] == K285)
-      |=> (page_ram_lookahead_valid || page_ram_lookahead_pending_valid);
+      |=> ((presenter_state != FTABLE_PRESENTER_PRESENTING) ||
+           retire_pending ||
+           page_ram_lookahead_valid ||
+           page_ram_lookahead_pending_valid);
   endproperty
   ap_tail_lookahead_preamble_is_buffered: assert property (p_tail_lookahead_preamble_is_buffered)
     else $error("OPQ_NATIVE_BASIC_PRESENTER let a queued next-packet preamble roll off page_ram.q without buffering it for restart");

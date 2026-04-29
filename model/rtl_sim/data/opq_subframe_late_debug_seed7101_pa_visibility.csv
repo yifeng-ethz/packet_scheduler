@@ -1,0 +1,21 @@
+run_tag,mode,component,status,rtl_hits,tlm_hits,aggregate_delta,bucket_abs_delta,compared_buckets,mismatched_buckets,abs_delta_hits,first_mismatch,threshold
+component_b000_rho0750_f0261_seed7101,normal,source_hits,PASS,100597,100597,0,0,70681,0,0,-,0.01
+component_b000_rho0750_f0261_seed7101,normal,ingress_accept_hits,DEBUG,95042,63727,0.32948591,0.36504914,67999,24146,34695,f63 l1 shd120,0.01
+component_b000_rho0750_f0261_seed7101,normal,ingress_predrop_flag_hits,DEBUG,5555,36870,5.6372637,6.2457246,26828,24146,34695,f63 l1 shd120,0.01
+component_b000_rho0750_f0261_seed7101,normal,controlled_predrop_exact_hits,DEBUG,28751,36870,0.28239018,0.95387987,32414,19394,27425,f63 l1 shd120,0.01
+component_b000_rho0750_f0261_seed7101,normal,pa_load_hits,DEBUG,58090,58430,0.0058529867,0.48652092,51254,20108,28262,f63 l1 shd120,0.01
+component_b000_rho0750_f0261_seed7101,normal,late_drop_pa_action_hits,DEBUG,6844,5297,0.22603741,1.5258621,8025,7417,10443,f68 l0 shd1,0.01
+component_b000_rho0750_f0261_seed7101,normal,late_drop_control_exact_hits,DEBUG,6827,5297,0.22411015,1.5271715,8016,7408,10426,f68 l0 shd1,0.01
+component_b000_rho0750_f0261_seed7101,normal,transaction_deliver_hits,DEBUG,58090,58430,0.0058529867,0.48197624,24352,11137,27998,f63 l-1 shd120,0.01
+component_b000_rho0750_f0261_seed7101,normal,ingress_decision_ticket,DEBUG,133632,133632,0,0.44201988,163166,59068,59068,f63 l1 shd120 accept,0.01
+component_b000_rho0750_f0261_seed7101,normal,frame_table_hit_aggregate,PASS,58090,58430,0.0058529867,0.0058529867,1,1,340,aggregate,0.01
+component_b000_rho0750_f0261_seed7101,forced_ingress,source_hits,PASS,100597,100597,0,0,70681,0,0,-,0.01
+component_b000_rho0750_f0261_seed7101,forced_ingress,ingress_accept_hits,DEBUG,95042,68073,0.28375876,0.28375876,66761,18576,26969,f97 l3 shd118,0.01
+component_b000_rho0750_f0261_seed7101,forced_ingress,ingress_predrop_flag_hits,DEBUG,5555,32524,4.8549055,4.8549055,22496,18576,26969,f97 l3 shd118,0.01
+component_b000_rho0750_f0261_seed7101,forced_ingress,controlled_predrop_exact_hits,DEBUG,28751,32524,0.13123022,0.13123022,22496,2652,3773,f166 l1 shd101,0.01
+component_b000_rho0750_f0261_seed7101,forced_ingress,pa_load_hits,DEBUG,58090,63702,0.096608711,0.13961095,45971,5772,8110,f98 l1 shd0,0.01
+component_b000_rho0750_f0261_seed7101,forced_ingress,late_drop_pa_action_hits,DEBUG,6844,4371,0.3613384,0.72340736,5734,3511,4951,f98 l1 shd0,0.01
+component_b000_rho0750_f0261_seed7101,forced_ingress,late_drop_control_exact_hits,DEBUG,6827,4371,0.35974806,0.72769884,5734,3520,4968,f98 l1 shd0,0.01
+component_b000_rho0750_f0261_seed7101,forced_ingress,transaction_deliver_hits,DEBUG,58090,63702,0.096608711,0.13961095,21896,3260,8110,f98 l-1 shd0,0.01
+component_b000_rho0750_f0261_seed7101,forced_ingress,ingress_decision_ticket,DEBUG,133632,133632,0,0.27801724,152208,37152,37152,f97 l3 shd118 accept,0.01
+component_b000_rho0750_f0261_seed7101,forced_ingress,frame_table_hit_aggregate,DEBUG,58090,63702,0.096608711,0.096608711,1,1,5612,aggregate,0.01

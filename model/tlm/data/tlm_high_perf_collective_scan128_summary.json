@@ -1,0 +1,33 @@
+{
+  "model": "level-3 high-performance collective LT event-queue scan",
+  "points_per_implementation": 128,
+  "burstiness_definition": "B=(CV_timestamp-1)/(CV_timestamp+1), matching Goh-Barabasi",
+  "rate_unit": "rho_hits_per_subheader_lane, converted to hit words/cycle/lane by rho*N_SHD/frame_period",
+  "n_lane": 4,
+  "n_shd": 128,
+  "egress_symbols_per_beat": 1,
+  "frame_period_cycles": 4096,
+  "ready_duty": 1.0,
+  "time_merger_penalty": 5.0,
+  "implementations": {
+    "opq": {
+      "points": 128,
+      "target_hits_per_point": 1000000,
+      "total_offered_hits": 128000000,
+      "total_dropped_hits": 259716,
+      "min_loss": 0.0,
+      "max_loss": 0.03247548692494811,
+      "persistent_knee_hits_per_subheader_lane": 7.73828125
+    },
+    "time_merger": {
+      "points": 128,
+      "target_hits_per_point": 1000000,
+      "total_offered_hits": 128000000,
+      "total_dropped_hits": 26140582,
+      "min_loss": 0.0,
+      "max_loss": 0.8326977396500924,
+      "persistent_knee_hits_per_subheader_lane": 1.33828125
+    }
+  },
+  "csv": "/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/tlm/data/tlm_high_perf_collective_scan128.csv"
+}

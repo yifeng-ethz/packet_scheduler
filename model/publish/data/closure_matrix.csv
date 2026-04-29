@@ -1,4 +1,4 @@
 case,A,T,S,B,A_T,T_S,A_S,max_abs_loss_delta,notes
-RTL-LS-001,PASS,PASS,PASS,PENDING_BOARD_RUN,PASS,PASS,PASS,0.0,RTL finite-sample markers use dropped/offered; board tier intentionally pending
-RTL-LS-002,PASS,PASS,PASS,PENDING_BOARD_RUN,PASS,PASS,PASS,0.0,RTL finite-sample markers use dropped/offered; board tier intentionally pending
-RTL-LS-005,PASS,PASS,PASS,PENDING_BOARD_RUN,PASS,PASS,PASS,0.0,RTL finite-sample markers use dropped/offered; board tier intentionally pending
+RTL-LS-001,PASS,PASS,FAIL,PENDING_BOARD_RUN,PASS,FAIL,FAIL,nan,RTL finite-sample markers use dropped/offered; board tier intentionally pending
+RTL-LS-002,PASS,PASS,FAIL,PENDING_BOARD_RUN,PASS,FAIL,FAIL,nan,RTL finite-sample markers use dropped/offered; board tier intentionally pending
+RTL-LS-005,PASS,PASS,FAIL,PENDING_BOARD_RUN,PASS,FAIL,FAIL,nan,RTL finite-sample markers use dropped/offered; board tier intentionally pending

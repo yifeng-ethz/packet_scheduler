@@ -1,0 +1,32 @@
+run_tag,component,status,metric,rtl_value,tlm_value,compared,mismatches,threshold,discrepancy,notes
+component_b000_rho0750_f0006_seed7101,ingress_source_ticket_stream,PASS,raw_subheader_ticket_identity,3072,3072,3072,0,0.01,0,source_missing_tlm=0 source_extra_tlm=0
+component_b000_rho0750_f0006_seed7101,ingress_lane_fifo,PASS,raw_subheader_ticket_decision,3072,3072,3072,0,0.01,0,missing_tlm=0 extra_tlm=0 key_count=3072
+component_b000_rho0750_f0006_seed7101,ticket_drop_control,PASS,controlled_pre_post_drop_hits_by_serial_lane,0,0,0,0,0.01,0,exact_pre_post key_count=0 hit_delta_sum=0 rtl_aggregate_only_pre=0 rtl_aggregate_only_post=0
+component_b000_rho0750_f0006_seed7101,page_allocator_handle_fifo,PASS,handle_accept_hits_by_lane_timestamp,2418,2418,1365,0,0.01,0,rtl_handles=1681 rtl_accept_trace=1 tlm_handle_events=1681
+component_b000_rho0750_f0006_seed7101,block_mover_credit_return,PASS,mover_done_credit_return_hits,2418,2418,19,0,0.01,0,rtl_return_events=1681 tlm_return_events=1681
+component_b000_rho0750_f0006_seed7101,page_allocator_lane_action_load,PASS,load_hits,2418,2418,4632,0,0.01,0,"rtl_action_counts={0: 1536, 1: 24, 2: 3072}"
+component_b000_rho0750_f0006_seed7101,page_allocator_lane_action_late_drop,PASS,late_drop_hits,0,0,4632,0,0.01,0,"rtl_action_counts={0: 1536, 1: 24, 2: 3072}"
+component_b000_rho0750_f0006_seed7101,page_allocator_ticket_visibility_net,PASS,ingress_accept_minus_predrop_hits,2418,2418,3072,0,0.01,0,rtl_ingress_accept=2418 tlm_ingress_accept=2418 rtl_pa_action_extra=0 tlm_pa_action_extra=0
+component_b000_rho0750_f0006_seed7101,page_allocator_ticket_visibility_unconsumed,PASS,net_ingress_not_seen_as_pa_load_or_late,0,0,1391,0,0.01,0,rtl_pa_ticket_seen=0 rtl_pa_ticket_curr_seen=0 rtl_pa_ticket_future_only=0 rtl_pa_ticket_never_seen=0 rtl_keys=0 tlm_keys=1391
+component_b000_rho0750_f0006_seed7101,page_allocator_ticket_visibility_rtl_local_trace,PASS,pa_ticket_debug_samples,4632,-,4632,0,0.01,-,
+component_b000_rho0750_f0006_seed7101,page_allocator_state_trace,PASS,rtl_wait_samples,30859,6,30859,0,0.01,0.99980557,"frame_wait=5 active_wait=0 ingress_busy=1295 future_only=15328 top_states=[(20, 4608), (21, 4608), (0, 1183), (2, 1158), (3, 1158)]"
+component_b000_rho0750_f0006_seed7101,frame_table_header_ledger,PASS,wr_hdr,6,6,1,0,0.01,0,rtl_rd_hdr=6 rtl_drop_hdr=0
+component_b000_rho0750_f0006_seed7101,frame_table_subheader_ledger,PASS,wr_shd,736,736,1,0,0.01,0,rtl_rd_shd=736 rtl_drop_shd=0
+component_b000_rho0750_f0006_seed7101,frame_table_hit_ledger,PASS,rd_plus_drop_hit,2418,2418,1,0,0.01,0,rtl_ft_drop_hit=0 tlm_ft_drop_hit=0 tlm_wr_hit=2418
+component_b000_rho0750_f0006_seed7101,transaction_bucket_order,PASS,OPQ_TXN_deliver_bucket_count_and_order,2418,2418,2418,0,0.01,0,missing_bucket=0 extra_bucket=0 bucket_order_violations=0
+component_b000_rho0750_f0006_seed7101,transaction_word_identity,PASS,OPQ_TXN_deliver_word_identity,2418,2418,2418,0,0.01,0,missing_word=0 extra_word=0
+component_b000_rho0750_f0006_seed7101,collective_loss,PASS,dropped_hits,0,0,2418,0,0.01,0,rtl_expected=2418 rtl_uvm_clean=1 tlm_pre=0 tlm_post=0 tlm_ft=0
+component_b000_rho0750_f0006_seed7101,ingress_parser_ticket_fifo_write_parser_ticket_stream,PASS,parser_ticket_body_hits,2418,2418,3096,0,0.01,0,sop_rows=24 eop_rows=14 ignored_rows=0
+component_b000_rho0750_f0006_seed7101,page_allocator_handle_fifo_parser_ticket_stream,DEBUG,handle_accept_hits_by_lane_timestamp,2418,369,1365,2049,0.01,0.84739454,rtl_handles=1681 rtl_accept_trace=1 tlm_handle_events=266
+component_b000_rho0750_f0006_seed7101,block_mover_credit_return_parser_ticket_stream,DEBUG,mover_done_credit_return_hits,2418,369,19,1415,0.01,0.84739454,rtl_return_events=1681 tlm_return_events=266
+component_b000_rho0750_f0006_seed7101,page_allocator_lane_action_load_parser_ticket_stream,DEBUG,load_hits,2418,369,4632,2049,0.01,0.84739454,"rtl_action_counts={0: 1536, 1: 24, 2: 3072}"
+component_b000_rho0750_f0006_seed7101,page_allocator_lane_action_late_drop_parser_ticket_stream,PASS,late_drop_hits,0,0,4632,0,0.01,0,"rtl_action_counts={0: 1536, 1: 24, 2: 3072}"
+component_b000_rho0750_f0006_seed7101,page_allocator_ticket_visibility_net_parser_ticket_stream,DEBUG,ingress_accept_minus_predrop_hits,2418,0,3072,2418,0.01,1,rtl_ingress_accept=2418 tlm_ingress_accept=0 rtl_pa_action_extra=0 tlm_pa_action_extra=369
+component_b000_rho0750_f0006_seed7101,page_allocator_ticket_visibility_unconsumed_parser_ticket_stream,PASS,net_ingress_not_seen_as_pa_load_or_late,0,0,0,0,0.01,0,rtl_pa_ticket_seen=0 rtl_pa_ticket_curr_seen=0 rtl_pa_ticket_future_only=0 rtl_pa_ticket_never_seen=0 rtl_keys=0 tlm_keys=0
+component_b000_rho0750_f0006_seed7101,page_allocator_ticket_visibility_rtl_local_trace_parser_ticket_stream,PASS,pa_ticket_debug_samples,4632,-,4632,0,0.01,-,
+component_b000_rho0750_f0006_seed7101,frame_table_header_ledger_parser_ticket_stream,DEBUG,wr_hdr,6,0,1,6,0.01,1,rtl_rd_hdr=6 rtl_drop_hdr=0
+component_b000_rho0750_f0006_seed7101,frame_table_subheader_ledger_parser_ticket_stream,DEBUG,wr_shd,736,0,1,736,0.01,1,rtl_rd_shd=736 rtl_drop_shd=0
+component_b000_rho0750_f0006_seed7101,frame_table_hit_ledger_parser_ticket_stream,DEBUG,rd_plus_drop_hit,2418,0,1,2418,0.01,1,rtl_ft_drop_hit=0 tlm_ft_drop_hit=0 tlm_wr_hit=0
+component_b000_rho0750_f0006_seed7101,transaction_bucket_order_parser_ticket_stream,DEBUG,OPQ_TXN_deliver_bucket_count_and_order,2418,0,2418,2418,0.01,1,missing_bucket=0 extra_bucket=2418 bucket_order_violations=0
+component_b000_rho0750_f0006_seed7101,transaction_word_identity_parser_ticket_stream,DEBUG,OPQ_TXN_deliver_word_identity,2418,0,2418,2418,0.01,1,missing_word=0 extra_word=2418
+component_b000_rho0750_f0006_seed7101,collective_loss_parser_ticket_stream,PASS,dropped_hits,0,0,2418,0,0.01,0,parser_ticket_stream rtl_expected=2418 rtl_uvm_clean=1 tlm_pre=0 tlm_post=0 tlm_ft=0

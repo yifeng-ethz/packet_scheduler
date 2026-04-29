@@ -3,7 +3,7 @@
   "scope_note": "OPQ-inspired analytical loss surface; not a direct RTL drop-probability measurement.",
   "buffer_capacity": 255,
   "service_cycles_per_hit": 1.0,
-  "burstiness_definition": "B = (SCV - 1) / (SCV + 1)",
+  "burstiness_definition": "B = (CV - 1) / (CV + 1), CV=sigma_tau/m_tau",
   "rate_definition": "rho = lambda / mu",
   "burstiness_range": [
     -1.0,

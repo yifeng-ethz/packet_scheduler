@@ -30,6 +30,14 @@ tb/REPORT/math/queueing_model/.build_dislin/
 model/**/.build/
 model/**/.build_dislin/
 
+# Generated RTL/model simulation run logs. Curated reports and reduced data
+# stay tracked; raw simulator stdout/log streams are local run artifacts.
+model/rtl_sim/runs/**/logs/*.log
+model/rtl_sim/runs/**/stdout/*.log
+model/rtl_sim/runs/**/*.stdout.log
+model/rtl_sim/runs/
+model/rtl_sim/build_runs*/
+
 # TERP-generated wrappers (regenerated each run)
 rtl/ordered_priority_queue/split/top/ordered_priority_queue_top.vhd
 

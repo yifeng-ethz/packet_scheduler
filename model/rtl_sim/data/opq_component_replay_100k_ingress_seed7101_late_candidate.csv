@@ -1,0 +1,26 @@
+run_tag,component,status,metric,rtl_value,tlm_value,compared,mismatches,threshold,discrepancy,notes
+component_b000_rho0750_f0261_seed7101,ingress_source_ticket_stream,PASS,raw_subheader_ticket_identity,133632,133632,133632,0,0.01,0,source_missing_tlm=0 source_extra_tlm=0
+component_b000_rho0750_f0261_seed7101,ingress_lane_fifo,DEBUG,raw_subheader_ticket_decision,133632,133632,133632,54998,0.01,0,missing_tlm=27499 extra_tlm=27499 key_count=161131
+component_b000_rho0750_f0261_seed7101,ticket_drop_control,DEBUG,controlled_pre_post_drop_hits_by_serial_lane,35578,41000,1153,37162,0.01,0.15239755,exact_pre_post key_count=1153 hit_delta_sum=37162 rtl_aggregate_only_pre=3744 rtl_aggregate_only_post=0
+component_b000_rho0750_f0261_seed7101,page_allocator_handle_fifo,DEBUG,handle_accept_hits_by_lane_timestamp,58090,59597,40285,27443,0.01,0.025942503,rtl_handles=41058 rtl_accept_trace=1 tlm_handle_events=42122
+component_b000_rho0750_f0261_seed7101,block_mover_credit_return,DEBUG,mover_done_credit_return_hits,58090,59597,25,1082,0.01,0.025942503,rtl_return_events=41058 tlm_return_events=42122
+component_b000_rho0750_f0261_seed7101,page_allocator_lane_action_load,DEBUG,load_hits,58090,59597,187930,1507,0.01,0.025942503,"rtl_action_counts={0: 87632, 1: 1010, 2: 85888, 3: 13400}"
+component_b000_rho0750_f0261_seed7101,page_allocator_lane_action_late_drop,DEBUG,late_drop_hits,6844,6930,187930,86,0.01,0.012565751,"rtl_action_counts={0: 87632, 1: 1010, 2: 85888, 3: 13400}"
+component_b000_rho0750_f0261_seed7101,page_allocator_state_trace,PASS,rtl_wait_samples,1240693,232,1240693,0,0.01,0.99981301,"frame_wait=5 active_wait=0 ingress_busy=49436 future_only=791325 top_states=[(20, 186960), (21, 186960), (0, 47577), (2, 46994), (3, 46994)]"
+component_b000_rho0750_f0261_seed7101,frame_table_header_ledger,DEBUG,wr_hdr,192,232,1,40,0.01,0.20833333,rtl_rd_hdr=192 rtl_drop_hdr=0
+component_b000_rho0750_f0261_seed7101,frame_table_subheader_ledger,DEBUG,wr_shd,19206,20829,1,1623,0.01,0.084504842,rtl_rd_shd=19206 rtl_drop_shd=0
+component_b000_rho0750_f0261_seed7101,frame_table_hit_ledger,DEBUG,rd_plus_drop_hit,58090,59597,1,1507,0.01,0.025942503,rtl_ft_drop_hit=0 tlm_ft_drop_hit=0 tlm_wr_hit=59597
+component_b000_rho0750_f0261_seed7101,transaction_bucket_order,DEBUG,OPQ_TXN_deliver_bucket_count_and_order,58090,59597,58090,28777,0.01,0.025942503,missing_bucket=15142 extra_bucket=13635 bucket_order_violations=0
+component_b000_rho0750_f0261_seed7101,transaction_word_identity,DEBUG,OPQ_TXN_deliver_word_identity,58090,59597,58090,28995,0.01,0.025942503,missing_word=15251 extra_word=13744
+component_b000_rho0750_f0261_seed7101,collective_loss,DEBUG,dropped_hits,39339,41000,100597,1661,0.01,0.042222731,rtl_expected=100597 rtl_uvm_clean=0 tlm_pre=34070 tlm_post=6930 tlm_ft=0
+component_b000_rho0750_f0261_seed7101,ticket_drop_control_forced_ingress,DEBUG,controlled_pre_post_drop_hits_by_serial_lane,35578,34118,1024,10958,0.01,0.041036596,exact_pre_post key_count=1024 hit_delta_sum=10958 rtl_aggregate_only_pre=3744 rtl_aggregate_only_post=0
+component_b000_rho0750_f0261_seed7101,page_allocator_handle_fifo_forced_ingress,DEBUG,handle_accept_hits_by_lane_timestamp,58090,66479,39774,17583,0.01,0.14441384,rtl_handles=41058 rtl_accept_trace=1 tlm_handle_events=47056
+component_b000_rho0750_f0261_seed7101,block_mover_credit_return_forced_ingress,DEBUG,mover_done_credit_return_hits,58090,66479,24,5998,0.01,0.14441384,rtl_return_events=41058 tlm_return_events=47056
+component_b000_rho0750_f0261_seed7101,page_allocator_lane_action_load_forced_ingress,DEBUG,load_hits,58090,66479,187930,8389,0.01,0.14441384,"rtl_action_counts={0: 87632, 1: 1010, 2: 85888, 3: 13400}"
+component_b000_rho0750_f0261_seed7101,page_allocator_lane_action_late_drop_forced_ingress,DEBUG,late_drop_hits,6844,5367,187930,1477,0.01,0.21580947,"rtl_action_counts={0: 87632, 1: 1010, 2: 85888, 3: 13400}"
+component_b000_rho0750_f0261_seed7101,frame_table_header_ledger_forced_ingress,DEBUG,wr_hdr,192,257,1,65,0.01,0.33854167,rtl_rd_hdr=192 rtl_drop_hdr=0
+component_b000_rho0750_f0261_seed7101,frame_table_subheader_ledger_forced_ingress,DEBUG,wr_shd,19206,24014,1,4808,0.01,0.25033844,rtl_rd_shd=19206 rtl_drop_shd=0
+component_b000_rho0750_f0261_seed7101,frame_table_hit_ledger_forced_ingress,DEBUG,rd_plus_drop_hit,58090,66479,1,8389,0.01,0.14441384,rtl_ft_drop_hit=0 tlm_ft_drop_hit=0 tlm_wr_hit=66479
+component_b000_rho0750_f0261_seed7101,transaction_bucket_order_forced_ingress,DEBUG,OPQ_TXN_deliver_bucket_count_and_order,58090,66479,58090,17645,0.01,0.14441384,missing_bucket=13017 extra_bucket=4628 bucket_order_violations=0
+component_b000_rho0750_f0261_seed7101,transaction_word_identity_forced_ingress,DEBUG,OPQ_TXN_deliver_word_identity,58090,66479,58090,17645,0.01,0.14441384,missing_word=13017 extra_word=4628
+component_b000_rho0750_f0261_seed7101,collective_loss_forced_ingress,DEBUG,dropped_hits,39339,34118,100597,5221,0.01,0.13271817,forced_ingress_decisions rtl_expected=100597 rtl_uvm_clean=0 tlm_pre=28751 tlm_post=5367 tlm_ft=0

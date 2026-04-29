@@ -1,0 +1,13 @@
+run_tag,component,status,metric,rtl_value,tlm_value,compared,mismatches,threshold,discrepancy,notes
+component_b000_rho0750_f0261_seed7101,ingress_lane_fifo,PASS,raw_subheader_ticket_decision,0,0,0,0,0.01,0,missing_tlm=0 hit_mismatch=0 drop_mismatch=0 avg_credit_abs_delta=0.000
+component_b000_rho0750_f0261_seed7101,ticket_drop_control,DEBUG,controlled_pre_post_drop_hits_by_serial_lane,39322,28805,855,31043,0.01,0.26745842,pre/post key_count=855 hit_delta_sum=31043
+component_b000_rho0750_f0261_seed7101,page_allocator_handle_fifo,DEBUG,handle_accept_hits_by_lane_timestamp,58090,71817,45796,129397,0.01,0.23630573,rtl_handles=41058 tlm_handle_events=50664
+component_b000_rho0750_f0261_seed7101,frame_table_hit_ledger,DEBUG,rd_plus_drop_hit,58090,71817,1,13727,0.01,0.23630573,rtl_ft_drop_hit=0 tlm_ft_drop_hit=0
+component_b000_rho0750_f0261_seed7101,transaction_bucket_order,DEBUG,OPQ_TXN_deliver_bucket_identity,58090,71817,58090,85585,0.01,0.23630573,missing=49656 extra=35929 bucket_order_violations=0
+component_b000_rho0750_f0261_seed7101,collective_loss,DEBUG,dropped_hits,39339,28805,100597,10534,0.01,0.26777498,rtl_expected=100597 rtl_uvm_clean=0 tlm_pre=25940 tlm_post=2865 tlm_ft=0
+component_b000_rho0750_f0261_seed7102,ingress_lane_fifo,PASS,raw_subheader_ticket_decision,0,0,0,0,0.01,0,missing_tlm=0 hit_mismatch=0 drop_mismatch=0 avg_credit_abs_delta=0.000
+component_b000_rho0750_f0261_seed7102,ticket_drop_control,DEBUG,controlled_pre_post_drop_hits_by_serial_lane,41631,28805,892,34110,0.01,0.30808772,pre/post key_count=892 hit_delta_sum=34110
+component_b000_rho0750_f0261_seed7102,page_allocator_handle_fifo,DEBUG,handle_accept_hits_by_lane_timestamp,56884,71817,45794,128193,0.01,0.2625167,rtl_handles=40207 tlm_handle_events=50664
+component_b000_rho0750_f0261_seed7102,frame_table_hit_ledger,DEBUG,rd_plus_drop_hit,56884,71817,1,14933,0.01,0.2625167,rtl_ft_drop_hit=0 tlm_ft_drop_hit=0
+component_b000_rho0750_f0261_seed7102,transaction_bucket_order,DEBUG,OPQ_TXN_deliver_bucket_identity,56884,71817,56884,85137,0.01,0.2625167,missing=50035 extra=35102 bucket_order_violations=0
+component_b000_rho0750_f0261_seed7102,collective_loss,DEBUG,dropped_hits,41646,28805,100226,12841,0.01,0.30833694,rtl_expected=100226 rtl_uvm_clean=0 tlm_pre=25940 tlm_post=2865 tlm_ft=0

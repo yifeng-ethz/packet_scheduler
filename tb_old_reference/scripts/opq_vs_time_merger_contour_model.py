@@ -50,7 +50,8 @@ def burstiness_to_scv(burstiness: float) -> float:
         return 0.0
     if burstiness >= 0.999_999:
         return MAX_ENDPOINT_SCV
-    return (1.0 + burstiness) / (1.0 - burstiness)
+    cv = (1.0 + burstiness) / (1.0 - burstiness)
+    return min(MAX_ENDPOINT_SCV, cv * cv)
 
 
 def finite_queue_loss(load: float, capacity: int) -> float:
@@ -133,7 +134,7 @@ def build_rows(args: argparse.Namespace) -> tuple[list[ContourPoint], dict[str, 
         "time_merger_stage_bubble": args.time_merger_stage_bubble,
         "time_merger_service_symbols_per_beat": time_merger_service,
         "time_merger_capacity": time_merger_capacity,
-        "burstiness_definition": "B = (SCV - 1) / (SCV + 1)",
+        "burstiness_definition": "B = (CV - 1) / (CV + 1), CV=sigma_tau/m_tau",
         "effective_load": (
             "rho_eff = rate_per_lane * N_LANE / service_symbols_per_beat "
             "* sqrt((1+SCV)/2)"

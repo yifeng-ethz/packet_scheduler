@@ -171,7 +171,7 @@ static void render_plot(const scaling_grid_t *scaling_grid, const char *output_p
   filmod("delete");
   setpag("da4l");
   if (strcasecmp(output_format, "PNG") == 0) {
-    winsiz(2048, 1200);
+    winsiz(4096, 2400);
   }
   scrmod("reverse");
   disini();

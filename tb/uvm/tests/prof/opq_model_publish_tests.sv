@@ -19,6 +19,11 @@ class opq_model_publish_loss_sweep_test extends opq_base_test;
   int unsigned model_require_drain;
   int unsigned model_credit_samples;
   int unsigned model_credit_interval_us;
+  int unsigned model_noise_rho_ppm;
+  int unsigned model_cluster_rho_ppm;
+  int unsigned model_cluster_size_min;
+  int unsigned model_cluster_size_max;
+  int unsigned model_rng_seed;
 
   function new(string name = "opq_model_publish_loss_sweep_test", uvm_component parent = null);
     super.new(name, parent);
@@ -45,7 +50,7 @@ class opq_model_publish_loss_sweep_test extends opq_base_test;
     model_subheaders_per_frame = 32;
     model_hit_period = 4;
     model_hit_count = 2;
-    model_inter_gap_cycles = OPQ_MIN_SOP_GAP_CYCLES;
+    model_inter_gap_cycles = OPQ_FRAME_DURATION_SWB_CYCLES;
     model_ready_high = 0;
     model_ready_low = 0;
     model_ready_repeat = 0;
@@ -57,6 +62,11 @@ class opq_model_publish_loss_sweep_test extends opq_base_test;
     model_require_drain = 0;
     model_credit_samples = 12;
     model_credit_interval_us = 10;
+    model_noise_rho_ppm = 0;
+    model_cluster_rho_ppm = 0;
+    model_cluster_size_min = 4;
+    model_cluster_size_max = 8;
+    model_rng_seed = 32'h5C1F_0001;
 
     void'($value$plusargs("OPQ_MODEL_PROFILE=%d", model_profile));
     void'($value$plusargs("OPQ_MODEL_FRAME_COUNT=%d", model_frame_count));
@@ -77,6 +87,11 @@ class opq_model_publish_loss_sweep_test extends opq_base_test;
     void'($value$plusargs("OPQ_MODEL_REQUIRE_DRAIN=%d", model_require_drain));
     void'($value$plusargs("OPQ_MODEL_CREDIT_SAMPLES=%d", model_credit_samples));
     void'($value$plusargs("OPQ_MODEL_CREDIT_INTERVAL_US=%d", model_credit_interval_us));
+    void'($value$plusargs("OPQ_MODEL_NOISE_RHO_PPM=%d", model_noise_rho_ppm));
+    void'($value$plusargs("OPQ_MODEL_CLUSTER_RHO_PPM=%d", model_cluster_rho_ppm));
+    void'($value$plusargs("OPQ_MODEL_CLUSTER_SIZE_MIN=%d", model_cluster_size_min));
+    void'($value$plusargs("OPQ_MODEL_CLUSTER_SIZE_MAX=%d", model_cluster_size_max));
+    void'($value$plusargs("OPQ_MODEL_RNG_SEED=%d", model_rng_seed));
 
     if (model_subheaders_per_frame == 0) begin
       model_subheaders_per_frame = 1;
@@ -92,6 +107,12 @@ class opq_model_publish_loss_sweep_test extends opq_base_test;
     end
     if ((model_ready_high + model_ready_low) != 0) begin
       model_ready_duty_ppm = (model_ready_high * 1000000) / (model_ready_high + model_ready_low);
+    end
+    if (model_cluster_size_min == 0) begin
+      model_cluster_size_min = 1;
+    end
+    if (model_cluster_size_max < model_cluster_size_min) begin
+      model_cluster_size_max = model_cluster_size_min;
     end
   endfunction
 
@@ -120,6 +141,7 @@ class opq_model_publish_loss_sweep_test extends opq_base_test;
 
   virtual task run_main_sequence();
     opq_whole_frame_skew_virtual_sequence whole_seq;
+    opq_timestamp_burst_virtual_sequence timestamp_seq;
     opq_drr_saturation_virtual_sequence drr_seq;
     opq_variable_saturation_overflow_virtual_sequence sat_seq;
 
@@ -127,14 +149,21 @@ class opq_model_publish_loss_sweep_test extends opq_base_test;
     csr_clear_counters();
 
     `uvm_info(get_type_name(), $sformatf(
-      "MODEL_PUBLISH_CONFIG case=%s profile=%0d n_lane=%0d n_shd=%0d egress_symbols_per_beat=%0d frame_count=%0d subheaders_per_frame=%0d hit_period=%0d hit_count=%0d ready_duty_ppm=%0d rho_ppm=%0d burstiness_milli=%0d",
+      "MODEL_PUBLISH_CONFIG case=%s profile=%0d n_lane=%0d n_shd=%0d egress_symbols_per_beat=%0d lane_fifo_depth=%0d ticket_fifo_depth=%0d page_ram_depth=%0d frame_count=%0d subheaders_per_frame=%0d inter_frame_gap_cycles=%0d frame_ts_step_ticks=%0d frame_launch_period_cycles=%0d feb_header_latency_cycles=%0d hit_period=%0d hit_count=%0d ready_duty_ppm=%0d rho_ppm=%0d burstiness_milli=%0d",
       model_case,
       model_profile,
       OPQ_N_LANE,
       OPQ_N_SHD,
       OPQ_EGRESS_SYMBOLS_PER_BEAT,
+      OPQ_LANE_FIFO_DEPTH,
+      OPQ_TICKET_FIFO_DEPTH,
+      OPQ_PAGE_RAM_DEPTH,
       model_frame_count,
       model_subheaders_per_frame,
+      model_inter_gap_cycles,
+      OPQ_FRAME_DURATION_TS_TICKS,
+      model_inter_gap_cycles,
+      OPQ_VIRTUAL_FEB_HEADER_LATENCY_CYCLES,
       model_hit_period,
       model_hit_count,
       model_ready_duty_ppm,
@@ -163,6 +192,20 @@ class opq_model_publish_loss_sweep_test extends opq_base_test;
             sat_seq.hot_lane_count_max = (OPQ_N_LANE >= 2) ? 2 : 1;
             sat_seq.inter_frame_gap_cycles = model_inter_gap_cycles;
             sat_seq.start(env.vseqr);
+          end
+          3: begin
+            timestamp_seq = opq_timestamp_burst_virtual_sequence::type_id::create("model_publish_timestamp_seq");
+            timestamp_seq.frame_count = model_frame_count;
+            timestamp_seq.subheaders_per_frame = model_subheaders_per_frame;
+            timestamp_seq.inter_frame_gap_cycles = model_inter_gap_cycles;
+            timestamp_seq.total_rho_ppm = model_rho_ppm;
+            timestamp_seq.noise_rho_ppm = model_noise_rho_ppm;
+            timestamp_seq.cluster_rho_ppm = model_cluster_rho_ppm;
+            timestamp_seq.cluster_size_min = model_cluster_size_min;
+            timestamp_seq.cluster_size_max = model_cluster_size_max;
+            timestamp_seq.burstiness_milli = model_burstiness_milli;
+            timestamp_seq.rng_seed = model_rng_seed;
+            timestamp_seq.start(env.vseqr);
           end
           default: begin
             whole_seq = opq_whole_frame_skew_virtual_sequence::type_id::create("model_publish_whole_seq");
@@ -210,6 +253,7 @@ class opq_model_publish_loss_sweep_test extends opq_base_test;
       int unsigned delivered_hits;
       int unsigned unexplained_hits;
       int unsigned loss_ppm;
+      longint unsigned loss_ppm_wide;
       int unsigned allowance_word;
       int unsigned quantum_word;
       int unsigned grant_cnt_word;
@@ -221,7 +265,9 @@ class opq_model_publish_loss_sweep_test extends opq_base_test;
       dropped_hits = env.scoreboard.get_dropped_lane_hit_cnt(lane);
       delivered_hits = env.scoreboard.get_actual_lane_hit_cnt(lane);
       unexplained_hits = env.scoreboard.get_unexplained_lane_hit_cnt(lane);
-      loss_ppm = (expected_hits == 0) ? 0 : ((dropped_hits * 1000000) / expected_hits);
+      loss_ppm_wide = (expected_hits == 0) ? 0 :
+        ((longint'(dropped_hits) * 1000000) / longint'(expected_hits));
+      loss_ppm = int'(loss_ppm_wide);
       read_lane_drr_snapshot(lane, allowance_word, quantum_word, grant_cnt_word, beat_cnt_word, defer_cnt_word);
 
       total_expected += expected_hits;
@@ -231,18 +277,25 @@ class opq_model_publish_loss_sweep_test extends opq_base_test;
       total_unexplained += unexplained_hits;
 
       `uvm_info(get_type_name(), $sformatf(
-        "MODEL_PUBLISH_RESULT case=%s profile=%0d lane=%0d n_lane=%0d n_shd=%0d egress_symbols_per_beat=%0d ready_duty_ppm=%0d rho_ppm=%0d burstiness_milli=%0d frame_count=%0d subheaders_per_frame=%0d hit_period=%0d hit_count=%0d expected_hits=%0d accepted_hits=%0d dropped_hits=%0d delivered_hits=%0d unexplained_hits=%0d loss_ppm=%0d drr_allowance=%0d drr_quantum=%0d drr_grants=%0d drr_beats=%0d drr_defers=%0d",
+        "MODEL_PUBLISH_RESULT case=%s profile=%0d lane=%0d n_lane=%0d n_shd=%0d egress_symbols_per_beat=%0d lane_fifo_depth=%0d ticket_fifo_depth=%0d page_ram_depth=%0d ready_duty_ppm=%0d rho_ppm=%0d burstiness_milli=%0d frame_count=%0d subheaders_per_frame=%0d inter_frame_gap_cycles=%0d frame_ts_step_ticks=%0d frame_launch_period_cycles=%0d feb_header_latency_cycles=%0d hit_period=%0d hit_count=%0d expected_hits=%0d accepted_hits=%0d dropped_hits=%0d delivered_hits=%0d unexplained_hits=%0d loss_ppm=%0d drr_allowance=%0d drr_quantum=%0d drr_grants=%0d drr_beats=%0d drr_defers=%0d",
         model_case,
         model_profile,
         lane,
         OPQ_N_LANE,
         OPQ_N_SHD,
         OPQ_EGRESS_SYMBOLS_PER_BEAT,
+        OPQ_LANE_FIFO_DEPTH,
+        OPQ_TICKET_FIFO_DEPTH,
+        OPQ_PAGE_RAM_DEPTH,
         model_ready_duty_ppm,
         model_rho_ppm,
         model_burstiness_milli,
         model_frame_count,
         model_subheaders_per_frame,
+        model_inter_gap_cycles,
+        OPQ_FRAME_DURATION_TS_TICKS,
+        model_inter_gap_cycles,
+        OPQ_VIRTUAL_FEB_HEADER_LATENCY_CYCLES,
         model_hit_period,
         model_hit_count,
         expected_hits,
@@ -259,21 +312,35 @@ class opq_model_publish_loss_sweep_test extends opq_base_test;
       ), UVM_LOW)
     end
 
-    total_loss_ppm = (total_expected == 0) ? 0 : ((total_dropped * 1000000) / total_expected);
+    begin
+      longint unsigned total_loss_ppm_wide;
+      total_loss_ppm_wide = (total_expected == 0) ? 0 :
+        ((longint'(total_dropped) * 1000000) / longint'(total_expected));
+      total_loss_ppm = int'(total_loss_ppm_wide);
+    end
     csr_read32(OPQ_CSR_WORD_FT_WR_HIT, ft_wr_hit_word);
     csr_read32(OPQ_CSR_WORD_FT_RD_HIT, ft_rd_hit_word);
     csr_read32(OPQ_CSR_WORD_FT_DROP_HIT, ft_drop_hit_word);
 
     `uvm_info(get_type_name(), $sformatf(
-      "MODEL_PUBLISH_AGG case=%s profile=%0d n_lane=%0d n_shd=%0d egress_symbols_per_beat=%0d ready_duty_ppm=%0d rho_ppm=%0d burstiness_milli=%0d expected_hits=%0d accepted_hits=%0d dropped_hits=%0d delivered_hits=%0d unexplained_hits=%0d loss_ppm=%0d ft_wr_hit=%0d ft_rd_hit=%0d ft_drop_hit=%0d",
+      "MODEL_PUBLISH_AGG case=%s profile=%0d n_lane=%0d n_shd=%0d egress_symbols_per_beat=%0d lane_fifo_depth=%0d ticket_fifo_depth=%0d page_ram_depth=%0d ready_duty_ppm=%0d rho_ppm=%0d burstiness_milli=%0d frame_count=%0d subheaders_per_frame=%0d inter_frame_gap_cycles=%0d frame_ts_step_ticks=%0d frame_launch_period_cycles=%0d feb_header_latency_cycles=%0d expected_hits=%0d accepted_hits=%0d dropped_hits=%0d delivered_hits=%0d unexplained_hits=%0d loss_ppm=%0d ft_wr_hit=%0d ft_rd_hit=%0d ft_drop_hit=%0d",
       model_case,
       model_profile,
       OPQ_N_LANE,
       OPQ_N_SHD,
       OPQ_EGRESS_SYMBOLS_PER_BEAT,
+      OPQ_LANE_FIFO_DEPTH,
+      OPQ_TICKET_FIFO_DEPTH,
+      OPQ_PAGE_RAM_DEPTH,
       model_ready_duty_ppm,
       model_rho_ppm,
       model_burstiness_milli,
+      model_frame_count,
+      model_subheaders_per_frame,
+      model_inter_gap_cycles,
+      OPQ_FRAME_DURATION_TS_TICKS,
+      model_inter_gap_cycles,
+      OPQ_VIRTUAL_FEB_HEADER_LATENCY_CYCLES,
       total_expected,
       total_accepted,
       total_dropped,

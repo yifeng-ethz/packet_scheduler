@@ -290,6 +290,50 @@ class opq_virtual_sequence_base extends uvm_sequence #(uvm_sequence_item);
     return finalize_frame_item(tr, pkg_cnt);
   endfunction
 
+  function automatic opq_frame_item build_timestamp_hit_count_frame(
+    string name,
+    int lane_id,
+    bit [47:0] frame_ts,
+    bit [15:0] pkg_cnt,
+    int unsigned shd_ts_base,
+    int unsigned pre_gap_cycles,
+    input int unsigned hit_counts[$],
+    bit [31:0] payload_seed
+  );
+    opq_frame_item tr;
+
+    tr = opq_frame_item::type_id::create(name);
+    tr.lane_id = lane_id;
+    tr.channel = lane_to_channel(lane_id);
+    tr.frame_ts = frame_ts;
+    tr.pkg_cnt = pkg_cnt;
+    tr.pre_gap_cycles = pre_gap_cycles;
+
+    foreach (hit_counts[shd_idx]) begin
+      opq_subheader_desc shd;
+      int unsigned capped_hit_count;
+
+      shd = opq_subheader_desc::type_id::create($sformatf("%s_ts_shd_%0d", name, shd_idx));
+      shd.shd_ts = (shd_ts_base + shd_idx) % 256;
+      capped_hit_count = (hit_counts[shd_idx] > OPQ_N_HIT) ? OPQ_N_HIT : hit_counts[shd_idx];
+      for (int unsigned hit_idx = 0; hit_idx < capped_hit_count; hit_idx++) begin
+        opq_hit_desc hit_desc;
+
+        hit_desc = opq_hit_desc::type_id::create($sformatf("%s_ts_hit_%0d_%0d", name, shd_idx, hit_idx));
+        hit_desc.payload_word = payload_seed
+          + (shd_idx << 12)
+          + hit_idx
+          + (lane_id << 24);
+        hit_desc.debug_hit_id = next_debug_hit_id;
+        next_debug_hit_id++;
+        shd.hits.push_back(hit_desc);
+      end
+      tr.subheaders.push_back(shd);
+    end
+
+    return finalize_frame_item(tr, pkg_cnt);
+  endfunction
+
   function automatic bit [63:0] decode_slot_offset_cycles(
     opq_frame_item tr,
     int unsigned slot_idx,
@@ -325,6 +369,53 @@ class opq_virtual_sequence_base extends uvm_sequence #(uvm_sequence_item);
     end
     return launch_origin_cycle;
   endfunction
+
+  task automatic apply_absolute_frame_period_schedule(
+    ref opq_frame_item lane_frames[OPQ_N_LANE][$],
+    input int unsigned frame_period_cycles
+  );
+    int unsigned max_slot_count;
+    bit [63:0] launch_origin_cycle;
+
+    if (frame_period_cycles == 0) begin
+      frame_period_cycles = OPQ_FRAME_DURATION_SWB_CYCLES;
+    end
+
+    max_slot_count = 0;
+    for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+      if (lane_frames[lane].size() > max_slot_count) begin
+        max_slot_count = lane_frames[lane].size();
+      end
+    end
+
+    launch_origin_cycle = get_absolute_launch_origin_cycle();
+    for (int unsigned slot_idx = 0; slot_idx < max_slot_count; slot_idx++) begin
+      bit [63:0] slot_base_cycle;
+
+      slot_base_cycle = launch_origin_cycle + (64'(slot_idx) * 64'(frame_period_cycles));
+      for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+        if (slot_idx < lane_frames[lane].size()) begin
+          bit [63:0] frame_words_v;
+
+          frame_words_v = lane_frames[lane][slot_idx].frame_word_count();
+          if (frame_words_v > 64'(frame_period_cycles)) begin
+            `uvm_warning(get_type_name(), $sformatf(
+              "lane %0d frame slot %0d word_count=%0d exceeds physical frame_period_cycles=%0d",
+              lane,
+              slot_idx,
+              frame_words_v,
+              frame_period_cycles
+            ))
+          end
+          lane_frames[lane][slot_idx].use_absolute_launch = 1'b1;
+          lane_frames[lane][slot_idx].launch_cycle = slot_base_cycle;
+          lane_frames[lane][slot_idx].frame_slot_id = slot_idx;
+          lane_frames[lane][slot_idx].ingress_debug_ts =
+            default_ingress_debug_ts(lane_frames[lane][slot_idx].frame_ts);
+        end
+      end
+    end
+  endtask
 
   task automatic apply_absolute_frame_slot_schedule(
     ref opq_frame_item lane_frames[OPQ_N_LANE][$],
@@ -555,6 +646,239 @@ class opq_whole_frame_skew_virtual_sequence extends opq_virtual_sequence_base;
     end
 
     apply_absolute_frame_slot_schedule(lane_frames, inter_frame_gap_cycles);
+    start_lane_frame_matrix(lane_frames);
+  endtask
+endclass
+
+class opq_timestamp_burst_virtual_sequence extends opq_virtual_sequence_base;
+  `uvm_object_utils(opq_timestamp_burst_virtual_sequence)
+
+  int unsigned frame_count;
+  int unsigned subheaders_per_frame;
+  int unsigned inter_frame_gap_cycles;
+  int unsigned total_rho_ppm;
+  int unsigned noise_rho_ppm;
+  int unsigned cluster_rho_ppm;
+  int unsigned cluster_size_min;
+  int unsigned cluster_size_max;
+  int signed   burstiness_milli;
+  int unsigned rng_seed;
+
+  function new(string name = "opq_timestamp_burst_virtual_sequence");
+    super.new(name);
+    frame_count = 16;
+    subheaders_per_frame = OPQ_N_SHD;
+    inter_frame_gap_cycles = OPQ_MIN_SOP_GAP_CYCLES;
+    total_rho_ppm = 600000;
+    noise_rho_ppm = 100000;
+    cluster_rho_ppm = 500000;
+    cluster_size_min = 4;
+    cluster_size_max = 8;
+    burstiness_milli = 403;
+    rng_seed = 32'h5C1F_0001;
+  endfunction
+
+  function automatic bit [31:0] next_rng(ref bit [31:0] state);
+    state = (state * 32'd1664525) + 32'd1013904223;
+    return state;
+  endfunction
+
+  function automatic real uniform_open01(ref bit [31:0] state);
+    return (real'(next_rng(state)) + 1.0) / 4294967297.0;
+  endfunction
+
+  function automatic int unsigned sample_poisson_ppm(
+    int unsigned rate_ppm,
+    ref bit [31:0] state
+  );
+    int unsigned count;
+    real lambda;
+    real limit_p;
+    real product_p;
+
+    if (rate_ppm == 0) begin
+      return 0;
+    end
+
+    lambda = real'(rate_ppm) / 1000000.0;
+    limit_p = $exp(-lambda);
+    product_p = 1.0;
+    count = 0;
+    do begin
+      count++;
+      product_p *= uniform_open01(state);
+    end while (product_p > limit_p);
+    return count - 1;
+  endfunction
+
+  function automatic int unsigned sample_cluster_size(ref bit [31:0] state);
+    int unsigned span;
+
+    if (cluster_size_max <= cluster_size_min) begin
+      return cluster_size_min;
+    end
+    span = cluster_size_max - cluster_size_min + 1;
+    return cluster_size_min + (next_rng(state) % span);
+  endfunction
+
+  function automatic real burstiness_to_mean_batch();
+    real b;
+    real cv;
+
+    b = burstiness_milli / 1000.0;
+    if (b < 0.0) begin
+      return 1.0;
+    end
+    if (b > 0.999) begin
+      b = 0.999;
+    end
+    cv = (1.0 + b) / (1.0 - b);
+    return 0.5 * ((cv * cv) + 1.0);
+  endfunction
+
+  task body();
+    opq_frame_item lane_frames[OPQ_N_LANE][$];
+    bit [31:0] lane_rng[OPQ_N_LANE];
+    bit [47:0] ts_step;
+    int unsigned frame_period_cycles;
+    int unsigned active_noise_rho_ppm;
+    int unsigned active_cluster_rho_ppm;
+    int unsigned active_cluster_event_ppm;
+    int unsigned active_cluster_min;
+    int unsigned active_cluster_max;
+    int unsigned lane_noise_hits[OPQ_N_LANE];
+    int unsigned lane_cluster_hits[OPQ_N_LANE];
+    int unsigned lane_cluster_events[OPQ_N_LANE];
+
+    if (subheaders_per_frame == 0) begin
+      subheaders_per_frame = 1;
+    end
+    if (subheaders_per_frame > OPQ_N_SHD) begin
+      subheaders_per_frame = OPQ_N_SHD;
+    end
+    if (cluster_size_min == 0) begin
+      cluster_size_min = 1;
+    end
+    if (cluster_size_max < cluster_size_min) begin
+      cluster_size_max = cluster_size_min;
+    end
+
+    active_noise_rho_ppm = noise_rho_ppm;
+    active_cluster_rho_ppm = cluster_rho_ppm;
+    active_cluster_min = cluster_size_min;
+    active_cluster_max = cluster_size_max;
+    if ((active_noise_rho_ppm == 0) && (active_cluster_rho_ppm == 0)) begin
+      if (burstiness_milli <= 0) begin
+        active_noise_rho_ppm = total_rho_ppm;
+      end else begin
+        real mean_batch;
+        int unsigned rounded_batch;
+
+        mean_batch = burstiness_to_mean_batch();
+        rounded_batch = int'($rtoi(mean_batch + 0.5));
+        if (rounded_batch < 1) begin
+          rounded_batch = 1;
+        end
+        active_cluster_min = rounded_batch;
+        active_cluster_max = rounded_batch;
+        active_cluster_rho_ppm = total_rho_ppm;
+      end
+    end
+
+    begin
+      real cluster_mean;
+      cluster_mean = 0.5 * real'(active_cluster_min + active_cluster_max);
+      if ((active_cluster_rho_ppm != 0) && (cluster_mean > 0.0)) begin
+        active_cluster_event_ppm = int'($rtoi((active_cluster_rho_ppm / cluster_mean) + 0.5));
+      end else begin
+        active_cluster_event_ppm = 0;
+      end
+    end
+
+    ts_step = OPQ_FRAME_DURATION_TS_TICKS;
+    frame_period_cycles = (inter_frame_gap_cycles == 0)
+      ? OPQ_FRAME_DURATION_SWB_CYCLES
+      : inter_frame_gap_cycles;
+    for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+      lane_rng[lane] = rng_seed ^ (32'h9E37_79B9 * (lane + 1));
+      lane_noise_hits[lane] = 0;
+      lane_cluster_hits[lane] = 0;
+      lane_cluster_events[lane] = 0;
+    end
+
+    `uvm_info(get_type_name(), $sformatf(
+      "TIMESTAMP_BURST_CONFIG n_lane=%0d frame_count=%0d subheaders_per_frame=%0d total_rho_ppm=%0d noise_rho_ppm=%0d cluster_rho_ppm=%0d cluster_event_ppm=%0d cluster_size_min=%0d cluster_size_max=%0d burstiness_milli=%0d independent_lanes=1 seed=%0d frame_ts_step_ticks=%0d frame_launch_period_cycles=%0d feb_header_latency_cycles=%0d",
+      OPQ_N_LANE,
+      frame_count,
+      subheaders_per_frame,
+      total_rho_ppm,
+      active_noise_rho_ppm,
+      active_cluster_rho_ppm,
+      active_cluster_event_ppm,
+      active_cluster_min,
+      active_cluster_max,
+      burstiness_milli,
+      rng_seed,
+      OPQ_FRAME_DURATION_TS_TICKS,
+      frame_period_cycles,
+      OPQ_VIRTUAL_FEB_HEADER_LATENCY_CYCLES
+    ), UVM_LOW)
+
+    for (int unsigned frame_idx = 0; frame_idx < frame_count; frame_idx++) begin
+      for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+        int unsigned hit_counts[$];
+        int unsigned pre_gap_cycles;
+        bit [31:0] payload_seed;
+
+        for (int unsigned shd_idx = 0; shd_idx < subheaders_per_frame; shd_idx++) begin
+          int unsigned noise_hits;
+          int unsigned cluster_events;
+          int unsigned total_hits;
+
+          noise_hits = sample_poisson_ppm(active_noise_rho_ppm, lane_rng[lane]);
+          cluster_events = sample_poisson_ppm(active_cluster_event_ppm, lane_rng[lane]);
+          total_hits = noise_hits;
+          lane_noise_hits[lane] += noise_hits;
+          lane_cluster_events[lane] += cluster_events;
+          for (int unsigned event_idx = 0; event_idx < cluster_events; event_idx++) begin
+            int unsigned cluster_hits;
+
+            cluster_hits = sample_cluster_size(lane_rng[lane]);
+            total_hits += cluster_hits;
+            lane_cluster_hits[lane] += cluster_hits;
+          end
+          hit_counts.push_back(total_hits);
+        end
+
+        pre_gap_cycles = 0;
+        payload_seed = 32'hA000_0000 + (lane << 24) + (frame_idx << 8);
+        lane_frames[lane].push_back(build_timestamp_hit_count_frame(
+          $sformatf("lane%0d_timestamp_burst_%0d", lane, frame_idx),
+          lane,
+          ts_step * frame_idx,
+          frame_idx[15:0],
+          0,
+          pre_gap_cycles,
+          hit_counts,
+          payload_seed
+        ));
+        lane_frames[lane][lane_frames[lane].size()-1].whole_frame_packet = 1'b1;
+        lane_frames[lane][lane_frames[lane].size()-1].feb_id = (lane < 2) ? 16'h0001 : 16'h0002;
+      end
+    end
+
+    for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+      `uvm_info(get_type_name(), $sformatf(
+        "TIMESTAMP_BURST_COUNTS lane=%0d noise_hits=%0d cluster_hits=%0d cluster_events=%0d total_hits=%0d",
+        lane,
+        lane_noise_hits[lane],
+        lane_cluster_hits[lane],
+        lane_cluster_events[lane],
+        lane_noise_hits[lane] + lane_cluster_hits[lane]
+      ), UVM_LOW)
+    end
+
+    apply_absolute_frame_period_schedule(lane_frames, frame_period_cycles);
     start_lane_frame_matrix(lane_frames);
   endtask
 endclass

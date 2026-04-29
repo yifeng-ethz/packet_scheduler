@@ -15,7 +15,7 @@ Write the meaning of every axis and metric on the figure or in its caption. Defi
 | `N_SHD` | OPQ shadow-window depth, packaged points `{64, 128, 256, 512}` |
 | `E` (`egress_symbols_per_beat`) | OPQ egress width, packaged points `{1, 2, 4, 8}` (time-merger remains `1`) |
 | `ρ_lane` | offered hit rate per lane, sampled `[0.005, 0.30]` |
-| `B` | burstiness, `B = (SCV − 1) / (SCV + 1)` (slide 44 / 45 convention; `−1` periodic, `0` Poisson, `+1` bursty) |
+| `B` | Goh-Barabasi burstiness, `B = (CV_timestamp - 1) / (CV_timestamp + 1)` where `CV_timestamp = sigma_tau / m_tau` is computed from hit-to-hit interevent times after sorting by true hit generation timestamp; same-timestamp physical-cluster hits contribute zero deltas (`-1` periodic, `0` Poisson, `+1` bursty) |
 | `M` | Goh–Barabási memory index over inter-arrival times |
 | `ready_duty` | egress `ready` duty cycle, sampled `[0.45, 1.0]` |
 | `loss` | `dropped_hit_count / offered_hit_count` from the schema in `rtl_sim/CASE_CATALOG.md` |

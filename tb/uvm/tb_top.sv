@@ -18,6 +18,7 @@ module tb_top;
   int unsigned clk_period_ns;
 `ifdef OPQ_USE_NATIVE_SV
   bit native_trace_boundary;
+  bit native_trace_ingress_credit;
   longint unsigned native_trace_after_ps = 0;
   localparam int unsigned TB_LANE_FIFO_ADDR_WIDTH = $clog2(OPQ_LANE_FIFO_DEPTH);
   localparam int unsigned TB_PAGE_RAM_ADDR_WIDTH = $clog2(OPQ_PAGE_RAM_DEPTH);
@@ -86,6 +87,7 @@ module tb_top;
 `ifdef OPQ_USE_NATIVE_SV
   initial begin
     native_trace_boundary = $test$plusargs("OPQ_NATIVE_TRACE_BOUNDARY");
+    native_trace_ingress_credit = $test$plusargs("OPQ_NATIVE_TRACE_INGRESS_CREDIT");
     void'($value$plusargs("OPQ_TRACE_AFTER_PS=%d", native_trace_after_ps));
   end
 `endif
@@ -348,11 +350,32 @@ module tb_top;
         prev_tk_past <= gen_dut_native.dut.u_native.page_allocator_i.page_allocator_is_tk_past;
 
         for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
-          if (gen_dut_native.dut.native_drop_evt_valid_dbg[lane]) begin
+          if (native_trace_ingress_credit &&
+              gen_dut_native.dut.asi_ingress_valid_eff_bus[lane] &&
+              gen_dut_native.dut.is_subheader_word(gen_dut_native.dut.asi_ingress_data_bus[lane])) begin
             $display(
-              "[opq_drop_evt] t=%0t lane%0d total(hdr=%0d shd=%0d hit=%0d) pre(shd=%0d hit=%0d) post(hdr=%0d shd=%0d hit=%0d) src(mask=%0b credit=%0b late=%0b handle=%0b) exact_pre(valid=%0b serial=%0d ts=0x%012h shd=%0d hit=%0d) exact_post(valid=%0b serial=%0d ts=0x%012h shd=%0d hit=%0d)",
+              "[opq_ing_credit] t=%0t lane%0d pkg=%0d running_ts=0x%012h data=0x%09h hit_decl=%0d lane_credit=%0d ticket_credit=%0d drop_valid=%0b drop_lane=%0b drop_ticket=%0b",
               $time,
               lane,
+              gen_dut_native.dut.native_ingress_pkg_cnt_dbg[lane],
+              gen_dut_native.dut.native_ingress_running_ts_dbg[lane],
+              gen_dut_native.dut.asi_ingress_data_bus[lane],
+              gen_dut_native.dut.asi_ingress_data_bus[lane][15:8],
+              gen_dut_native.dut.native_lane_credit_dbg[lane],
+              gen_dut_native.dut.native_ticket_credit_dbg[lane],
+              gen_dut_native.dut.native_ingress_credit_drop_valid_dbg[lane],
+              gen_dut_native.dut.native_ingress_credit_drop_lane_dbg[lane],
+              gen_dut_native.dut.native_ingress_credit_drop_ticket_dbg[lane]
+            );
+          end
+
+          if (gen_dut_native.dut.native_drop_evt_valid_dbg[lane]) begin
+            $display(
+              "[opq_drop_evt] t=%0t lane%0d credit(lane=%0d ticket=%0d) total(hdr=%0d shd=%0d hit=%0d) pre(shd=%0d hit=%0d) post(hdr=%0d shd=%0d hit=%0d) src(mask=%0b credit=%0b late=%0b handle=%0b) exact_pre(valid=%0b serial=%0d ts=0x%012h shd=%0d hit=%0d) exact_post(valid=%0b serial=%0d ts=0x%012h shd=%0d hit=%0d)",
+              $time,
+              lane,
+              gen_dut_native.dut.native_lane_credit_dbg[lane],
+              gen_dut_native.dut.native_ticket_credit_dbg[lane],
               gen_dut_native.dut.native_drop_evt_hdr_dbg[lane],
               gen_dut_native.dut.native_drop_evt_shd_dbg[lane],
               gen_dut_native.dut.native_drop_evt_hit_dbg[lane],
@@ -439,15 +462,132 @@ module tb_top;
       end
     end
   end else begin : gen_native_boundary_trace_4lane
+    logic [2:0] prev_pa_state;
+    logic prev_all_fetch_ready;
+    logic prev_any_pending_ticket;
+    logic prev_any_pending_curr_sop_ticket;
+    logic prev_all_present_tk_sop;
+    logic prev_frame_start_waiting_busy_lane;
+    logic prev_active_frame_waiting_busy_lane;
+    logic [OPQ_N_LANE-1:0] prev_pending_ticket;
+    logic [OPQ_N_LANE-1:0] prev_pending_ticket_lane;
+    logic [OPQ_N_LANE-1:0] prev_ticket_q_valid;
+    logic [OPQ_N_LANE-1:0] prev_tk_sop;
+    logic [OPQ_N_LANE-1:0] prev_tk_curr;
+    logic [OPQ_N_LANE-1:0] prev_tk_future;
+    logic [OPQ_N_LANE-1:0] prev_tk_past;
+
     always_ff @(posedge d_clk) begin
+      if (d_reset) begin
+        prev_pa_state <= 3'h7;
+        prev_all_fetch_ready <= 1'b0;
+        prev_any_pending_ticket <= 1'b0;
+        prev_any_pending_curr_sop_ticket <= 1'b0;
+        prev_all_present_tk_sop <= 1'b0;
+        prev_frame_start_waiting_busy_lane <= 1'b0;
+        prev_active_frame_waiting_busy_lane <= 1'b0;
+        prev_pending_ticket <= '0;
+        prev_pending_ticket_lane <= '0;
+        prev_ticket_q_valid <= '0;
+        prev_tk_sop <= '0;
+        prev_tk_curr <= '0;
+        prev_tk_future <= '0;
+        prev_tk_past <= '0;
+      end
       if (!d_reset && native_trace_boundary &&
           ($rtoi($realtime / 1ps) >= native_trace_after_ps)) begin
+        if ((prev_pa_state != gen_dut_native.dut.u_native.page_allocator_i.page_allocator_state) ||
+            (prev_all_fetch_ready != gen_dut_native.dut.u_native.page_allocator_i.all_lanes_fetch_ready) ||
+            (prev_any_pending_ticket != gen_dut_native.dut.u_native.page_allocator_i.any_pending_ticket) ||
+            (prev_any_pending_curr_sop_ticket != gen_dut_native.dut.u_native.page_allocator_i.any_pending_curr_sop_ticket) ||
+            (prev_all_present_tk_sop != gen_dut_native.dut.u_native.page_allocator_i.all_present_tk_sop) ||
+            (prev_frame_start_waiting_busy_lane != gen_dut_native.dut.u_native.page_allocator_i.frame_start_waiting_busy_lane) ||
+            (prev_active_frame_waiting_busy_lane != gen_dut_native.dut.u_native.page_allocator_i.active_frame_waiting_busy_lane) ||
+            (prev_pending_ticket != gen_dut_native.dut.u_native.page_allocator_i.page_allocator_is_pending_ticket) ||
+            (prev_pending_ticket_lane != gen_dut_native.dut.u_native.page_allocator_i.page_allocator_is_pending_ticket_lane) ||
+            (prev_ticket_q_valid != gen_dut_native.dut.u_native.page_allocator_i.page_allocator_ticket_q_valid) ||
+            (prev_tk_sop != gen_dut_native.dut.u_native.page_allocator_i.page_allocator_is_tk_sop) ||
+            (prev_tk_curr != gen_dut_native.dut.u_native.page_allocator_i.page_allocator_is_tk_curr) ||
+            (prev_tk_future != gen_dut_native.dut.u_native.page_allocator_i.page_allocator_is_tk_future) ||
+            (prev_tk_past != gen_dut_native.dut.u_native.page_allocator_i.page_allocator_is_tk_past)) begin
+          $display(
+            "[opq_pa] t=%0t state=%0d all_fetch=%0b any_pending=%0b any_curr_sop=%0b all_sop=%0b frame_wait=%0b active_wait=%0b frame_lane_active=0x%0h lane_masked=0x%0h lane_skipped=0x%0h ingress_busy=0x%0h pending=0x%0h pending_lane=0x%0h q_valid=0x%0h tk_sop=0x%0h tk_curr=0x%0h tk_future=0x%0h tk_past=0x%0h ticket_wptr=0x%0h/0x%0h/0x%0h/0x%0h ticket_rptr=0x%0h/0x%0h/0x%0h/0x%0h",
+            $time,
+            gen_dut_native.dut.u_native.page_allocator_i.page_allocator_state,
+            gen_dut_native.dut.u_native.page_allocator_i.all_lanes_fetch_ready,
+            gen_dut_native.dut.u_native.page_allocator_i.any_pending_ticket,
+            gen_dut_native.dut.u_native.page_allocator_i.any_pending_curr_sop_ticket,
+            gen_dut_native.dut.u_native.page_allocator_i.all_present_tk_sop,
+            gen_dut_native.dut.u_native.page_allocator_i.frame_start_waiting_busy_lane,
+            gen_dut_native.dut.u_native.page_allocator_i.active_frame_waiting_busy_lane,
+            gen_dut_native.dut.u_native.page_allocator_i.page_allocator.frame_lane_active,
+            gen_dut_native.dut.u_native.page_allocator_i.page_allocator.lane_masked,
+            gen_dut_native.dut.u_native.page_allocator_i.page_allocator.lane_skipped,
+            gen_dut_native.dut.u_native.ingress_parser_busy_dbg,
+            gen_dut_native.dut.u_native.page_allocator_i.page_allocator_is_pending_ticket,
+            gen_dut_native.dut.u_native.page_allocator_i.page_allocator_is_pending_ticket_lane,
+            gen_dut_native.dut.u_native.page_allocator_i.page_allocator_ticket_q_valid,
+            gen_dut_native.dut.u_native.page_allocator_i.page_allocator_is_tk_sop,
+            gen_dut_native.dut.u_native.page_allocator_i.page_allocator_is_tk_curr,
+            gen_dut_native.dut.u_native.page_allocator_i.page_allocator_is_tk_future,
+            gen_dut_native.dut.u_native.page_allocator_i.page_allocator_is_tk_past,
+            gen_dut_native.dut.u_native.g_ingress_parser[0].ingress_parser_i.ticket_wptr,
+            gen_dut_native.dut.u_native.g_ingress_parser[1].ingress_parser_i.ticket_wptr,
+            gen_dut_native.dut.u_native.g_ingress_parser[2].ingress_parser_i.ticket_wptr,
+            gen_dut_native.dut.u_native.g_ingress_parser[3].ingress_parser_i.ticket_wptr,
+            gen_dut_native.dut.u_native.page_allocator_i.page_allocator.ticket_rptr[0],
+            gen_dut_native.dut.u_native.page_allocator_i.page_allocator.ticket_rptr[1],
+            gen_dut_native.dut.u_native.page_allocator_i.page_allocator.ticket_rptr[2],
+            gen_dut_native.dut.u_native.page_allocator_i.page_allocator.ticket_rptr[3]
+          );
+        end
+
+        prev_pa_state <= gen_dut_native.dut.u_native.page_allocator_i.page_allocator_state;
+        prev_all_fetch_ready <= gen_dut_native.dut.u_native.page_allocator_i.all_lanes_fetch_ready;
+        prev_any_pending_ticket <= gen_dut_native.dut.u_native.page_allocator_i.any_pending_ticket;
+        prev_any_pending_curr_sop_ticket <=
+          gen_dut_native.dut.u_native.page_allocator_i.any_pending_curr_sop_ticket;
+        prev_all_present_tk_sop <= gen_dut_native.dut.u_native.page_allocator_i.all_present_tk_sop;
+        prev_frame_start_waiting_busy_lane <=
+          gen_dut_native.dut.u_native.page_allocator_i.frame_start_waiting_busy_lane;
+        prev_active_frame_waiting_busy_lane <=
+          gen_dut_native.dut.u_native.page_allocator_i.active_frame_waiting_busy_lane;
+        prev_pending_ticket <= gen_dut_native.dut.u_native.page_allocator_i.page_allocator_is_pending_ticket;
+        prev_pending_ticket_lane <=
+          gen_dut_native.dut.u_native.page_allocator_i.page_allocator_is_pending_ticket_lane;
+        prev_ticket_q_valid <= gen_dut_native.dut.u_native.page_allocator_i.page_allocator_ticket_q_valid;
+        prev_tk_sop <= gen_dut_native.dut.u_native.page_allocator_i.page_allocator_is_tk_sop;
+        prev_tk_curr <= gen_dut_native.dut.u_native.page_allocator_i.page_allocator_is_tk_curr;
+        prev_tk_future <= gen_dut_native.dut.u_native.page_allocator_i.page_allocator_is_tk_future;
+        prev_tk_past <= gen_dut_native.dut.u_native.page_allocator_i.page_allocator_is_tk_past;
+
         for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
-          if (gen_dut_native.dut.native_drop_evt_valid_dbg[lane]) begin
+          if (native_trace_ingress_credit &&
+              gen_dut_native.dut.asi_ingress_valid_eff_bus[lane] &&
+              gen_dut_native.dut.is_subheader_word(gen_dut_native.dut.asi_ingress_data_bus[lane])) begin
             $display(
-              "[opq_drop_evt] t=%0t lane%0d total(hdr=%0d shd=%0d hit=%0d) pre(shd=%0d hit=%0d) post(hdr=%0d shd=%0d hit=%0d) src(mask=%0b credit=%0b late=%0b handle=%0b) exact_pre(valid=%0b serial=%0d ts=0x%012h shd=%0d hit=%0d) exact_post(valid=%0b serial=%0d ts=0x%012h shd=%0d hit=%0d)",
+              "[opq_ing_credit] t=%0t lane%0d pkg=%0d running_ts=0x%012h data=0x%09h hit_decl=%0d lane_credit=%0d ticket_credit=%0d drop_valid=%0b drop_lane=%0b drop_ticket=%0b",
               $time,
               lane,
+              gen_dut_native.dut.native_ingress_pkg_cnt_dbg[lane],
+              gen_dut_native.dut.native_ingress_running_ts_dbg[lane],
+              gen_dut_native.dut.asi_ingress_data_bus[lane],
+              gen_dut_native.dut.asi_ingress_data_bus[lane][15:8],
+              gen_dut_native.dut.native_lane_credit_dbg[lane],
+              gen_dut_native.dut.native_ticket_credit_dbg[lane],
+              gen_dut_native.dut.native_ingress_credit_drop_valid_dbg[lane],
+              gen_dut_native.dut.native_ingress_credit_drop_lane_dbg[lane],
+              gen_dut_native.dut.native_ingress_credit_drop_ticket_dbg[lane]
+            );
+          end
+
+          if (gen_dut_native.dut.native_drop_evt_valid_dbg[lane]) begin
+            $display(
+              "[opq_drop_evt] t=%0t lane%0d credit(lane=%0d ticket=%0d) total(hdr=%0d shd=%0d hit=%0d) pre(shd=%0d hit=%0d) post(hdr=%0d shd=%0d hit=%0d) src(mask=%0b credit=%0b late=%0b handle=%0b) exact_pre(valid=%0b serial=%0d ts=0x%012h shd=%0d hit=%0d) exact_post(valid=%0b serial=%0d ts=0x%012h shd=%0d hit=%0d)",
+              $time,
+              lane,
+              gen_dut_native.dut.native_lane_credit_dbg[lane],
+              gen_dut_native.dut.native_ticket_credit_dbg[lane],
               gen_dut_native.dut.native_drop_evt_hdr_dbg[lane],
               gen_dut_native.dut.native_drop_evt_shd_dbg[lane],
               gen_dut_native.dut.native_drop_evt_hit_dbg[lane],
@@ -726,6 +866,7 @@ module tb_top;
 
 `endif
 
+`ifndef OPQ_DISABLE_TB_SVA
   generate
     for (i = 0; i < OPQ_N_LANE; i++) begin : gen_ingress_sva
       opq_avst_ingress_sva #(
@@ -812,6 +953,7 @@ module tb_top;
       .pa_write(gen_dut_4lane.dut4.u_impl.b2p_arb_pa_write)
     );
   end
+`endif
 `endif
 
   generate
