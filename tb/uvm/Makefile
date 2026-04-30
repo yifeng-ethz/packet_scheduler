@@ -35,7 +35,8 @@ OPQ_PAGE_RAM_DEPTH ?= 65536
 OPQ_N_SHD ?= 256
 OPQ_N_LANE ?= 2
 OPQ_TICKET_FIFO_DEPTH ?= $(shell s=$(OPQ_N_SHD); l=$(OPQ_N_LANE); target_lane=$$((s * 32)); target_scan=$$((s * l * 2)); target=$$target_lane; if [ "$$target_scan" -gt "$$target" ]; then target=$$target_scan; fi; d=256; while [ "$$d" -lt "$$target" ]; do d=$$((d * 2)); done; echo $$d)
-OPQ_LANE_FIFO_DEPTH ?= $(shell n=$(OPQ_N_LANE); if [ "$$n" -le 2 ]; then echo 1024; elif [ "$$n" -le 4 ]; then echo 2048; elif [ "$$n" -le 8 ]; then echo 4096; elif [ "$$n" -le 16 ]; then echo 8192; else echo 16384; fi)
+OPQ_LANE_FIFO_DEPTH ?= $(shell n=$(OPQ_N_LANE); s=$(OPQ_N_SHD); target_lane=$$((n * 1024)); target_frame=$$((s * 64)); target=$$target_lane; if [ "$$target_frame" -gt "$$target" ]; then target=$$target_frame; fi; d=1024; while [ "$$d" -lt "$$target" ]; do d=$$((d * 2)); done; echo $$d)
+OPQ_HANDLE_FIFO_DEPTH ?= 64
 OPQ_CHANNEL_WIDTH ?= $(shell n=$(OPQ_N_LANE); if [ "$$n" -le 4 ]; then echo 2; elif [ "$$n" -le 8 ]; then echo 3; elif [ "$$n" -le 16 ]; then echo 4; else awk -v n="$$n" 'BEGIN { w=0; p=1; while (p<n) { p*=2; w++ } if (w<1) w=1; print w }'; fi)
 OPQ_PAGE_RAM_RD_WIDTH ?= 36
 OPQ_EGRESS_SYMBOLS_PER_BEAT ?= $(shell w=$(OPQ_PAGE_RAM_RD_WIDTH); echo $$((w / 36)))
@@ -78,6 +79,7 @@ endif
 UVM_DEFINES += +define+OPQ_PAGE_RAM_DEPTH=$(OPQ_PAGE_RAM_DEPTH)
 UVM_DEFINES += +define+OPQ_N_SHD=$(OPQ_N_SHD)
 UVM_DEFINES += +define+OPQ_TICKET_FIFO_DEPTH=$(OPQ_TICKET_FIFO_DEPTH)
+UVM_DEFINES += +define+OPQ_HANDLE_FIFO_DEPTH=$(OPQ_HANDLE_FIFO_DEPTH)
 UVM_DEFINES += +define+OPQ_N_LANE=$(OPQ_N_LANE)
 UVM_DEFINES += +define+OPQ_LANE_FIFO_DEPTH=$(OPQ_LANE_FIFO_DEPTH)
 UVM_DEFINES += +define+OPQ_CHANNEL_WIDTH=$(OPQ_CHANNEL_WIDTH)

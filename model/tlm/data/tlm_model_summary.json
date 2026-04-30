@@ -5,14 +5,14 @@
   "burstiness_definition": "B = (CV_timestamp - 1) / (CV_timestamp + 1), where CV_timestamp = sigma_tau / m_tau is computed from hit-to-hit interevent times after sorting by true generation timestamp. Same-timestamp cluster hits contribute zero deltas.",
   "cv_definition": "CV_timestamp = (1 + B) / (1 - B)",
   "scv_definition": "SCV_timestamp = ((1 + B) / (1 - B))^2",
-  "traffic_model": "Each point runs a deterministic generation-event source with mean hit rate N_LANE*rho_lane. Positive B maps to same-timestamp hit batches with mean multiplicity (CV_timestamp^2+1)/2; B=0 is singleton Poisson-equivalent hit generation; negative B is under-dispersed singleton generation.",
-  "scifi_anchor_model": "The SciFi anchor models 128 iid noise channels per lane plus a DC-beam Poisson particle source. Each particle creates a same-timestamp physical hit cluster of 4-8 hits. This phase uses independent lane streams only; cross-lane-correlated particle bursts are intentionally deferred to a later model mode.",
+  "traffic_model": "Each point runs a deterministic generation-event source with mean normalized throughput N_LANE*rho_share. Positive B maps to same-timestamp hit batches with mean multiplicity (CV_timestamp^2+1)/2; B=0 is singleton Poisson-equivalent hit generation; negative B is under-dispersed singleton generation.",
+  "scifi_anchor_model": "The SciFi anchor models 128 iid noise channels per lane plus a DC-beam Poisson particle source. Each particle creates a same-timestamp physical hit cluster of 4-8 hits. The plot anchor uses normalized link share data=0.6*0.25=0.15 and Poisson noise=0.1*0.25=0.025, for total share 0.175. This phase uses independent lane streams only; cross-lane-correlated particle bursts are intentionally deferred to a later model mode.",
   "ready_model": "Egress ready is a deterministic vacation process with configured duty q and period ready_period.",
   "time_merger_penalty": "P_tm = 1 + ceil(log2(N_LANE))^2",
-  "opq_service_tokens": "EGRESS_SYMBOLS_PER_BEAT * opq_service_scale tokens on each ready cycle",
-  "opq_service_scale": 3.05,
-  "opq_service_scale_note": "Calibrates the compact finite-FIFO OPQ loss surface to the RTL 100-frame marginal-loss ridge for N_LANE=4, Egress=1x. This is plot-domain calibration only; packet/component closure remains based on RTL parser-ticket replay evidence.",
-  "rho_axis": "rho_lane in hits/subheader/lane, plotted from args.rho_min to args.rho_max",
+  "opq_service_tokens": "EGRESS_SYMBOLS_PER_BEAT tokens on each ready cycle",
+  "opq_service_scale": 1.0,
+  "opq_service_scale_note": "Scalar service tuning is disabled. RTL matching uses opq_structural_tlm.py with explicit lane FIFO, ticket FIFO, handle FIFO, allocator, DRR mover, frame table, and presenter state.",
+  "rho_axis": "normalized per-lane offered throughput share, plotted from args.rho_min to args.rho_max. For the physical OPQ UVM cadence, share = raw_hits_per_subheader_per_lane * N_SHD / (frame_launch_period_cycles * egress_symbols_per_beat).",
   "loss_grid_points": {
     "burstiness_count": 61,
     "rho_count": 61,
@@ -22,7 +22,18 @@
     "rho_max": 1.0
   },
   "time_merger_service_tokens": "1/P_tm token on each ready cycle",
-  "opq_capacity": 255,
+  "opq_capacity": 2048,
+  "opq_profile": {
+    "preset": "Mu3e Demo",
+    "n_lane": 4,
+    "n_shd": 128,
+    "egress_symbols_per_beat": 1,
+    "lane_fifo_depth": 2048,
+    "ticket_fifo_depth": 1024,
+    "handle_fifo_depth": 256,
+    "page_ram_depth": 65536,
+    "coarse_capacity_note": "The coarse event-grid TLM uses opq_capacity as the finite queue capacity; by default it is pinned to the Mu3e Demo lane FIFO depth. The structural AT TLM models lane FIFO, ticket FIFO, handle FIFO, and page RAM separately."
+  },
   "time_merger_credit": 96.0,
   "cycles": 8192,
   "warmup_cycles": 1024,
@@ -62,50 +73,50 @@
     "N_LANE=8,EGRESS=1x": {
       "max_ratio_clipped": 1000000.0,
       "min_ratio_clipped": 1.0,
-      "fraction_ge_1e3": 0.3236901317904211,
-      "fraction_ge_1e6": 0.3236901317904211
+      "fraction_ge_1e3": 0.3400835744133719,
+      "fraction_ge_1e6": 0.3400835744133719
     },
     "N_LANE=8,EGRESS=2x": {
       "max_ratio_clipped": 1000000.0,
       "min_ratio_clipped": 1.0,
-      "fraction_ge_1e3": 0.3236901317904211,
-      "fraction_ge_1e6": 0.3236901317904211
+      "fraction_ge_1e3": 0.3400835744133719,
+      "fraction_ge_1e6": 0.3400835744133719
     },
     "N_LANE=8,EGRESS=4x": {
       "max_ratio_clipped": 1000000.0,
       "min_ratio_clipped": 1.0,
-      "fraction_ge_1e3": 0.3236901317904211,
-      "fraction_ge_1e6": 0.3236901317904211
+      "fraction_ge_1e3": 0.3400835744133719,
+      "fraction_ge_1e6": 0.3400835744133719
     },
     "N_LANE=8,EGRESS=8x": {
       "max_ratio_clipped": 1000000.0,
       "min_ratio_clipped": 1.0,
-      "fraction_ge_1e3": 0.3236901317904211,
-      "fraction_ge_1e6": 0.3236901317904211
+      "fraction_ge_1e3": 0.3400835744133719,
+      "fraction_ge_1e6": 0.3400835744133719
     },
     "N_LANE=16,EGRESS=1x": {
       "max_ratio_clipped": 1000000.0,
-      "min_ratio_clipped": 2.016326530612245,
-      "fraction_ge_1e3": 0.9508196721311475,
-      "fraction_ge_1e6": 0.9508196721311475
+      "min_ratio_clipped": 1000000.0,
+      "fraction_ge_1e3": 1.0,
+      "fraction_ge_1e6": 1.0
     },
     "N_LANE=16,EGRESS=2x": {
       "max_ratio_clipped": 1000000.0,
-      "min_ratio_clipped": 2.016326530612245,
-      "fraction_ge_1e3": 0.9508196721311475,
-      "fraction_ge_1e6": 0.9508196721311475
+      "min_ratio_clipped": 1000000.0,
+      "fraction_ge_1e3": 1.0,
+      "fraction_ge_1e6": 1.0
     },
     "N_LANE=16,EGRESS=4x": {
       "max_ratio_clipped": 1000000.0,
-      "min_ratio_clipped": 2.016326530612245,
-      "fraction_ge_1e3": 0.9508196721311475,
-      "fraction_ge_1e6": 0.9508196721311475
+      "min_ratio_clipped": 1000000.0,
+      "fraction_ge_1e3": 1.0,
+      "fraction_ge_1e6": 1.0
     },
     "N_LANE=16,EGRESS=8x": {
       "max_ratio_clipped": 1000000.0,
-      "min_ratio_clipped": 2.016326530612245,
-      "fraction_ge_1e3": 0.9508196721311475,
-      "fraction_ge_1e6": 0.9508196721311475
+      "min_ratio_clipped": 1000000.0,
+      "fraction_ge_1e3": 1.0,
+      "fraction_ge_1e6": 1.0
     }
   },
   "feature_scaling_ratio": {
@@ -131,28 +142,28 @@
     "anchor_sample_point": {
       "sample_name": "scifi_noise10_cluster50",
       "scifi_channels_per_lane": 128,
-      "noise_rho_lane": 0.1,
-      "cluster_rho_lane": 0.5,
-      "total_rho_lane": 0.6,
+      "noise_rho_lane": 0.025,
+      "cluster_rho_lane": 0.15,
+      "total_rho_lane": 0.175,
       "cluster_size_min": 4,
       "cluster_size_max": 8,
       "cluster_size_mean": 6.0,
       "sampled_cycles": 200000,
-      "sampled_noise_hits": 20134,
-      "sampled_cluster_hits": 101670,
-      "sampled_total_hits": 121804,
-      "sampled_generation_events": 37072,
-      "sampled_noise_fraction": 0.16529834816590588,
-      "sampled_cluster_fraction": 0.8347016518340942,
-      "timestamp_mean_delta": 1.6418479019400178,
-      "timestamp_std_delta": 3.8616097496586717,
-      "timestamp_cv": 2.3519899407830467,
-      "timestamp_scv": 5.53185668154464,
-      "burstiness": 0.4033394982286889,
-      "analytic_mean_generation_batch_hits": 3.2727272727272725,
-      "analytic_timestamp_cv": 2.354878881270658,
-      "analytic_timestamp_scv": 5.545454545454545,
-      "analytic_burstiness": 0.40385329224091054
+      "sampled_noise_hits": 4981,
+      "sampled_cluster_hits": 30226,
+      "sampled_total_hits": 35207,
+      "sampled_generation_events": 10016,
+      "sampled_noise_fraction": 0.14147754707870594,
+      "sampled_cluster_fraction": 0.858522452921294,
+      "timestamp_mean_delta": 5.678776344941204,
+      "timestamp_std_delta": 14.062682046828561,
+      "timestamp_cv": 2.4763577912970547,
+      "timestamp_scv": 6.132347910517627,
+      "burstiness": 0.42468522514945584,
+      "analytic_mean_generation_batch_hits": 3.4999999999999996,
+      "analytic_timestamp_cv": 2.449489742783178,
+      "analytic_timestamp_scv": 5.999999999999999,
+      "analytic_burstiness": 0.4202041028867287
     },
     "dislin_dir": "/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/tlm/data/dislin",
     "published_plot_dir": "/home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/model/tlm/plots",

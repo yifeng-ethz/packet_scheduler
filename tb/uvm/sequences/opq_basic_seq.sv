@@ -711,6 +711,20 @@ class opq_timestamp_burst_virtual_sequence extends opq_virtual_sequence_base;
     return count - 1;
   endfunction
 
+  function automatic int unsigned sample_periodic_ppm(
+    int unsigned rate_ppm,
+    ref int unsigned accum_ppm
+  );
+    longint unsigned next_accum;
+
+    if (rate_ppm == 0) begin
+      return 0;
+    end
+    next_accum = longint'(accum_ppm) + longint'(rate_ppm);
+    accum_ppm = int'(next_accum % 1000000);
+    return int'(next_accum / 1000000);
+  endfunction
+
   function automatic int unsigned sample_cluster_size(ref bit [31:0] state);
     int unsigned span;
 
@@ -743,12 +757,14 @@ class opq_timestamp_burst_virtual_sequence extends opq_virtual_sequence_base;
     int unsigned frame_period_cycles;
     int unsigned active_noise_rho_ppm;
     int unsigned active_cluster_rho_ppm;
+    int unsigned active_periodic_rho_ppm;
     int unsigned active_cluster_event_ppm;
     int unsigned active_cluster_min;
     int unsigned active_cluster_max;
     int unsigned lane_noise_hits[OPQ_N_LANE];
     int unsigned lane_cluster_hits[OPQ_N_LANE];
     int unsigned lane_cluster_events[OPQ_N_LANE];
+    int unsigned lane_periodic_accum_ppm[OPQ_N_LANE];
 
     if (subheaders_per_frame == 0) begin
       subheaders_per_frame = 1;
@@ -765,6 +781,7 @@ class opq_timestamp_burst_virtual_sequence extends opq_virtual_sequence_base;
 
     active_noise_rho_ppm = noise_rho_ppm;
     active_cluster_rho_ppm = cluster_rho_ppm;
+    active_periodic_rho_ppm = 0;
     active_cluster_min = cluster_size_min;
     active_cluster_max = cluster_size_max;
     if ((active_noise_rho_ppm == 0) && (active_cluster_rho_ppm == 0)) begin
@@ -783,6 +800,18 @@ class opq_timestamp_burst_virtual_sequence extends opq_virtual_sequence_base;
         active_cluster_max = rounded_batch;
         active_cluster_rho_ppm = total_rho_ppm;
       end
+    end
+    if ((burstiness_milli < 0) && (active_cluster_rho_ppm == 0)) begin
+      int unsigned periodic_milli;
+      longint unsigned periodic_rho_wide;
+
+      periodic_milli = int'(-burstiness_milli);
+      if (periodic_milli > 1000) begin
+        periodic_milli = 1000;
+      end
+      periodic_rho_wide = (longint'(active_noise_rho_ppm) * longint'(periodic_milli)) / 1000;
+      active_periodic_rho_ppm = int'(periodic_rho_wide);
+      active_noise_rho_ppm -= active_periodic_rho_ppm;
     end
 
     begin
@@ -804,15 +833,19 @@ class opq_timestamp_burst_virtual_sequence extends opq_virtual_sequence_base;
       lane_noise_hits[lane] = 0;
       lane_cluster_hits[lane] = 0;
       lane_cluster_events[lane] = 0;
+      lane_periodic_accum_ppm[lane] = (active_periodic_rho_ppm == 0)
+        ? 0
+        : int'(next_rng(lane_rng[lane]) % 1000000);
     end
 
     `uvm_info(get_type_name(), $sformatf(
-      "TIMESTAMP_BURST_CONFIG n_lane=%0d frame_count=%0d subheaders_per_frame=%0d total_rho_ppm=%0d noise_rho_ppm=%0d cluster_rho_ppm=%0d cluster_event_ppm=%0d cluster_size_min=%0d cluster_size_max=%0d burstiness_milli=%0d independent_lanes=1 seed=%0d frame_ts_step_ticks=%0d frame_launch_period_cycles=%0d feb_header_latency_cycles=%0d",
+      "TIMESTAMP_BURST_CONFIG n_lane=%0d frame_count=%0d subheaders_per_frame=%0d total_rho_ppm=%0d noise_rho_ppm=%0d periodic_rho_ppm=%0d cluster_rho_ppm=%0d cluster_event_ppm=%0d cluster_size_min=%0d cluster_size_max=%0d burstiness_milli=%0d independent_lanes=1 seed=%0d frame_ts_step_ticks=%0d frame_launch_period_cycles=%0d feb_header_latency_cycles=%0d",
       OPQ_N_LANE,
       frame_count,
       subheaders_per_frame,
       total_rho_ppm,
       active_noise_rho_ppm,
+      active_periodic_rho_ppm,
       active_cluster_rho_ppm,
       active_cluster_event_ppm,
       active_cluster_min,
@@ -832,10 +865,12 @@ class opq_timestamp_burst_virtual_sequence extends opq_virtual_sequence_base;
 
         for (int unsigned shd_idx = 0; shd_idx < subheaders_per_frame; shd_idx++) begin
           int unsigned noise_hits;
+          int unsigned periodic_hits;
           int unsigned cluster_events;
           int unsigned total_hits;
 
-          noise_hits = sample_poisson_ppm(active_noise_rho_ppm, lane_rng[lane]);
+          periodic_hits = sample_periodic_ppm(active_periodic_rho_ppm, lane_periodic_accum_ppm[lane]);
+          noise_hits = periodic_hits + sample_poisson_ppm(active_noise_rho_ppm, lane_rng[lane]);
           cluster_events = sample_poisson_ppm(active_cluster_event_ppm, lane_rng[lane]);
           total_hits = noise_hits;
           lane_noise_hits[lane] += noise_hits;

@@ -32,6 +32,26 @@ MAX_ENDPOINT_MEAN_BATCH_HITS = 0.5 * (MAX_ENDPOINT_SCV + 1.0)
 SCIFI_CHANNELS_PER_LANE = 128
 DEFAULT_CLUSTER_SIZE_MIN = 4
 DEFAULT_CLUSTER_SIZE_MAX = 8
+SCIFI_ANCHOR_DATA_LINK_FRACTION = 0.60
+SCIFI_ANCHOR_NOISE_LINK_FRACTION = 0.10
+SCIFI_ANCHOR_BOTTLENECK_SHARE_PER_LANE = 0.25
+SCIFI_ANCHOR_CLUSTER_SHARE = (
+    SCIFI_ANCHOR_DATA_LINK_FRACTION * SCIFI_ANCHOR_BOTTLENECK_SHARE_PER_LANE
+)
+SCIFI_ANCHOR_NOISE_SHARE = (
+    SCIFI_ANCHOR_NOISE_LINK_FRACTION * SCIFI_ANCHOR_BOTTLENECK_SHARE_PER_LANE
+)
+PHYSICAL_N_SHD = 128
+PHYSICAL_FRAME_PERIOD_CYCLES = 4096
+PHYSICAL_EGRESS_SYMBOLS = 1
+MU3E_DEMO_PROFILE_NAME = "Mu3e Demo"
+MU3E_DEMO_N_LANE = 4
+MU3E_DEMO_N_SHD = 128
+MU3E_DEMO_LANE_FIFO_DEPTH = 2048
+MU3E_DEMO_TICKET_FIFO_DEPTH = 1024
+MU3E_DEMO_HANDLE_FIFO_DEPTH = 256
+MU3E_DEMO_PAGE_RAM_DEPTH = 65536
+MU3E_DEMO_EGRESS_SYMBOLS = 1
 PUBLISHED_FEATURES = tuple(
     (n_lane, egress_symbols)
     for n_lane in (4, 8, 16)
@@ -190,10 +210,10 @@ def service_increment(
     implementation: str,
     n_lane: int,
     egress_symbols_per_beat: int,
-    opq_service_scale: float,
+    opq_service_scale: float = 1.0,
 ) -> float:
     if implementation == "opq":
-        return float(egress_symbols_per_beat) * float(opq_service_scale)
+        return float(egress_symbols_per_beat)
     return 1.0 / time_merger_penalty(n_lane)
 
 
@@ -418,10 +438,14 @@ def write_anchor_sample_point(output_dir: Path, args: argparse.Namespace) -> Anc
         writer.writerow(asdict(point))
 
     env_path = output_dir / "tlm_anchor_sample_point.env"
+    normalized_anchor_share = point.total_rho_lane
     env_rows = {
         "OPQ_SAMPLE_B": f"{point.burstiness:.8f}",
-        "OPQ_SAMPLE_RHO_LANE": f"{point.total_rho_lane:.8f}",
-        "OPQ_SAMPLE_LABEL": "SciFi anchor",
+        "OPQ_SAMPLE_RHO_LANE": f"{normalized_anchor_share:.8f}",
+        "OPQ_SAMPLE_LABEL": (
+            f"SciFi anchor data={point.cluster_rho_lane:.3f} "
+            f"noise={point.noise_rho_lane:.3f}"
+        ),
     }
     with env_path.open("w", encoding="ascii") as handle:
         for key, value in env_rows.items():
@@ -806,23 +830,35 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--ratio-rho-lane", type=float, default=0.0075)
     parser.add_argument("--scaling-burstiness", type=float, default=0.70)
     parser.add_argument("--scaling-ready-duty", type=float, default=0.75)
-    parser.add_argument("--opq-capacity", type=int, default=255)
+    parser.add_argument(
+        "--opq-capacity",
+        type=int,
+        default=0,
+        help=(
+            "Finite OPQ queue capacity used by this coarse event-grid model. "
+            "Default 0 means use --opq-lane-fifo-depth from the Mu3e Demo profile."
+        ),
+    )
+    parser.add_argument("--opq-lane-fifo-depth", type=int, default=MU3E_DEMO_LANE_FIFO_DEPTH)
+    parser.add_argument("--opq-ticket-fifo-depth", type=int, default=MU3E_DEMO_TICKET_FIFO_DEPTH)
+    parser.add_argument("--opq-handle-fifo-depth", type=int, default=MU3E_DEMO_HANDLE_FIFO_DEPTH)
+    parser.add_argument("--opq-page-ram-depth", type=int, default=MU3E_DEMO_PAGE_RAM_DEPTH)
     parser.add_argument(
         "--opq-service-scale",
         type=float,
-        default=3.05,
+        default=1.0,
         help=(
-            "OPQ physical-cadence service scale for rho_lane plots. 3.05 "
-            "calibrates the simple finite-FIFO surface to the RTL 100-frame "
-            "marginal loss knee near rho_lane=0.75..0.80 for N_LANE=4, E=1."
+            "Deprecated compatibility knob. OPQ service is fixed to "
+            "EGRESS_SYMBOLS_PER_BEAT; do not use scalar service tuning for "
+            "RTL matching."
         ),
     )
     parser.add_argument("--time-merger-credit", type=float, default=96.0)
     parser.add_argument("--cycles", type=int, default=8192)
     parser.add_argument("--warmup-cycles", type=int, default=1024)
     parser.add_argument("--ready-period", type=int, default=37)
-    parser.add_argument("--anchor-noise-rho-lane", type=float, default=0.10)
-    parser.add_argument("--anchor-cluster-rho-lane", type=float, default=0.50)
+    parser.add_argument("--anchor-noise-rho-lane", type=float, default=SCIFI_ANCHOR_NOISE_SHARE)
+    parser.add_argument("--anchor-cluster-rho-lane", type=float, default=SCIFI_ANCHOR_CLUSTER_SHARE)
     parser.add_argument("--anchor-scifi-channels-per-lane", type=int, default=SCIFI_CHANNELS_PER_LANE)
     parser.add_argument("--anchor-cluster-size-min", type=int, default=DEFAULT_CLUSTER_SIZE_MIN)
     parser.add_argument("--anchor-cluster-size-max", type=int, default=DEFAULT_CLUSTER_SIZE_MAX)
@@ -833,6 +869,13 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+    if abs(args.opq_service_scale - 1.0) > 1.0e-12:
+        raise SystemExit(
+            "--opq-service-scale is deprecated; OPQ matching must use the structural "
+            "FIFO/credit/allocator TLM instead of scalar service tuning"
+        )
+    if args.opq_capacity <= 0:
+        args.opq_capacity = args.opq_lane_fifo_depth
     args.output_dir.mkdir(parents=True, exist_ok=True)
     args.plot_output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -861,7 +904,7 @@ def main() -> None:
         "scv_definition": "SCV_timestamp = ((1 + B) / (1 - B))^2",
         "traffic_model": (
             "Each point runs a deterministic generation-event source with "
-            "mean hit rate N_LANE*rho_lane. Positive B maps to same-timestamp "
+            "mean normalized throughput N_LANE*rho_share. Positive B maps to same-timestamp "
             "hit batches with mean multiplicity (CV_timestamp^2+1)/2; B=0 is "
             "singleton Poisson-equivalent hit generation; negative B is "
             "under-dispersed singleton generation."
@@ -869,9 +912,11 @@ def main() -> None:
         "scifi_anchor_model": (
             "The SciFi anchor models 128 iid noise channels per lane plus a "
             "DC-beam Poisson particle source. Each particle creates a "
-            "same-timestamp physical hit cluster of 4-8 hits. This phase "
-            "uses independent lane streams only; cross-lane-correlated "
-            "particle bursts are intentionally deferred to a later model mode."
+            "same-timestamp physical hit cluster of 4-8 hits. The plot anchor "
+            "uses normalized link share data=0.6*0.25=0.15 and Poisson "
+            "noise=0.1*0.25=0.025, for total share 0.175. This phase uses "
+            "independent lane streams only; cross-lane-correlated particle "
+            "bursts are intentionally deferred to a later model mode."
         ),
         "ready_model": (
             "Egress ready is a deterministic vacation process with configured "
@@ -879,16 +924,21 @@ def main() -> None:
         ),
         "time_merger_penalty": "P_tm = 1 + ceil(log2(N_LANE))^2",
         "opq_service_tokens": (
-            "EGRESS_SYMBOLS_PER_BEAT * opq_service_scale tokens on each ready cycle"
+            "EGRESS_SYMBOLS_PER_BEAT tokens on each ready cycle"
         ),
-        "opq_service_scale": args.opq_service_scale,
+        "opq_service_scale": 1.0,
         "opq_service_scale_note": (
-            "Calibrates the compact finite-FIFO OPQ loss surface to the RTL "
-            "100-frame marginal-loss ridge for N_LANE=4, Egress=1x. This is "
-            "plot-domain calibration only; packet/component closure remains "
-            "based on RTL parser-ticket replay evidence."
+            "Scalar service tuning is disabled. RTL matching uses "
+            "opq_structural_tlm.py with explicit lane FIFO, ticket FIFO, "
+            "handle FIFO, allocator, DRR mover, frame table, and presenter "
+            "state."
         ),
-        "rho_axis": "rho_lane in hits/subheader/lane, plotted from args.rho_min to args.rho_max",
+        "rho_axis": (
+            "normalized per-lane offered throughput share, plotted from "
+            "args.rho_min to args.rho_max. For the physical OPQ UVM cadence, "
+            "share = raw_hits_per_subheader_per_lane * N_SHD / "
+            "(frame_launch_period_cycles * egress_symbols_per_beat)."
+        ),
         "loss_grid_points": {
             "burstiness_count": args.burstiness_count,
             "rho_count": args.rate_count,
@@ -899,6 +949,22 @@ def main() -> None:
         },
         "time_merger_service_tokens": "1/P_tm token on each ready cycle",
         "opq_capacity": args.opq_capacity,
+        "opq_profile": {
+            "preset": MU3E_DEMO_PROFILE_NAME,
+            "n_lane": MU3E_DEMO_N_LANE,
+            "n_shd": MU3E_DEMO_N_SHD,
+            "egress_symbols_per_beat": MU3E_DEMO_EGRESS_SYMBOLS,
+            "lane_fifo_depth": args.opq_lane_fifo_depth,
+            "ticket_fifo_depth": args.opq_ticket_fifo_depth,
+            "handle_fifo_depth": args.opq_handle_fifo_depth,
+            "page_ram_depth": args.opq_page_ram_depth,
+            "coarse_capacity_note": (
+                "The coarse event-grid TLM uses opq_capacity as the finite queue "
+                "capacity; by default it is pinned to the Mu3e Demo lane FIFO depth. "
+                "The structural AT TLM models lane FIFO, ticket FIFO, handle FIFO, "
+                "and page RAM separately."
+            ),
+        },
         "time_merger_credit": args.time_merger_credit,
         "cycles": args.cycles,
         "warmup_cycles": args.warmup_cycles,

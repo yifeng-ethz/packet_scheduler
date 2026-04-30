@@ -70,10 +70,10 @@ row.
 | TXN-OPQ-ALIGNED-MULTIFRAME | PASS | RTL | opq | 4 | 1 | 0 | aligned | UVM | 1 | 128 | 0 | 0 | 0 | PASS | - | packet_scheduler/model/rtl_sim/data/opq_transaction_match_profile1_multiframe.csv | 2026-04-28 | OPQ aligned DRR-saturation multi-frame exact gate passed: 4 frames x 4 subheaders x 2 hits x 4 lanes = 128 offered/accepted/delivered, exact lane+bucket identity, no controlled drops. |
 | TXN-OPQ-PHYSICAL-SCIFI-ANCHOR | PASS | RTL | opq | 4 | 1 | 0.403 | 0.60 | UVM-physical-cadence | 1 | 160 | 0 | 0 | 0 | PASS | - | packet_scheduler/model/rtl_sim/data/opq_transaction_match_profile3_anchor.csv | 2026-04-28 | Physical timestamp-burst SciFi anchor passed exact OPQ transaction check: independent lanes, noise rho 0.10 + cluster rho 0.50, cluster size 4-8, 4 frames x 16 subheaders, 160 offered/accepted/delivered with exact lane+bucket identity. |
 | TXN-OPQ-WHOLE-FRAME-SKEW-RTL-BUG | PASS | RTL | opq | 4 | 1 | 0 | skew-stress | UVM | 1 | 32 | 0 | 0 | 0 | PASS | - | packet_scheduler/model/rtl_sim/data/opq_transaction_match.csv | 2026-04-28 | Fixed ticket-read RAW alignment: staged ticket data is now validated against a FIFO_RAW_DELAY-aligned read pointer; OPQ skew stress passes 32 offered/accepted/delivered, zero controlled/inferred loss. |
-| LEVEL3-HPC-SCAN128 | PASS | TLM | both | 4 | 1 | sweep | 0.1-8.0_hps | LT-high-performance | 128 | 1000000 | 0.832698 | - | - | PASS | mixed | packet_scheduler/model/tlm/data/tlm_high_perf_collective_scan128.csv | 2026-04-28 | Level-3 collective scan completed 128 points per implementation with 1e6 offered hits/point. OPQ charges frame/subheader overhead and first drops only at rho=8.0 above persistent knee 7.73828125; OPQ max loss=0.03248. Time-merger first drops at rho=1.5 above tree-service knee 1.33828125; TM max loss=0.83270. |
-| DISLIN-TLM-REFRESH | PASS | plotting | both | 4/8/16 | 1/2/4/8 | sweep | sweep | n/a | all | - | - | - | - | PASS | - | packet_scheduler/model/tlm/plots/opq_vs_time_merger_loss_contour_nlane08_egress08x.png | 2026-04-28 | Regenerated TLM and analytical DISLIN plot families with Warnings: 0; visual inspection passed for Image #1 nlane08/egress08, nlane04/egress01 contour, and nlane04/egress01 loss surface. Legend boxes are opaque and ordered; clipped SciFi anchor label no longer crosses legend or curves. |
+| LEVEL3-HPC-SCAN128 | PASS | TLM | both | 4 | 1 | sweep | 0.1-8.0_hps | LT-high-performance | 128 | 1000000 | 0.8326977396500924 | - | - | PASS | mixed | packet_scheduler/model/tlm/data/tlm_high_perf_collective_scan128.csv | 2026-04-30 | Level-3 collective scan rerun under Mu3e Demo metadata/profile: lane FIFO=2048, ticket FIFO=1024, handle FIFO=256, page RAM=65536, event-queue capacity=2048. OPQ total dropped=245372/128M, max loss=0.0306825; time-merger total dropped=26140582/128M, max loss=0.832698. |
+| DISLIN-TLM-REFRESH | PASS | plotting | both | 4/8/16 | 1/2/4/8 | sweep | sweep | n/a | all | - | - | - | - | PASS | - | packet_scheduler/model/tlm/plots/opq_vs_time_merger_loss_contour_nlane08_egress08x.png | 2026-04-30 | Regenerated TLM and DISLIN plot families after Mu3e Demo preset/default update. DISLIN 11.5.2 completed all plot renders with Warnings: 0; plot data now reports OPQ capacity/profile as Mu3e Demo. |
 | DISLIN-TM-LOSS-SURFACE | PASS | plotting | time_merger | 4/8/16 | 1/2/4/8 | sweep | sweep | n/a | 12x2 | - | - | - | - | PASS | - | packet_scheduler/model/tlm/plots/time_merger_loss_surface_nlane04_egress01x.png | 2026-04-28 | Generated standalone time-merger loss-surface DISLIN plot family for TLM and analytical models; N=4 E=1 visually inspected, modeling gate box moved upper-left for TM surfaces so it does not cover the knee or contour labels; DISLIN Warnings: 0. |
-| DISLIN-RANGE-BFULL-RHO01 | PASS | plotting | both | 4/8/16 | 1/2/4/8 | -1..1 | 0..1 | n/a | all | - | - | - | - | PASS | - | packet_scheduler/model/tlm/plots/opq_vs_time_merger_loss_contour_nlane08_egress08x.png | 2026-04-28 | TLM and analytical DISLIN families regenerated with B axis -1..1 and raw per-lane rho axis 0..1 for loss surfaces, contour overlays, and loss curves. DISLIN Warnings: 0; visually inspected OPQ N4/E1, time-merger N4/E1, high-egress N8/E8 contour, and N8/E8 loss curve. High-egress contour knee is visible and loss-curve legend is boxed, ordered top-to-bottom by curve position, and clear of the OPQ knee. |
+| DISLIN-RANGE-BFULL-RHO01 | PASS | plotting | both | 4/8/16 | 1/2/4/8 | -1..1 | 0..1_share | n/a | all | - | - | - | - | PASS | - | packet_scheduler/model/tlm/plots/opq_vs_time_merger_loss_contour_nlane08_egress08x.png | 2026-04-29 | TLM and analytical DISLIN families regenerated with B axis -1..1 and normalized per-lane throughput share axis 0..1 for loss surfaces, contour overlays, and loss curves. DISLIN Warnings: 0; labels/notes distinguish raw OPQ rho_lane from normalized plotted share. |
 | RTL-OPQ-HANDLE-CREDIT-GATE | PASS | RTL | opq | 4 | 1 | 0 | 6.0_hps | UVM-physical-cadence | 1 | 12557 | 0 | 0 | 0 | PASS | controlled/asserted/inferred | packet_scheduler/model/rtl_sim/runs/model_publish_sweep_debug_fix5_sva_on/logs/scan128_b000_rho6000.log | 2026-04-28 | Raw Questa/UVM with TB SVA enabled passes after OPQ page-allocator rebase and handle-FIFO credit gate: accepted=delivered=12557, controlled drops=0, unexplained=0, UVM_ERROR=0. This removes the local DEBUG caveat for the directed rho=6 packet identity gate; boundary sweep remains separate. |
 | BOUNDARY-RTL-OPQ-PHYSICAL-RHO01-06 | PASS | RTL | opq | 4 | 1 | 0/0.403/0.700 | 0.10-0.60 | UVM-physical-cadence | 20 | 3181-19735 | 0 | 0 | 0 | PASS | controlled/asserted/inferred | packet_scheduler/model/rtl_sim/runs/model_publish_sweep_fix7_boundary_rho01_06_sva_on | 2026-04-28 | Boundary/knee zoom in the plot-domain range passed all 20 raw UVM runs with SVA on: accepted=delivered for every point; controlled, asserted, and inferred loss counts are all zero. This replaces the obsolete zero-gap boundary for low-rho physical cadence evidence. |
 | BOUNDARY-RTL-OPQ-MARGINAL-F100 | PASS | RTL | opq | 4 | 1 | 0/0.403/0.700 | 0.60-1.00 | UVM-physical-cadence | 39 | 30186-51718 | - | - | - | PASS | controlled | packet_scheduler/model/rtl_sim/data/RTL-LS-002_marginal_loss_zoom_f100.csv | 2026-04-28 | 100-frame knee zoom passed UVM with SVA on; all rows have unexplained=0 and loss tier is controlled. First-loss brackets: B=0 and B=0.403 clean at rho=0.72/loss at 0.75; B=0.700 clean at 0.68/loss at 0.70. |
@@ -91,9 +91,37 @@ row.
 | COMP-REPLAY-OPQ-LONG-DRAIN-CHECK | DEBUG | RTL | opq | 4 | 1 | 0 | 0.75 | UVM-component | 1 | 100000 | - | - | - | DEBUG | inferred | packet_scheduler/model/rtl_sim/runs/component_replay_100k_ingress_longdrain_20260429 | 2026-04-29 | Re-ran seed7101 with 200 ms requested drain timeout. RTL counters were unchanged from the original 100k run: accepted=61258, dropped=39339, delivered=55536, unexplained=5838, frame table wr/rd hit=58090. This rules out simple drain-time extension as the reason for the component mismatch; residual unexplained hits are a monitor/accounting issue for this failing evidence row. |
 | COMP-REPLAY-OPQ-PARSER-TICKET-12RUN | PASS | TLM+RTL | opq | 4 | 1 | 0/0.403/0.700 | 0.70/0.75/0.80 | AT-component | 12 | 100000 | - | - | - | PASS | controlled/asserted | packet_scheduler/model/rtl_sim/data/opq_component_replay_parser_ticket_100k_12run_closure_report.md | 2026-04-29 | Calibrated parser-ticket component closure has 127/127 PASS rows across 12 runs. Parser FIFO, handle FIFO, mover credit return, PA LOAD, PA LATE_DROP, PA local loss, frame-table subheader/hit ledgers, transaction bucket order, and word identity are exact. Header-only diagnostic residual is marked NOT_CHECKED in JSON and filtered out of the hit-bearing closure CSV. |
 | COMP-REPLAY-OPQ-INDEPENDENT-PA-TAIL | DEBUG | TLM+RTL | opq | 4 | 1 | 0/0.403/0.700 | 0.70/0.75/0.80 | AT-component | 12 | 100000 | - | - | - | DEBUG | asserted | packet_scheduler/model/rtl_sim/data/opq_component_replay_parser_ticket_100k_12run_localpa_report.md | 2026-04-29 | Parser-tail bypass is a producer-side tail-status write, not an exact loss boundary. Seed7101 100k: parser-tail drop candidates 455, PA-local LATE_DROP tail frames 241, missing PA frames 0, extra candidates 214. Keep independent predictor DEBUG; PA-local LATE_DROP hook is exact for component handoff. |
-| TLM-OPQ-SERVICE-SCALE-RIDGE | PASS | TLM | opq | 4 | 1 | 0/0.4/0.7 | 0.775 ridge | plot-domain | 61x61 | 8192 cycles | - | - | - | PASS | controlled | packet_scheduler/model/tlm/data/tlm_model_summary.json | 2026-04-29 | Compact loss-surface TLM records opq_service_scale=3.05, aligning the plotted 1% OPQ contour to the RTL 100-frame marginal knee near rho_lane=0.775 for B=0, 0.4, and 0.7. Packet/component closure remains based on RTL parser-ticket replay evidence. |
-| DISLIN-OPQ-N4E1-RIDGE-PINS-HIRES | PASS | plotting | opq | 4 | 1 | -1..1 | 0..1 | n/a | 12 | 100 frames | - | - | - | PASS | controlled | packet_scheduler/model/tlm/plots/opq_loss_surface_nlane04_egress01x.png | 2026-04-29 | PNG resolution increased to 4096x2896. N4/E1 uses 12 marginal 100-frame pins from opq_marginal_f100_ridge_12run_pins.csv: eight on/near the 1% ridge, two low-side corner checks, and two high-side corner checks. DISLIN regeneration completed with Warnings: 0. |
+| TLM-OPQ-SERVICE-SCALE-RIDGE | PASS | TLM | opq | 4 | 1 | 0/0.4/0.7 | disabled | plot-domain | 1 | 8192 cycles | - | - | - | PASS | controlled | packet_scheduler/model/tlm/data/tlm_model_summary.json | 2026-04-29 | Closed as obsolete: scalar opq_service_scale is now disabled in opq_tlm_feature_sweep.py. OPQ RTL matching must use structural FIFO/credit/allocator TLM and real RTL pins, not service-scale tuning. |
+| DISLIN-OPQ-N4E1-RIDGE-PINS-HIRES | PASS | plotting | opq | 4 | 1 | -1..1 | 0..1_share | n/a | 6 | 100 frames | - | - | - | PASS | controlled | packet_scheduler/model/tlm/plots/opq_loss_surface_nlane04_egress01x.png | 2026-04-29 | Superseded old 12-run marginal pins for this plot pass. Current high-res PNG uses corrected normalized-share RTL pins: 5 shallow clean points around share 0.23-0.27 and one 100k controlled-loss point at share 0.30. DISLIN Warnings: 0. |
+| RTL-OPQ-N4E1-NORMALIZED-SHARE-SCAN | PASS | RTL | opq | 4 | 1 | 0/0.403/0.700 | 0.23-0.30_share | UVM-physical-cadence | 6 | 10k-100k | - | 0.3396799010 | - | PASS | controlled/asserted/inferred | packet_scheduler/model/rtl_sim/data/opq_normalized_share_scan_n4_e1_report.md | 2026-04-29 | Corrected real RTL/UVM normalized-share scan after fixing lane FIFO depth contract to 8192 for N_SHD=128,N_LANE=4. False below-knee controlled loss from old 2048-depth contract is invalidated. Corrected pins are clean at share 0.23/0.25/0.27 shallow and show controlled loss 33.97% at share 0.30 with 100k hits; long matrix still needs rerun. |
+| DISLIN-OPQ-N4E1-NORMALIZED-AXIS | PASS | plotting | opq | 4 | 1 | -1..1 | 0..1_share | n/a | 6 | 100 frames + shallow/100k probes | - | - | - | PASS | controlled | packet_scheduler/model/tlm/plots/opq_loss_surface_nlane04_egress01x.png | 2026-04-29 | Regenerated at 4096x2896 after corrected real RTL normalized-share scan. Pin priority now uses opq_normalized_share_scan_n4_e1_pins.csv before obsolete marginal pins; labels show clean below-knee points and the 100k above-knee controlled-loss point. Plot now includes the OPQ persistent-knee line and corrected RTL/TLM evidence box. DISLIN Warnings: 0; visual post-inspection passed. |
+| RTL-OPQ-LFIFO-CONTRACT | PASS | RTL | opq | 4 | 1 | 0 | 6.0_hps | UVM-physical-cadence | 5 | 24497-49211 | 0 | 0 | 0 | PASS | controlled/asserted/inferred | packet_scheduler/model/rtl_sim/runs/fix_default_lfifo/logs/fix_default_lfifo_x1_b000_rho6000_f8.log | 2026-04-29 | Fixed OPQ lane FIFO depth contract from lane-count-only 2048 to geometry-derived 8192 for N_SHD=128,N_LANE=4. Directed UVM: depth2048 loses 5436/24497 at rho=6; corrected default depth8192 has 0 drops at rho=6 f8 and rho=6/7.5/8 f12 explicit-depth probes. Earlier normalized-share contour pins below persistent knee were invalid under the old FIFO contract. |
+| MATCH-OPQ-N4E1-LFIFO-STRUCT-TLM | PASS | TLM+RTL | opq | 4 | 1 | 0/0.403/0.700 | 0.23-0.30_share | AT-structural | 6 | 10k-100k | 0.338094869911 | 0.339679901032 | 0.00468813 | PASS | controlled | packet_scheduler/model/rtl_sim/data/opq_structural_tlm_normalized_share_n4_e1.csv | 2026-04-29 | Structural OPQ TLM replay of corrected normalized-share RTL pins. Explicit lane FIFO/ticket FIFO/handle FIFO/allocator/DRR/presenter model matches all clean rows exactly and the 100k above-knee point within 0.47% drop-count error (34982 TLM vs 35146 RTL), without scalar service scaling. |
+| NIGHTLY-RTL-OPQ-N4E1-NORMALIZED-FULLSCAN | IN_PROGRESS | RTL+TLM | opq | 4 | 1 | 0/0.1/0.2/0.3/0.403/0.5/0.7/0.9 | 0.18-0.40_share | UVM-physical-cadence + AT-structural | 128 | 10k shallow, 1e6 deep loss rows | - | - | - | IN_PROGRESS | controlled/asserted/inferred | packet_scheduler/model/rtl_sim/runs/opq_normalized_share_fullscan_20260429/fullscan.meta | 2026-04-29 | Detached PID 26185 normalized-share full scan launched with corrected FIFO=8192 and resume enabled. Grid is concentrated around the expected N4/E1 persistent knee at normalized share about 0.242, with scatter to 0.18 and 0.40. RTL CSV target: opq_normalized_share_fullscan_n4_e1.csv; structural TLM replay target: opq_structural_tlm_normalized_share_fullscan_n4_e1.csv. |
+| TLM-MU3E-DEMO-PRESET | PASS | TLM | opq | 4 | 1 | sweep | 0..1_share | AT+LT | all | 8192 cycles + 1e6 LT | - | - | - | PASS | controlled | packet_scheduler/model/tlm/data/tlm_model_summary.json | 2026-04-30 | Mu3e Demo profile installed as TLM baseline: N_LANE=4, N_SHD=128, lane FIFO=2048, ticket FIFO=1024, handle FIFO=256, page RAM=65536. Coarse event-grid capacity now defaults to 2048; structural AT TLM has an explicit --mu3e-demo-profile override. |
+| TLM-STRUCT-MU3E-DEMO-OVERRIDE | PASS | TLM | opq | 4 | 1 | 0/0.403/0.700 | 0.23-0.30_share | AT-structural | 6 | 10k-100k | - | - | - | PASS | controlled | packet_scheduler/model/rtl_sim/data/opq_structural_tlm_mu3e_demo_profile_n4_e1.csv | 2026-04-30 | Structural AT TLM replay with --mu3e-demo-profile forced all rows to lane FIFO=2048, ticket FIFO=1024, handle FIFO=256, page RAM=65536. This is a TLM-profile sanity run over older normalized-share stimuli, not an RTL-match closure row; forced profile predicts earlier finite-buffer loss than previous deeper-depth RTL rows. |
+| DISLIN-RTA-SCIFI-ANCHOR | PASS | plotting | opq | 4 | 1 | 0.424685 | 0.175_share | n/a | 6 pins + anchor | - | - | - | - | - | controlled | packet_scheduler/model/tlm/plots/opq_loss_surface_nlane04_egress01x.png | 2026-04-30 | N4/E1 plot pins now label R/T/A = RTL/TLM/Analytical loss. SciFi anchor recalibrated to data=0.6*0.25=0.150 plus noise=0.1*0.25=0.025, total share=0.175, and drawn as a filled dot distinct from scan crosses. DISLIN Warnings: 0. |
 <!-- SCOREBOARD:END -->
+
+## Active OPQ Preset
+
+The active TLM/IP-packaging comparison preset is `Mu3e Demo`.
+
+| field | value |
+|---|---:|
+| `N_LANE` | 4 |
+| `N_SHD` | 128 |
+| `LANE_FIFO_DEPTH` | 2048 |
+| `TICKET_FIFO_DEPTH` | 1024 |
+| `HANDLE_FIFO_DEPTH` | 256 |
+| `PAGE_RAM_DEPTH` | 65536 |
+
+`packet_scheduler/script/ordered_priority_queue_hw.tcl` exposes this as the
+default representative preset. The coarse TLM loss surface uses
+`LANE_FIFO_DEPTH` as the finite OPQ capacity. The structural AT TLM models lane
+FIFO, ticket FIFO, handle FIFO, and page RAM separately and can force this
+profile with `--mu3e-demo-profile` when replaying older CSV stimuli that contain
+different per-row depth fields.
 
 ## Burstiness Definition
 
@@ -155,14 +183,18 @@ channels plus a physical-particle source:
 - Noise: iid Poisson per channel, aggregated at the lane.
 - Physical particle source: Poisson in true generation time.
 - Physical cluster: each particle produces 4-8 hits at the same timestamp.
-- Anchor point: `rho_noise = 0.10`, `rho_cluster = 0.50` per lane.
+- Anchor point in normalized per-lane throughput-share units:
+  `rho_noise = 0.10 * 0.25 = 0.025`,
+  `rho_cluster = 0.60 * 0.25 = 0.150`, and
+  `rho_total = 0.175`.
 - Phase-1 correlation scope: lanes are independent. No physical-particle burst
   is shared across lanes in this phase; cross-lane-correlated bursts are a
   future model mode and must have separate scoreboard rows.
 
 The anchor point must be derived from generated hit timestamps using the `B`
 definition above. Plot annotations and CSVs should label it as a timestamp
-sample point, not as a fitted queueing-model parameter.
+sample point, not as a fitted queueing-model parameter. In DISLIN plots the
+SciFi anchor uses a filled dot; cross markers are reserved for scan/sample pins.
 
 ## Frame Cadence Contract
 
@@ -199,9 +231,15 @@ For physical-cadence OPQ rows:
 - `rho_ppm` is `rho_lane * 1e6` for integer plusarg transport.
 - Example: `rho_ppm=6000000` means `rho_lane=6.0` hits/subheader/lane. It is
   not 6 percent.
-- With `N_SHD=128` and a 4096-cycle physical frame-launch period, the equivalent
-  lane hit-word utilization is `rho_lane * 128 / 4096 = rho_lane / 32`. Thus
-  `rho_lane=6.0` is `0.1875` hit words/cycle/lane.
+- `normalized_share_lane` is the plotted normalized per-lane throughput share:
+  `rho_lane * N_SHD / (frame_launch_period_cycles * egress_symbols_per_beat)`.
+- With `N_SHD=128`, `frame_launch_period_cycles=4096`, and `Egress=1x`,
+  `normalized_share_lane = rho_lane / 32`. Thus `rho_lane=0.75` plots at
+  `0.0234375`, while `rho_lane=8.0` plots at `0.25`.
+- For `N_LANE=4`, `Egress=1x`, the ideal persistent 4:1 output-bandwidth knee
+  is `normalized_share_lane=0.25` per lane. If real RTL loss appears below this
+  value, classify it as finite OPQ admission/window behavior until the
+  frame-table, presenter, credit, and allocator evidence proves otherwise.
 
 For the current old time-merger reference sweep:
 

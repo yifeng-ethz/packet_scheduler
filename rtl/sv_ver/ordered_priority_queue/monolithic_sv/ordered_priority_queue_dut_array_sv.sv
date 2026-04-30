@@ -19,12 +19,16 @@
 `define OPQ_TICKET_FIFO_DEPTH 256
 `endif
 
+`ifndef OPQ_HANDLE_FIFO_DEPTH
+`define OPQ_HANDLE_FIFO_DEPTH 64
+`endif
+
 `ifndef OPQ_N_LANE
 `define OPQ_N_LANE 2
 `endif
 
 `ifndef OPQ_LANE_FIFO_DEPTH
-`define OPQ_LANE_FIFO_DEPTH 1024
+`define OPQ_LANE_FIFO_DEPTH 8192
 `endif
 
 `ifndef OPQ_PAGE_RAM_RD_WIDTH
@@ -38,6 +42,7 @@ module ordered_priority_queue_dut_array_sv #(
   parameter int unsigned OPQ_PAGE_RAM_DEPTH_PARAM = `OPQ_PAGE_RAM_DEPTH,
   parameter int unsigned OPQ_LANE_FIFO_DEPTH_PARAM = `OPQ_LANE_FIFO_DEPTH,
   parameter int unsigned OPQ_TICKET_FIFO_DEPTH_PARAM = `OPQ_TICKET_FIFO_DEPTH,
+  parameter int unsigned OPQ_HANDLE_FIFO_DEPTH_PARAM = `OPQ_HANDLE_FIFO_DEPTH,
   parameter int unsigned CHANNEL_WIDTH_PARAM = (OPQ_N_LANE_PARAM <= 4) ? 2 : $clog2(OPQ_N_LANE_PARAM),
   parameter int unsigned PAGE_RAM_RD_WIDTH_PARAM = `OPQ_PAGE_RAM_RD_WIDTH,
   parameter int unsigned EGRESS_SYMBOLS_PER_BEAT_PARAM = PAGE_RAM_RD_WIDTH_PARAM / 36,
@@ -81,7 +86,7 @@ module ordered_priority_queue_dut_array_sv #(
   localparam int unsigned TICKET_FIFO_DEPTH_CONST = OPQ_TICKET_FIFO_DEPTH_PARAM;
   localparam int unsigned TICKET_FIFO_ADDR_WIDTH_CONST = $clog2(TICKET_FIFO_DEPTH_CONST);
   localparam int unsigned TICKET_FIFO_MAX_CREDIT_CONST = TICKET_FIFO_DEPTH_CONST - 1;
-  localparam int unsigned HANDLE_FIFO_DEPTH_CONST = 64;
+  localparam int unsigned HANDLE_FIFO_DEPTH_CONST = OPQ_HANDLE_FIFO_DEPTH_PARAM;
   localparam int unsigned HANDLE_FIFO_ADDR_WIDTH_CONST = $clog2(HANDLE_FIFO_DEPTH_CONST);
   localparam int unsigned PAGE_RAM_DEPTH_CONST = OPQ_PAGE_RAM_DEPTH_PARAM;
   localparam int unsigned PAGE_RAM_ADDR_WIDTH_CONST = $clog2(PAGE_RAM_DEPTH_CONST);
@@ -458,6 +463,7 @@ module ordered_priority_queue_dut_array_sv #(
     .CHANNEL_WIDTH(CHANNEL_WIDTH_CONST),
     .LANE_FIFO_DEPTH(LANE_FIFO_DEPTH_CONST),
     .TICKET_FIFO_DEPTH(TICKET_FIFO_DEPTH_CONST),
+    .HANDLE_FIFO_DEPTH(HANDLE_FIFO_DEPTH_CONST),
     .PAGE_RAM_DEPTH(PAGE_RAM_DEPTH_CONST),
     .PAGE_RAM_RD_WIDTH(PAGE_RAM_RD_WIDTH_CONST),
     .N_SHD(OPQ_N_SHD_LOCAL)

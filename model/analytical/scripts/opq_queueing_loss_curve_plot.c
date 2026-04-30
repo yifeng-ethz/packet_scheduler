@@ -198,7 +198,7 @@ static void render_curve(const loss_curve_t *curve_data, const char *output_path
     plot_title = "OPQ vs Time-Merger Loss Curve";
   }
   titlin(plot_title, 2);
-  name("per-lane offered rate rho", "x");
+  name("normalized throughput share / lane", "x");
   name("", "y");
   intax();
   labdig(2, "x");

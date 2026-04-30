@@ -12,6 +12,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ANALYTICAL_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 IP_DIR="$(cd "${ANALYTICAL_DIR}/../.." && pwd)"
+MODEL_DIR_ROOT="$(cd "${ANALYTICAL_DIR}/.." && pwd)"
 MODEL_DIR="${MODEL_DIR:-${ANALYTICAL_DIR}/data/queueing_model}"
 PLOT_DIR="${PLOT_DIR:-${ANALYTICAL_DIR}/plots}"
 BUILD_DIR="${BUILD_DIR:-${MODEL_DIR}/.build_dislin}"
@@ -114,6 +115,50 @@ for n_lane in 4 8 16; do
       "${PLOT_DIR}/${ratio_stem}.png"
   done
 done
+
+CALIBRATED_OPQ_DAT="${MODEL_DIR}/dislin/opq_loss_surface_nlane04_egress01x_calibrated.dat"
+PIN_CSV="${MODEL_DIR_ROOT}/rtl_sim/data/opq_mu3e_demo_calibration_scan_n4_e1_pins.csv"
+ANCHOR_ENV="${MODEL_DIR_ROOT}/tlm/data/tlm_anchor_sample_point.env"
+ANCHOR_SAMPLE_B=""
+ANCHOR_SAMPLE_RHO_LANE=""
+ANCHOR_SAMPLE_LABEL=""
+if [[ -f "${ANCHOR_ENV}" ]]; then
+  set -a
+  # shellcheck source=/dev/null
+  source "${ANCHOR_ENV}"
+  set +a
+  ANCHOR_SAMPLE_B="${OPQ_SAMPLE_B:-}"
+  ANCHOR_SAMPLE_RHO_LANE="${OPQ_SAMPLE_RHO_LANE:-}"
+  ANCHOR_SAMPLE_LABEL="${OPQ_SAMPLE_LABEL:-}"
+  unset OPQ_SAMPLE_B OPQ_SAMPLE_RHO_LANE OPQ_SAMPLE_LABEL
+fi
+if [[ -s "${CALIBRATED_OPQ_DAT}" ]]; then
+  if [[ -s "${PIN_CSV}" ]]; then
+    python3 "${MODEL_DIR_ROOT}/tlm/scripts/format_sample_pin_labels.py" \
+      --input "${PIN_CSV}" \
+      --output "${PIN_CSV}" \
+      --analytical-dat "${CALIBRATED_OPQ_DAT}"
+  fi
+  pin_env=()
+  if [[ -s "${PIN_CSV}" ]]; then
+    pin_env=(OPQ_SAMPLE_PINS_CSV="${PIN_CSV}")
+  fi
+  if [[ -n "${ANCHOR_SAMPLE_B}" && -n "${ANCHOR_SAMPLE_RHO_LANE}" ]]; then
+    pin_env+=(
+      OPQ_SAMPLE_B="${ANCHOR_SAMPLE_B}"
+      OPQ_SAMPLE_RHO_LANE="${ANCHOR_SAMPLE_RHO_LANE}"
+      OPQ_SAMPLE_LABEL="${ANCHOR_SAMPLE_LABEL}"
+    )
+  fi
+  env "${pin_env[@]}" \
+  OPQ_LOSS_SURFACE_TITLE="Calibrated OPQ Loss Surface N_LANE=4, Egress=1x" \
+  OPQ_LOSS_SURFACE_NOTE="empirical analytical surface calibrated from RTL/TLM scan pins; y is normalized per-lane egress share" \
+  OPQ_EVIDENCE_MODE="opq_n4_e1" \
+  OPQ_MODELING_BOX_ANCHOR="upper_left" \
+    "${BUILD_DIR}/opq_loss_surface_plot" \
+    "${CALIBRATED_OPQ_DAT}" \
+    "${PLOT_DIR}/opq_loss_surface_nlane04_egress01x_calibrated.png"
+fi
 
 OPQ_SCALING_TITLE="OPQ vs Time-Merger Feature Sweep Loss Ratio" \
 OPQ_SCALING_NOTE="analytical stress point B=0.70, ready duty=0.75, rho_lane=0.0075" \

@@ -16,6 +16,9 @@ FALLBACK_INPUT = PKT_ROOT / "model" / "rtl_sim" / "data" / "opq_component_replay
 DEFAULT_OUTPUT = PKT_ROOT / "model" / "tlm" / "data" / "dislin" / "opq_component_replay_12run_pins.csv"
 
 TAG_RE = re.compile(r"component_b(?P<b>-?\d+)_rho(?P<rho>\d+).*_seed(?P<seed>[0-9a-fA-F]+)")
+PHYSICAL_N_SHD = 128.0
+PHYSICAL_FRAME_PERIOD_CYCLES = 4096.0
+PHYSICAL_EGRESS_SYMBOLS = 1.0
 
 
 def parse_float(text: str) -> float:
@@ -29,8 +32,11 @@ def point_from_tag(run_tag: str) -> tuple[float, float, str]:
     if not match:
         raise ValueError(f"cannot parse run tag {run_tag!r}")
     burstiness = int(match.group("b")) / 1000.0
-    rho = int(match.group("rho")) / 1000.0
-    return burstiness, rho, match.group("seed")
+    raw_rho = int(match.group("rho")) / 1000.0
+    normalized_share = raw_rho * PHYSICAL_N_SHD / (
+        PHYSICAL_FRAME_PERIOD_CYCLES * PHYSICAL_EGRESS_SYMBOLS
+    )
+    return burstiness, normalized_share, match.group("seed")
 
 
 def choose_input(path: Path | None) -> Path:

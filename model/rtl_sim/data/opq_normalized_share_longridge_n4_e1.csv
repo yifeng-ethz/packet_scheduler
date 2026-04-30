@@ -1,0 +1,11 @@
+run_tag,sim_pass,burstiness,normalized_share_lane,persistent_bottleneck_share_lane,raw_rho_lane_hits_per_subheader,rho_unit,n_lane,n_shd,egress_symbols_per_beat,frame_launch_period_cycles,expected_hits,accepted_hits,dropped_hits,delivered_hits,unexplained_hits,loss_probability,loss_tier,persistent_loss_floor,merged_output_utilization
+share_shallow_b000_s0212_rho06784_f0029_seed9001,1,0.0,0.212,0.25,6.784,hits_per_subheader_per_lane,4,128,1,4096,100960,26846,74114,26846,0,0.7340927099841521,controlled,0.0,0.88071484375
+share_shallow_b000_s0214_rho06848_f0029_seed9002,1,0.0,0.214,0.25,6.848,hits_per_subheader_per_lane,4,128,1,4096,101904,30555,71349,30555,0,0.7001589731512011,controlled,0.0,0.88871484375
+share_shallow_b000_s0216_rho06912_f0029_seed9003,1,0.0,0.216,0.25,6.912,hits_per_subheader_per_lane,4,128,1,4096,102942,28820,74122,28820,0,0.7200365254220823,controlled,0.0,0.89671484375
+share_shallow_b000_s0218_rho06976_f0028_seed9004,1,0.0,0.218,0.25,6.976,hits_per_subheader_per_lane,4,128,1,4096,99995,33333,66662,33333,0,0.6666533326666333,controlled,0.0,0.90471484375
+share_shallow_b403_s0214_rho06848_f0029_seed9005,1,0.403,0.214,0.25,6.848,hits_per_subheader_per_lane,4,128,1,4096,101057,29298,71759,29298,0,0.710084407809454,controlled,0.0,0.88871484375
+share_shallow_b403_s0216_rho06912_f0029_seed9006,1,0.403,0.216,0.25,6.912,hits_per_subheader_per_lane,4,128,1,4096,102488,37200,65288,37200,0,0.6370306767621575,controlled,0.0,0.89671484375
+share_shallow_b403_s0218_rho06976_f0028_seed9007,0,0.403,0.218,0.25,6.976,hits_per_subheader_per_lane,4,128,1,4096,98934,28042,70892,27783,259,0.7165585137566458,mixed,0.0,0.90471484375
+share_shallow_b700_s0220_rho07040_f0028_seed9008,1,0.7,0.22,0.25,7.04,hits_per_subheader_per_lane,4,128,1,4096,101086,51547,49539,51547,0,0.49006786300773597,controlled,0.0,0.91271484375
+share_shallow_b700_s0225_rho07200_f0028_seed9009,1,0.7,0.225,0.25,7.2,hits_per_subheader_per_lane,4,128,1,4096,105523,49209,56314,49209,0,0.5336656463519801,controlled,0.0,0.93271484375
+share_shallow_b700_s0230_rho07360_f0027_seed900a,1,0.7,0.23,0.25,7.36,hits_per_subheader_per_lane,4,128,1,4096,99647,48794,50853,48794,0,0.5103314700894156,controlled,0.0,0.95271484375

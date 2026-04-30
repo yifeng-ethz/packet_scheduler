@@ -8,15 +8,27 @@
   "egress_symbols_per_beat": 1,
   "frame_period_cycles": 4096,
   "ready_duty": 1.0,
+  "opq_capacity": 2048,
+  "opq_profile": {
+    "preset": "Mu3e Demo",
+    "n_lane": 4,
+    "n_shd": 128,
+    "egress_symbols_per_beat": 1,
+    "lane_fifo_depth": 2048,
+    "ticket_fifo_depth": 1024,
+    "handle_fifo_depth": 256,
+    "page_ram_depth": 65536,
+    "event_queue_capacity_hits": 2048
+  },
   "time_merger_penalty": 5.0,
   "implementations": {
     "opq": {
       "points": 128,
       "target_hits_per_point": 1000000,
       "total_offered_hits": 128000000,
-      "total_dropped_hits": 259716,
+      "total_dropped_hits": 245372,
       "min_loss": 0.0,
-      "max_loss": 0.03247548692494811,
+      "max_loss": 0.03068248692494549,
       "persistent_knee_hits_per_subheader_lane": 7.73828125
     },
     "time_merger": {

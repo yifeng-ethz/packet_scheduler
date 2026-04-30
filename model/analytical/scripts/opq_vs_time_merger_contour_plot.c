@@ -11,6 +11,7 @@
 #define MAX_CONTOUR_POINTS 262144
 #define MAX_CONTOUR_CURVES 8192
 #define MAX_SAMPLE_PINS 128
+#define PLOT_PI 3.14159265358979323846
 
 typedef struct {
   int nx;
@@ -25,6 +26,7 @@ typedef struct {
   float rho_lane;
   float rtl_loss;
   float tlm_loss;
+  char loss_tier[64];
   char label[160];
 } sample_pin_t;
 
@@ -42,6 +44,33 @@ static void trim_ascii(char *text) {
     memmove(text, text + start, end - start);
   }
   text[end - start] = '\0';
+}
+
+static int split_csv_fields(char *line, char **fields, int max_fields) {
+  int count = 0;
+  char *cursor = line;
+
+  while (count < max_fields && cursor != NULL) {
+    char *comma = strchr(cursor, ',');
+    if (comma != NULL) {
+      *comma = '\0';
+    }
+    trim_ascii(cursor);
+    fields[count++] = cursor;
+    cursor = (comma == NULL) ? NULL : comma + 1;
+  }
+  return count;
+}
+
+static int parse_float_text(const char *text, float *value) {
+  char *end = NULL;
+  double parsed = strtod(text, &end);
+
+  if (end == text) {
+    return 0;
+  }
+  *value = (float) parsed;
+  return 1;
 }
 
 static const char *output_format_from_path(const char *path) {
@@ -285,8 +314,8 @@ static void draw_sample_point_if_present(float gxmin, float gxmax, float gymin, 
   int clipped_high = 0;
   int clipped_low = 0;
   char clipped_label[256];
-  float xs[2];
-  float ys[2];
+  float dot_x[13];
+  float dot_y[13];
 
   if (!parse_env_float("OPQ_SAMPLE_B", &burstiness) ||
       !parse_env_float("OPQ_SAMPLE_RHO_LANE", &rho_lane)) {
@@ -308,22 +337,24 @@ static void draw_sample_point_if_present(float gxmin, float gxmax, float gymin, 
     clipped_low = 1;
   }
 
-  linwid(5);
+  linwid(1);
   setrgb(0.00f, 0.82f, 0.36f);
-  xs[0] = burstiness - dx; xs[1] = burstiness + dx;
-  ys[0] = rho_axis - dy; ys[1] = rho_axis + dy;
-  curve(xs, ys, 2);
-  xs[0] = burstiness - dx; xs[1] = burstiness + dx;
-  ys[0] = rho_axis + dy; ys[1] = rho_axis - dy;
-  curve(xs, ys, 2);
+  for (int dot_idx = 0; dot_idx < 13; dot_idx++) {
+    float theta = (2.0f * (float) PLOT_PI * (float) dot_idx) / 12.0f;
+    dot_x[dot_idx] = burstiness + (0.95f * dx * cosf(theta));
+    dot_y[dot_idx] = rho_axis + (0.95f * dy * sinf(theta));
+  }
+  shdpat(16);
+  rlarea(dot_x, dot_y, 13);
+  curve(dot_x, dot_y, 13);
   linwid(1);
 
   if (label != NULL && label[0] != '\0') {
     if (clipped_high) {
-      snprintf(clipped_label, sizeof(clipped_label), "%s (rho above axis)", label);
+      snprintf(clipped_label, sizeof(clipped_label), "%s (share above axis)", label);
       label = clipped_label;
     } else if (clipped_low) {
-      snprintf(clipped_label, sizeof(clipped_label), "%s (rho below axis)", label);
+      snprintf(clipped_label, sizeof(clipped_label), "%s (share below axis)", label);
       label = clipped_label;
     }
     height(13);
@@ -350,19 +381,70 @@ static int read_sample_pins(sample_pin_t *pins, int max_pins) {
     return 0;
   }
   while (fgets(line, sizeof(line), handle) != NULL && count < max_pins) {
-    char run_tag[192];
+    char *fields[8];
+    int field_count;
     sample_pin_t pin;
     memset(&pin, 0, sizeof(pin));
-    if (sscanf(line, "%191[^,],%f,%f,%f,%f,%159[^\n]",
-               run_tag, &pin.burstiness, &pin.rho_lane,
-               &pin.rtl_loss, &pin.tlm_loss, pin.label) != 6) {
+    line[strcspn(line, "\r\n")] = '\0';
+    field_count = split_csv_fields(line, fields, 8);
+    if (field_count < 6 ||
+        !parse_float_text(fields[1], &pin.burstiness) ||
+        !parse_float_text(fields[2], &pin.rho_lane) ||
+        !parse_float_text(fields[3], &pin.rtl_loss) ||
+        !parse_float_text(fields[4], &pin.tlm_loss)) {
       continue;
     }
+    if (field_count >= 7) {
+      snprintf(pin.loss_tier, sizeof(pin.loss_tier), "%s", fields[5]);
+      snprintf(pin.label, sizeof(pin.label), "%s", fields[6]);
+    } else {
+      pin.loss_tier[0] = '\0';
+      snprintf(pin.label, sizeof(pin.label), "%s", fields[5]);
+    }
+    trim_ascii(pin.loss_tier);
     trim_ascii(pin.label);
     pins[count++] = pin;
   }
   fclose(handle);
   return count;
+}
+
+static void draw_persistent_knee_if_present(float gxmin, float gxmax, float gymin, float gymax) {
+  const char *label = getenv("OPQ_PERSISTENT_KNEE_LABEL");
+  float knee;
+  float xs[2];
+  float ys[2];
+  float xspan = fmaxf(fabsf(gxmax - gxmin), 1.0e-6f);
+  float yspan = fmaxf(fabsf(gymax - gymin), 1.0e-6f);
+  char default_label[128];
+
+  if (!parse_env_float("OPQ_PERSISTENT_KNEE_SHARE", &knee)) {
+    return;
+  }
+  if (knee < gymin || knee > gymax) {
+    return;
+  }
+
+  xs[0] = gxmin + (0.015f * xspan);
+  xs[1] = gxmax - (0.015f * xspan);
+  ys[0] = knee;
+  ys[1] = knee;
+  linwid(5);
+  setrgb(0.66f, 0.16f, 0.10f);
+  dashm();
+  curve(xs, ys, 2);
+  solid();
+  linwid(1);
+
+  if (label == NULL || label[0] == '\0') {
+    snprintf(default_label, sizeof(default_label), "OPQ persistent knee %.3f", knee);
+    label = default_label;
+  }
+  height(11);
+  txtjus("LEFT");
+  setrgb(0.66f, 0.16f, 0.10f);
+  rlmess(label, gxmin + (0.030f * xspan), knee + (0.012f * yspan));
+  color("fore");
 }
 
 static void draw_sample_pins_if_present(float gxmin, float gxmax, float gymin, float gymax) {
@@ -378,6 +460,9 @@ static void draw_sample_pins_if_present(float gxmin, float gxmax, float gymin, f
     float ys[2];
     int group_row = 0;
     int group_count = 0;
+    int low_share_row = 0;
+    int low_share_count = 0;
+    int low_share_pin = 0;
     float xspan = fmaxf(fabsf(gxmax - gxmin), 1.0e-6f);
     float yspan = fmaxf(fabsf(gymax - gymin), 1.0e-6f);
     int label_left;
@@ -396,6 +481,18 @@ static void draw_sample_pins_if_present(float gxmin, float gxmax, float gymin, f
         group_count++;
       }
     }
+    low_share_pin = (y < gymin + (0.10f * yspan));
+    if (low_share_pin) {
+      for (int other = 0; other < count; other++) {
+        if (fabsf(pins[other].burstiness - x) < 1.0e-5f &&
+            pins[other].rho_lane < gymin + (0.10f * yspan)) {
+          if (other < idx) {
+            low_share_row++;
+          }
+          low_share_count++;
+        }
+      }
+    }
 
     linwid(6);
     setrgb(0.00f, 0.62f, 0.28f);
@@ -409,14 +506,21 @@ static void draw_sample_pins_if_present(float gxmin, float gxmax, float gymin, f
 
     label_left = (x > gxmin + (0.35f * xspan));
     label_x = label_left ? x - (2.2f * dx) : x + (2.2f * dx);
-    label_y = y +
-      ((float) group_row - 0.5f * (float) (group_count - 1)) * (2.3f * dy) +
-      ((y > gymin + (0.77f * yspan)) ? (2.2f * dy) : (-2.2f * dy));
+    if (low_share_pin) {
+      float row_gap = 0.030f * yspan;
+      float row_base = gymin + (0.110f * yspan);
+      (void) low_share_count;
+      label_y = row_base + (float) low_share_row * row_gap;
+    } else {
+      label_y = y +
+        ((float) group_row - 0.5f * (float) (group_count - 1)) * (2.3f * dy) +
+        ((y > gymin + (0.77f * yspan)) ? (2.2f * dy) : (-2.2f * dy));
+    }
     if (label_y > gymax - (1.5f * dy)) {
       label_y = gymax - (1.5f * dy);
     }
-    if (label_y < gymin + (1.5f * dy)) {
-      label_y = gymin + (1.5f * dy);
+    if (label_y < gymin + (0.065f * yspan)) {
+      label_y = gymin + (0.065f * yspan);
     }
 
     height(9);
@@ -461,7 +565,7 @@ static void render_plot(const loss_grid_t *opq_grid, const loss_grid_t *tm_grid,
   }
   titlin(plot_title, 2);
   name("burstiness B", "x");
-  name("rate / lane rho", "y");
+  name("normalized throughput share / lane", "y");
   intax();
   labdig(2, "x");
   labdig(2, "y");
@@ -475,6 +579,7 @@ static void render_plot(const loss_grid_t *opq_grid, const loss_grid_t *tm_grid,
     draw_single_contour(tm_grid, levels[level_idx], 1, level_idx);
   }
 
+  draw_persistent_knee_if_present(gxmin, gxmax, gymin, gymax);
   draw_sample_point_if_present(gxmin, gxmax, gymin, gymax);
   draw_sample_pins_if_present(gxmin, gxmax, gymin, gymax);
   draw_legend(gxmin, gxmax, gymin, gymax);
@@ -483,10 +588,10 @@ static void render_plot(const loss_grid_t *opq_grid, const loss_grid_t *tm_grid,
   color("fore");
   height(15);
   if (plot_note == NULL || plot_note[0] == '\0') {
-    plot_note = "x: B=(CV-1)/(CV+1), y: offered rate/lane; window zooms out to expose early time-merger loss";
+    plot_note = "x: B=(CV-1)/(CV+1), y: normalized offered throughput share/lane";
   }
   messag(plot_note, 420, 1918);
-  messag("finite-buffer analytical proxy: OPQ capacity=255, Time-Merger tree capacity/service penalized", 420, 1960);
+  messag("finite-buffer model: green pin labels are R/T/A = RTL/TLM/Analytical loss", 420, 1960);
   disfin();
 }
 

@@ -106,14 +106,21 @@ proc derive_hit_payload_width {data_w} {
     }
 }
 
-proc sync_auto_parameters {} {
+proc sync_geometry_parameters {} {
     set n_lane      [get_parameter_value N_LANE]
     set data_w      [get_parameter_value INGRESS_DATA_WIDTH]
     set datak_w     [get_parameter_value INGRESS_DATAK_WIDTH]
-    set n_shd       [get_parameter_value N_SHD]
 
     set_parameter_value CHANNEL_WIDTH     [derive_channel_width $n_lane]
     set_parameter_value LANE_FIFO_WIDTH   [derive_lane_fifo_width $data_w $datak_w]
+}
+
+proc sync_auto_parameters {} {
+    sync_geometry_parameters
+
+    set n_lane      [get_parameter_value N_LANE]
+    set n_shd       [get_parameter_value N_SHD]
+
     set_parameter_value TICKET_FIFO_DEPTH [derive_ticket_fifo_depth $n_shd $n_lane]
     set_parameter_value HANDLE_FIFO_DEPTH [derive_handle_fifo_depth]
 }
@@ -170,6 +177,23 @@ opq_define_preset "4LANE_BASE" \
         INGRESS_DATAK_WIDTH 4
         LANE_FIFO_DEPTH     2048
         PAGE_RAM_DEPTH      65536
+        N_SHD               128
+        N_HIT               255
+    }
+
+opq_define_preset "Mu3e Demo" \
+    "Mu3e demo profile for the current TLM/RTL comparison point: 4 lanes, 128 subheaders, 2048-deep lane FIFO, 1024-deep ticket FIFO, 256-deep handle FIFO, and 65536-word page RAM." \
+    {
+        N_LANE              4
+        MODE                MERGING
+        TRACK_HEADER        true
+        INGRESS_DATA_WIDTH  32
+        INGRESS_DATAK_WIDTH 4
+        LANE_FIFO_DEPTH     2048
+        TICKET_FIFO_DEPTH   1024
+        HANDLE_FIFO_DEPTH   256
+        PAGE_RAM_DEPTH      65536
+        PAGE_RAM_RD_WIDTH   36
         N_SHD               128
         N_HIT               255
     }
@@ -268,7 +292,13 @@ proc opq_apply_preset {preset_name} {
             send_message warning "Preset $preset_name: failed to set $pname=$pval: $err"
         }
     }
-    sync_auto_parameters
+    sync_geometry_parameters
+    if {![dict exists $params TICKET_FIFO_DEPTH]} {
+        set_parameter_value TICKET_FIFO_DEPTH [derive_ticket_fifo_depth [get_parameter_value N_SHD] [get_parameter_value N_LANE]]
+    }
+    if {![dict exists $params HANDLE_FIFO_DEPTH]} {
+        set_parameter_value HANDLE_FIFO_DEPTH [derive_handle_fifo_depth]
+    }
 }
 
 proc opq_apply_preset_if_needed {} {
@@ -288,20 +318,36 @@ proc opq_preset_summary_html {selected_preset} {
     append html "Concrete presets intentionally pin <b>N_SHD=128</b> and the safe current <b>32 data + 4 datak</b> ingress contract. "
     append html "PAGE_RAM_RD_WIDTH remains selectable as 1x/2x/4x/8x OPQ symbols per egress beat for the active wide-egress DV closure.<br/><br/>"
     append html "<table border=\"1\" cellpadding=\"3\" width=\"100%\">"
-    append html "<tr><th>Preset</th><th>N_LANE</th><th>LANE_FIFO_DEPTH</th><th>Ingress</th><th>Egress</th><th>Description</th></tr>"
+    append html "<tr><th>Preset</th><th>N_LANE</th><th>N_SHD</th><th>Lane FIFO</th><th>Ticket FIFO</th><th>Handle FIFO</th><th>Page RAM</th><th>Ingress</th><th>Egress</th><th>Description</th></tr>"
     foreach name $OPQ_PRESET_ORDER {
         set params [dict get $OPQ_PRESETS $name]
         set n_lane [dict get $params N_LANE]
+        set n_shd [dict get $params N_SHD]
         set lane_fifo_depth [dict get $params LANE_FIFO_DEPTH]
+        set ticket_fifo_depth [opq_preset_value_or_derived $name TICKET_FIFO_DEPTH [derive_ticket_fifo_depth $n_shd $n_lane]]
+        set handle_fifo_depth [opq_preset_value_or_derived $name HANDLE_FIFO_DEPTH [derive_handle_fifo_depth]]
+        set page_ram_depth [dict get $params PAGE_RAM_DEPTH]
         set desc [dict get $OPQ_PRESET_DESC $name]
         set preset_label $name
         if {$name eq $selected_preset} {
             set preset_label "<b>$name</b>"
         }
-        append html "<tr><td>$preset_label</td><td>$n_lane</td><td>$lane_fifo_depth</td><td>32+4</td><td>36/72/144/288</td><td><small>$desc</small></td></tr>"
+        append html "<tr><td>$preset_label</td><td>$n_lane</td><td>$n_shd</td><td>$lane_fifo_depth</td><td>$ticket_fifo_depth</td><td>$handle_fifo_depth</td><td>$page_ram_depth</td><td>32+4</td><td>36/72/144/288</td><td><small>$desc</small></td></tr>"
     }
     append html "</table><br/><b>CUSTOM</b> leaves the individual parameters editable; the named presets are representative starting points rather than a signoff claim on the full matrix space.</html>"
     return $html
+}
+
+proc opq_preset_value_or_derived {preset_name field_name derived_value} {
+    variable OPQ_PRESETS
+
+    if {$preset_name ne "CUSTOM" && [dict exists $OPQ_PRESETS $preset_name]} {
+        set params [dict get $OPQ_PRESETS $preset_name]
+        if {[dict exists $params $field_name]} {
+            return [dict get $params $field_name]
+        }
+    }
+    return $derived_value
 }
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -407,7 +453,6 @@ set OPQ_LANE_REGION_HTML {<html><table border="1" cellpadding="3" width="100%">
 # ────────────────────────────────────────────────────────────────────────────
 proc compute_derived_values {} {
     opq_apply_preset_if_needed
-    sync_auto_parameters
 
     set preset          [get_parameter_value PRESET]
     set n_lane          [get_parameter_value N_LANE]
@@ -446,7 +491,7 @@ proc compute_derived_values {} {
     set_parameter_value EGRESS_EMPTY_WIDTH_DERIVED   $empty_w
 
     catch {
-        set_display_item_property sizing_html TEXT "<html><b>Derived storage and auto-sized knobs</b><br/>Ingress symbol: <b>${ingress_beat_w}</b> bits = data <b>${data_w}</b> + datak <b>${datak_w}</b><br/>CHANNEL_WIDTH auto = <b>${channel_w}</b> (compatibility floor of 2 bits, then grows with N_LANE)<br/>LANE_FIFO_WIDTH auto = <b>${lane_fifo_w}</b> bits = ingress symbol + sop/eop/hit_err/reserved<br/>TICKET_FIFO_DEPTH auto = <b>${ticket_fifo_d}</b> (smallest power-of-two at or above max(32 \u00d7 N_SHD, 2 \u00d7 N_SHD \u00d7 N_LANE), minimum 256)<br/>HANDLE_FIFO_DEPTH auto = <b>${handle_fifo_d}</b><br/>PAGE_RAM_RD_WIDTH selected = <b>${page_ram_rd_w}</b> bits = <b>${symbols_per_beat}</b> OPQ symbol(s) per egress beat<br/>EGRESS_EMPTY_WIDTH derived = <b>${empty_w}</b><br/>Hit payload model: current packaged point = <b>${data_w}</b>-bit hit word with <b>${hit_payload_w}</b>-bit non-timestamp payload<br/><br/><b>Derived storage</b><br/>Lane FIFO storage: <b>${lane_store_bits}</b> bits (${n_lane} \u00d7 ${lane_fifo_d} \u00d7 ${lane_fifo_w})<br/>Ticket FIFO storage: <b>${ticket_store_bits}</b> bits<br/>Handle FIFO storage: <b>${handle_store_bits}</b> bits<br/>Page RAM storage: <b>${page_ram_bits}</b> bits (${page_ram_d} \u00d7 ${lane_fifo_w})<br/>Total on-chip memory: <b>${total_store_bits}</b> bits</html>"
+        set_display_item_property sizing_html TEXT "<html><b>Derived storage and preset-pinned knobs</b><br/>Ingress symbol: <b>${ingress_beat_w}</b> bits = data <b>${data_w}</b> + datak <b>${datak_w}</b><br/>CHANNEL_WIDTH auto = <b>${channel_w}</b> (compatibility floor of 2 bits, then grows with N_LANE)<br/>LANE_FIFO_WIDTH auto = <b>${lane_fifo_w}</b> bits = ingress symbol + sop/eop/hit_err/reserved<br/>TICKET_FIFO_DEPTH active = <b>${ticket_fifo_d}</b> (auto-derived for generic presets, explicitly pinned by Mu3e Demo)<br/>HANDLE_FIFO_DEPTH active = <b>${handle_fifo_d}</b> (auto-derived for generic presets, explicitly pinned by Mu3e Demo)<br/>PAGE_RAM_RD_WIDTH selected = <b>${page_ram_rd_w}</b> bits = <b>${symbols_per_beat}</b> OPQ symbol(s) per egress beat<br/>EGRESS_EMPTY_WIDTH derived = <b>${empty_w}</b><br/>Hit payload model: current packaged point = <b>${data_w}</b>-bit hit word with <b>${hit_payload_w}</b>-bit non-timestamp payload<br/><br/><b>Derived storage</b><br/>Lane FIFO storage: <b>${lane_store_bits}</b> bits (${n_lane} \u00d7 ${lane_fifo_d} \u00d7 ${lane_fifo_w})<br/>Ticket FIFO storage: <b>${ticket_store_bits}</b> bits<br/>Handle FIFO storage: <b>${handle_store_bits}</b> bits<br/>Page RAM storage: <b>${page_ram_bits}</b> bits (${page_ram_d} \u00d7 ${lane_fifo_w})<br/>Total on-chip memory: <b>${total_store_bits}</b> bits</html>"
     }
     catch {
         set_display_item_property packet_html TEXT "<html><b>Packet format</b><br/>Current packaged release uses a <b>${ingress_beat_w}</b>-bit symbol: datak[${ingress_beat_w}-1:${data_w}] + data[${data_w}-1:0].<br/><table border=\"1\" cellpadding=\"3\" width=\"100%\"><tr><th>Segment</th><th>Words</th><th>Marker</th><th>Current layout</th></tr><tr><td>Header preamble</td><td>1</td><td><b>K285</b> / 0xBC</td><td>datak=<b>0001</b>, data[31:26]=dt_type, data[23:8]=feb_id, data[7:0]=K285</td></tr><tr><td>Header payload</td><td>4</td><td>data</td><td>word1=frame_ts[47:16], word2=frame_ts[15:0]|pkg_cnt, word3=subheader_cnt|hit_cnt, word4=send_ts[30:0]</td></tr><tr><td>Subheader</td><td>1 each</td><td><b>K237</b> / 0xF7</td><td>datak=<b>0001</b>, data[31:24]=subheader_ts, data[15:8]=hit_cnt, data[7:0]=K237</td></tr><tr><td>Hit</td><td>1 each</td><td>data</td><td>datak=<b>0000</b>, data[31:0]=hit word. Current packaged point: 32-bit hit word with 24-bit non-timestamp payload.</td></tr><tr><td>Trailer</td><td>1</td><td><b>K284</b> / 0x9C</td><td>datak=<b>0001</b>, data[7:0]=K284</td></tr></table><br/><b>Packet limits</b><br/>TRACK_HEADER is fixed to <b>${track_header}</b> in this release.<br/>Subheaders per header packet: <b>${n_shd}</b><br/>Max hits per subheader: <b>${n_hit}</b><br/>Max hits per header packet: <b>${worst_case_hits_per_frame}</b> (worst case before <i>ingress parser</i> drop)</html>"
@@ -455,7 +500,7 @@ proc compute_derived_values {} {
         set_display_item_property throughput_html TEXT "<html><b>Expected throughput</b><br/>Aggregation mode: <b>${mode}</b><br/>Current packaged egress beat: <b>${page_ram_rd_w}</b> bits/cycle = <b>${symbols_per_beat}</b> OPQ ingress symbol(s) per egress beat<br/>Per-lane ingress budget: <b>${ingress_beat_w}</b> bits/cycle at the shared data-path clock<br/>Lossless equal-load share guideline: the selected egress pack ratio gives each lane roughly <b>${symbols_per_beat}/${n_lane}</b> of the sustained symbol budget before packet-overhead effects.<br/>Block-mover scheduling: shared page-RAM write port is serviced by an <b>ordered block-level DRR arbiter</b> with software-tunable per-lane refill allowance.<br/>Backpressure: ingress lanes are <i>non-backlog</i> (drop-on-full inside the lane/ticket FIFOs); egress honours <code>ready</code> and exports <code>empty</code> for packet-tail packing.</html>"
     }
     catch {
-        set_display_item_property profile_html TEXT "<html><b>Catalog revision</b><br/>This release is packaged as <b>${::OPQ_VERSION_STRING}</b> (git <b>${::OPQ_GIT_HEX_STRING}</b>).<br/><br/><b>Packaged legal points</b><br/>N_LANE=<b>{2,4,8,16}</b>, MODE=<b>MERGING</b>, TRACK_HEADER=<b>true</b>, ingress=<b>32 data + 4 datak</b>, N_SHD=<b>{64,128,256,512}</b>, PAGE_RAM_RD_WIDTH=<b>{36,72,144,288}</b>. CHANNEL_WIDTH, LANE_FIFO_WIDTH, TICKET_FIFO_DEPTH, HANDLE_FIFO_DEPTH, EGRESS_SYMBOLS_PER_BEAT, and EGRESS_EMPTY_WIDTH are derived for the selected point.<br/><br/><b>Representative preset family</b><br/>The preset menu adds nine GUI options (<b>CUSTOM</b> plus eight named presets). All concrete named presets pin <b>N_SHD=128</b> and scale <b>N_LANE</b> plus <b>LANE_FIFO_DEPTH</b> as a starting point for later quantitative analysis.<br/><br/><b>Deferred preset axes</b><br/>64-bit / 128-bit hit words remain future work because the current monolithic ingress parser still uses the 32-bit hit-word contract.<br/><br/><b>Current instance</b><br/>PRESET=<b>${preset}</b>, MODE=<b>${mode}</b>, N_LANE=<b>${n_lane}</b>, N_SHD=<b>${n_shd}</b>, N_HIT=<b>${n_hit}</b>, CHANNEL_WIDTH=<b>${channel_w}</b>, PAGE_RAM_RD_WIDTH=<b>${page_ram_rd_w}</b>.<br/><br/><b>Runtime visibility</b><br/>The monolithic OPQ exposes a runtime <b>CSR Avalon-MM slave</b>. Software can read the common Mu3e <b>UID + META</b> header, inspect per-lane write/read/drop counters, inspect frame-table ownership counters, clear counter state, program a per-lane packet-boundary mask, and tune the per-lane <b>DRR allowance</b> used by the shared page-RAM arbiter.</html>"
+        set_display_item_property profile_html TEXT "<html><b>Catalog revision</b><br/>This release is packaged as <b>${::OPQ_VERSION_STRING}</b> (git <b>${::OPQ_GIT_HEX_STRING}</b>).<br/><br/><b>Packaged legal points</b><br/>N_LANE=<b>{2,4,8,16}</b>, MODE=<b>MERGING</b>, TRACK_HEADER=<b>true</b>, ingress=<b>32 data + 4 datak</b>, N_SHD=<b>{64,128,256,512}</b>, PAGE_RAM_RD_WIDTH=<b>{36,72,144,288}</b>. CHANNEL_WIDTH, LANE_FIFO_WIDTH, EGRESS_SYMBOLS_PER_BEAT, and EGRESS_EMPTY_WIDTH are derived for the selected point. TICKET_FIFO_DEPTH and HANDLE_FIFO_DEPTH are derived unless an explicit preset pins them.<br/><br/><b>Representative preset family</b><br/>The preset menu adds <b>Mu3e Demo</b> as the TLM/RTL comparison profile: N_LANE=4, N_SHD=128, LANE_FIFO_DEPTH=2048, TICKET_FIFO_DEPTH=1024, HANDLE_FIFO_DEPTH=256, PAGE_RAM_DEPTH=65536.<br/><br/><b>Deferred preset axes</b><br/>64-bit / 128-bit hit words remain future work because the current monolithic ingress parser still uses the 32-bit hit-word contract.<br/><br/><b>Current instance</b><br/>PRESET=<b>${preset}</b>, MODE=<b>${mode}</b>, N_LANE=<b>${n_lane}</b>, N_SHD=<b>${n_shd}</b>, N_HIT=<b>${n_hit}</b>, CHANNEL_WIDTH=<b>${channel_w}</b>, PAGE_RAM_RD_WIDTH=<b>${page_ram_rd_w}</b>.<br/><br/><b>Runtime visibility</b><br/>The monolithic OPQ exposes a runtime <b>CSR Avalon-MM slave</b>. Software can read the common Mu3e <b>UID + META</b> header, inspect per-lane write/read/drop counters, inspect frame-table ownership counters, clear counter state, program a per-lane packet-boundary mask, and tune the per-lane <b>DRR allowance</b> used by the shared page-RAM arbiter.</html>"
     }
     catch {
         set_display_item_property preset_html TEXT [opq_preset_summary_html $preset]
@@ -487,8 +532,9 @@ proc validate {} {
     set ingress_beat_w  [expr {$data_w + $datak_w}]
     set expected_channel_w   [derive_channel_width $n_lane]
     set expected_lane_fifo_w [derive_lane_fifo_width $data_w $datak_w]
-    set expected_ticket_d    [derive_ticket_fifo_depth $n_shd $n_lane]
-    set expected_handle_d    [derive_handle_fifo_depth]
+    set preset               [get_parameter_value PRESET]
+    set expected_ticket_d    [opq_preset_value_or_derived $preset TICKET_FIFO_DEPTH [derive_ticket_fifo_depth $n_shd $n_lane]]
+    set expected_handle_d    [opq_preset_value_or_derived $preset HANDLE_FIFO_DEPTH [derive_handle_fifo_depth]]
     set legal_page_rd_ws     [legal_page_ram_rd_widths $data_w $datak_w]
 
     if {[lsearch -exact {2 4 8 16} $n_lane] < 0} {
@@ -519,10 +565,10 @@ proc validate {} {
         send_message error "LANE_FIFO_WIDTH (${lane_fifo_w}) is auto-derived from the ingress symbol and must be ${expected_lane_fifo_w}."
     }
     if {$ticket_fifo_d != $expected_ticket_d} {
-        send_message error "TICKET_FIFO_DEPTH (${ticket_fifo_d}) is auto-derived from N_SHD and N_LANE and must be ${expected_ticket_d}."
+        send_message error "TICKET_FIFO_DEPTH (${ticket_fifo_d}) must match the selected preset or derived point (${expected_ticket_d})."
     }
     if {$handle_fifo_d != $expected_handle_d} {
-        send_message error "HANDLE_FIFO_DEPTH (${handle_fifo_d}) is auto-derived and must be ${expected_handle_d}."
+        send_message error "HANDLE_FIFO_DEPTH (${handle_fifo_d}) must match the selected preset or derived point (${expected_handle_d})."
     }
     if {![is_power_of_two $page_ram_d]} {
         send_message error "PAGE_RAM_DEPTH must be a power of two."
@@ -652,13 +698,13 @@ proc my_generate {output_name} {
 # ────────────────────────────────────────────────────────────────────────────
 # HDL parameters (mirror the entity generics of the monolithic core)
 # ────────────────────────────────────────────────────────────────────────────
-add_parameter PRESET STRING "2LANE_BASE"
+add_parameter PRESET STRING "Mu3e Demo"
 set_parameter_property PRESET DISPLAY_NAME "Representative Preset"
 set_parameter_property PRESET ALLOWED_RANGES [linsert [opq_get_preset_names] 0 CUSTOM]
 set_parameter_property PRESET HDL_PARAMETER false
-set_parameter_property PRESET DESCRIPTION "Representative preset selector for the `_hw.tcl` GUI. The named presets pin N_SHD=128 and scale N_LANE plus LANE_FIFO_DEPTH. CUSTOM leaves the individual parameters editable."
+set_parameter_property PRESET DESCRIPTION "Representative preset selector for the `_hw.tcl` GUI. Mu3e Demo pins the current TLM/RTL comparison profile; CUSTOM leaves individual parameters editable."
 
-add_parameter N_LANE NATURAL 2
+add_parameter N_LANE NATURAL 4
 set_parameter_property N_LANE DISPLAY_NAME "Number of Ingress Lanes"
 set_parameter_property N_LANE ALLOWED_RANGES {2 4 8 16}
 set_parameter_property N_LANE HDL_PARAMETER true
@@ -698,7 +744,7 @@ set_parameter_property CHANNEL_WIDTH ALLOWED_RANGES {2 3 4}
 set_parameter_property CHANNEL_WIDTH HDL_PARAMETER true
 set_parameter_property CHANNEL_WIDTH DESCRIPTION "Auto-derived from N_LANE with a compatibility floor of 2 bits. Current legal lane points map to {2,2,3,4} bits for N_LANE={2,4,8,16}, so the packaged legal set is {2,3,4}."
 
-add_parameter LANE_FIFO_DEPTH NATURAL 1024
+add_parameter LANE_FIFO_DEPTH NATURAL 2048
 set_parameter_property LANE_FIFO_DEPTH DISPLAY_NAME "Lane FIFO Depth"
 set_parameter_property LANE_FIFO_DEPTH ALLOWED_RANGES {16 32 64 128 256 512 1024 2048 4096 8192 16384 32768 65536}
 set_parameter_property LANE_FIFO_DEPTH HDL_PARAMETER true
@@ -711,17 +757,17 @@ set_parameter_property LANE_FIFO_WIDTH ALLOWED_RANGES {40}
 set_parameter_property LANE_FIFO_WIDTH HDL_PARAMETER true
 set_parameter_property LANE_FIFO_WIDTH DESCRIPTION "Auto-derived from ingress symbol width plus sop/eop/hit_err/reserved bits. Current packaged base point is 40 bits = 32 data + 4 datak + 4 control bits. Future 64-bit hit-word support will require widening this auto-derived value together with the parser/presenter path."
 
-add_parameter TICKET_FIFO_DEPTH NATURAL 256
+add_parameter TICKET_FIFO_DEPTH NATURAL 1024
 set_parameter_property TICKET_FIFO_DEPTH DISPLAY_NAME "Ticket FIFO Depth"
 set_parameter_property TICKET_FIFO_DEPTH ALLOWED_RANGES {256 512 1024 2048 4096 8192 16384}
 set_parameter_property TICKET_FIFO_DEPTH HDL_PARAMETER true
-set_parameter_property TICKET_FIFO_DEPTH DESCRIPTION "Auto-derived from N_SHD and N_LANE as the smallest power-of-two at or above max(32*N_SHD, 2*N_SHD*N_LANE), with a minimum of 256."
+set_parameter_property TICKET_FIFO_DEPTH DESCRIPTION "Ticket FIFO depth. Generic presets derive this from N_SHD and N_LANE; Mu3e Demo explicitly pins 1024."
 
-add_parameter HANDLE_FIFO_DEPTH NATURAL 64
+add_parameter HANDLE_FIFO_DEPTH NATURAL 256
 set_parameter_property HANDLE_FIFO_DEPTH DISPLAY_NAME "Handle FIFO Depth"
-set_parameter_property HANDLE_FIFO_DEPTH ALLOWED_RANGES {64}
+set_parameter_property HANDLE_FIFO_DEPTH ALLOWED_RANGES {64 128 256 512 1024}
 set_parameter_property HANDLE_FIFO_DEPTH HDL_PARAMETER true
-set_parameter_property HANDLE_FIFO_DEPTH DESCRIPTION "Auto-derived fixed handle depth for the packaged release. Current legal point is 64."
+set_parameter_property HANDLE_FIFO_DEPTH DESCRIPTION "Handle FIFO depth. Generic presets derive the legacy value of 64; Mu3e Demo explicitly pins 256."
 
 add_parameter PAGE_RAM_DEPTH NATURAL 65536
 set_parameter_property PAGE_RAM_DEPTH DISPLAY_NAME "Page RAM Depth"

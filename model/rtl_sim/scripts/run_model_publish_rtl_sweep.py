@@ -49,6 +49,7 @@ class RtlCase:
     egress_symbols_per_beat: int = 1
     lane_fifo_depth: int = 0
     ticket_fifo_depth: int = 0
+    handle_fifo_depth: int = 64
     page_ram_depth: int = 65536
     ready_high: int = 0
     ready_low: int = 0
@@ -84,15 +85,11 @@ class RtlCase:
     def effective_lane_fifo_depth(self) -> int:
         if self.lane_fifo_depth:
             return self.lane_fifo_depth
-        if self.n_lane <= 2:
-            return 1024
-        if self.n_lane <= 4:
-            return 2048
-        if self.n_lane <= 8:
-            return 4096
-        if self.n_lane <= 16:
-            return 8192
-        return 16384
+        target = max(self.n_shd * 64, self.n_lane * 1024)
+        depth = 1024
+        while depth < target:
+            depth *= 2
+        return depth
 
     @property
     def effective_ticket_fifo_depth(self) -> int:
@@ -532,6 +529,7 @@ def parse_log(log_path: Path, case: RtlCase) -> tuple[list[dict[str, str]], list
             fields.setdefault("ready_duty_ppm", str(case.ready_duty_ppm))
             fields.setdefault("lane_fifo_depth", str(case.effective_lane_fifo_depth))
             fields.setdefault("ticket_fifo_depth", str(case.effective_ticket_fifo_depth))
+            fields.setdefault("handle_fifo_depth", str(case.handle_fifo_depth))
             fields.setdefault("page_ram_depth", str(case.page_ram_depth))
             fields.setdefault("inter_frame_gap_cycles", str(case.frame_launch_period_cycles))
             fields.setdefault("frame_ts_step_ticks", str(case.frame_ts_step_ticks))
@@ -567,6 +565,7 @@ def parse_log(log_path: Path, case: RtlCase) -> tuple[list[dict[str, str]], list
                     "egress_symbols_per_beat": str(case.egress_symbols_per_beat),
                     "lane_fifo_depth": str(case.effective_lane_fifo_depth),
                     "ticket_fifo_depth": str(case.effective_ticket_fifo_depth),
+                    "handle_fifo_depth": str(case.handle_fifo_depth),
                     "page_ram_depth": str(case.page_ram_depth),
                     "ready_duty_ppm": str(case.ready_duty_ppm),
                     "rho_ppm": str(case.rho_ppm),
@@ -601,7 +600,7 @@ def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) 
 
 
 def aggregate_case_rows(rows: list[dict[str, str]]) -> list[dict[str, object]]:
-    by_key: dict[tuple[str, str, str, str, str, str, str, str, str, str, str], dict[str, object]] = {}
+    by_key: dict[tuple[str, str, str, str, str, str, str, str, str, str, str, str], dict[str, object]] = {}
     for row in rows:
         key = (
             row.get("run_tag", ""),
@@ -611,6 +610,7 @@ def aggregate_case_rows(rows: list[dict[str, str]]) -> list[dict[str, object]]:
             row.get("egress_symbols_per_beat", ""),
             row.get("lane_fifo_depth", ""),
             row.get("ticket_fifo_depth", ""),
+            row.get("handle_fifo_depth", ""),
             row.get("frame_launch_period_cycles", row.get("inter_frame_gap_cycles", "")),
             row.get("ready_duty_ppm", ""),
             row.get("rho_ppm", ""),
@@ -626,11 +626,12 @@ def aggregate_case_rows(rows: list[dict[str, str]]) -> list[dict[str, object]]:
                 "egress_symbols_per_beat": key[4],
                 "lane_fifo_depth": key[5],
                 "ticket_fifo_depth": key[6],
-                "frame_launch_period_cycles": key[7],
-                "ready_duty": int(key[8] or "0") / 1_000_000.0,
+                "handle_fifo_depth": key[7],
+                "frame_launch_period_cycles": key[8],
+                "ready_duty": int(key[9] or "0") / 1_000_000.0,
                 "rho_unit": "hits_per_subheader_per_lane",
-                "rho_lane": int(key[9] or "0") / 1_000_000.0,
-                "burstiness": int(key[10] or "0") / 1000.0,
+                "rho_lane": int(key[10] or "0") / 1_000_000.0,
+                "burstiness": int(key[11] or "0") / 1000.0,
                 "expected_hits": 0,
                 "accepted_hits": 0,
                 "dropped_hits": 0,
@@ -775,6 +776,7 @@ def run_case(
             "OPQ_N_SHD": str(case.n_shd),
             "OPQ_LANE_FIFO_DEPTH": str(case.effective_lane_fifo_depth),
             "OPQ_TICKET_FIFO_DEPTH": str(case.effective_ticket_fifo_depth),
+            "OPQ_HANDLE_FIFO_DEPTH": str(case.handle_fifo_depth),
             "OPQ_PAGE_RAM_DEPTH": str(case.page_ram_depth),
             "OPQ_PAGE_RAM_RD_WIDTH": str(case.page_ram_rd_width),
             "RUN_DIR": str(case_root),
@@ -832,6 +834,7 @@ def write_outputs(rows: list[dict[str, str]], aggs: list[dict[str, str]], reside
         "egress_symbols_per_beat",
         "lane_fifo_depth",
         "ticket_fifo_depth",
+        "handle_fifo_depth",
         "page_ram_depth",
         "ready_duty_ppm",
         "rho_ppm",
@@ -876,6 +879,7 @@ def write_outputs(rows: list[dict[str, str]], aggs: list[dict[str, str]], reside
         "egress_symbols_per_beat",
         "lane_fifo_depth",
         "ticket_fifo_depth",
+        "handle_fifo_depth",
         "frame_launch_period_cycles",
         "ready_duty",
         "rho_unit",
@@ -980,6 +984,7 @@ def write_outputs(rows: list[dict[str, str]], aggs: list[dict[str, str]], reside
         "egress_symbols_per_beat",
         "lane_fifo_depth",
         "ticket_fifo_depth",
+        "handle_fifo_depth",
         "page_ram_depth",
         "ready_duty_ppm",
         "rho_ppm",

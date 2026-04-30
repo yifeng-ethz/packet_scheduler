@@ -18,6 +18,14 @@ from pathlib import Path
 import numpy as np
 
 from opq_tlm_feature_sweep import (
+    MU3E_DEMO_EGRESS_SYMBOLS,
+    MU3E_DEMO_HANDLE_FIFO_DEPTH,
+    MU3E_DEMO_LANE_FIFO_DEPTH,
+    MU3E_DEMO_N_LANE,
+    MU3E_DEMO_N_SHD,
+    MU3E_DEMO_PAGE_RAM_DEPTH,
+    MU3E_DEMO_PROFILE_NAME,
+    MU3E_DEMO_TICKET_FIFO_DEPTH,
     burstiness_to_mean_generation_batch_hits,
     implementation_capacity,
     service_increment,
@@ -197,18 +205,32 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--summary", type=Path, default=DEFAULT_SUMMARY)
     parser.add_argument("--target-hits", type=int, default=1_000_000)
-    parser.add_argument("--n-lane", type=int, default=4)
-    parser.add_argument("--n-shd", type=int, default=128)
-    parser.add_argument("--egress-symbols-per-beat", type=int, default=1)
+    parser.add_argument("--n-lane", type=int, default=MU3E_DEMO_N_LANE)
+    parser.add_argument("--n-shd", type=int, default=MU3E_DEMO_N_SHD)
+    parser.add_argument("--egress-symbols-per-beat", type=int, default=MU3E_DEMO_EGRESS_SYMBOLS)
     parser.add_argument("--frame-period-cycles", type=int, default=4096)
     parser.add_argument("--ready-duty", type=float, default=1.0)
-    parser.add_argument("--opq-capacity", type=int, default=255)
+    parser.add_argument(
+        "--opq-capacity",
+        type=int,
+        default=0,
+        help=(
+            "Finite OPQ queue capacity for this LT event queue. Default 0 "
+            "uses --opq-lane-fifo-depth from the Mu3e Demo profile."
+        ),
+    )
+    parser.add_argument("--opq-lane-fifo-depth", type=int, default=MU3E_DEMO_LANE_FIFO_DEPTH)
+    parser.add_argument("--opq-ticket-fifo-depth", type=int, default=MU3E_DEMO_TICKET_FIFO_DEPTH)
+    parser.add_argument("--opq-handle-fifo-depth", type=int, default=MU3E_DEMO_HANDLE_FIFO_DEPTH)
+    parser.add_argument("--opq-page-ram-depth", type=int, default=MU3E_DEMO_PAGE_RAM_DEPTH)
     parser.add_argument("--time-merger-credit", type=float, default=96.0)
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
+    if args.opq_capacity <= 0:
+        args.opq_capacity = args.opq_lane_fifo_depth
     burstiness = np.array([b / 1000.0 for b in BURSTINESS_MILLI for _ in RHO_HITS_PER_SUBHEADER], dtype=float)
     rho_hps = np.array(RHO_HITS_PER_SUBHEADER * len(BURSTINESS_MILLI), dtype=float)
 
@@ -259,6 +281,18 @@ def main() -> int:
         "egress_symbols_per_beat": args.egress_symbols_per_beat,
         "frame_period_cycles": args.frame_period_cycles,
         "ready_duty": args.ready_duty,
+        "opq_capacity": args.opq_capacity,
+        "opq_profile": {
+            "preset": MU3E_DEMO_PROFILE_NAME,
+            "n_lane": args.n_lane,
+            "n_shd": args.n_shd,
+            "egress_symbols_per_beat": args.egress_symbols_per_beat,
+            "lane_fifo_depth": args.opq_lane_fifo_depth,
+            "ticket_fifo_depth": args.opq_ticket_fifo_depth,
+            "handle_fifo_depth": args.opq_handle_fifo_depth,
+            "page_ram_depth": args.opq_page_ram_depth,
+            "event_queue_capacity_hits": args.opq_capacity,
+        },
         "time_merger_penalty": time_merger_penalty(args.n_lane),
         "implementations": by_impl,
         "csv": str(args.output),

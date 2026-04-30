@@ -44,6 +44,7 @@ typedef struct {
   float rho_lane;
   float rtl_loss;
   float tlm_loss;
+  char loss_tier[64];
   char label[160];
 } sample_pin_t;
 
@@ -61,6 +62,33 @@ static void trim_ascii(char *text) {
     memmove(text, text + start, end - start);
   }
   text[end - start] = '\0';
+}
+
+static int split_csv_fields(char *line, char **fields, int max_fields) {
+  int count = 0;
+  char *cursor = line;
+
+  while (count < max_fields && cursor != NULL) {
+    char *comma = strchr(cursor, ',');
+    if (comma != NULL) {
+      *comma = '\0';
+    }
+    trim_ascii(cursor);
+    fields[count++] = cursor;
+    cursor = (comma == NULL) ? NULL : comma + 1;
+  }
+  return count;
+}
+
+static int parse_float_text(const char *text, float *value) {
+  char *end = NULL;
+  double parsed = strtod(text, &end);
+
+  if (end == text) {
+    return 0;
+  }
+  *value = (float) parsed;
+  return 1;
 }
 
 static int read_grid(const char *path, opq_loss_grid_t *grid) {
@@ -278,8 +306,8 @@ static void draw_sample_point_if_present(
   int clipped_high = 0;
   int clipped_low = 0;
   char clipped_label[256];
-  float xs[2];
-  float ys[2];
+  float dot_x[13];
+  float dot_y[13];
 
   if (!parse_env_float("OPQ_SAMPLE_B", &burstiness) ||
       !parse_env_float("OPQ_SAMPLE_RHO_LANE", &rho_lane)) {
@@ -301,22 +329,24 @@ static void draw_sample_point_if_present(
     clipped_low = 1;
   }
 
-  linwid(7);
+  linwid(1);
   setrgb(0.00f, 0.82f, 0.36f);
-  xs[0] = burstiness - dx; xs[1] = burstiness + dx;
-  ys[0] = rho_axis - dy; ys[1] = rho_axis + dy;
-  curve(xs, ys, 2);
-  xs[0] = burstiness - dx; xs[1] = burstiness + dx;
-  ys[0] = rho_axis + dy; ys[1] = rho_axis - dy;
-  curve(xs, ys, 2);
+  for (int dot_idx = 0; dot_idx < 13; dot_idx++) {
+    float theta = (2.0f * (float) PLOT_PI * (float) dot_idx) / 12.0f;
+    dot_x[dot_idx] = burstiness + (0.95f * dx * cosf(theta));
+    dot_y[dot_idx] = rho_axis + (0.95f * dy * sinf(theta));
+  }
+  shdpat(16);
+  rlarea(dot_x, dot_y, 13);
+  curve(dot_x, dot_y, 13);
   linwid(1);
 
   if (label != NULL && label[0] != '\0') {
     if (clipped_high) {
-      snprintf(clipped_label, sizeof(clipped_label), "%s (rho above axis)", label);
+      snprintf(clipped_label, sizeof(clipped_label), "%s (share above axis)", label);
       label = clipped_label;
     } else if (clipped_low) {
-      snprintf(clipped_label, sizeof(clipped_label), "%s (rho below axis)", label);
+      snprintf(clipped_label, sizeof(clipped_label), "%s (share below axis)", label);
       label = clipped_label;
     }
     height(14);
@@ -348,19 +378,70 @@ static int read_sample_pins(sample_pin_t *pins, int max_pins) {
     return 0;
   }
   while (fgets(line, sizeof(line), handle) != NULL && count < max_pins) {
-    char run_tag[192];
+    char *fields[8];
+    int field_count;
     sample_pin_t pin;
     memset(&pin, 0, sizeof(pin));
-    if (sscanf(line, "%191[^,],%f,%f,%f,%f,%159[^\n]",
-               run_tag, &pin.burstiness, &pin.rho_lane,
-               &pin.rtl_loss, &pin.tlm_loss, pin.label) != 6) {
+    line[strcspn(line, "\r\n")] = '\0';
+    field_count = split_csv_fields(line, fields, 8);
+    if (field_count < 6 ||
+        !parse_float_text(fields[1], &pin.burstiness) ||
+        !parse_float_text(fields[2], &pin.rho_lane) ||
+        !parse_float_text(fields[3], &pin.rtl_loss) ||
+        !parse_float_text(fields[4], &pin.tlm_loss)) {
       continue;
     }
+    if (field_count >= 7) {
+      snprintf(pin.loss_tier, sizeof(pin.loss_tier), "%s", fields[5]);
+      snprintf(pin.label, sizeof(pin.label), "%s", fields[6]);
+    } else {
+      pin.loss_tier[0] = '\0';
+      snprintf(pin.label, sizeof(pin.label), "%s", fields[5]);
+    }
+    trim_ascii(pin.loss_tier);
     trim_ascii(pin.label);
     pins[count++] = pin;
   }
   fclose(handle);
   return count;
+}
+
+static void draw_persistent_knee_if_present(float gxmin, float gxmax, float gymin, float gymax) {
+  const char *label = getenv("OPQ_PERSISTENT_KNEE_LABEL");
+  float knee;
+  float xs[2];
+  float ys[2];
+  float xspan = fmaxf(fabsf(gxmax - gxmin), 1.0e-6f);
+  float yspan = fmaxf(fabsf(gymax - gymin), 1.0e-6f);
+  char default_label[128];
+
+  if (!parse_env_float("OPQ_PERSISTENT_KNEE_SHARE", &knee)) {
+    return;
+  }
+  if (knee < gymin || knee > gymax) {
+    return;
+  }
+
+  xs[0] = gxmin + (0.015f * xspan);
+  xs[1] = gxmax - (0.015f * xspan);
+  ys[0] = knee;
+  ys[1] = knee;
+  linwid(5);
+  setrgb(0.66f, 0.16f, 0.10f);
+  dashm();
+  curve(xs, ys, 2);
+  solid();
+  linwid(1);
+
+  if (label == NULL || label[0] == '\0') {
+    snprintf(default_label, sizeof(default_label), "OPQ persistent knee %.3f", knee);
+    label = default_label;
+  }
+  height(11);
+  txtjus("LEFT");
+  setrgb(0.66f, 0.16f, 0.10f);
+  rlmess(label, gxmin + (0.030f * xspan), knee + (0.012f * yspan));
+  color("fore");
 }
 
 static void draw_sample_pins_if_present(
@@ -380,6 +461,9 @@ static void draw_sample_pins_if_present(
     float ys[2];
     int group_row = 0;
     int group_count = 0;
+    int low_share_row = 0;
+    int low_share_count = 0;
+    int low_share_pin = 0;
     float xspan = fmaxf(fabsf(gxmax - gxmin), 1.0e-6f);
     float yspan = fmaxf(fabsf(gymax - gymin), 1.0e-6f);
     int label_left;
@@ -398,6 +482,18 @@ static void draw_sample_pins_if_present(
         group_count++;
       }
     }
+    low_share_pin = (y < gymin + (0.10f * yspan));
+    if (low_share_pin) {
+      for (int other = 0; other < count; other++) {
+        if (fabsf(pins[other].burstiness - x) < 1.0e-5f &&
+            pins[other].rho_lane < gymin + (0.10f * yspan)) {
+          if (other < idx) {
+            low_share_row++;
+          }
+          low_share_count++;
+        }
+      }
+    }
 
     linwid(6);
     setrgb(0.00f, 0.82f, 0.36f);
@@ -411,19 +507,27 @@ static void draw_sample_pins_if_present(
 
     label_left = (x > gxmin + (0.35f * xspan));
     label_x = label_left ? x - (2.2f * dx) : x + (2.2f * dx);
-    label_y = y +
-      ((float) group_row - 0.5f * (float) (group_count - 1)) * (2.3f * dy) +
-      ((y > gymin + (0.77f * yspan)) ? (2.2f * dy) : (-2.2f * dy));
+    if (low_share_pin) {
+      float row_gap = 0.027f * yspan;
+      float row_base = gymin + (0.055f * yspan);
+      (void) low_share_count;
+      label_y = row_base + (float) low_share_row * row_gap;
+    } else {
+      label_y = y +
+        ((float) group_row - 0.5f * (float) (group_count - 1)) * (2.3f * dy) +
+        ((y > gymin + (0.77f * yspan)) ? (2.2f * dy) : (-2.2f * dy));
+    }
     if (label_y > gymax - (1.5f * dy)) {
       label_y = gymax - (1.5f * dy);
     }
-    if (label_y < gymin + (1.5f * dy)) {
-      label_y = gymin + (1.5f * dy);
+    if (label_y < gymin + (0.065f * yspan)) {
+      label_y = gymin + (0.065f * yspan);
     }
 
     height(9);
     txtjus(label_left ? "RIGHT" : "LEFT");
-    if (0.5f * (pins[idx].rtl_loss + pins[idx].tlm_loss) < 0.004f) {
+    if (y < gymin + (0.12f * yspan) ||
+        0.5f * (pins[idx].rtl_loss + pins[idx].tlm_loss) < 0.004f) {
       setrgb(0.06f, 0.05f, 0.08f);
     } else {
       setrgb(0.96f, 0.96f, 0.96f);
@@ -449,6 +553,7 @@ static void draw_real_box(float x0, float y0, float x1, float y1) {
 
 static void draw_modeling_contract_box(float gxmin, float gymin, float gymax) {
   const char *anchor = getenv("OPQ_MODELING_BOX_ANCHOR");
+  const char *evidence_mode = getenv("OPQ_EVIDENCE_MODE");
   float yspan = fmaxf(fabsf(gymax - gymin), 1.0e-6f);
   float line_gap = 0.040f * yspan;
   float top_pad = 0.040f * yspan;
@@ -466,12 +571,21 @@ static void draw_modeling_contract_box(float gxmin, float gymin, float gymax) {
   draw_real_box(x0, y0, x1, y1);
   height(12);
   color("fore");
-  rlmess("modeling gate", x0 + 0.02f, y1 - top_pad);
-  rlmess("loss tiers: controlled / asserted / inferred", x0 + 0.02f, y1 - top_pad - line_gap);
-  rlmess("checkpoints: per-subframe basic", x0 + 0.02f, y1 - top_pad - 2.0f * line_gap);
-  rlmess("  -> knee-zoom subframe stats", x0 + 0.02f, y1 - top_pad - 3.0f * line_gap);
-  rlmess("  -> high-performance collective soak", x0 + 0.02f, y1 - top_pad - 4.0f * line_gap);
-  rlmess("gate: RTL pin/UVM tx bucket match", x0 + 0.02f, y1 - top_pad - 5.0f * line_gap);
+  if (evidence_mode != NULL && strcmp(evidence_mode, "opq_n4_e1") == 0) {
+    rlmess("evidence gate: corrected OPQ N4/E1", x0 + 0.02f, y1 - top_pad);
+    rlmess("RTL pins: UVM physical cadence, FIFO=8192", x0 + 0.02f, y1 - top_pad - line_gap);
+    rlmess("TLM: structural FIFO/credit/allocator/DRR", x0 + 0.02f, y1 - top_pad - 2.0f * line_gap);
+    rlmess("loss tier: controlled drop monitor", x0 + 0.02f, y1 - top_pad - 3.0f * line_gap);
+    rlmess("pins: R/T/A = RTL/TLM/Analytical loss", x0 + 0.02f, y1 - top_pad - 4.0f * line_gap);
+    rlmess("next: detached 128-point RTL scan", x0 + 0.02f, y1 - top_pad - 5.0f * line_gap);
+  } else {
+    rlmess("modeling gate", x0 + 0.02f, y1 - top_pad);
+    rlmess("loss tiers: controlled / asserted / inferred", x0 + 0.02f, y1 - top_pad - line_gap);
+    rlmess("checkpoints: per-subframe basic", x0 + 0.02f, y1 - top_pad - 2.0f * line_gap);
+    rlmess("  -> knee-zoom subframe stats", x0 + 0.02f, y1 - top_pad - 3.0f * line_gap);
+    rlmess("  -> high-performance collective soak", x0 + 0.02f, y1 - top_pad - 4.0f * line_gap);
+    rlmess("gate: RTL pin/UVM tx bucket match", x0 + 0.02f, y1 - top_pad - 5.0f * line_gap);
+  }
 }
 
 static void draw_loss_gradient_cells(
@@ -1131,7 +1245,7 @@ static void render_plot(const opq_loss_grid_t *loss_grid, const char *output_pat
   titlin(plot_title, 2);
 
   name("burstiness B", "x");
-  name("rate / lane rho", "y");
+  name("normalized throughput share / lane", "y");
 
   intax();
   labdig(2, "x");
@@ -1163,6 +1277,8 @@ static void render_plot(const opq_loss_grid_t *loss_grid, const char *output_pat
   linwid(1);
   solid();
   angle(0);
+
+  draw_persistent_knee_if_present(gxmin, gxmax, gymin, gymax);
 
   color("fore");
   height(32);
@@ -1201,7 +1317,7 @@ static void render_plot(const opq_loss_grid_t *loss_grid, const char *output_pat
   color("fore");
   height(14);
   if (plot_note == NULL || plot_note[0] == '\0') {
-    plot_note = "x: B=(CV-1)/(CV+1), y: raw offered rate rho per lane";
+    plot_note = "x: B=(CV-1)/(CV+1), y: normalized offered throughput share per lane";
   }
   messag(plot_note, 420, 1938);
   messag("loss tiers: controlled CSR/drop, asserted local hook, inferred E2E-after-drain", 420, 1980);

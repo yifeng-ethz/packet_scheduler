@@ -1,0 +1,10 @@
+run_tag,sim_pass,burstiness,normalized_share_lane,persistent_bottleneck_share_lane,raw_rho_lane_hits_per_subheader,rho_unit,n_lane,n_shd,egress_symbols_per_beat,frame_launch_period_cycles,expected_hits,accepted_hits,dropped_hits,delivered_hits,unexplained_hits,loss_probability,loss_tier,persistent_loss_floor,merged_output_utilization
+share_shallow_b000_s0200_rho06400_f0031_seed9001,1,0.0,0.2,0.25,6.4,hits_per_subheader_per_lane,4,128,1,4096,101753,25833,75920,25833,0,0.7461205075034643,controlled,0.0,0.83271484375
+share_shallow_b000_s0205_rho06560_f0030_seed9002,1,0.0,0.205,0.25,6.56,hits_per_subheader_per_lane,4,128,1,4096,100837,28548,72289,28548,0,0.7168896337653837,controlled,0.0,0.85271484375
+share_shallow_b000_s0210_rho06720_f0030_seed9003,0,0.0,0.21,0.25,6.72,hits_per_subheader_per_lane,4,128,1,4096,103609,36135,67474,35271,864,0.6512368616625969,mixed,0.0,0.87271484375
+share_shallow_b403_s0200_rho06400_f0031_seed9004,1,0.403,0.2,0.25,6.4,hits_per_subheader_per_lane,4,128,1,4096,100466,39028,61438,39028,0,0.6115302689467084,controlled,0.0,0.83271484375
+share_shallow_b403_s0205_rho06560_f0030_seed9005,1,0.403,0.205,0.25,6.56,hits_per_subheader_per_lane,4,128,1,4096,100620,37565,63055,37565,0,0.6266646789902603,controlled,0.0,0.85271484375
+share_shallow_b403_s0210_rho06720_f0030_seed9006,1,0.403,0.21,0.25,6.72,hits_per_subheader_per_lane,4,128,1,4096,103392,39942,63450,39942,0,0.6136838440111421,controlled,0.0,0.87271484375
+share_shallow_b700_s0200_rho06400_f0031_seed9007,1,0.7,0.2,0.25,6.4,hits_per_subheader_per_lane,4,128,1,4096,101350,55570,45780,55570,0,0.4517020226936359,controlled,0.0,0.83271484375
+share_shallow_b700_s0210_rho06720_f0030_seed9008,1,0.7,0.21,0.25,6.72,hits_per_subheader_per_lane,4,128,1,4096,103530,49521,54009,49521,0,0.5216748768472906,controlled,0.0,0.87271484375
+share_shallow_b700_s0215_rho06880_f0029_seed9009,1,0.7,0.215,0.25,6.88,hits_per_subheader_per_lane,4,128,1,4096,104610,48017,56593,48017,0,0.5409903450912915,controlled,0.0,0.89271484375

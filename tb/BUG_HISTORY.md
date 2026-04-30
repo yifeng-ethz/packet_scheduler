@@ -75,6 +75,70 @@ Historical formal note:
 | [BUG-035-H](#bug-035-h-frame-timestamp-sva-required-strict-increase-for-legal-aggregate-frames) | H | non-datapath-refactor | `corner-only (continuous-frame signoff)` | fixed | `opq_bucket_frame_native_sv_test` @ `OPQ_N_SHD=64` on `2026-04-24` | `pending` | Frame timestamp SVA required strict increase and false-failed legal same-timestamp aggregate frames. |
 | [BUG-036-H](#bug-036-h-coverage-closure-merged-out-of-scope-ucdbs-and-old-geometry) | H | non-datapath-refactor | `directed-only (coverage flow)` | fixed | `run_cov_closure.sh` on `2026-04-24` | `pending` | Coverage closure mixed old-geometry UCDBs into the baseline merge and let vendor RAM coverage dominate the run. |
 | [BUG-037-H](#bug-037-h-ingress-formal-checker-parameter-surface-drifted-from-the-parser) | H | non-datapath-refactor | `directed-only (formal elaboration)` | fixed | `formal_ingress.sh` on `2026-04-24` | `pending` | Ingress formal checker stopped accepting parser configuration parameters and blocked elaboration. |
+| [BUG-038-H](#bug-038-h-opq-model-publish-runs-under-sized-the-lane-fifo-for-the-physical-cadence-contract) | H | non-datapath-refactor | `common (model-publish performance scans)` | fixed | `opq_model_publish_loss_sweep_test` N4/E1 rho=6.0 hps on `2026-04-29` | `pending` | Model-publish and UVM default geometry derived lane FIFO depth from lane count only, so N_SHD=128,N_LANE=4 scans used 2048 entries/lane and reported false early pre-drops below the persistent bandwidth knee. |
+
+## 2026-04-29
+
+### BUG-038-H: OPQ model-publish runs under-sized the lane FIFO for the physical-cadence contract
+- First seen in:
+  - `packet_scheduler/model/rtl_sim/scripts/run_model_publish_rtl_sweep.py`
+    focused N_LANE=4, N_SHD=128, egress=1x physical-cadence probes on
+    `2026-04-29`
+  - failing contract point:
+    `opq_model_publish_loss_sweep_test`, B=0, raw rho=6.0
+    hits/subheader/lane, 8 frames
+- Symptom:
+  - the model-publish normalized-share scan reported controlled OPQ pre-drop
+    well below the ideal x1 persistent bandwidth knee
+  - depth A/B evidence at the same traffic showed the root directly:
+    - `LANE_FIFO_DEPTH=2048`: `expected=24497 accepted=19061 dropped=5436`
+    - `LANE_FIFO_DEPTH=4096`: `expected=24497 accepted=24497 dropped=0`
+    - `LANE_FIFO_DEPTH=8192`: `expected=24497 accepted=24497 dropped=0`
+  - a longer 12-frame directed probe showed 4096 was still marginal, while
+    8192 was clean at rho=6.0, 7.5, and 8.0 for the same feature point
+- Root cause:
+  - UVM/model-publish default geometry derived `OPQ_LANE_FIFO_DEPTH` from
+    `N_LANE` only
+  - for N_SHD=128,N_LANE=4 this selected 2048 entries/lane, which is not the
+    physical-cadence OPQ contract being modeled
+  - the false loss was therefore controlled ingress credit exhaustion caused
+    by an undersized simulation/model parameter, not an RTL packet-ordering
+    failure or a persistent egress-bandwidth limit
+- Fix status:
+  - state:
+    - fixed in the model-publish runner, UVM wrapper script, UVM Makefile, and
+      fallback native-SV/UVM macro defaults
+  - mechanism:
+    - default lane FIFO depth is now geometry-derived as the next power of two
+      covering `max(N_SHD * 64, N_LANE * 1024)`
+    - for N_SHD=128,N_LANE=4 this gives 8192 entries/lane
+    - the Python structural OPQ TLM now derives the same default depth, and
+      scalar OPQ service-rate tuning is disabled in the compact plot model
+  - before_fix_outcome:
+    - `debug_x1_b000_rho6000_f8_lf2048` passed simulation but reported
+      `5436/24497` controlled drops at B=0 rho=6.0 hps
+  - after_fix_outcome:
+    - `fix_default_lfifo_x1_b000_rho6000_f8` uses the corrected default
+      `lane_fifo_depth=8192` and reports
+      `expected=24497 accepted=24497 dropped=0 delivered=24497 unexplained=0`
+    - `make -C packet_scheduler/tb/uvm OPQ_N_LANE=4 OPQ_N_SHD=128
+      print-OPQ_LANE_FIFO_DEPTH` resolves to `8192`
+    - Python syntax checks pass for the model-publish runner and updated TLM
+      scripts
+  - potential_hazard:
+    - this fixes the parameter contract, not the need for a long soak: broad
+      scans must be rerun because old N4/E1 normalized-share pins below the
+      persistent knee used the wrong FIFO budget
+  - Claude Opus 4.7 xhigh review decision:
+    - pending / not run in this turn
+- Runtime / coverage context:
+  - the short RTL/UVM packet identity path was already clean; this bug only
+    affected performance/loss-boundary claims that relied on the derived lane
+    FIFO default
+  - future long scans should report `lane_fifo_depth` beside every loss point
+    and reject rows whose depth does not match this geometry-derived contract
+- Commit:
+  - pending
 
 ## 2026-04-24
 

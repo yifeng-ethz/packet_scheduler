@@ -12,7 +12,7 @@ from __future__ import annotations
 import argparse
 import csv
 from collections import defaultdict, deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 
@@ -20,6 +20,12 @@ REPO_ROOT = Path(__file__).resolve().parents[4]
 RTL_DATA = REPO_ROOT / "packet_scheduler" / "model" / "rtl_sim" / "data"
 DEFAULT_INPUT = RTL_DATA / "RTL-LS-002.csv"
 DEFAULT_OUTPUT = RTL_DATA / "opq_structural_tlm_boundary.csv"
+MU3E_DEMO_N_LANE = 4
+MU3E_DEMO_N_SHD = 128
+MU3E_DEMO_LANE_FIFO_DEPTH = 2048
+MU3E_DEMO_TICKET_FIFO_DEPTH = 1024
+MU3E_DEMO_HANDLE_FIFO_DEPTH = 256
+MU3E_DEMO_PAGE_RAM_DEPTH = 65536
 OPQ_TIMESTAMP_TICK_NS = 8
 OPQ_UVM_CLK_PERIOD_NS = 4
 OPQ_SUBHEADER_DURATION_TS_TICKS = 16
@@ -112,9 +118,10 @@ class CaseConfig:
     rng_seed: int
     rtl_expected_hits: int = 0
     rtl_dropped_hits: int = 0
-    lane_fifo_depth: int = 1024
-    ticket_fifo_depth: int = 4096
-    page_ram_depth: int = 65536
+    lane_fifo_depth: int = 0
+    ticket_fifo_depth: int = MU3E_DEMO_TICKET_FIFO_DEPTH
+    handle_fifo_depth: int = MU3E_DEMO_HANDLE_FIFO_DEPTH
+    page_ram_depth: int = MU3E_DEMO_PAGE_RAM_DEPTH
     frame_ts_step_ticks: int = 0
     frame_launch_period_cycles: int = 0
     feb_header_latency_cycles: int = OPQ_VIRTUAL_FEB_HEADER_LATENCY_CYCLES
@@ -186,15 +193,25 @@ def default_frame_launch_period_cycles(n_shd: int) -> int:
     return (frame_ts_step_ticks(n_shd) * OPQ_TIMESTAMP_TICK_NS) // OPQ_UVM_CLK_PERIOD_NS
 
 
+def default_lane_fifo_depth(n_lane: int, n_shd: int) -> int:
+    if n_lane == MU3E_DEMO_N_LANE and n_shd == MU3E_DEMO_N_SHD:
+        return MU3E_DEMO_LANE_FIFO_DEPTH
+    target = max(n_shd * 64, n_lane * 1024)
+    depth = 1024
+    while depth < target:
+        depth *= 2
+    return depth
+
+
 class OpqStructuralTlm:
     def __init__(
         self,
         cfg: CaseConfig,
         *,
-        lane_fifo_depth: int = 1024,
-        ticket_fifo_depth: int = 4096,
-        handle_fifo_depth: int = 64,
-        page_ram_depth: int = 65536,
+        lane_fifo_depth: int | None = None,
+        ticket_fifo_depth: int = MU3E_DEMO_TICKET_FIFO_DEPTH,
+        handle_fifo_depth: int = MU3E_DEMO_HANDLE_FIFO_DEPTH,
+        page_ram_depth: int = MU3E_DEMO_PAGE_RAM_DEPTH,
         n_hit: int = 255,
         lane_frames_override: list[list[list[int]]] | None = None,
         ingress_decision_override: dict[tuple[int, int, int], bool] | None = None,
@@ -203,6 +220,8 @@ class OpqStructuralTlm:
         trace_events: list[dict[str, object]] | None = None,
     ) -> None:
         self.cfg = cfg
+        if lane_fifo_depth is None or lane_fifo_depth <= 0:
+            lane_fifo_depth = default_lane_fifo_depth(cfg.n_lane, cfg.n_shd)
         self.lane_frames_override = lane_frames_override
         self.ingress_decision_override = ingress_decision_override
         self.parser_ticket_events_override = parser_ticket_events_override
@@ -268,7 +287,9 @@ class OpqStructuralTlm:
         self.handle_startup_cycles = 7
         self.pa_frame_open_mover_block_cycles = 2
         self.pa_frame_close_mover_block_cycles = 0
-        self.pa_accepted_subheader_mover_block_cycles = 29
+        # Corrected N_SHD=128/N_LANE=4 physical-cadence RTL probes put this
+        # accepted-subheader allocator-to-mover blocking term at 23 cycles.
+        self.pa_accepted_subheader_mover_block_cycles = 23
         # RTL does not expose a tail-dropped SOP's body ticket immediately.
         # The SOP sits at the lane ticket head for repeated allocator fetches
         # before ADVANCE_ONLY consumes it; other lanes can advance running_ts
@@ -305,10 +326,11 @@ class OpqStructuralTlm:
     def add_event(self, cycle: int, kind: str, item: object) -> None:
         self.events[cycle].append((kind, item))
 
-    def configure_active_mix(self) -> tuple[int, int, int, int]:
+    def configure_active_mix(self) -> tuple[int, int, int, int, int]:
         cfg = self.cfg
         noise = cfg.noise_rho_ppm
         cluster = cfg.cluster_rho_ppm
+        periodic = 0
         cmin = max(1, cfg.cluster_size_min)
         cmax = max(cmin, cfg.cluster_size_max)
         if noise == 0 and cluster == 0:
@@ -321,23 +343,34 @@ class OpqStructuralTlm:
                 batch = max(1, int((0.5 * ((cv * cv) + 1.0)) + 0.5))
                 cmin = cmax = batch
                 cluster = cfg.rho_ppm
-        return noise, cluster, cmin, cmax
+        if cfg.burstiness_milli < 0 and cluster == 0:
+            periodic_milli = min(1000, max(0, -cfg.burstiness_milli))
+            periodic = int((noise * periodic_milli) / 1000)
+            noise -= periodic
+        return noise, periodic, cluster, cmin, cmax
 
     def generate_lane_frames(self) -> list[list[list[int]]]:
         cfg = self.cfg
-        noise, cluster, cmin, cmax = self.configure_active_mix()
+        noise, periodic, cluster, cmin, cmax = self.configure_active_mix()
         cluster_mean = 0.5 * (cmin + cmax)
         cluster_event_ppm = int((cluster / max(cluster_mean, 1.0)) + 0.5) if cluster else 0
         rng = [Lcg32(cfg.rng_seed ^ ((0x9E37_79B9 * (lane + 1)) & 0xFFFF_FFFF)) for lane in range(cfg.n_lane)]
+        periodic_accum = [
+            (rng[lane].next() % 1_000_000) if periodic else 0
+            for lane in range(cfg.n_lane)
+        ]
         lane_frames: list[list[list[int]]] = [[] for _ in range(cfg.n_lane)]
 
         for frame_idx in range(cfg.frame_count):
             for lane in range(cfg.n_lane):
                 counts: list[int] = []
                 for _ in range(cfg.subheaders_per_frame):
+                    periodic_accum[lane] += periodic
+                    periodic_hits = periodic_accum[lane] // 1_000_000
+                    periodic_accum[lane] %= 1_000_000
                     noise_hits = rng[lane].sample_poisson_ppm(noise)
                     cluster_events = rng[lane].sample_poisson_ppm(cluster_event_ppm)
-                    total_hits = noise_hits
+                    total_hits = periodic_hits + noise_hits
                     for _event_idx in range(cluster_events):
                         total_hits += rng[lane].sample_cluster_size(cmin, cmax)
                     total_hits = min(total_hits, 255)
@@ -1419,9 +1452,17 @@ def configs_from_rtl_rows(rows: list[dict[str, str]]) -> list[CaseConfig]:
                 rng_seed=int_field(row, "rng_seed", 0x5C1F0001),
                 rtl_expected_hits=expected,
                 rtl_dropped_hits=dropped,
-                lane_fifo_depth=int_field(row, "lane_fifo_depth", 1024),
-                ticket_fifo_depth=int_field(row, "ticket_fifo_depth", 4096),
-                page_ram_depth=int_field(row, "page_ram_depth", 65536),
+                lane_fifo_depth=int_field(
+                    row,
+                    "lane_fifo_depth",
+                    default_lane_fifo_depth(
+                        int_field(row, "n_lane", 4),
+                        int_field(row, "n_shd", 128),
+                    ),
+                ),
+                ticket_fifo_depth=int_field(row, "ticket_fifo_depth", MU3E_DEMO_TICKET_FIFO_DEPTH),
+                handle_fifo_depth=int_field(row, "handle_fifo_depth", MU3E_DEMO_HANDLE_FIFO_DEPTH),
+                page_ram_depth=int_field(row, "page_ram_depth", MU3E_DEMO_PAGE_RAM_DEPTH),
                 frame_ts_step_ticks=int_field(
                     row,
                     "frame_ts_step_ticks",
@@ -1460,6 +1501,7 @@ def write_rows(path: Path, rows: list[dict[str, object]]) -> None:
         "inter_frame_gap_cycles",
         "lane_fifo_depth",
         "ticket_fifo_depth",
+        "handle_fifo_depth",
         "page_ram_depth",
         "frame_ts_step_ticks",
         "frame_launch_period_cycles",
@@ -1496,6 +1538,7 @@ def run_config(cfg: CaseConfig) -> dict[str, object]:
         cfg,
         lane_fifo_depth=cfg.lane_fifo_depth,
         ticket_fifo_depth=cfg.ticket_fifo_depth,
+        handle_fifo_depth=cfg.handle_fifo_depth,
         page_ram_depth=cfg.page_ram_depth,
     )
     stats = tlm.run()
@@ -1529,6 +1572,7 @@ def run_config(cfg: CaseConfig) -> dict[str, object]:
         "inter_frame_gap_cycles": cfg.inter_frame_gap_cycles,
         "lane_fifo_depth": cfg.lane_fifo_depth,
         "ticket_fifo_depth": cfg.ticket_fifo_depth,
+        "handle_fifo_depth": cfg.handle_fifo_depth,
         "page_ram_depth": cfg.page_ram_depth,
         "frame_ts_step_ticks": cfg.frame_ts_step_ticks or frame_ts_step_ticks(cfg.n_shd),
         "frame_launch_period_cycles": cfg.frame_launch_period_cycles
@@ -1566,12 +1610,34 @@ def main() -> int:
     parser.add_argument("--input", type=Path, default=DEFAULT_INPUT)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--run-tag", action="append", default=[])
+    parser.add_argument(
+        "--mu3e-demo-profile",
+        action="store_true",
+        help=(
+            "Override per-row FIFO/RAM fields with the Mu3e Demo profile: "
+            "N_LANE=4, N_SHD=128, lane FIFO=2048, ticket FIFO=1024, "
+            "handle FIFO=256, page RAM=65536."
+        ),
+    )
     args = parser.parse_args()
 
     configs = configs_from_rtl_rows(read_csv(args.input))
     if args.run_tag:
         allowed = set(args.run_tag)
         configs = [cfg for cfg in configs if cfg.run_tag in allowed]
+    if args.mu3e_demo_profile:
+        configs = [
+            replace(
+                cfg,
+                n_lane=MU3E_DEMO_N_LANE,
+                n_shd=MU3E_DEMO_N_SHD,
+                lane_fifo_depth=MU3E_DEMO_LANE_FIFO_DEPTH,
+                ticket_fifo_depth=MU3E_DEMO_TICKET_FIFO_DEPTH,
+                handle_fifo_depth=MU3E_DEMO_HANDLE_FIFO_DEPTH,
+                page_ram_depth=MU3E_DEMO_PAGE_RAM_DEPTH,
+            )
+            for cfg in configs
+        ]
     rows = [run_config(cfg) for cfg in configs]
     write_rows(args.output, rows)
     for row in rows:

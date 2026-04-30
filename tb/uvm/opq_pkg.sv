@@ -27,7 +27,11 @@ package opq_pkg;
 `define OPQ_N_LANE 2
 `endif
 `ifndef OPQ_LANE_FIFO_DEPTH
-`define OPQ_LANE_FIFO_DEPTH 1024
+`define OPQ_LANE_FIFO_DEPTH 8192
+`endif
+
+`ifndef OPQ_HANDLE_FIFO_DEPTH
+`define OPQ_HANDLE_FIFO_DEPTH 64
 `endif
 `ifndef OPQ_CHANNEL_WIDTH
 `define OPQ_CHANNEL_WIDTH 2
@@ -52,7 +56,7 @@ package opq_pkg;
   localparam int OPQ_PAGE_RAM_DEPTH = `OPQ_PAGE_RAM_DEPTH;
   localparam int OPQ_LANE_FIFO_DEPTH = `OPQ_LANE_FIFO_DEPTH;
   localparam int OPQ_TICKET_FIFO_DEPTH = `OPQ_TICKET_FIFO_DEPTH;
-  localparam int OPQ_HANDLE_FIFO_DEPTH = 64;
+  localparam int OPQ_HANDLE_FIFO_DEPTH = `OPQ_HANDLE_FIFO_DEPTH;
   localparam int OPQ_LANE_FIFO_MAX_CREDIT = OPQ_LANE_FIFO_DEPTH - 2;
   localparam int OPQ_TICKET_FIFO_MAX_CREDIT = OPQ_TICKET_FIFO_DEPTH - 1;
   localparam int OPQ_HANDLE_FIFO_MAX_CREDIT = OPQ_HANDLE_FIFO_DEPTH - 2;

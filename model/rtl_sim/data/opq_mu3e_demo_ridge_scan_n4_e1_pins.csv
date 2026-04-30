@@ -1,0 +1,13 @@
+run_tag,burstiness,rho_lane,rtl_loss,tlm_loss,loss_tier,label
+share_shallow_b000_s0245_rho07840_f0025_seedb001,0.000000,0.245000,0.77525009,0.77525009,controlled,RTL100k controlled 77.53% raw 7.84
+share_shallow_b000_s0250_rho08000_f0025_seedb002,0.000000,0.250000,0.76461448,0.76461448,mixed,RTL100k mixed 76.46% raw 8.00
+share_shallow_b000_s0270_rho08640_f0023_seedb003,0.000000,0.270000,0.68239182,0.68239182,mixed,RTL100k mixed 68.24% raw 8.64
+share_shallow_b000_s0300_rho09600_f0021_seedb004,0.000000,0.300000,0.69834022,0.69834022,mixed,RTL100k mixed 69.83% raw 9.60
+share_shallow_b403_s0245_rho07840_f0025_seedb005,0.403000,0.245000,0.66345251,0.66345251,mixed,RTL100k mixed 66.35% raw 7.84
+share_shallow_b403_s0250_rho08000_f0025_seedb006,0.403000,0.250000,0.65646255,0.65646255,controlled,RTL100k controlled 65.65% raw 8.00
+share_shallow_b403_s0270_rho08640_f0023_seedb007,0.403000,0.270000,0.71288189,0.71288189,controlled,RTL100k controlled 71.29% raw 8.64
+share_shallow_b403_s0300_rho09600_f0021_seedb008,0.403000,0.300000,0.73371524,0.73371524,mixed,RTL100k mixed 73.37% raw 9.60
+share_shallow_b700_s0245_rho07840_f0025_seedb009,0.700000,0.245000,0.55095970,0.55095970,controlled,RTL100k controlled 55.10% raw 7.84
+share_shallow_b700_s0250_rho08000_f0025_seedb00a,0.700000,0.250000,0.57707487,0.57707487,controlled,RTL100k controlled 57.71% raw 8.00
+share_shallow_b700_s0270_rho08640_f0023_seedb00b,0.700000,0.270000,0.59784936,0.59784936,controlled,RTL100k controlled 59.78% raw 8.64
+share_shallow_b700_s0300_rho09600_f0021_seedb00c,0.700000,0.300000,0.58198585,0.58198585,controlled,RTL100k controlled 58.20% raw 9.60
