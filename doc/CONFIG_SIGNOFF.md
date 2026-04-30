@@ -1,7 +1,7 @@
 # ⚠️ Config Signoff — packet_scheduler ordered_priority_queue
 
-**DUT:** `ordered_priority_queue` &nbsp; **Date:** `2026-04-23` &nbsp;
-**Release:** `26.3.66.0423`
+**DUT:** `ordered_priority_queue` &nbsp; **Date:** `2026-04-30` &nbsp;
+**Release:** `26.5.0.0430`
 
 This page is the configuration-legality and evidence matrix for
 [`../script/ordered_priority_queue_hw.tcl`](../script/ordered_priority_queue_hw.tcl).
@@ -71,11 +71,11 @@ Formalized packet shape:
 | Debug | `DEBUG_LV` | `{0,1,2}` | yes | Existing debug policy retained. |
 | Identity | `IP_UID` | fixed packaged default | no | HDL-backed Mu3e UID. |
 | Identity | `VERSION_MAJOR` | fixed packaged default | no | `26`. |
-| Identity | `VERSION_MINOR` | fixed packaged default | no | `3`. |
-| Identity | `VERSION_PATCH` | fixed packaged CSR META default | no | `29`; retained interface stamp packed into CSR META page 0 and not equal to the repo release suffix. |
-| Identity | `BUILD` | fixed packaged CSR META default | no | `0420`; retained 12-bit CSR build stamp. |
-| Identity | `VERSION_DATE` | fixed packaged CSR META default | no | `20260421`; CSR META page-1 date from the current hidden package defaults. |
-| Identity | `VERSION_GIT` | fixed packaged CSR META default | no | `0xACB54C7D`; retained 32-bit provenance stamp exposed through CSR META page 2. |
+| Identity | `VERSION_MINOR` | fixed packaged default | no | `5`. |
+| Identity | `VERSION_PATCH` | fixed packaged CSR META default | no | `0`; packed into CSR META page 0. |
+| Identity | `BUILD` | fixed packaged CSR META default | no | `0430`; 12-bit CSR build stamp. |
+| Identity | `VERSION_DATE` | fixed packaged CSR META default | no | `20260430`; CSR META page-1 date. |
+| Identity | `VERSION_GIT` | fixed packaged CSR META default | no | `0x4F667FB1`; 32-bit provenance stamp exposed through CSR META page 2. |
 | Identity | `INSTANCE_ID` | integrator override | yes | Only identity field left GUI-editable. |
 
 ## Configuration Matrix
@@ -126,7 +126,7 @@ reruns.
 | DV bounded tuples | `2` | `2-lane/N_SHD=64` and `4-lane/N_SHD=256`, both at `N_HIT=255`. |
 | DV open legal tuples | `59` | Remaining packaged tuples not yet closed in DV. |
 | DV blocked staged tuples | `704` | Wider ingress / packed DMA tuples remain blocked by current RTL and harness. |
-| SYN closed tuples | `2` | `2-lane/N_SHD=256/N_HIT=255` and `4-lane/N_SHD=256/N_HIT=255`. |
+| SYN closed tuples | `2` | `2-lane/N_SHD=256/N_HIT=255` and Mu3e Demo `4-lane/N_SHD=128/N_HIT=255`. |
 | SYN open legal tuples | `62` | Remaining packaged tuples have no standalone Quartus closure yet. |
 | SYN blocked staged tuples | `704` | Wider ingress / packed DMA tuples remain blocked. |
 
@@ -191,6 +191,17 @@ future width axes remains tracked only by the generator script.
   with
   `OPQ_N_LANE=4 OPQ_N_SHD=256 OPQ_TICKET_FIFO_DEPTH=512 bash tb/scripts/run_uvm.sh opq_basic_smoke_test`
   and ended `pass=1 fail=0 total=1`.
+- Mu3e Demo fixed4 evidence was refreshed on `2026-04-30` with
+  `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_N_HIT=255 OPQ_TICKET_FIFO_DEPTH=1024`
+  and `OPQ_PAGE_RAM_DEPTH=65536`. The standalone UVM subset
+  `opq_basic_smoke_test`, `opq_edge_max_hits_test`,
+  `opq_edge_overlimit_one_loss_test`, `opq_error_lane_mask_burst_test`, and
+  `opq_error_counter_clear_test` ended `pass=5 fail=0 total=5`. The
+  over-limit witness drives a declared 256-hit cluster and checks the expected
+  one-hit loss (`drop_hit=1`, 255 delivered). The matching
+  `opq_native_sv_4lane_signoff` Quartus revision closed the tightened
+  `275 MHz` standalone clock with `+0.318 ns` slow-100 setup slack and
+  `+0.014 ns` worst reported hold slack.
 - New 2-lane standalone synthesis evidence is captured in
   [`../syn/quartus/opq_native_sv_2lane_signoff/output_files/opq_native_sv_2lane_signoff.fit.summary`](../syn/quartus/opq_native_sv_2lane_signoff/output_files/opq_native_sv_2lane_signoff.fit.summary)
   and
@@ -210,7 +221,7 @@ future width axes remains tracked only by the generator script.
 - Requested future axes are preserved here as staged, visible non-claims:
   `INGRESS_DATA_WIDTH={64,128}`, matching `datak`, and DMA-packed
   `PAGE_RAM_RD_WIDTH={4x,8x,16x}` base widths with `empty`.
-- The honest packaged release for `26.3.66.0423` is therefore:
+- The honest packaged release for `26.5.0.0430` is therefore:
   `N_LANE={2,4,8,16}`, `MODE=MERGING`, `TRACK_HEADER=true`,
   `INGRESS_DATA_WIDTH=32`, `INGRESS_DATAK_WIDTH=4`,
   `N_SHD={64,128,256,512}`, `N_HIT={255,511,1023,2047}`,

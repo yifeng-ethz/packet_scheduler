@@ -1,7 +1,7 @@
 # ✅ Signoff — packet_scheduler ordered_priority_queue
 
-**DUT:** `ordered_priority_queue` &nbsp; **Date:** `2026-04-28` &nbsp;
-**Release under check:** `26.4.15.0428` &nbsp; **Git base:** `post-26.4.14.0428 local signoff batch`
+**DUT:** `ordered_priority_queue` &nbsp; **Date:** `2026-04-30` &nbsp;
+**Release under check:** `26.5.0.0430` &nbsp; **Git base:** `post-26.4.15 SWB fixed4 timing batch`
 
 This page is the master signoff dashboard. Detailed standalone synthesis
 evidence lives in [`../syn/SYN_REPORT.md`](../syn/SYN_REPORT.md); detailed DV
@@ -17,13 +17,13 @@ configuration legality and evidence matrix lives in
 
 | status | field | value |
 |:---:|---|---|
-| ⚠️ | overall_signoff | `closed` for the maintained `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256 DUT_IMPL=native_sv` signoff-run slice and source-side timing fix; the full generated isolated catalog remains a tracked partial with `507` unimplemented rows |
+| ⚠️ | overall_signoff | `closed` for the maintained `OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256 DUT_IMPL=native_sv` signoff-run slice plus the Mu3e Demo fixed4 `OPQ_TICKET_FIFO_DEPTH=1024` one-loss witness and synthesis refresh; the full generated isolated catalog remains a tracked partial with `507` unimplemented rows |
 | ⚠️ | config_matrix | `representative 2-lane and 4-lane measured; active generated dashboard is the canonical 4-lane/128 rerun slice and full package-space closure remains a later phase` |
-| ✅ | standalone_syn | `2-lane and 4-lane A10 standalone Quartus signoff both close at 275 MHz on 10AX115N2F45E1SG; the corrected 4-lane refresh now reports +0.155 ns setup slack` |
+| ✅ | standalone_syn | `2-lane and Mu3e Demo 4-lane/N_SHD=128/N_HIT=255 A10 standalone Quartus signoff close at 275 MHz on 10AX115N2F45E1SG; the corrected 4-lane refresh reports +0.318 ns setup slack and +0.014 ns worst hold slack` |
 | ⚠️ | isolated_dv_catalog | active generated dashboard has `failed_cases=0`, `promoted_signoff_cases=516`, `evidenced_promoted_cases=9`, and `unimplemented_cases=507`; the remaining raw structural deltas are covered by explicit hole disposition rather than hidden evidence |
 | ✅ | cross_bucket_signoff | `8/8` current maintained signoff runs are green for the active native-SV scope: `bucket_frame`, `all_buckets_frame`, mixed-bucket random soak, DRR frame2 boundary, BP pre-drop boundary, overflow step2 boundary, counter-clear, and reduced-depth frame-table overflow |
 | ✅ | tb_int_longrun_matrix | `128/128` integrated matrix cases green |
-| ✅ | resource_model | `3,235 ALMs / 129 M20Ks at 2-lane and 6,944 ALMs / 159 M20Ks at 4-lane on the active standalone fits` |
+| ✅ | resource_model | `3,235 ALMs / 129 M20Ks at 2-lane and 7,516 ALMs / 159 M20Ks at the Mu3e Demo 4-lane point` |
 
 ## Verification
 
@@ -32,6 +32,7 @@ configuration legality and evidence matrix lives in
 | ⚠️ | isolated DV catalog | active generated standalone report is the canonical `4-lane/128/256/native_sv` rerun slice and currently carries `evidenced_promoted_cases=9`, `failed_cases=0`, and `unimplemented_cases=507`; `DV_COV.md` records the remaining raw structural deltas as explicit justified non-claims / exclusions instead of a hidden-evidence claim | [`../tb/DV_REPORT.md`](../tb/DV_REPORT.md), [`../tb/DV_COV.md`](../tb/DV_COV.md) |
 | ⚠️ | bounded parameter extension evidence | historical 2-lane closure, bounded `N_SHD=64`, and bounded 4-lane points remain documented planning evidence, but they are not mixed into the active generated standalone dashboard unless rerun in the current signoff scope | [`CONFIG_SIGNOFF.md`](CONFIG_SIGNOFF.md) |
 | ✅ | current continuous-frame / soak evidence | current-scope native-SV continuous-frame runs, overflow shape screens, exact-window repros, and the maintained mixed/DRR supplemental screens are linked directly from the active generated report; historical out-of-scope artifacts remain archived separately | [`../tb/DV_REPORT.md`](../tb/DV_REPORT.md), [`../tb/BUG_HISTORY.md`](../tb/BUG_HISTORY.md) |
+| ✅ | Mu3e Demo over-limit witness | `OPQ_N_SHD=128`, `OPQ_N_HIT=255`, `OPQ_TICKET_FIFO_DEPTH=1024`, and `OPQ_PAGE_RAM_DEPTH=65536` directed UVM subset passes `5/5`; `opq_edge_overlimit_one_loss_test` verifies that a declared 256-hit cluster records one dropped hit and delivers 255 hits | local UVM log `/tmp/opq_mudemo_nhit255_regression/tb_mudemo_profile_20260430.log` |
 | ✅ | integrated long-run matrix | `128/128` long-run cases green; merged-frame contract evidence exists in `tb_int/` | [`../tb_int/DV_REPORT.md`](../tb_int/DV_REPORT.md) |
 | ✅ | bug ledgers | standalone and integrated bugs are both tracked in live ledgers | [`../tb/BUG_HISTORY.md`](../tb/BUG_HISTORY.md), [`../tb_int/BUG_HISTORY.md`](../tb_int/BUG_HISTORY.md) |
 
@@ -39,11 +40,11 @@ configuration legality and evidence matrix lives in
 
 | status | item | value |
 |:---:|---|---|
-| ✅ | revisions | `opq_native_sv_2lane_signoff` and `opq_native_sv_4lane_signoff` standalone A10 refreshes completed |
+| ✅ | revisions | `opq_native_sv_2lane_signoff` and corrected Mu3e Demo `opq_native_sv_4lane_signoff` standalone A10 refreshes completed |
 | ℹ️ | device | `10AX115N2F45E1SG` (`online_sc/a10_board`) planned signoff target |
 | ℹ️ | signoff constraint | `275 MHz` (`1.1x` the `250 MHz` board target) |
-| ✅ | timing summary | `2-lane: +0.172 / +0.044 ns, Fmax 288.68 MHz; 4-lane: +0.155 / +0.040 ns, Fmax 287.27 MHz` |
-| ✅ | fitted resources | `2-lane: 3,235 ALMs, 129 M20Ks, 0 MLAB bits; 4-lane: 6,944 ALMs, 159 M20Ks, 0 MLAB bits` |
+| ✅ | timing summary | `2-lane: +0.172 / +0.044 ns, Fmax 288.68 MHz; Mu3e Demo 4-lane/N_SHD=128/N_HIT=255: +0.318 ns setup, +0.014 ns worst hold, Fmax 301.39 MHz` |
+| ✅ | fitted resources | `2-lane: 3,235 ALMs, 129 M20Ks, 0 MLAB bits; Mu3e Demo 4-lane: 7,516 ALMs, 159 M20Ks, 0 MLAB bits` |
 | ℹ️ | detail report | [`../syn/SYN_REPORT.md`](../syn/SYN_REPORT.md), [`CONFIG_SIGNOFF.md`](CONFIG_SIGNOFF.md) |
 
 ## Fixes In Scope
@@ -58,6 +59,7 @@ configuration legality and evidence matrix lives in
 | ✅ | Native-SV presenter restart safety | stale overlap replay can no longer self-scan the current head into a synthetic zero-length packet; the targeted flush-under-backpressure formal-like stress is green again on the 4-lane/128 preset |
 | ✅ | Native-SV mixed-soak long chain | exact-window reproducer, long random soak, and the full stretched seconds-soak rerun are all green after the allocator repairs and mixed ERROR pool restoration |
 | ✅ | Standalone synthesis | 2-lane stale compat collateral and the stale `d_clk` SDC target were repaired; the 4-lane fixed4 synthesis block-path copy was re-aligned to the maintained registered mover page-write stage, and both 2-lane and 4-lane standalone A10 signoff points are now green |
+| ✅ | Mu3e Demo hit-limit contract | `N_HIT=255` is intentional for the 256-channel cluster check; the parser pre-drops excess subheader hits so the expected result is one recorded hit loss and 255 delivered hits |
 
 ## Evidence Index
 
@@ -92,18 +94,17 @@ configuration legality and evidence matrix lives in
 - `legacy/` is now a compatibility symlink only. Canonical archived references
   should use `tb/legacy/`.
 - The active standalone 4-lane Arria 10 refresh resolves the RAM/CAM concern
-  for the current signoff point: the fitted design uses `159` M20K blocks and
-  `0` MLAB bits, so the storage implementation is no longer being inferred as
-  a large LUT/MLAB surrogate on this build.
+  for the current Mu3e Demo signoff point: the fitted design uses `159` M20K
+  blocks and `0` MLAB bits, so the storage implementation is no longer being
+  inferred as a large LUT/MLAB surrogate on this build.
 - The refreshed 2-lane standalone harness now also closes at the intended
   `275 MHz` target after the stale local synthesis-compat copies were aligned
   to the live 4-lane compat set and the stale `d_clk` SDC target was corrected
   to the actual harness port `clk`.
-- The formerly dominant presenter overlap-start cone is no longer the blocker
-  on the current timing-clean standalone build; the refreshed 4-lane rerun now
-  closes with `+0.155 ns` slow-corner setup slack at the tightened signoff
-  target after aligning the fixed4 synthesis block-path copy to the maintained
-  registered mover page-write stage.
+- The corrected Mu3e Demo 4-lane rerun closes with `+0.318 ns` slow-corner
+  setup slack and `+0.014 ns` worst hold slack at the tightened signoff target
+  after aligning the fixed4 synthesis block-path copy and narrowing the
+  diagnostic drop-delta adders.
 - Future parameterized timing closure is still a later phase: `N_LANE={8,16}`
   plus the staged wider ingress / DMA-packed egress axes need their own
   synthesis-safe pipeline options and matching DV closure rather than

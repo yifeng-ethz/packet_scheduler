@@ -1,13 +1,13 @@
-Analysis & Synthesis Status : Successful - Tue Apr 28 21:48:27 2026
+Analysis & Synthesis Status : Successful - Thu Apr 30 12:05:57 2026
 Quartus Prime Version : 18.1.0 Build 625 09/12/2018 SJ Standard Edition
 Revision Name : opq_native_sv_4lane_signoff
 Top-level Entity Name : opq_native_sv_4lane_signoff_top
 Family : Arria 10
 Logic utilization (in ALMs) : N/A
-Total registers : 7888
+Total registers : 7843
 Total pins : 0
 Total virtual pins : 18
-Total block memory bits : 2,579,072
+Total block memory bits : 2,578,304
 Total DSP Blocks : 0
 Total HSSI RX channels : 0
 Total HSSI TX channels : 0

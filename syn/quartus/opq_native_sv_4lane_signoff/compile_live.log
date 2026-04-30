@@ -14,7 +14,7 @@ Info: Running Quartus Prime Shell
     Info: the sole purpose of programming logic devices manufactured by
     Info: Intel and sold by Intel or its authorized distributors.  Please
     Info: refer to the applicable agreement for further details.
-    Info: Processing started: Tue Apr 28 21:47:26 2026
+    Info: Processing started: Thu Apr 30 12:04:54 2026
 Info: Command: quartus_sh --flow compile opq_native_sv_4lane_signoff -c opq_native_sv_4lane_signoff
 Info: Quartus(args): compile opq_native_sv_4lane_signoff -c opq_native_sv_4lane_signoff
 Info: Project Name = /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff
@@ -22,7 +22,7 @@ Info: Revision Name = opq_native_sv_4lane_signoff
 Info: *******************************************************************
 Info: Running Quartus Prime Analysis & Synthesis
     Info: Version 18.1.0 Build 625 09/12/2018 SJ Standard Edition
-    Info: Processing started: Tue Apr 28 21:47:26 2026
+    Info: Processing started: Thu Apr 30 12:04:55 2026
 Info: Command: quartus_map --read_settings_files=on --write_settings_files=off opq_native_sv_4lane_signoff -c opq_native_sv_4lane_signoff
 Info (16303): High Performance Effort optimization mode selected -- timing performance will be prioritized at the potential cost of increased compilation time
 Info (20032): Parallel compilation is enabled and will use up to 16 processors
@@ -39,7 +39,7 @@ Info (12021): Found 1 design units, including 1 entities, in source file src_com
 Info (12021): Found 1 design units, including 1 entities, in source file /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/vendor/alt_ram/tile_fifo.v
     Info (12023): Found entity 1: tile_fifo File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/vendor/alt_ram/tile_fifo.v Line: 1
 Info (12021): Found 1 design units, including 1 entities, in source file /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv
-    Info (12023): Found entity 1: ordered_priority_queue_monolithic_ingress_parser File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 8
+    Info (12023): Found entity 1: ordered_priority_queue_monolithic_ingress_parser File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 9
 Info (12021): Found 1 design units, including 1 entities, in source file /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv
     Info (12023): Found entity 1: ordered_priority_queue_monolithic_page_allocator File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 10
 Info (12021): Found 1 design units, including 1 entities, in source file src_compat/ordered_priority_queue_monolithic_block_path.sv
@@ -57,7 +57,6 @@ Info (12021): Found 1 design units, including 1 entities, in source file opq_nat
     Info (12023): Found entity 1: opq_native_sv_4lane_signoff_top File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 21
 Info (12127): Elaborating entity "opq_native_sv_4lane_signoff_top" for the top level hierarchy
 Info (12128): Elaborating entity "ordered_priority_queue_monolithic_sv" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 325
-Warning (10977): SystemVerilog $warning at ordered_priority_queue_monolithic.sv(602): N hits counter will likely overflow the 16-bit frame hit counter File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 602
 Info (10008): Verilog HDL or VHDL information: EDA Netlist Writer cannot regroup multidimensional array "packet_complete_lane_shd_cnt_presenter_delay_dbg" into its bus
 Info (10008): Verilog HDL or VHDL information: EDA Netlist Writer cannot regroup multidimensional array "packet_complete_lane_hit_cnt_presenter_delay_dbg" into its bus
 Info (12128): Elaborating entity "ticket_fifo" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[0].ticket_fifo_i" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 281
@@ -133,21 +132,18 @@ Info (12133): Instantiated megafunction "ordered_priority_queue_monolithic_sv:du
     Info (12134): Parameter "power_up_uninitialized" = "FALSE"
     Info (12134): Parameter "ram_block_type" = "M20K"
     Info (12134): Parameter "read_during_write_mode_mixed_ports" = "OLD_DATA"
-    Info (12134): Parameter "width_a" = "00000000000000000000000000100110"
-    Info (12134): Parameter "width_b" = "00000000000000000000000000100110"
+    Info (12134): Parameter "width_a" = "00000000000000000000000000100011"
+    Info (12134): Parameter "width_b" = "00000000000000000000000000100011"
     Info (12134): Parameter "width_byteena_a" = "1"
     Info (12134): Parameter "widthad_a" = "00000000000000000000000000000110"
     Info (12134): Parameter "widthad_b" = "00000000000000000000000000000110"
-Info (12021): Found 1 design units, including 1 entities, in source file db/altsyncram_esv1.tdf
-    Info (12023): Found entity 1: altsyncram_esv1 File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_esv1.tdf Line: 27
-Info (12128): Elaborating entity "altsyncram_esv1" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|handle_fifo:g_storage[0].handle_fifo_i|altsyncram:handle_fifo_ram|altsyncram_esv1:auto_generated" File: /data1/intelFPGA/18.1/quartus/libraries/megafunctions/altsyncram.tdf Line: 791
+Info (12021): Found 1 design units, including 1 entities, in source file db/altsyncram_8sv1.tdf
+    Info (12023): Found entity 1: altsyncram_8sv1 File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_8sv1.tdf Line: 27
+Info (12128): Elaborating entity "altsyncram_8sv1" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|handle_fifo:g_storage[0].handle_fifo_i|altsyncram:handle_fifo_ram|altsyncram_8sv1:auto_generated" File: /data1/intelFPGA/18.1/quartus/libraries/megafunctions/altsyncram.tdf Line: 791
 Info (12128): Elaborating entity "ordered_priority_queue_monolithic_ingress_parser" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[0].ingress_parser_i" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 361
-Warning (10230): Verilog HDL assignment warning at ordered_priority_queue_monolithic_ingress_parser.sv(119): truncated value with size 32 to match size of target (10) File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 119
 Warning (10230): Verilog HDL assignment warning at ordered_priority_queue_monolithic_ingress_parser.sv(120): truncated value with size 32 to match size of target (10) File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 120
-Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_ingress_parser.sv(186): object "ingress_parser_if_subheader_shd_ts" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 186
-Warning (10230): Verilog HDL assignment warning at ordered_priority_queue_monolithic_ingress_parser.sv(442): truncated value with size 11 to match size of target (10) File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 442
-Warning (10230): Verilog HDL assignment warning at ordered_priority_queue_monolithic_ingress_parser.sv(650): truncated value with size 11 to match size of target (10) File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 650
-Warning (10230): Verilog HDL assignment warning at ordered_priority_queue_monolithic_ingress_parser.sv(653): truncated value with size 11 to match size of target (10) File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 653
+Warning (10230): Verilog HDL assignment warning at ordered_priority_queue_monolithic_ingress_parser.sv(121): truncated value with size 32 to match size of target (10) File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 121
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_ingress_parser.sv(192): object "ingress_parser_if_subheader_shd_ts" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 192
 Info (12128): Elaborating entity "ordered_priority_queue_monolithic_page_allocator" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 438
 Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(530): object "idle_tk_past_q" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 530
 Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(546): object "fetch_resident_predict_matches_q" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 546
@@ -171,8 +167,6 @@ Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithi
 Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(675): object "header_running_ts" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 675
 Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(1119): object "tail_status_slot_v" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 1119
 Info (10264): Verilog HDL Case Statement information at ordered_priority_queue_monolithic_page_allocator.sv(1080): all case item expressions in this case statement are onehot File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 1080
-Warning (10230): Verilog HDL assignment warning at ordered_priority_queue_monolithic_page_allocator.sv(1808): truncated value with size 11 to match size of target (10) File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 1808
-Warning (10230): Verilog HDL assignment warning at ordered_priority_queue_monolithic_page_allocator.sv(1906): truncated value with size 11 to match size of target (10) File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 1906
 Warning (10230): Verilog HDL assignment warning at ordered_priority_queue_monolithic_page_allocator.sv(292): truncated value with size 32 to match size of target (17) File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 292
 Info (10008): Verilog HDL or VHDL information: EDA Netlist Writer cannot regroup multidimensional array "page_allocator_ticket_rptr_d" into its bus
 Info (12128): Elaborating entity "tile_fifo" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|tile_fifo:gen_tail_status_wrap_ram[0].tail_status_wrap_ram_i" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 720
@@ -340,10 +334,10 @@ Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_
 Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_basic_presenter:presenter_i|ordered_priority_queue_monolithic_basic_presenter_native:native_i|presenter_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv Line: 853
 Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_block_path:block_path_i|arbiter_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_block_path.sv Line: 215
 Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|page_allocator_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 515
-Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[3].ingress_parser_i|ingress_parser_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 174
-Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[2].ingress_parser_i|ingress_parser_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 174
-Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[1].ingress_parser_i|ingress_parser_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 174
-Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[0].ingress_parser_i|ingress_parser_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 174
+Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[3].ingress_parser_i|ingress_parser_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 177
+Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[2].ingress_parser_i|ingress_parser_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 177
+Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[1].ingress_parser_i|ingress_parser_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 177
+Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[0].ingress_parser_i|ingress_parser_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 177
 Info (19000): Inferred 11 megafunctions from design logic
     Info (276029): Inferred altsyncram megafunction from the following design logic: "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_basic_presenter:presenter_i|ordered_priority_queue_monolithic_basic_presenter_native:native_i|overlap_req_addr_q_rtl_0"
         Info (286033): Parameter OPERATION_MODE set to DUAL_PORT
@@ -632,20 +626,20 @@ Info (15717): Design contains 18 virtual pins; timing numbers associated with pa
     Info (15719): Pin "activity_o[15]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 25
     Info (15718): Pin "clk" is virtual input pin File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 22
     Info (15718): Pin "reset_n" is virtual input pin File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 23
-Info (21057): Implemented 15398 device resources after synthesis - the final resource count might be different
+Info (21057): Implemented 16048 device resources after synthesis - the final resource count might be different
     Info (21058): Implemented 0 input pins
     Info (21059): Implemented 0 output pins
-    Info (21061): Implemented 14416 logic cells
-    Info (21064): Implemented 982 RAM segments
-Info: Quartus Prime Analysis & Synthesis was successful. 0 errors, 148 warnings
-    Info: Peak virtual memory: 1554 megabytes
-    Info: Processing ended: Tue Apr 28 21:48:28 2026
-    Info: Elapsed time: 00:01:02
-    Info: Total CPU time (on all processors): 00:01:18
+    Info (21061): Implemented 15078 logic cells
+    Info (21064): Implemented 970 RAM segments
+Info: Quartus Prime Analysis & Synthesis was successful. 0 errors, 142 warnings
+    Info: Peak virtual memory: 1589 megabytes
+    Info: Processing ended: Thu Apr 30 12:05:58 2026
+    Info: Elapsed time: 00:01:03
+    Info: Total CPU time (on all processors): 00:01:21
 Info: *******************************************************************
 Info: Running Quartus Prime Fitter
     Info: Version 18.1.0 Build 625 09/12/2018 SJ Standard Edition
-    Info: Processing started: Tue Apr 28 21:48:28 2026
+    Info: Processing started: Thu Apr 30 12:05:59 2026
 Info: Command: quartus_fit --read_settings_files=off --write_settings_files=off opq_native_sv_4lane_signoff -c opq_native_sv_4lane_signoff
 Info: qfit2_default_script.tcl version: #1
 Info: Project  = opq_native_sv_4lane_signoff
@@ -668,7 +662,7 @@ Critical Warning (17951): There are 48 unused RX channels in the design. If you 
 Critical Warning (18655): There are 48 unused TX channels in the design. If you intend to use any of these channels in the future, you must add the assignment 'set_instance_assignment -name PRESERVE_UNUSED_XCVR_CHANNEL ON -to <pin_name>' in your QSF file. This assignment will preserve the performance of specified channels over time. Note that unused channel preservation only works if the design uses or instantiates atleast 1 transceiver channel.
 Info (12295): Periphery placement of all unplaced cells complete: elapsed time is 00:00:01
 Info (11191): Automatically promoted 2 clocks (2 global)
-    Info (13173): clk~CLKENA0 (8870 fanout) drives Global Clock Region, with the buffer placed at CLKCTRL_3D_G_I16
+    Info (13173): clk~CLKENA0 (8813 fanout) drives Global Clock Region, with the buffer placed at CLKCTRL_3D_G_I16
     Info (13173): reset_n~CLKENA0 (772 fanout) drives Global Clock Region, with the buffer placed at CLKCTRL_3D_G_I18
 Info (176233): Starting register packing
 Info (176235): Finished register packing
@@ -691,8 +685,8 @@ Info (14951): The Fitter is using Advanced Physical Optimization.
 Info (170190): Fitter placement preparation operations ending: elapsed time is 00:00:17
 Info (170191): Fitter placement operations beginning
 Info (170137): Fitter placement was successful
-Info (170192): Fitter placement operations ending: elapsed time is 00:00:24
-Info (11888): Total time spent on timing analysis during Global Placement is 6.02 seconds.
+Info (170192): Fitter placement operations ending: elapsed time is 00:00:26
+Info (11888): Total time spent on timing analysis during Global Placement is 6.06 seconds.
 Info (18258): Fitter Physical Synthesis operations beginning
 Info (18259): Fitter Physical Synthesis operations ending: elapsed time is 00:00:02
 Info (11888): Total time spent on timing analysis during Physical Synthesis is 0.00 seconds.
@@ -703,33 +697,33 @@ Info (170192): Fitter placement operations ending: elapsed time is 00:00:00
 Info (11888): Total time spent on timing analysis during Placement is 0.08 seconds.
 Info (170193): Fitter routing operations beginning
 Info (170195): Router estimated average interconnect usage is 0% of the available device resources
-    Info (170196): Router estimated peak interconnect usage is 26% of the available device resources in the region that extends from location X153_Y106 to location X164_Y117
-Info (11888): Total time spent on timing analysis during Routing is 4.73 seconds.
-Info (16607): Fitter routing operations ending: elapsed time is 00:00:48
-Info (11888): Total time spent on timing analysis during Post-Routing is 0.47 seconds.
+    Info (170196): Router estimated peak interconnect usage is 25% of the available device resources in the region that extends from location X165_Y106 to location X176_Y117
+Info (11888): Total time spent on timing analysis during Routing is 5.19 seconds.
+Info (16607): Fitter routing operations ending: elapsed time is 00:00:54
+Info (11888): Total time spent on timing analysis during Post-Routing is 0.49 seconds.
 Info (16557): Fitter post-fit operations ending: elapsed time is 00:00:33
 Info (144001): Generated suppressed messages file /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/output_files/opq_native_sv_4lane_signoff.fit.smsg
 Info (11793): Fitter databases successfully split.
 Info: Quartus Prime Fitter was successful. 0 errors, 4 warnings
-    Info: Peak virtual memory: 8292 megabytes
-    Info: Processing ended: Tue Apr 28 21:52:11 2026
-    Info: Elapsed time: 00:03:43
-    Info: Total CPU time (on all processors): 00:19:57
+    Info: Peak virtual memory: 8330 megabytes
+    Info: Processing ended: Thu Apr 30 12:09:47 2026
+    Info: Elapsed time: 00:03:48
+    Info: Total CPU time (on all processors): 00:20:20
 Info: *******************************************************************
 Info: Running Quartus Prime Assembler
     Info: Version 18.1.0 Build 625 09/12/2018 SJ Standard Edition
-    Info: Processing started: Tue Apr 28 21:52:13 2026
+    Info: Processing started: Thu Apr 30 12:09:49 2026
 Info: Command: quartus_asm --read_settings_files=off --write_settings_files=off opq_native_sv_4lane_signoff -c opq_native_sv_4lane_signoff
 Info: Quartus Prime Assembler was successful. 0 errors, 0 warnings
     Info: Peak virtual memory: 6937 megabytes
-    Info: Processing ended: Tue Apr 28 21:52:59 2026
+    Info: Processing ended: Thu Apr 30 12:10:35 2026
     Info: Elapsed time: 00:00:46
     Info: Total CPU time (on all processors): 00:00:47
 Info (293026): Skipped module Power Analyzer due to the assignment FLOW_ENABLE_POWER_ANALYZER
 Info: *******************************************************************
 Info: Running Quartus Prime Timing Analyzer
     Info: Version 18.1.0 Build 625 09/12/2018 SJ Standard Edition
-    Info: Processing started: Tue Apr 28 21:53:00 2026
+    Info: Processing started: Thu Apr 30 12:10:36 2026
 Info: Command: quartus_sta opq_native_sv_4lane_signoff -c opq_native_sv_4lane_signoff
 Info: qsta_default_script.tcl version: #1
 Info (20032): Parallel compilation is enabled and will use up to 16 processors
@@ -743,14 +737,14 @@ Info (332151): Clock uncertainty is not calculated until you update the timing n
 Info (332154): The derive_clock_uncertainty command did not apply clock uncertainty to any clock-to-clock transfers.
 Info: Found TIMING_ANALYZER_REPORT_SCRIPT_INCLUDE_DEFAULT_ANALYSIS = ON
 Info: Analyzing Slow 900mV 100C Model
-Info (332146): Worst-case setup slack is 0.155
+Info (332146): Worst-case setup slack is 0.318
     Info (332119):     Slack       End Point TNS Clock
     Info (332119): ========= =================== =====================
-    Info (332119):     0.155               0.000 clk
-Info (332146): Worst-case hold slack is 0.040
+    Info (332119):     0.318               0.000 clk
+Info (332146): Worst-case hold slack is 0.039
     Info (332119):     Slack       End Point TNS Clock
     Info (332119): ========= =================== =====================
-    Info (332119):     0.040               0.000 clk
+    Info (332119):     0.039               0.000 clk
 Info (332140): No Recovery paths to report
 Info (332140): No Removal paths to report
 Info (332146): Worst-case minimum pulse width slack is 1.453
@@ -758,29 +752,29 @@ Info (332146): Worst-case minimum pulse width slack is 1.453
     Info (332119): ========= =================== =====================
     Info (332119):     1.453               0.000 clk
 Info: Analyzing Slow 900mV 0C Model
-Info (332146): Worst-case setup slack is 0.392
+Info (332146): Worst-case setup slack is 0.534
     Info (332119):     Slack       End Point TNS Clock
     Info (332119): ========= =================== =====================
-    Info (332119):     0.392               0.000 clk
-Info (332146): Worst-case hold slack is 0.038
+    Info (332119):     0.534               0.000 clk
+Info (332146): Worst-case hold slack is 0.037
     Info (332119):     Slack       End Point TNS Clock
     Info (332119): ========= =================== =====================
-    Info (332119):     0.038               0.000 clk
+    Info (332119):     0.037               0.000 clk
 Info (332140): No Recovery paths to report
 Info (332140): No Removal paths to report
-Info (332146): Worst-case minimum pulse width slack is 1.452
+Info (332146): Worst-case minimum pulse width slack is 1.459
     Info (332119):     Slack       End Point TNS Clock
     Info (332119): ========= =================== =====================
-    Info (332119):     1.452               0.000 clk
+    Info (332119):     1.459               0.000 clk
 Info: Analyzing Fast 900mV 100C Model
-Info (332146): Worst-case setup slack is 1.089
+Info (332146): Worst-case setup slack is 0.932
     Info (332119):     Slack       End Point TNS Clock
     Info (332119): ========= =================== =====================
-    Info (332119):     1.089               0.000 clk
-Info (332146): Worst-case hold slack is 0.017
+    Info (332119):     0.932               0.000 clk
+Info (332146): Worst-case hold slack is 0.015
     Info (332119):     Slack       End Point TNS Clock
     Info (332119): ========= =================== =====================
-    Info (332119):     0.017               0.000 clk
+    Info (332119):     0.015               0.000 clk
 Info (332140): No Recovery paths to report
 Info (332140): No Removal paths to report
 Info (332146): Worst-case minimum pulse width slack is 1.479
@@ -788,14 +782,14 @@ Info (332146): Worst-case minimum pulse width slack is 1.479
     Info (332119): ========= =================== =====================
     Info (332119):     1.479               0.000 clk
 Info: Analyzing Fast 900mV 0C Model
-Info (332146): Worst-case setup slack is 1.569
+Info (332146): Worst-case setup slack is 1.461
     Info (332119):     Slack       End Point TNS Clock
     Info (332119): ========= =================== =====================
-    Info (332119):     1.569               0.000 clk
-Info (332146): Worst-case hold slack is 0.013
+    Info (332119):     1.461               0.000 clk
+Info (332146): Worst-case hold slack is 0.014
     Info (332119):     Slack       End Point TNS Clock
     Info (332119): ========= =================== =====================
-    Info (332119):     0.013               0.000 clk
+    Info (332119):     0.014               0.000 clk
 Info (332140): No Recovery paths to report
 Info (332140): No Removal paths to report
 Info (332146): Worst-case minimum pulse width slack is 1.502
@@ -805,14 +799,14 @@ Info (332146): Worst-case minimum pulse width slack is 1.502
 Info (332102): Design is not fully constrained for setup requirements
 Info (332102): Design is not fully constrained for hold requirements
 Info: Quartus Prime Timing Analyzer was successful. 0 errors, 2 warnings
-    Info: Peak virtual memory: 3327 megabytes
-    Info: Processing ended: Tue Apr 28 21:53:12 2026
+    Info: Peak virtual memory: 3366 megabytes
+    Info: Processing ended: Thu Apr 30 12:10:48 2026
     Info: Elapsed time: 00:00:12
-    Info: Total CPU time (on all processors): 00:00:43
-Info (293000): Quartus Prime Full Compilation was successful. 0 errors, 154 warnings
+    Info: Total CPU time (on all processors): 00:00:44
+Info (293000): Quartus Prime Full Compilation was successful. 0 errors, 148 warnings
 Info (23030): Evaluation of Tcl script /data1/intelFPGA/18.1/quartus/common/tcl/internal/qsh_flow.tcl was successful
-Info: Quartus Prime Shell was successful. 0 errors, 154 warnings
-    Info: Peak virtual memory: 788 megabytes
-    Info: Processing ended: Tue Apr 28 21:53:13 2026
-    Info: Elapsed time: 00:05:47
-    Info: Total CPU time (on all processors): 00:22:49
+Info: Quartus Prime Shell was successful. 0 errors, 148 warnings
+    Info: Peak virtual memory: 800 megabytes
+    Info: Processing ended: Thu Apr 30 12:10:49 2026
+    Info: Elapsed time: 00:05:55
+    Info: Total CPU time (on all processors): 00:23:14

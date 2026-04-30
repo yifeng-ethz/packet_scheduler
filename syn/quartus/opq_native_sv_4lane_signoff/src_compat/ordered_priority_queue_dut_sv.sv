@@ -1,14 +1,14 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_dut_sv
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.4.15-syn
-// Date    : 20260428
-// Change  : Register OPQ drop-counter deltas before saturating CSR updates to
-//           remove the lane-mask decode path from the 250 MHz counter adder.
+// Version : 26.5.0-syn
+// Date    : 20260430
+// Change  : Narrow fixed4 drop-delta adders before the CSR delta register to
+//           close the SWB 250 MHz integration path without changing the CSR map.
 //------------------------------------------------------------------------------
 
 `ifndef OPQ_N_SHD
-`define OPQ_N_SHD 256
+`define OPQ_N_SHD 128
 `endif
 
 `ifndef OPQ_PAGE_RAM_DEPTH
@@ -24,17 +24,17 @@
 `endif
 
 `ifndef OPQ_N_HIT
-`define OPQ_N_HIT 2047
+`define OPQ_N_HIT 255
 `endif
 
 module ordered_priority_queue_dut_sv #(
   parameter int unsigned N_HIT = `OPQ_N_HIT,
   parameter int unsigned IP_UID = 32'h4F50_514D,
   parameter int unsigned VERSION_MAJOR = 26,
-  parameter int unsigned VERSION_MINOR = 4,
-  parameter int unsigned VERSION_PATCH = 15,
-  parameter int unsigned BUILD = 428,
-  parameter int unsigned VERSION_DATE = 20260428,
+  parameter int unsigned VERSION_MINOR = 5,
+  parameter int unsigned VERSION_PATCH = 0,
+  parameter int unsigned BUILD = 430,
+  parameter int unsigned VERSION_DATE = 20260430,
   parameter int unsigned VERSION_GIT = 32'h4F66_7FB1,
   parameter int unsigned INSTANCE_ID = 0
 ) (
@@ -98,6 +98,8 @@ module ordered_priority_queue_dut_sv #(
   localparam int unsigned FRAME_HIT_CNT_SIZE_CONST = 16;
   localparam int unsigned MAX_PKT_LENGTH_CONST = N_HIT;
   localparam int unsigned MAX_PKT_LENGTH_BITS_CONST = (MAX_PKT_LENGTH_CONST <= 1) ? 1 : $clog2(MAX_PKT_LENGTH_CONST);
+  localparam int unsigned DROP_SHD_DELTA_BITS_CONST = 17;
+  localparam int unsigned DROP_HIT_DELTA_BITS_CONST = 18;
   localparam int unsigned TICKET_FIFO_DATA_WIDTH_A_CONST =
     48 + LANE_FIFO_ADDR_WIDTH_CONST + MAX_PKT_LENGTH_BITS_CONST + FRAME_SERIAL_SIZE_CONST + 2;
   localparam int unsigned TICKET_FIFO_DATA_WIDTH_B_CONST =
@@ -595,8 +597,8 @@ module ordered_priority_queue_dut_sv #(
       end else begin
         for (int lane = 0; lane < OPQ_N_LANE_LOCAL; lane++) begin
           logic [31:0] drop_hdr_delta_v;
-          logic [31:0] drop_shd_delta_v;
-          logic [31:0] drop_hit_delta_v;
+          logic [DROP_SHD_DELTA_BITS_CONST-1:0] drop_shd_delta_v;
+          logic [DROP_HIT_DELTA_BITS_CONST-1:0] drop_hit_delta_v;
 
           drop_hdr_delta_v = '0;
           drop_shd_delta_v = '0;
@@ -638,24 +640,29 @@ module ordered_priority_queue_dut_sv #(
 
           if (csr_lane_mask_effective[lane] && asi_ingress_valid_bus[lane] &&
               is_subheader_word(asi_ingress_data_bus[lane])) begin
-            drop_shd_delta_v = drop_shd_delta_v + 32'd1;
-            drop_hit_delta_v = drop_hit_delta_v + {{16{1'b0}}, asi_ingress_data_bus[lane][23:8]};
+            drop_shd_delta_v = drop_shd_delta_v +
+              {{(DROP_SHD_DELTA_BITS_CONST-1){1'b0}}, 1'b1};
+            drop_hit_delta_v = drop_hit_delta_v +
+              {{(DROP_HIT_DELTA_BITS_CONST-16){1'b0}}, asi_ingress_data_bus[lane][23:8]};
           end
 
           if (native_ingress_credit_drop_valid_dbg[lane]) begin
-            drop_shd_delta_v = drop_shd_delta_v + {{16{1'b0}}, native_ingress_credit_drop_shd_dbg[lane]};
-            drop_hit_delta_v = drop_hit_delta_v + {{16{1'b0}}, native_ingress_credit_drop_hit_dbg[lane]};
+            drop_shd_delta_v = drop_shd_delta_v +
+              {{(DROP_SHD_DELTA_BITS_CONST-16){1'b0}}, native_ingress_credit_drop_shd_dbg[lane]};
+            drop_hit_delta_v = drop_hit_delta_v +
+              {{(DROP_HIT_DELTA_BITS_CONST-16){1'b0}}, native_ingress_credit_drop_hit_dbg[lane]};
           end
 
           if (native_handle_we_dbg[lane] && native_handle_flag_dbg[lane]) begin
-            drop_shd_delta_v = drop_shd_delta_v + 32'd1;
+            drop_shd_delta_v = drop_shd_delta_v +
+              {{(DROP_SHD_DELTA_BITS_CONST-1){1'b0}}, 1'b1};
             drop_hit_delta_v = drop_hit_delta_v +
-              {{(32-MAX_PKT_LENGTH_BITS_CONST){1'b0}}, native_handle_block_len_dbg[lane]};
+              {{(DROP_HIT_DELTA_BITS_CONST-MAX_PKT_LENGTH_BITS_CONST){1'b0}}, native_handle_block_len_dbg[lane]};
           end
 
           csr_drop_hdr_delta_q[lane] <= drop_hdr_delta_v;
-          csr_drop_shd_delta_q[lane] <= drop_shd_delta_v;
-          csr_drop_hit_delta_q[lane] <= drop_hit_delta_v;
+          csr_drop_shd_delta_q[lane] <= {{(32-DROP_SHD_DELTA_BITS_CONST){1'b0}}, drop_shd_delta_v};
+          csr_drop_hit_delta_q[lane] <= {{(32-DROP_HIT_DELTA_BITS_CONST){1'b0}}, drop_hit_delta_v};
 
           if (native_drr_lock_event_dbg[lane]) begin
             csr_drr_grant_cnt[lane] <= sat_add32(csr_drr_grant_cnt[lane], 32'd1);

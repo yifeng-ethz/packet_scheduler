@@ -1,14 +1,14 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_dut_array_sv
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.4.15
-// Date    : 20260428
-// Change  : Register OPQ drop-counter deltas before saturating CSR updates to
-//           remove the lane-mask decode path from the 250 MHz counter adder.
+// Version : 26.5.0
+// Date    : 20260430
+// Change  : Align the native array wrapper fallback profile with the Mu3e Demo
+//           N_SHD=128, N_HIT=255 SWB/ER operating point.
 //------------------------------------------------------------------------------
 
 `ifndef OPQ_N_SHD
-`define OPQ_N_SHD 256
+`define OPQ_N_SHD 128
 `endif
 
 `ifndef OPQ_PAGE_RAM_DEPTH
@@ -135,10 +135,10 @@ module ordered_priority_queue_dut_array_sv #(
   localparam logic [3:0] CSR_LANE_WORD_DRR_DEFER_CNT_CONST = 4'hF;
   localparam logic [31:0] UID_CONST = 32'h4F50_514D;
   localparam int unsigned VERSION_MAJOR_CONST = 26;
-  localparam int unsigned VERSION_MINOR_CONST = 4;
-  localparam int unsigned VERSION_PATCH_CONST = 15;
-  localparam int unsigned VERSION_BUILD_CONST = 428;
-  localparam logic [31:0] VERSION_DATE_CONST = 32'd20260428;
+  localparam int unsigned VERSION_MINOR_CONST = 5;
+  localparam int unsigned VERSION_PATCH_CONST = 0;
+  localparam int unsigned VERSION_BUILD_CONST = 430;
+  localparam logic [31:0] VERSION_DATE_CONST = 32'd20260430;
   localparam logic [31:0] VERSION_GIT_CONST = 32'h4F66_7FB1;
   localparam logic [31:0] INSTANCE_ID_CONST = 32'd0;
   localparam logic [9:0] DRR_DEFAULT_ALLOWANCE_CONST = 10'd256;

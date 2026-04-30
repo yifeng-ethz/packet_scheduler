@@ -13,7 +13,7 @@ Target build:
   - `OPQ_USE_NATIVE_SV`
   - `OPQ_N_LANE=4`
   - `OPQ_N_SHD=128`
-  - `OPQ_N_HIT=2047`
+  - `OPQ_N_HIT=255`
   - `OPQ_TICKET_FIFO_DEPTH=1024`
   - `OPQ_PAGE_RAM_DEPTH=65536`
 
@@ -39,15 +39,16 @@ Compatibility layer:
 Current closure scope:
 
 - this standalone point now matches the active DV closure preset
-  `OPQ_N_LANE=4`, `OPQ_N_SHD=128`, `OPQ_TICKET_FIFO_DEPTH=1024`
-- the `2026-04-28` rerun closes the 275 MHz signoff clock with slow-100 setup
-  slack `+0.155 ns`, hold slack `+0.040 ns`, Fmax `287.27 MHz`, `6,944` ALMs,
-  `7,977` registers, and `159` M20Ks
+  `OPQ_N_LANE=4`, `OPQ_N_SHD=128`, `OPQ_N_HIT=255`,
+  `OPQ_TICKET_FIFO_DEPTH=1024`, and `OPQ_PAGE_RAM_DEPTH=65536`
+- the `2026-04-30` Mu3e Demo rerun closes the 275 MHz signoff clock with
+  slow-100 setup slack `+0.318 ns`, worst reported hold slack `+0.014 ns`,
+  Fmax `301.39 MHz`, `7,516` ALMs, `7,944` registers, and `159` M20Ks
 - the rerun specifically re-aligns `src_compat/ordered_priority_queue_monolithic_block_path.sv`
   to the maintained registered mover page-write stage so fixed4/Qsys synthesis
   does not use the stale direct lane-FIFO-to-page-RAM data cone
-- the older `4-lane / 256-subheader / ticket512` point remains a later
-  expanded signoff target rather than the current closure gate
+- the rerun specifically checks the narrowed fixed4 drop-delta adder path
+  before that source is consumed by the SWB Qsys wrapper
 
 Planned follow-up:
 

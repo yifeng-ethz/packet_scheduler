@@ -9,6 +9,30 @@ Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 > `qverify` / `znformal` with simulation stress fallback only when the
 > Siemens formal binaries are not present on the host.
 
+## 26.5.0.0430
+
+- **Synthesis / Mu3e Demo Fixed4 Timing**: corrected the SWB/FEB OPQ profile
+  to the Mu3e Demo setting `OPQ_N_SHD=128`, `OPQ_N_HIT=255`,
+  `OPQ_TICKET_FIFO_DEPTH=1024`, and `OPQ_PAGE_RAM_DEPTH=65536`. The fixed4
+  Qsys-wrapper drop-delta adders are narrowed before the CSR delta register,
+  cutting the integration critical path into `csr_drop_hit_delta_q` without
+  changing the CSR map or counter semantics.
+- **RTL / Intentional One-Hit Loss Contract**: the ingress parser now clamps
+  over-limit subheader hit counts to `N_HIT` and emits a pre-drop event for
+  the excess hits. With the active `N_HIT=255` profile, a declared 256-hit
+  cluster is expected to drop exactly one hit and deliver 255 hits.
+- **Regression Evidence**: ran the native-SV UVM subset with `OPQ_N_LANE=4`,
+  `OPQ_N_SHD=128`, `OPQ_N_HIT=255`, `OPQ_TICKET_FIFO_DEPTH=1024`, and
+  `OPQ_PAGE_RAM_DEPTH=65536`; `opq_basic_smoke_test`,
+  `opq_edge_max_hits_test`, `opq_edge_overlimit_one_loss_test`,
+  `opq_error_lane_mask_burst_test`, and `opq_error_counter_clear_test` all
+  passed with `UVM_ERROR=0`.
+- **Standalone Synthesis Evidence**: reran `opq_native_sv_4lane_signoff` at
+  the tightened `275 MHz` clock with the corrected Mu3e Demo profile. The
+  compile closed with slow-100 setup `+0.318 ns`, worst reported hold
+  `+0.014 ns`, slow-100 Fmax `301.39 MHz`, `7,516` ALMs, `7,944` registers,
+  and `159` M20Ks.
+
 ## 26.4.15.0428
 
 - **Synthesis / Fixed4 Block-Path Closure**: re-aligned the 4-lane

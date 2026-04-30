@@ -9,7 +9,7 @@ set_global_assignment -name VERILOG_MACRO "SYNTHESIS=1"
 set_global_assignment -name VERILOG_MACRO "OPQ_USE_NATIVE_SV"
 set_global_assignment -name VERILOG_MACRO "OPQ_N_LANE=4"
 set_global_assignment -name VERILOG_MACRO "OPQ_N_SHD=128"
-set_global_assignment -name VERILOG_MACRO "OPQ_N_HIT=2047"
+set_global_assignment -name VERILOG_MACRO "OPQ_N_HIT=255"
 set_global_assignment -name VERILOG_MACRO "OPQ_TICKET_FIFO_DEPTH=1024"
 set_global_assignment -name VERILOG_MACRO "OPQ_PAGE_RAM_DEPTH=65536"
 
