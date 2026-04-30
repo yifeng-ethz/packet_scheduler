@@ -33,7 +33,6 @@ class opq_edge_backpressure_test extends opq_base_test;
     fork
       seq.start(env.vseqr);
       begin
-        #1us;
         bp_seq.start(env.vseqr.egress_seqr);
       end
       begin
@@ -124,7 +123,6 @@ class opq_edge_always_ready_test extends opq_base_test;
     fork
       seq.start(env.vseqr);
       begin
-        #1us;
         bp_seq.start(env.vseqr.egress_seqr);
       end
       begin
@@ -295,7 +293,6 @@ class opq_edge_stuck_low_backpressure_test extends opq_base_test;
     fork
       seq.start(env.vseqr);
       begin
-        #1us;
         bp_seq.start(env.vseqr.egress_seqr);
       end
       begin

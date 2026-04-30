@@ -45,6 +45,9 @@ package opq_pkg;
 `ifndef OPQ_EGRESS_EMPTY_WIDTH
 `define OPQ_EGRESS_EMPTY_WIDTH 1
 `endif
+`ifndef OPQ_N_HIT
+`define OPQ_N_HIT 255
+`endif
 
   localparam int OPQ_N_LANE = `OPQ_N_LANE;
   localparam int OPQ_INGRESS_WIDTH = 36;
@@ -61,7 +64,7 @@ package opq_pkg;
   localparam int OPQ_TICKET_FIFO_MAX_CREDIT = OPQ_TICKET_FIFO_DEPTH - 1;
   localparam int OPQ_HANDLE_FIFO_MAX_CREDIT = OPQ_HANDLE_FIFO_DEPTH - 2;
   localparam int OPQ_N_SHD = `OPQ_N_SHD;
-  localparam int OPQ_N_HIT = 255;
+  localparam int OPQ_N_HIT = `OPQ_N_HIT;
   localparam int OPQ_DRR_DEFAULT_ALLOWANCE = 256;
   localparam int OPQ_TIMESTAMP_TICK_NS = 8;
   localparam int OPQ_UVM_CLK_PERIOD_NS = 4;
@@ -122,11 +125,11 @@ package opq_pkg;
     return data32;
   endfunction
 
-  function automatic bit [31:0] make_subheader(bit [7:0] shd_ts, bit [7:0] hit_cnt);
+  function automatic bit [31:0] make_subheader(bit [7:0] shd_ts, bit [15:0] hit_cnt);
     bit [31:0] data32;
     data32 = '0;
     data32[31:24] = shd_ts;
-    data32[15:8] = hit_cnt;
+    data32[23:8] = hit_cnt;
     data32[7:0] = K237;
     return data32;
   endfunction

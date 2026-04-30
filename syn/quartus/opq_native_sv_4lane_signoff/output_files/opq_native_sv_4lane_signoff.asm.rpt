@@ -1,5 +1,5 @@
 Assembler report for opq_native_sv_4lane_signoff
-Wed Apr 22 20:03:39 2026
+Thu Apr 30 12:10:34 2026
 Quartus Prime Version 18.1.0 Build 625 09/12/2018 SJ Standard Edition
 
 
@@ -37,7 +37,7 @@ refer to the applicable agreement for further details.
 +---------------------------------------------------------------+
 ; Assembler Summary                                             ;
 +-----------------------+---------------------------------------+
-; Assembler Status      ; Successful - Wed Apr 22 20:03:39 2026 ;
+; Assembler Status      ; Successful - Thu Apr 30 12:10:34 2026 ;
 ; Revision Name         ; opq_native_sv_4lane_signoff           ;
 ; Top-level Entity Name ; opq_native_sv_4lane_signoff_top       ;
 ; Family                ; Arria 10                              ;
@@ -52,13 +52,13 @@ refer to the applicable agreement for further details.
 +--------+---------+---------------+
 
 
-+-------------------------------------------------------------------------------------------------------------------------------------------------------+
-; Assembler Generated Files                                                                                                                             ;
-+-------------------------------------------------------------------------------------------------------------------------------------------------------+
-; File Name                                                                                                                                             ;
-+-------------------------------------------------------------------------------------------------------------------------------------------------------+
-; /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/output_files/opq_native_sv_4lane_signoff.sof ;
-+-------------------------------------------------------------------------------------------------------------------------------------------------------+
++----------------------------------------------------------------------------------------------------------------------------------------------------------+
+; Assembler Generated Files                                                                                                                                ;
++----------------------------------------------------------------------------------------------------------------------------------------------------------+
+; File Name                                                                                                                                                ;
++----------------------------------------------------------------------------------------------------------------------------------------------------------+
+; /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/output_files/opq_native_sv_4lane_signoff.sof ;
++----------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 
 +-----------------------------------------------------------+
@@ -67,7 +67,7 @@ refer to the applicable agreement for further details.
 ; Option         ; Setting                                  ;
 +----------------+------------------------------------------+
 ; JTAG usercode  ; 0xFFFFFFFF                               ;
-; Checksum       ; 0x30C996F5                               ;
+; Checksum       ; 0x30C16814                               ;
 +----------------+------------------------------------------+
 
 
@@ -77,12 +77,12 @@ refer to the applicable agreement for further details.
 Info: *******************************************************************
 Info: Running Quartus Prime Assembler
     Info: Version 18.1.0 Build 625 09/12/2018 SJ Standard Edition
-    Info: Processing started: Wed Apr 22 20:02:51 2026
+    Info: Processing started: Thu Apr 30 12:09:49 2026
 Info: Command: quartus_asm --read_settings_files=off --write_settings_files=off opq_native_sv_4lane_signoff -c opq_native_sv_4lane_signoff
 Info: Quartus Prime Assembler was successful. 0 errors, 0 warnings
-    Info: Peak virtual memory: 6947 megabytes
-    Info: Processing ended: Wed Apr 22 20:03:41 2026
-    Info: Elapsed time: 00:00:50
-    Info: Total CPU time (on all processors): 00:00:49
+    Info: Peak virtual memory: 6937 megabytes
+    Info: Processing ended: Thu Apr 30 12:10:35 2026
+    Info: Elapsed time: 00:00:46
+    Info: Total CPU time (on all processors): 00:00:47
 
 

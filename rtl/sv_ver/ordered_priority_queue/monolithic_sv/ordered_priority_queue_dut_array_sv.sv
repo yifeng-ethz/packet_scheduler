@@ -1,14 +1,14 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_dut_array_sv
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.4.0
-// Date    : 20260424
-// Change  : Add PAGE_RAM_RD_WIDTH and empty-sideband plumbing for native
-//           N_LANE x egress-width DV closure release
+// Version : 26.5.0
+// Date    : 20260430
+// Change  : Align the native array wrapper fallback profile with the Mu3e Demo
+//           N_SHD=128, N_HIT=255 SWB/ER operating point.
 //------------------------------------------------------------------------------
 
 `ifndef OPQ_N_SHD
-`define OPQ_N_SHD 256
+`define OPQ_N_SHD 128
 `endif
 
 `ifndef OPQ_PAGE_RAM_DEPTH
@@ -27,6 +27,10 @@
 `define OPQ_N_LANE 2
 `endif
 
+`ifndef OPQ_N_HIT
+`define OPQ_N_HIT 255
+`endif
+
 `ifndef OPQ_LANE_FIFO_DEPTH
 `define OPQ_LANE_FIFO_DEPTH 8192
 `endif
@@ -39,6 +43,7 @@
 module ordered_priority_queue_dut_array_sv #(
   parameter int unsigned OPQ_N_LANE_PARAM = `OPQ_N_LANE,
   parameter int unsigned OPQ_N_SHD_PARAM = `OPQ_N_SHD,
+  parameter int unsigned OPQ_N_HIT_PARAM = `OPQ_N_HIT,
   parameter int unsigned OPQ_PAGE_RAM_DEPTH_PARAM = `OPQ_PAGE_RAM_DEPTH,
   parameter int unsigned OPQ_LANE_FIFO_DEPTH_PARAM = `OPQ_LANE_FIFO_DEPTH,
   parameter int unsigned OPQ_TICKET_FIFO_DEPTH_PARAM = `OPQ_TICKET_FIFO_DEPTH,
@@ -76,6 +81,7 @@ module ordered_priority_queue_dut_array_sv #(
 `ifdef OPQ_USE_NATIVE_SV
   localparam int unsigned OPQ_N_LANE_LOCAL = OPQ_N_LANE_PARAM;
   localparam int unsigned OPQ_N_SHD_LOCAL = OPQ_N_SHD_PARAM;
+  localparam int unsigned OPQ_N_HIT_LOCAL = OPQ_N_HIT_PARAM;
   localparam int unsigned CHANNEL_WIDTH_CONST = CHANNEL_WIDTH_PARAM;
   localparam int unsigned PAGE_RAM_RD_WIDTH_CONST = PAGE_RAM_RD_WIDTH_PARAM;
   localparam int unsigned EGRESS_SYMBOLS_PER_BEAT_CONST = EGRESS_SYMBOLS_PER_BEAT_PARAM;
@@ -91,7 +97,7 @@ module ordered_priority_queue_dut_array_sv #(
   localparam int unsigned PAGE_RAM_DEPTH_CONST = OPQ_PAGE_RAM_DEPTH_PARAM;
   localparam int unsigned PAGE_RAM_ADDR_WIDTH_CONST = $clog2(PAGE_RAM_DEPTH_CONST);
   localparam int unsigned FRAME_SERIAL_SIZE_CONST = 16;
-  localparam int unsigned MAX_PKT_LENGTH_CONST = 255;
+  localparam int unsigned MAX_PKT_LENGTH_CONST = OPQ_N_HIT_LOCAL;
   localparam int unsigned MAX_PKT_LENGTH_BITS_CONST = (MAX_PKT_LENGTH_CONST <= 1) ? 1 : $clog2(MAX_PKT_LENGTH_CONST);
   localparam int unsigned TICKET_FIFO_DATA_WIDTH_A_CONST =
     48 + LANE_FIFO_ADDR_WIDTH_CONST + MAX_PKT_LENGTH_BITS_CONST + FRAME_SERIAL_SIZE_CONST + 2;
@@ -99,13 +105,6 @@ module ordered_priority_queue_dut_array_sv #(
   localparam int unsigned TICKET_FIFO_DATA_WIDTH_CONST =
     (TICKET_FIFO_DATA_WIDTH_A_CONST > TICKET_FIFO_DATA_WIDTH_B_CONST) ?
       TICKET_FIFO_DATA_WIDTH_A_CONST : TICKET_FIFO_DATA_WIDTH_B_CONST;
-  localparam int unsigned TICKET_TS_LO_CONST = 0;
-  localparam int unsigned TICKET_TS_HI_CONST = 47;
-  localparam int unsigned TICKET_LANE_RD_OFST_LO_CONST = 48;
-  localparam int unsigned TICKET_LANE_RD_OFST_HI_CONST = 48 + LANE_FIFO_ADDR_WIDTH_CONST - 1;
-  localparam int unsigned TICKET_BLOCK_LEN_LO_CONST = 48 + LANE_FIFO_ADDR_WIDTH_CONST;
-  localparam int unsigned TICKET_BLOCK_LEN_HI_CONST =
-    48 + LANE_FIFO_ADDR_WIDTH_CONST + MAX_PKT_LENGTH_BITS_CONST - 1;
   localparam int unsigned HANDLE_LENGTH_CONST =
     LANE_FIFO_ADDR_WIDTH_CONST + PAGE_RAM_ADDR_WIDTH_CONST + MAX_PKT_LENGTH_BITS_CONST;
   localparam int unsigned HANDLE_LEN_LO_CONST = LANE_FIFO_ADDR_WIDTH_CONST + PAGE_RAM_ADDR_WIDTH_CONST;
@@ -141,11 +140,11 @@ module ordered_priority_queue_dut_array_sv #(
   localparam logic [3:0] CSR_LANE_WORD_DRR_DEFER_CNT_CONST = 4'hF;
   localparam logic [31:0] UID_CONST = 32'h4F50_514D;
   localparam int unsigned VERSION_MAJOR_CONST = 26;
-  localparam int unsigned VERSION_MINOR_CONST = 3;
-  localparam int unsigned VERSION_PATCH_CONST = 30;
-  localparam int unsigned VERSION_BUILD_CONST = 420;
-  localparam logic [31:0] VERSION_DATE_CONST = 32'd20260420;
-  localparam logic [31:0] VERSION_GIT_CONST = 32'h38D3_2BFD;
+  localparam int unsigned VERSION_MINOR_CONST = 5;
+  localparam int unsigned VERSION_PATCH_CONST = 0;
+  localparam int unsigned VERSION_BUILD_CONST = 430;
+  localparam logic [31:0] VERSION_DATE_CONST = 32'd20260430;
+  localparam logic [31:0] VERSION_GIT_CONST = 32'h4F66_7FB1;
   localparam logic [31:0] INSTANCE_ID_CONST = 32'd0;
   localparam logic [9:0] DRR_DEFAULT_ALLOWANCE_CONST = 10'd256;
 
@@ -170,6 +169,9 @@ module ordered_priority_queue_dut_array_sv #(
   logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_drop_hdr_cnt;
   logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_drop_shd_cnt;
   logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_drop_hit_cnt;
+  logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_drop_hdr_delta_q;
+  logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_drop_shd_delta_q;
+  logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_drop_hit_delta_q;
   logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_drr_grant_cnt;
   logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_drr_beat_cnt;
   logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_drr_defer_cnt;
@@ -184,7 +186,7 @@ module ordered_priority_queue_dut_array_sv #(
   logic [31:0] csr_ft_drop_hit_cnt;
   logic        csr_ft_rd_in_packet;
   logic [2:0]  csr_ft_rd_header_idx;
-  logic [7:0]  csr_ft_rd_hits_pending;
+  logic [15:0] csr_ft_rd_hits_pending;
 
   logic        csr_read_d;
   logic [8:0]  csr_read_addr_d;
@@ -193,6 +195,7 @@ module ordered_priority_queue_dut_array_sv #(
 
   logic [OPQ_N_LANE_LOCAL-1:0][LANE_FIFO_ADDR_WIDTH_CONST-1:0] native_lane_credit_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][TICKET_FIFO_ADDR_WIDTH_CONST-1:0] native_ticket_credit_dbg;
+  logic [OPQ_N_LANE_LOCAL-1:0] native_ingress_parser_idle_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0] native_ingress_ticket_we_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][TICKET_FIFO_DATA_WIDTH_CONST-1:0] native_ingress_ticket_wdata_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0] native_ingress_lane_we_dbg;
@@ -203,10 +206,6 @@ module ordered_priority_queue_dut_array_sv #(
   logic [OPQ_N_LANE_LOCAL-1:0][47:0] native_ingress_credit_drop_ts_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][15:0] native_ingress_credit_drop_shd_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][15:0] native_ingress_credit_drop_hit_dbg;
-  logic [OPQ_N_LANE_LOCAL-1:0] native_ingress_tail_bypass_valid_dbg;
-  logic [OPQ_N_LANE_LOCAL-1:0] native_ingress_tail_bypass_drop_dbg;
-  logic [OPQ_N_LANE_LOCAL-1:0][FRAME_SERIAL_SIZE_CONST-1:0] native_ingress_tail_bypass_serial_dbg;
-  logic [OPQ_N_LANE_LOCAL-1:0][47:0] native_ingress_tail_bypass_ts_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][FRAME_SERIAL_SIZE_CONST-1:0] native_ingress_pkg_cnt_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0] native_handle_we_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0] native_handle_flag_dbg;
@@ -466,7 +465,8 @@ module ordered_priority_queue_dut_array_sv #(
     .HANDLE_FIFO_DEPTH(HANDLE_FIFO_DEPTH_CONST),
     .PAGE_RAM_DEPTH(PAGE_RAM_DEPTH_CONST),
     .PAGE_RAM_RD_WIDTH(PAGE_RAM_RD_WIDTH_CONST),
-    .N_SHD(OPQ_N_SHD_LOCAL)
+    .N_SHD(OPQ_N_SHD_LOCAL),
+    .N_HIT(MAX_PKT_LENGTH_CONST)
   ) u_native (
     .asi_ingress_data(asi_ingress_data_bus),
     .asi_ingress_valid(asi_ingress_valid_eff_bus),
@@ -479,52 +479,57 @@ module ordered_priority_queue_dut_array_sv #(
     .aso_egress_ready(aso_egress_ready),
     .aso_egress_startofpacket(aso_egress_startofpacket),
     .aso_egress_endofpacket(aso_egress_endofpacket),
-    .aso_egress_error(aso_egress_error),
-    .aso_egress_empty(aso_egress_empty),
-    .cfg_drr_allowance_i(csr_drr_allowance),
-    .cfg_drr_allowance_reload_i(csr_drr_allowance_reload),
+      .aso_egress_error(aso_egress_error),
+      .aso_egress_empty(aso_egress_empty),
+      .ingress_lane_credit_dbg_o(native_lane_credit_dbg),
+      .ingress_ticket_credit_dbg_o(native_ticket_credit_dbg),
+      .ingress_parser_idle_dbg_o(native_ingress_parser_idle_dbg),
+      .ingress_ticket_we_dbg_o(native_ingress_ticket_we_dbg),
+      .ingress_ticket_wdata_dbg_o(native_ingress_ticket_wdata_dbg),
+      .ingress_lane_we_dbg_o(native_ingress_lane_we_dbg),
+      .ingress_running_ts_dbg_o(native_ingress_running_ts_dbg),
+      .ingress_pkg_cnt_dbg_o(native_ingress_pkg_cnt_dbg),
+      .ingress_credit_drop_valid_dbg_o(native_ingress_credit_drop_valid_dbg),
+      .ingress_credit_drop_lane_dbg_o(native_ingress_credit_drop_lane_dbg),
+      .ingress_credit_drop_ticket_dbg_o(native_ingress_credit_drop_ticket_dbg),
+      .ingress_credit_drop_pkg_cnt_dbg_o(native_ingress_credit_drop_pkg_dbg),
+      .ingress_credit_drop_ts_dbg_o(native_ingress_credit_drop_ts_dbg),
+      .ingress_credit_drop_shd_cnt_dbg_o(native_ingress_credit_drop_shd_dbg),
+      .ingress_credit_drop_hit_cnt_dbg_o(native_ingress_credit_drop_hit_dbg),
+      .handle_we_dbg_o(native_handle_we_dbg),
+      .handle_flag_dbg_o(native_handle_flag_dbg),
+      .handle_block_len_dbg_o(native_handle_block_len_dbg),
+      .late_frame_drop_valid_dbg_o(native_late_frame_drop_valid_dbg),
+      .late_frame_drop_hdr_cnt_dbg_o(native_late_frame_drop_hdr_dbg),
+      .late_frame_drop_shd_cnt_dbg_o(native_late_frame_drop_shd_dbg),
+      .late_frame_drop_hit_cnt_dbg_o(native_late_frame_drop_hit_dbg),
+      .late_frame_drop_serial_dbg_o(native_late_frame_drop_serial_dbg),
+      .late_frame_drop_ts_dbg_o(native_late_frame_drop_ts_dbg),
+      .drr_quantum_dbg_o(native_drr_quantum_dbg),
+      .drr_req_dbg_o(native_drr_req_dbg),
+      .drr_gnt_dbg_o(native_drr_gnt_dbg),
+      .drr_lock_event_dbg_o(native_drr_lock_event_dbg),
+      .drr_defer_event_dbg_o(native_drr_defer_event_dbg),
+      .new_frame_dbg_o(native_new_frame_dbg),
+      .ft_wr_page_dbg_o(native_ft_wr_page_dbg),
+      .ft_wr_hit_len_dbg_o(native_ft_wr_hit_len_dbg),
+      .ft_drop_valid_dbg_o(native_ft_drop_valid_dbg),
+      .ft_drop_hdr_dbg_o(native_ft_drop_hdr_dbg),
+      .ft_drop_shd_dbg_o(native_ft_drop_shd_dbg),
+      .ft_drop_hit_dbg_o(native_ft_drop_hit_dbg),
+      .ft_drop_lane_shd_dbg_o(native_ft_drop_lane_shd_dbg),
+      .ft_drop_lane_hit_dbg_o(native_ft_drop_lane_hit_dbg),
+      .page_allocator_active_dbg_o(native_page_allocator_active_dbg),
+      .arbiter_active_dbg_o(native_arbiter_active_dbg),
+      .cfg_drr_allowance_i(csr_drr_allowance),
+      .cfg_drr_allowance_reload_i(csr_drr_allowance_reload),
     .d_clk(d_clk),
     .d_reset(d_reset)
-  );
+    );
 
-  for (genvar g = 0; g < OPQ_N_LANE_LOCAL; g++) begin : g_native_dbg
-    assign native_lane_credit_dbg[g] =
-      u_native.g_ingress_parser[g].ingress_parser_i.ingress_parser.lane_credit;
-    assign native_ticket_credit_dbg[g] =
-      u_native.g_ingress_parser[g].ingress_parser_i.ingress_parser.ticket_credit;
-    assign native_ingress_ticket_we_dbg[g] = u_native.ingress_ticket_we[g];
-    assign native_ingress_ticket_wdata_dbg[g] = u_native.ingress_ticket_wdata[g];
-    assign native_ingress_lane_we_dbg[g] = u_native.ingress_lane_we[g];
-    assign native_ingress_running_ts_dbg[g] = u_native.ingress_running_ts_dbg[g];
-    assign native_ingress_pkg_cnt_dbg[g] = u_native.ingress_pkg_cnt_dbg[g];
-    assign native_ingress_credit_drop_valid_dbg[g] = u_native.ingress_credit_drop_valid_dbg[g];
-    assign native_ingress_credit_drop_lane_dbg[g] = u_native.ingress_credit_drop_lane_dbg[g];
-    assign native_ingress_credit_drop_ticket_dbg[g] = u_native.ingress_credit_drop_ticket_dbg[g];
-    assign native_ingress_credit_drop_pkg_dbg[g] = u_native.ingress_credit_drop_pkg_cnt_dbg[g];
-    assign native_ingress_credit_drop_ts_dbg[g] = u_native.ingress_credit_drop_ts_dbg[g];
-    assign native_ingress_credit_drop_shd_dbg[g] = u_native.ingress_credit_drop_shd_cnt_dbg[g];
-    assign native_ingress_credit_drop_hit_dbg[g] = u_native.ingress_credit_drop_hit_cnt_dbg[g];
-    assign native_ingress_tail_bypass_valid_dbg[g] = u_native.ingress_tail_bypass_valid_dbg[g];
-    assign native_ingress_tail_bypass_drop_dbg[g] = u_native.ingress_tail_bypass_drop_dbg[g];
-    assign native_ingress_tail_bypass_serial_dbg[g] = u_native.ingress_tail_bypass_serial_dbg[g];
-    assign native_ingress_tail_bypass_ts_dbg[g] = u_native.ingress_tail_bypass_ts_dbg[g];
-    assign native_handle_we_dbg[g] = u_native.handle_we_dbg[g];
-    assign native_handle_flag_dbg[g] = u_native.handle_wdata_dbg[g][HANDLE_LENGTH_CONST];
-    assign native_handle_block_len_dbg[g] =
-      u_native.handle_wdata_dbg[g][HANDLE_LEN_HI_CONST:HANDLE_LEN_LO_CONST];
-    assign native_late_frame_drop_valid_dbg[g] = u_native.late_frame_drop_valid_dbg[g];
-    assign native_late_frame_drop_hdr_dbg[g] = u_native.late_frame_drop_hdr_cnt_dbg[g];
-    assign native_late_frame_drop_shd_dbg[g] = u_native.late_frame_drop_shd_cnt_dbg[g];
-    assign native_late_frame_drop_hit_dbg[g] = u_native.late_frame_drop_hit_cnt_dbg[g];
-    assign native_late_frame_drop_serial_dbg[g] = u_native.late_frame_drop_serial_dbg[g];
-    assign native_late_frame_drop_ts_dbg[g] = u_native.late_frame_drop_ts_dbg[g];
-    assign native_drr_quantum_dbg[g] = u_native.block_path_i.b2p_arb.quantum[g];
-    assign native_drr_req_dbg[g] = u_native.block_path_i.b2p_arb_req_raw[g];
-    assign native_drr_gnt_dbg[g] = u_native.block_path_i.b2p_arb_gnt[g];
-    assign native_drr_lock_event_dbg[g] = u_native.block_path_i.drr_lock_event_dbg[g];
-    assign native_drr_defer_event_dbg[g] = u_native.block_path_i.drr_defer_event_dbg[g];
-    assign csr_lane_mask_effective[g] = csr_lane_mask[g] &&
-      (u_native.g_ingress_parser[g].ingress_parser_i.ingress_parser_state == 3'd0);
+    for (genvar g = 0; g < OPQ_N_LANE_LOCAL; g++) begin : g_native_dbg
+      assign csr_lane_mask_effective[g] = csr_lane_mask[g] &&
+        native_ingress_parser_idle_dbg[g];
     assign asi_ingress_valid_eff_bus[g] = asi_ingress_valid_bus[g] && !csr_lane_mask_effective[g];
     assign native_drop_valid_dbg[g] = (csr_lane_mask_effective[g] && asi_ingress_valid_bus[g] &&
       is_subheader_word(asi_ingress_data_bus[g])) ||
@@ -547,66 +552,13 @@ module ordered_priority_queue_dut_array_sv #(
         {{(16-MAX_PKT_LENGTH_BITS_CONST){1'b0}}, native_handle_block_len_dbg[g]} : 16'd0);
   end
 
-  assign native_new_frame_dbg = u_native.write_head_active_dbg && (u_native.write_meta_flow_dbg == 3'd0);
-  assign native_ft_wr_page_dbg = u_native.write_page_active_dbg && u_native.page_we_dbg;
-  assign native_ft_wr_hit_len_dbg = u_native.page_wdata_dbg[23:8];
-  assign native_ft_drop_valid_dbg = u_native.ft_drop_valid_dbg;
-  assign native_ft_drop_hdr_dbg = u_native.ft_drop_hdr_cnt_dbg;
-  assign native_ft_drop_shd_dbg = u_native.ft_drop_shd_cnt_dbg;
-  assign native_ft_drop_hit_dbg = u_native.ft_drop_hit_cnt_dbg;
-  for (genvar g_ft = 0; g_ft < OPQ_N_LANE_LOCAL; g_ft++) begin : g_ft_drop_lane_dbg
-    assign native_ft_drop_lane_shd_dbg[g_ft] = u_native.ft_drop_lane_shd_cnt_dbg[g_ft];
-    assign native_ft_drop_lane_hit_dbg[g_ft] = u_native.ft_drop_lane_hit_cnt_dbg[g_ft];
-  end
-  assign native_page_allocator_active_dbg = u_native.fetch_ticket_active_dbg ||
-    u_native.write_head_active_dbg || u_native.write_tail_active_dbg || u_native.write_page_active_dbg;
-  assign native_arbiter_active_dbg = |native_drr_req_dbg || |u_native.block_path_i.b2p_arb.sel_mask;
   assign avs_csr_waitrequest = 1'b0;
-
-`ifndef SYNTHESIS
-`ifndef OPQ_OSS_FORMAL
-  bit opq_trace_boundary_lane_en;
-  time opq_trace_boundary_lane_after_ps;
-
-  initial begin
-    opq_trace_boundary_lane_en = $test$plusargs("OPQ_NATIVE_TRACE_BOUNDARY");
-    opq_trace_boundary_lane_after_ps = 0;
-    void'($value$plusargs("OPQ_TRACE_AFTER_PS=%d", opq_trace_boundary_lane_after_ps));
-  end
-
-  always_ff @(posedge d_clk) begin : proc_native_ticket_write_trace
-    if (!d_reset && opq_trace_boundary_lane_en && ($time >= opq_trace_boundary_lane_after_ps)) begin
-      for (int lane = 0; lane < OPQ_N_LANE_LOCAL; lane++) begin
-        if (native_ingress_ticket_we_dbg[lane]) begin
-          $display("[opq_boundary_lane] t=%0t parser_ticket_we lane=%0d pkg=%0d ts=0x%0h lane_start=0x%0h len=%0d sop=%0b eop=%0b",
-            $time,
-            lane,
-            native_ingress_pkg_cnt_dbg[lane],
-            native_ingress_ticket_wdata_dbg[lane][TICKET_TS_HI_CONST:TICKET_TS_LO_CONST],
-            native_ingress_ticket_wdata_dbg[lane][TICKET_LANE_RD_OFST_HI_CONST:TICKET_LANE_RD_OFST_LO_CONST],
-            native_ingress_ticket_wdata_dbg[lane][TICKET_BLOCK_LEN_HI_CONST:TICKET_BLOCK_LEN_LO_CONST],
-            native_ingress_ticket_wdata_dbg[lane][TICKET_ALT_SOP_LOC_CONST],
-            native_ingress_ticket_wdata_dbg[lane][TICKET_ALT_EOP_LOC_CONST]);
-        end
-        if (native_ingress_tail_bypass_valid_dbg[lane]) begin
-          $display("[opq_boundary_lane] t=%0t parser_tail lane=%0d pkg=%0d ts=0x%0h drop=%0b",
-            $time,
-            lane,
-            native_ingress_tail_bypass_serial_dbg[lane],
-            native_ingress_tail_bypass_ts_dbg[lane],
-            native_ingress_tail_bypass_drop_dbg[lane]);
-        end
-      end
-    end
-  end
-`endif
-`endif
 
   always_ff @(posedge d_clk) begin : proc_native_csr
     logic clear_counters_v;
     logic csr_ft_rd_in_packet_v;
     logic [2:0] csr_ft_rd_header_idx_v;
-    logic [7:0] csr_ft_rd_hits_pending_v;
+    logic [15:0] csr_ft_rd_hits_pending_v;
 
     avs_csr_readdatavalid <= 1'b0;
     if (csr_read_d) begin
@@ -636,6 +588,9 @@ module ordered_priority_queue_dut_array_sv #(
       csr_drop_hdr_cnt <= '0;
       csr_drop_shd_cnt <= '0;
       csr_drop_hit_cnt <= '0;
+      csr_drop_hdr_delta_q <= '0;
+      csr_drop_shd_delta_q <= '0;
+      csr_drop_hit_delta_q <= '0;
       csr_drr_grant_cnt <= '0;
       csr_drr_beat_cnt <= '0;
       csr_drr_defer_cnt <= '0;
@@ -739,6 +694,9 @@ module ordered_priority_queue_dut_array_sv #(
         csr_drop_hdr_cnt <= '0;
         csr_drop_shd_cnt <= '0;
         csr_drop_hit_cnt <= '0;
+        csr_drop_hdr_delta_q <= '0;
+        csr_drop_shd_delta_q <= '0;
+        csr_drop_hit_delta_q <= '0;
         csr_drr_grant_cnt <= '0;
         csr_drr_beat_cnt <= '0;
         csr_drr_defer_cnt <= '0;
@@ -776,6 +734,16 @@ module ordered_priority_queue_dut_array_sv #(
           drop_post_hit_delta_v = '0;
           masked_exact_pre_ts_v =
             {native_ingress_running_ts_dbg[lane][47:12], asi_ingress_data_bus[lane][31:24], 4'b0000};
+
+          if (csr_drop_hdr_delta_q[lane] != '0) begin
+            csr_drop_hdr_cnt[lane] <= sat_add32(csr_drop_hdr_cnt[lane], csr_drop_hdr_delta_q[lane]);
+          end
+          if (csr_drop_shd_delta_q[lane] != '0) begin
+            csr_drop_shd_cnt[lane] <= sat_add32(csr_drop_shd_cnt[lane], csr_drop_shd_delta_q[lane]);
+          end
+          if (csr_drop_hit_delta_q[lane] != '0) begin
+            csr_drop_hit_cnt[lane] <= sat_add32(csr_drop_hit_cnt[lane], csr_drop_hit_delta_q[lane]);
+          end
 
           if (csr_lane_mask_effective[lane] && asi_ingress_valid_bus[lane]) begin
             if (asi_ingress_startofpacket_bus[lane] && is_preamble_word(asi_ingress_data_bus[lane])) begin
@@ -920,15 +888,9 @@ module ordered_priority_queue_dut_array_sv #(
             drop_post_hit_delta_v = drop_post_hit_delta_v + {{16{1'b0}}, native_ft_drop_lane_hit_dbg[lane]};
           end
 
-          if (drop_hdr_delta_v != '0) begin
-            csr_drop_hdr_cnt[lane] <= sat_add32(csr_drop_hdr_cnt[lane], drop_hdr_delta_v);
-          end
-          if (drop_shd_delta_v != '0) begin
-            csr_drop_shd_cnt[lane] <= sat_add32(csr_drop_shd_cnt[lane], drop_shd_delta_v);
-          end
-          if (drop_hit_delta_v != '0) begin
-            csr_drop_hit_cnt[lane] <= sat_add32(csr_drop_hit_cnt[lane], drop_hit_delta_v);
-          end
+          csr_drop_hdr_delta_q[lane] <= drop_hdr_delta_v;
+          csr_drop_shd_delta_q[lane] <= drop_shd_delta_v;
+          csr_drop_hit_delta_q[lane] <= drop_hit_delta_v;
           if ((drop_hdr_delta_v != '0) || (drop_shd_delta_v != '0) || (drop_hit_delta_v != '0)) begin
             native_drop_evt_valid_dbg[lane] <= 1'b1;
             native_drop_evt_hdr_dbg[lane] <= drop_hdr_delta_v[15:0];
@@ -994,14 +956,14 @@ module ordered_priority_queue_dut_array_sv #(
                   ft_rd_hdr_delta_v = ft_rd_hdr_delta_v + 32'd1;
                 end
                 csr_ft_rd_header_idx_v = csr_ft_rd_header_idx_v + 3'd1;
-              end else if (csr_ft_rd_hits_pending_v != 8'd0) begin
+              end else if (csr_ft_rd_hits_pending_v != 16'd0) begin
                 if (egress_word_v[35:32] == 4'b0000) begin
                   ft_rd_hit_delta_v = ft_rd_hit_delta_v + 32'd1;
                 end
-                csr_ft_rd_hits_pending_v = csr_ft_rd_hits_pending_v - 8'd1;
+                csr_ft_rd_hits_pending_v = csr_ft_rd_hits_pending_v - 16'd1;
               end else if (is_subheader_word(egress_word_v)) begin
                 ft_rd_shd_delta_v = ft_rd_shd_delta_v + 32'd1;
-                csr_ft_rd_hits_pending_v = egress_word_v[15:8];
+                csr_ft_rd_hits_pending_v = egress_word_v[23:8];
               end else if (is_trailer_word(egress_word_v) ||
                            (aso_egress_endofpacket && (symbol_idx == (valid_symbols_v - 1)))) begin
                 csr_ft_rd_in_packet_v = 1'b0;

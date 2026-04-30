@@ -1997,6 +1997,32 @@ class opq_max_hits_virtual_sequence extends opq_virtual_sequence_base;
   endtask
 endclass
 
+class opq_overlimit_one_loss_virtual_sequence extends opq_virtual_sequence_base;
+  `uvm_object_utils(opq_overlimit_one_loss_virtual_sequence)
+
+  function new(string name = "opq_overlimit_one_loss_virtual_sequence");
+    super.new(name);
+  endfunction
+
+  task body();
+    opq_frame_item lane_frames[OPQ_N_LANE][$];
+
+    lane_frames[0].push_back(build_dense_frame(
+      "lane0_hit_limit_plus_one",
+      0,
+      48'd0,
+      16'd0,
+      1,
+      8'h01,
+      OPQ_MIN_SOP_GAP_CYCLES,
+      OPQ_N_HIT + 1,
+      32'h7600_0000
+    ));
+
+    start_lane_frame_matrix(lane_frames);
+  endtask
+endclass
+
 class opq_ftable_overflow_virtual_sequence extends opq_virtual_sequence_base;
   `uvm_object_utils(opq_ftable_overflow_virtual_sequence)
 

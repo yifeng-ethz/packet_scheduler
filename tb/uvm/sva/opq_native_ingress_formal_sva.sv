@@ -68,8 +68,8 @@ module opq_native_ingress_formal_sva #(
 
   logic                              past_valid;
   ingress_mon_state_t                ingress_mon_state;
-  logic [7:0]                        ingress_mon_hits_remaining;
-  logic [7:0]                        ingress_mon_hits_accepted;
+  logic [15:0]                       ingress_mon_hits_remaining;
+  logic [15:0]                       ingress_mon_hits_accepted;
   logic                              ingress_hdr_error_legal_v;
   logic                              ingress_shd_error_legal_v;
   logic                              ingress_hit_error_legal_v;
@@ -172,11 +172,11 @@ module opq_native_ingress_formal_sva #(
         asi_ingress_valid &&
         ingress_shd_error_legal_v &&
         !asi_ingress_error[1] &&
-        (asi_ingress_data[15:8] == 8'd0);
+        (asi_ingress_data[23:8] == 16'd0);
       ingress_last_hit_d <=
         (ingress_mon_state == ING_MON_HITS) &&
         asi_ingress_valid &&
-        (ingress_mon_hits_remaining == 8'd1);
+        (ingress_mon_hits_remaining == 16'd1);
       ingress_trailer_d <=
         asi_ingress_valid &&
         is_trailer_word(asi_ingress_data);
@@ -212,9 +212,9 @@ module opq_native_ingress_formal_sva #(
                 ingress_mon_state <= ING_MON_MASK_SUBH;
                 ingress_mon_hits_remaining <= '0;
                 ingress_mon_hits_accepted <= '0;
-              end else if (asi_ingress_data[15:8] != 8'd0) begin
+              end else if (asi_ingress_data[23:8] != 16'd0) begin
                 ingress_mon_state <= ING_MON_HITS;
-                ingress_mon_hits_remaining <= asi_ingress_data[15:8];
+                ingress_mon_hits_remaining <= asi_ingress_data[23:8];
                 ingress_mon_hits_accepted <= '0;
               end else begin
                 ingress_mon_state <= ING_MON_BODY;
@@ -266,9 +266,9 @@ module opq_native_ingress_formal_sva #(
                 ingress_mon_state <= ING_MON_MASK_SUBH;
                 ingress_mon_hits_remaining <= '0;
                 ingress_mon_hits_accepted <= '0;
-              end else if (asi_ingress_data[15:8] != 8'd0) begin
+              end else if (asi_ingress_data[23:8] != 16'd0) begin
                 ingress_mon_state <= ING_MON_HITS;
-                ingress_mon_hits_remaining <= asi_ingress_data[15:8];
+                ingress_mon_hits_remaining <= asi_ingress_data[23:8];
                 ingress_mon_hits_accepted <= '0;
               end else begin
                 ingress_mon_state <= ING_MON_BODY;
@@ -284,13 +284,13 @@ module opq_native_ingress_formal_sva #(
 
           ING_MON_HITS: begin
             if (!asi_ingress_error[0]) begin
-              ingress_mon_hits_accepted <= ingress_mon_hits_accepted + 8'd1;
+              ingress_mon_hits_accepted <= ingress_mon_hits_accepted + 16'd1;
             end
-            if (ingress_mon_hits_remaining == 8'd1) begin
+            if (ingress_mon_hits_remaining == 16'd1) begin
               ingress_mon_state <= ING_MON_BODY;
               ingress_mon_hits_remaining <= '0;
             end else begin
-              ingress_mon_hits_remaining <= ingress_mon_hits_remaining - 8'd1;
+              ingress_mon_hits_remaining <= ingress_mon_hits_remaining - 16'd1;
             end
           end
 
@@ -304,9 +304,9 @@ module opq_native_ingress_formal_sva #(
                 ingress_mon_state <= ING_MON_MASK_SUBH;
                 ingress_mon_hits_remaining <= '0;
                 ingress_mon_hits_accepted <= '0;
-              end else if (asi_ingress_data[15:8] != 8'd0) begin
+              end else if (asi_ingress_data[23:8] != 16'd0) begin
                 ingress_mon_state <= ING_MON_HITS;
-                ingress_mon_hits_remaining <= asi_ingress_data[15:8];
+                ingress_mon_hits_remaining <= asi_ingress_data[23:8];
                 ingress_mon_hits_accepted <= '0;
               end else begin
                 ingress_mon_state <= ING_MON_BODY;

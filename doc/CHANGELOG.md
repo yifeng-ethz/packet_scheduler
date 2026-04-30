@@ -9,6 +9,80 @@ Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 > `qverify` / `znformal` with simulation stress fallback only when the
 > Siemens formal binaries are not present on the host.
 
+## 26.5.0.0430
+
+- **Synthesis / Mu3e Demo Fixed4 Timing**: corrected the SWB/FEB OPQ profile
+  to the Mu3e Demo setting `OPQ_N_SHD=128`, `OPQ_N_HIT=255`,
+  `OPQ_TICKET_FIFO_DEPTH=1024`, and `OPQ_PAGE_RAM_DEPTH=65536`. The fixed4
+  Qsys-wrapper drop-delta adders are narrowed before the CSR delta register,
+  cutting the integration critical path into `csr_drop_hit_delta_q` without
+  changing the CSR map or counter semantics.
+- **RTL / Intentional One-Hit Loss Contract**: the ingress parser now clamps
+  over-limit subheader hit counts to `N_HIT` and emits a pre-drop event for
+  the excess hits. With the active `N_HIT=255` profile, a declared 256-hit
+  cluster is expected to drop exactly one hit and deliver 255 hits.
+- **Regression Evidence**: ran the native-SV UVM subset with `OPQ_N_LANE=4`,
+  `OPQ_N_SHD=128`, `OPQ_N_HIT=255`, `OPQ_TICKET_FIFO_DEPTH=1024`, and
+  `OPQ_PAGE_RAM_DEPTH=65536`; `opq_basic_smoke_test`,
+  `opq_edge_max_hits_test`, `opq_edge_overlimit_one_loss_test`,
+  `opq_error_lane_mask_burst_test`, and `opq_error_counter_clear_test` all
+  passed with `UVM_ERROR=0`.
+- **Standalone Synthesis Evidence**: reran `opq_native_sv_4lane_signoff` at
+  the tightened `275 MHz` clock with the corrected Mu3e Demo profile. The
+  compile closed with slow-100 setup `+0.318 ns`, worst reported hold
+  `+0.014 ns`, slow-100 Fmax `301.39 MHz`, `7,516` ALMs, `7,944` registers,
+  and `159` M20Ks.
+
+## 26.4.15.0428
+
+- **Synthesis / Fixed4 Block-Path Closure**: re-aligned the 4-lane
+  `src_compat/ordered_priority_queue_monolithic_block_path.sv` synthesis copy
+  to the maintained native-SV registered mover page-write stage. This removes
+  the stale direct lane-FIFO-to-page-RAM data cone that MuSiP integration was
+  closing through.
+- **Synthesis Evidence**: refreshed the 4-lane standalone Arria 10 signoff
+  compile at the tightened `275 MHz` clock. The rerun closes with slow-100
+  setup `+0.155 ns`, hold `+0.040 ns`, Fmax `287.27 MHz`, `6,944` ALMs,
+  `7,977` registers, and `159` M20Ks.
+- **Verification / Packaging**: reran the directed native-SV lane-mask and
+  counter-clear tests, refreshed the maintained 8-run frame signoff dashboard,
+  and advanced the delivered OPQ Platform Designer identity / CSR META version
+  to `26.4.15.0428`.
+
+## 26.4.13.0428
+
+- **RTL / Native-SV Presenter Timing**: preserved the existing native
+  presenter metadata and head staging registers and disabled advanced netlist
+  optimization on those cuts. This keeps frame-length/count arithmetic behind
+  the intended register boundary before page-RAM pointer launch control in
+  MuSiP integration builds without adding latency or changing queue order.
+- **RTL / Page Allocator Recovery**: allowed same-frame-timestamp forward
+  serial rebase after masked/drop-only frames. This restores no-restart
+  4-lane mixed-soak progress when the allocator timestamp has already advanced
+  but serial ownership must reopen at the same frame timestamp.
+- **Verification**: aligned the native presenter startup-backpressure SVA with
+  the two quiet prime cycles in the registered page-RAM handoff, then refreshed
+  directed native-SV and 4-lane mixed-soak/report evidence for
+  `26.4.13.0428`.
+- **Packaging**: advanced the Platform Designer identity and `VERSION` file to
+  `26.4.13.0428` for the refreshed MuSiP timing-closure candidate, including
+  the native-SV UVM and fixed4 synthesis-wrapper CSR META identity constants.
+
+## 26.4.12.0428
+
+- **RTL / Native-SV Presenter Timing**: registered completed-frame metadata at
+  the presenter boundary before metadata writes, overlap requests, and
+  presentation launch gating. This cuts the MuSiP critical path from
+  frame-count arithmetic through `block_present_start_v` into the page-RAM
+  read-pointer launch enable while preserving one-new-frame-per-cycle intake.
+- **Verification / Native-SV Assertions**: tightened the tail-lookahead
+  presenter assertion so it only fires on cycles where the one-entry
+  lookahead/pending capture path is actually free. The reduced-depth overflow
+  directed case already fell back through the normal restart path cleanly, but
+  the older assertion still flagged those cycles as tool errors.
+- **Packaging**: advanced the delivered OPQ Platform Designer identity and
+  `VERSION` file to `26.4.12.0428` for the MuSiP integration image.
+
 ## 26.4.3.0425
 
 - **RTL / Feature Timing Closure**: closed the focused

@@ -8,7 +8,7 @@ package require -exact altera_terp 1.0
 
 set_module_property NAME                             ordered_priority_queue
 set_module_property DISPLAY_NAME                     "Ordered Priority Queue"
-set_module_property VERSION                          26.4.0.0424
+set_module_property VERSION                          26.5.0.0430
 set_module_property DESCRIPTION                      "Ordered Priority Queue Mu3e IP Core"
 set_module_property GROUP                            "Mu3e Data Plane/Modules"
 set_module_property AUTHOR                           "Yifeng Wang (yifenwan@phys.ethz.ch)"
@@ -351,17 +351,17 @@ proc opq_preset_value_or_derived {preset_name field_name derived_value} {
 }
 
 # ────────────────────────────────────────────────────────────────────────────
-# Identity constants — packaged 2026-04-24
+# Identity constants - packaged 2026-04-30
 # ────────────────────────────────────────────────────────────────────────────
 # UID = ASCII "OPQM" (Ordered Priority Queue, Monolithic) = 0x4F50514D
 set IP_UID_DEFAULT_CONST        1330663757
 set VERSION_MAJOR_DEFAULT_CONST 26
-set VERSION_MINOR_DEFAULT_CONST 4
+set VERSION_MINOR_DEFAULT_CONST 5
 set VERSION_PATCH_DEFAULT_CONST 0
-set BUILD_DEFAULT_CONST         424
-set VERSION_DATE_DEFAULT_CONST  20260424
+set BUILD_DEFAULT_CONST         430
+set VERSION_DATE_DEFAULT_CONST  20260430
 # 32-bit packaged provenance stamp for this release family
-set VERSION_GIT_DEFAULT_CONST   36303022
+set VERSION_GIT_DEFAULT_CONST   1332117425
 set INSTANCE_ID_DEFAULT_CONST   0
 set OPQ_VERSION_STRING          [format "%d.%d.%d.%04d" \
     $VERSION_MAJOR_DEFAULT_CONST \
@@ -494,7 +494,7 @@ proc compute_derived_values {} {
         set_display_item_property sizing_html TEXT "<html><b>Derived storage and preset-pinned knobs</b><br/>Ingress symbol: <b>${ingress_beat_w}</b> bits = data <b>${data_w}</b> + datak <b>${datak_w}</b><br/>CHANNEL_WIDTH auto = <b>${channel_w}</b> (compatibility floor of 2 bits, then grows with N_LANE)<br/>LANE_FIFO_WIDTH auto = <b>${lane_fifo_w}</b> bits = ingress symbol + sop/eop/hit_err/reserved<br/>TICKET_FIFO_DEPTH active = <b>${ticket_fifo_d}</b> (auto-derived for generic presets, explicitly pinned by Mu3e Demo)<br/>HANDLE_FIFO_DEPTH active = <b>${handle_fifo_d}</b> (auto-derived for generic presets, explicitly pinned by Mu3e Demo)<br/>PAGE_RAM_RD_WIDTH selected = <b>${page_ram_rd_w}</b> bits = <b>${symbols_per_beat}</b> OPQ symbol(s) per egress beat<br/>EGRESS_EMPTY_WIDTH derived = <b>${empty_w}</b><br/>Hit payload model: current packaged point = <b>${data_w}</b>-bit hit word with <b>${hit_payload_w}</b>-bit non-timestamp payload<br/><br/><b>Derived storage</b><br/>Lane FIFO storage: <b>${lane_store_bits}</b> bits (${n_lane} \u00d7 ${lane_fifo_d} \u00d7 ${lane_fifo_w})<br/>Ticket FIFO storage: <b>${ticket_store_bits}</b> bits<br/>Handle FIFO storage: <b>${handle_store_bits}</b> bits<br/>Page RAM storage: <b>${page_ram_bits}</b> bits (${page_ram_d} \u00d7 ${lane_fifo_w})<br/>Total on-chip memory: <b>${total_store_bits}</b> bits</html>"
     }
     catch {
-        set_display_item_property packet_html TEXT "<html><b>Packet format</b><br/>Current packaged release uses a <b>${ingress_beat_w}</b>-bit symbol: datak[${ingress_beat_w}-1:${data_w}] + data[${data_w}-1:0].<br/><table border=\"1\" cellpadding=\"3\" width=\"100%\"><tr><th>Segment</th><th>Words</th><th>Marker</th><th>Current layout</th></tr><tr><td>Header preamble</td><td>1</td><td><b>K285</b> / 0xBC</td><td>datak=<b>0001</b>, data[31:26]=dt_type, data[23:8]=feb_id, data[7:0]=K285</td></tr><tr><td>Header payload</td><td>4</td><td>data</td><td>word1=frame_ts[47:16], word2=frame_ts[15:0]|pkg_cnt, word3=subheader_cnt|hit_cnt, word4=send_ts[30:0]</td></tr><tr><td>Subheader</td><td>1 each</td><td><b>K237</b> / 0xF7</td><td>datak=<b>0001</b>, data[31:24]=subheader_ts, data[15:8]=hit_cnt, data[7:0]=K237</td></tr><tr><td>Hit</td><td>1 each</td><td>data</td><td>datak=<b>0000</b>, data[31:0]=hit word. Current packaged point: 32-bit hit word with 24-bit non-timestamp payload.</td></tr><tr><td>Trailer</td><td>1</td><td><b>K284</b> / 0x9C</td><td>datak=<b>0001</b>, data[7:0]=K284</td></tr></table><br/><b>Packet limits</b><br/>TRACK_HEADER is fixed to <b>${track_header}</b> in this release.<br/>Subheaders per header packet: <b>${n_shd}</b><br/>Max hits per subheader: <b>${n_hit}</b><br/>Max hits per header packet: <b>${worst_case_hits_per_frame}</b> (worst case before <i>ingress parser</i> drop)</html>"
+        set_display_item_property packet_html TEXT "<html><b>Packet format</b><br/>Current packaged release uses a <b>${ingress_beat_w}</b>-bit symbol: datak[${ingress_beat_w}-1:${data_w}] + data[${data_w}-1:0].<br/><table border=\"1\" cellpadding=\"3\" width=\"100%\"><tr><th>Segment</th><th>Words</th><th>Marker</th><th>Current layout</th></tr><tr><td>Header preamble</td><td>1</td><td><b>K285</b> / 0xBC</td><td>datak=<b>0001</b>, data[31:26]=dt_type, data[23:8]=feb_id, data[7:0]=K285</td></tr><tr><td>Header payload</td><td>4</td><td>data</td><td>word1=frame_ts[47:16], word2=frame_ts[15:0]|pkg_cnt, word3=subheader_cnt|hit_cnt, word4=send_ts[30:0]</td></tr><tr><td>Subheader</td><td>1 each</td><td><b>K237</b> / 0xF7</td><td>datak=<b>0001</b>, data[31:24]=subheader_ts, data[23:8]=hit_cnt, data[7:0]=K237</td></tr><tr><td>Hit</td><td>1 each</td><td>data</td><td>datak=<b>0000</b>, data[31:0]=hit word. Current packaged point: 32-bit hit word with 24-bit non-timestamp payload.</td></tr><tr><td>Trailer</td><td>1</td><td><b>K284</b> / 0x9C</td><td>datak=<b>0001</b>, data[7:0]=K284</td></tr></table><br/><b>Packet limits</b><br/>TRACK_HEADER is fixed to <b>${track_header}</b> in this release.<br/>Subheaders per header packet: <b>${n_shd}</b><br/>Max hits per subheader: <b>${n_hit}</b><br/>Max hits per header packet: <b>${worst_case_hits_per_frame}</b> (worst case before <i>ingress parser</i> drop)</html>"
     }
     catch {
         set_display_item_property throughput_html TEXT "<html><b>Expected throughput</b><br/>Aggregation mode: <b>${mode}</b><br/>Current packaged egress beat: <b>${page_ram_rd_w}</b> bits/cycle = <b>${symbols_per_beat}</b> OPQ ingress symbol(s) per egress beat<br/>Per-lane ingress budget: <b>${ingress_beat_w}</b> bits/cycle at the shared data-path clock<br/>Lossless equal-load share guideline: the selected egress pack ratio gives each lane roughly <b>${symbols_per_beat}/${n_lane}</b> of the sustained symbol budget before packet-overhead effects.<br/>Block-mover scheduling: shared page-RAM write port is serviced by an <b>ordered block-level DRR arbiter</b> with software-tunable per-lane refill allowance.<br/>Backpressure: ingress lanes are <i>non-backlog</i> (drop-on-full inside the lane/ticket FIFOs); egress honours <code>ready</code> and exports <code>empty</code> for packet-tail packing.</html>"

@@ -6,7 +6,7 @@ lane, merges lane-local packet streams into shared page storage, and emits a
 single ordered Avalon-ST egress stream with explicit per-lane and frame-table
 drop accounting.
 
-**Version:** 26.3.66.0423
+**Version:** 26.4.13.0428
 **Module name:** `ordered_priority_queue`
 **Platform Designer group:** Mu3e Data Plane / Modules
 
@@ -36,7 +36,7 @@ The packaged release exposes representative legal points
 `N_LANE={2,4,8,16}`, fixed `MODE=MERGING`, fixed `TRACK_HEADER=true`,
 `N_SHD={64,128,256,512}`, and the safe current `32+4` ingress / `36`-bit
 single-symbol egress contract. The active release closure is the
-`4-lane / N_SHD=128 / TICKET_FIFO_DEPTH=256 / native_sv` slice documented in
+`4-lane / N_SHD=128 / TICKET_FIFO_DEPTH=1024 / native_sv` slice documented in
 [`doc/SIGNOFF.md`](doc/SIGNOFF.md).
 
 ---
@@ -90,7 +90,7 @@ single-symbol egress contract. The active release closure is the
 | `HANDLE_FIFO_DEPTH` | `64` | Fixed in the packaged release. |
 | `PAGE_RAM_DEPTH` | `{8192,16384,32768,65536}` | Legal shared page-storage depth points. |
 | `PAGE_RAM_RD_WIDTH` | `36` | Current packaged egress width; no `empty` sideband is exported. |
-| Active signoff slice | `N_LANE=4`, `N_SHD=128`, `TICKET_FIFO_DEPTH=256`, `DUT_IMPL=native_sv` | Current release dashboarded closure point. |
+| Active signoff slice | `N_LANE=4`, `N_SHD=128`, `TICKET_FIFO_DEPTH=1024`, `DUT_IMPL=native_sv` | Current release dashboarded closure point. |
 
 ### Legal Drop and Accounting Semantics
 
@@ -263,7 +263,7 @@ The active verification workflow lives under [`tb/`](tb/README.md) and
   resource evidence
 
 Current release signoff is closed on the active
-`OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=256 DUT_IMPL=native_sv`
+`OPQ_N_LANE=4 OPQ_N_SHD=128 OPQ_TICKET_FIFO_DEPTH=1024 DUT_IMPL=native_sv`
 slice, with broader package-space expansion tracked explicitly as later work in
 [`doc/CONFIG_SIGNOFF.md`](doc/CONFIG_SIGNOFF.md).
 

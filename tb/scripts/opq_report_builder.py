@@ -819,11 +819,21 @@ def resolve_ucdb_path(case: dict) -> tuple[Path | None, str | None]:
     return None, None
 
 
-def resolve_log_path(case: dict) -> tuple[Path | None, str | None]:
+def resolve_log_path(case: dict, expected_page_depth: int | None = None) -> tuple[Path | None, str | None]:
+    existing: list[tuple[Path, str]] = []
     for candidate_name in artifact_candidates(case):
         candidate = SIM_LOG_DIR / f"{candidate_name}.log"
         if candidate.is_file():
-            return candidate, candidate_name
+            existing.append((candidate, candidate_name))
+
+    if expected_page_depth is not None:
+        for candidate, candidate_name in existing:
+            _log_exists, engine_ok, pass_ok, log_summary = extract_log_summary(candidate)
+            if engine_ok and pass_ok and scope_matches_log_summary(log_summary, expected_page_depth):
+                return candidate, candidate_name
+
+    for candidate, candidate_name in existing:
+        return candidate, candidate_name
     return None, None
 
 
@@ -1028,7 +1038,9 @@ def stage_report_artifacts(case_artifacts: list[dict]) -> None:
         if not case.get("implemented", False):
             continue
         case_id = case["case_id"]
-        src_log, _ = resolve_log_path(case)
+        build_knobs = case.get("build_knobs") or {}
+        expected_page_depth = build_knobs.get("OPQ_PAGE_RAM_DEPTH")
+        src_log, _ = resolve_log_path(case, expected_page_depth)
         src_ucdb, _ = resolve_ucdb_path(case)
         dst_log = REPORT_LOG_DIR / f"{case_id}_{RTL_VARIANT}_s{SEED}.log"
         dst_ucdb = REPORT_COV_DIR / f"{case_id}_s{SEED}.ucdb"
@@ -1082,13 +1094,13 @@ def build() -> dict:
         for step, catalog_case in enumerate(catalog_rows, start=1):
             case_id = catalog_case["case_id"]
             all_artifacts.append(catalog_case)
-            log_path, log_artifact_name = resolve_log_path(catalog_case)
+            build_knobs = case_build_knobs(catalog_case)
+            expected_page_depth = build_knobs["OPQ_PAGE_RAM_DEPTH"]
+            log_path, log_artifact_name = resolve_log_path(catalog_case, expected_page_depth)
             ucdb_path, ucdb_artifact_name = resolve_ucdb_path(catalog_case)
             log_exists, engine_ok, pass_ok, log_summary = extract_log_summary(log_path)
             has_ucdb = ucdb_path is not None
-            scope_match = scope_matches_log_summary(
-                log_summary, case_build_knobs(catalog_case)["OPQ_PAGE_RAM_DEPTH"]
-            )
+            scope_match = scope_matches_log_summary(log_summary, expected_page_depth)
             implemented = log_exists and has_ucdb and scope_match
             evidence_state = "current_scope_evidenced"
             if not implemented:
@@ -1116,7 +1128,7 @@ def build() -> dict:
                 "implementation_mode": SIGNOFF_DUT_IMPL,
                 "build_tag": RTL_VARIANT,
                 "isolated_effort": "high" if catalog_case["method"] == "R" else "practical",
-                "build_knobs": case_build_knobs(catalog_case),
+                "build_knobs": build_knobs,
                 "log_summary": log_summary,
                 "scope_match": scope_match,
                 "evidence_state": evidence_state,

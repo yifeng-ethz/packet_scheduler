@@ -1,9 +1,10 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_page_allocator
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.4.3
-// Date    : 20260425
-// Change  : Pipeline allocator fetch and page-commit reductions for timing
+// Version : 26.4.13
+// Date    : 20260428
+// Change  : Permit forward-serial rebase at the same frame timestamp after
+//           masked/drop-only frames so mixed no-restart 4-lane soaks reopen.
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_page_allocator #(
@@ -519,7 +520,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
   page_allocator_state_t page_allocator_state;
   page_allocator_reg_t page_allocator;
   logic [N_LANE-1:0][FIFO_RAW_DELAY:1] page_allocator_is_pending_ticket_d;
-  ticket_rptr_t page_allocator_ticket_rptr_d [FIFO_RAW_DELAY:1];
+  logic [N_LANE-1:0][FIFO_RAW_DELAY:1][TICKET_FIFO_ADDR_WIDTH-1:0] page_allocator_ticket_rptr_d;
   ticket_raws_t ticket_fifos_rd_data_stage_q;
   (* preserve *) logic [N_LANE-1:0] fetch_pending_q;
   (* preserve *) tickets_t fetch_ticket_q;
@@ -631,12 +632,12 @@ module ordered_priority_queue_monolithic_page_allocator #(
   logic [PAGE_RAM_DATA_WIDTH-1:0] page_allocator_if_write_page_hdr_data;
   logic [PAGE_RAM_DATA_WIDTH-1:0] page_allocator_if_write_page_trl_data;
   logic all_lanes_fetch_ready;
+  logic all_lanes_fetch_ready_live;
   logic [N_LANE-1:0] idle_fetch_ready_lane;
   logic [N_LANE-1:0] idle_fetch_ready_lane_q;
   logic [FETCH_READY_PAIR_COUNT-1:0] idle_fetch_ready_pair;
   logic [FETCH_READY_REDUCE_COUNT-1:0] idle_fetch_ready_reduce;
   logic all_lanes_fetch_ready_q;
-  logic all_lanes_fetch_ready_now;
   logic idle_tail_flush_ready;
   logic idle_tail_flush_base;
   logic idle_tail_flush_ready_decision;
@@ -658,6 +659,8 @@ module ordered_priority_queue_monolithic_page_allocator #(
   logic [N_LANE-1:0] active_frame_waiting_busy_lane_v_q;
   logic [N_LANE-1:0] active_frame_pending_nonfuture_lane;
   logic [N_LANE-1:0] active_frame_pending_nonfuture_lane_q;
+  logic [N_LANE-1:0] inactive_frame_join_pending_lane;
+  logic inactive_frame_join_sop_pending;
   logic active_frame_pending_nonfuture_ticket;
   logic frame_join_hold;
   logic frame_join_hold_q;
@@ -700,7 +703,9 @@ module ordered_priority_queue_monolithic_page_allocator #(
   genvar tail_status_lane_idx;
 
   assign idle_tail_flush_ready_decision =
-    idle_tail_flush_base && (active_frame_pending_nonfuture_lane_q == '0);
+    idle_tail_flush_base &&
+    (active_frame_pending_nonfuture_lane_q == '0) &&
+    !frame_join_hold;
   assign idle_fetch_ready =
     all_lanes_fetch_ready_q &&
     any_pending_ticket_q &&
@@ -746,7 +751,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
     total_subh_v = 0;
     total_hit_v = 0;
     all_lanes_fetch_ready = 1'b1;
-    all_lanes_fetch_ready_now = 1'b1;
+    all_lanes_fetch_ready_live = 1'b1;
     all_present_tk_sop = 1'b1;
     any_pending_ticket = 1'b0;
     any_pending_curr_sop_ticket = 1'b0;
@@ -757,6 +762,8 @@ module ordered_priority_queue_monolithic_page_allocator #(
     frame_start_waiting_busy_lane_v = '0;
     active_frame_waiting_busy_lane_v = '0;
     active_frame_pending_nonfuture_lane = '0;
+    inactive_frame_join_pending_lane = '0;
+    inactive_frame_join_sop_pending = 1'b0;
     active_frame_pending_nonfuture_ticket = 1'b0;
     frame_join_hold = 1'b0;
     page_allocator_ticket_serial_ref = page_allocator.frame_serial;
@@ -794,8 +801,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
 
     page_allocator_if_write_page_shr_data[35:32] = 4'b0001;
     page_allocator_if_write_page_shr_data[31:24] = page_allocator.running_ts[11:4];
-    page_allocator_if_write_page_shr_data[23:16] = 8'd0;
-    page_allocator_if_write_page_shr_data[15:8] = page_allocator.page_length[7:0];
+    page_allocator_if_write_page_shr_data[23:8] = 16'(page_allocator.page_length);
     page_allocator_if_write_page_shr_data[7:0] = K237;
 
     if (page_allocator.frame_lane_active != '0) begin
@@ -913,13 +919,12 @@ module ordered_priority_queue_monolithic_page_allocator #(
 
       page_allocator_is_pending_ticket_lane[i] = &page_allocator_is_pending_ticket_d[i];
       page_allocator_ticket_q_valid[i] =
-        (page_allocator_ticket_rptr_d[FIFO_RAW_DELAY][i] == page_allocator.ticket_rptr[i]);
+        (page_allocator_ticket_rptr_d[i][FIFO_RAW_DELAY] == page_allocator.ticket_rptr[i]);
       any_pending_ticket_lane |= page_allocator_is_pending_ticket_lane[i];
       idle_fetch_ready_lane[i] =
         !page_allocator_is_pending_ticket[i] ||
         (page_allocator_is_pending_ticket_lane[i] &&
          page_allocator_ticket_q_valid[i]);
-      all_lanes_fetch_ready_now &= idle_fetch_ready_lane[i];
       lane_tail_ready_v = page_allocator.frame_lane_tail_seen[i];
       if (!page_allocator_is_pending_ticket[i] && ingress_parser_busy_i[i]) begin
         frame_start_waiting_busy_lane_v[i] = 1'b1;
@@ -940,6 +945,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
         // surfaces its ticket or drains to idle; otherwise the late body
         // ticket can be reclassified against the next frame and dropped.
         active_frame_pending_nonfuture_lane[i] = 1'b1;
+        inactive_frame_join_pending_lane[i] = 1'b1;
         active_frame_pending_nonfuture_ticket = 1'b1;
       end
       if (page_allocator_is_pending_ticket[i] && idle_tk_sop_q[i]) begin
@@ -971,6 +977,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
         if (!page_allocator_is_pending_ticket_lane[i] ||
             !page_allocator_ticket_q_valid[i]) begin
           active_frame_pending_nonfuture_lane[i] = 1'b1;
+          inactive_frame_join_pending_lane[i] = 1'b1;
           active_frame_pending_nonfuture_ticket = 1'b1;
         end else if (!idle_tk_sop_q[i] &&
                      idle_tk_active_frame_q[i]) begin
@@ -979,6 +986,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
           // ownership alive instead of retiring the frame and late-dropping the
           // straggling body ticket one cycle later.
           active_frame_pending_nonfuture_lane[i] = 1'b1;
+          inactive_frame_join_pending_lane[i] = 1'b1;
           active_frame_pending_nonfuture_ticket = 1'b1;
         end else if (idle_tk_sop_q[i] &&
                      idle_tk_curr_q[i]) begin
@@ -987,6 +995,8 @@ module ordered_priority_queue_monolithic_page_allocator #(
           // until that SOP is absorbed and the lane is reactivated, otherwise
           // the following body ticket ages into the late-drop path.
           active_frame_pending_nonfuture_lane[i] = 1'b1;
+          inactive_frame_join_pending_lane[i] = 1'b1;
+          inactive_frame_join_sop_pending = 1'b1;
           active_frame_pending_nonfuture_ticket = 1'b1;
         end
       end
@@ -1029,6 +1039,8 @@ module ordered_priority_queue_monolithic_page_allocator #(
       end
     end
 
+    all_lanes_fetch_ready_live = &idle_fetch_ready_lane;
+
     for (int i = 0; i < FETCH_READY_PAIR_COUNT; i++) begin
       idle_fetch_ready_pair[i] = idle_fetch_ready_lane_q[2*i];
       if ((2*i + 1) < N_LANE) begin
@@ -1047,14 +1059,17 @@ module ordered_priority_queue_monolithic_page_allocator #(
     if ((page_allocator.frame_join_wait != '0) &&
         (page_allocator.frame_lane_active != '0) &&
         (page_allocator.frame_lane_active != '1) &&
-        !any_pending_sop_ticket) begin
+        !inactive_frame_join_sop_pending) begin
       frame_join_hold = 1'b1;
     end
     idle_tail_flush_base =
       (page_allocator.frame_lane_active != '0) &&
       (&idle_active_tail_ready_lane_q) &&
       (page_allocator.frame_cnt != '0);
-    idle_tail_flush_ready = idle_tail_flush_base && !active_frame_pending_nonfuture_ticket;
+    idle_tail_flush_ready =
+      idle_tail_flush_base &&
+      !active_frame_pending_nonfuture_ticket &&
+      !frame_join_hold;
     page_allocator_if_read_ticket_ticket_sop.n_subh = frame_shr_cnt_t'(total_subh_v);
     page_allocator_if_read_ticket_ticket_sop.n_hit = frame_hit_cnt_t'(total_hit_v);
 
@@ -1208,7 +1223,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
             end
 `endif
           page_allocator_state <= PAGE_ALLOCATOR_PREPARE_WRITE_TAIL;
-        end else if (idle_fetch_ready_q) begin
+        end else if (idle_fetch_ready_q && !frame_join_hold) begin
 `ifndef SYNTHESIS
           if (opq_trace_boundary_en && ($time >= opq_trace_after_ps)) begin
             $display(
@@ -1267,7 +1282,9 @@ module ordered_priority_queue_monolithic_page_allocator #(
         end
 
       PAGE_ALLOCATOR_FETCH_TICKET: begin
-        if (!all_lanes_fetch_ready_now || !any_pending_ticket) begin
+        // Use the live FIFO-read validity interlock so an rptr update from the
+        // previous apply step cannot be followed by a stale ticket snapshot.
+        if (!all_lanes_fetch_ready_live || !any_pending_ticket) begin
           page_allocator_state <= PAGE_ALLOCATOR_FETCH_TICKET;
         end else begin
           for (int i = 0; i < N_LANE; i++) begin
@@ -1661,7 +1678,8 @@ module ordered_priority_queue_monolithic_page_allocator #(
           !fetch_any_pending_curr_sop_q &&
           fetch_future_frame_seen_q &&
           serial_reached_or_passed(fetch_future_frame_serial_q, page_allocator.frame_serial) &&
-          (fetch_future_frame_ts_q > page_allocator.frame_ts);
+          (fetch_future_frame_serial_q != page_allocator.frame_serial) &&
+          (fetch_future_frame_ts_q >= page_allocator.frame_ts);
         fetch_rebase_future_frame_q <= rebase_future_frame_v;
         fetch_rebase_future_frame_lane_q <= {N_LANE{rebase_future_frame_v}};
         fetch_predrop_current_frame_q <= predrop_current_frame_v;
@@ -2422,19 +2440,15 @@ module ordered_priority_queue_monolithic_page_allocator #(
     for (int i = 0; i < N_LANE; i++) begin
       if (d_reset) begin
         page_allocator_is_pending_ticket_d[i] <= '0;
-        for (int j = 1; j <= FIFO_RAW_DELAY; j++) begin
-          page_allocator_ticket_rptr_d[j][i] <= '0;
-        end
+        page_allocator_ticket_rptr_d[i] <= '0;
       end else begin
-        page_allocator_ticket_rptr_d[1][i] <= page_allocator.ticket_rptr[i];
-        for (int j = 2; j <= FIFO_RAW_DELAY; j++) begin
-          page_allocator_ticket_rptr_d[j][i] <= page_allocator_ticket_rptr_d[j-1][i];
-        end
         for (int j = 1; j <= FIFO_RAW_DELAY; j++) begin
           if (j == 1) begin
             page_allocator_is_pending_ticket_d[i][j] <= page_allocator_is_pending_ticket[i];
+            page_allocator_ticket_rptr_d[i][j] <= page_allocator.ticket_rptr[i];
           end else begin
             page_allocator_is_pending_ticket_d[i][j] <= page_allocator_is_pending_ticket_d[i][j-1];
+            page_allocator_ticket_rptr_d[i][j] <= page_allocator_ticket_rptr_d[i][j-1];
           end
         end
       end
@@ -2632,7 +2646,8 @@ module ordered_priority_queue_monolithic_page_allocator #(
     @(posedge d_clk) disable iff (d_reset)
       ((page_allocator_state == PAGE_ALLOCATOR_IDLE) &&
        !idle_tail_flush_ready_decision &&
-       idle_fetch_ready_q)
+       idle_fetch_ready_q &&
+       !frame_join_hold)
       |=> (page_allocator_state == PAGE_ALLOCATOR_FETCH_TICKET);
   endproperty
   ap_page_allocator_idle_fetch_requires_all_lanes: assert property (p_page_allocator_idle_fetch_requires_all_lanes);

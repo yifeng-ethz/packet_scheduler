@@ -33,6 +33,7 @@ MODELSIM_INI := $(BUILD_DIR)/modelsim.ini
 DPI_CPP_PATH ?= /usr/bin/gcc
 OPQ_PAGE_RAM_DEPTH ?= 65536
 OPQ_N_SHD ?= 256
+OPQ_N_HIT ?= 255
 OPQ_N_LANE ?= 2
 OPQ_TICKET_FIFO_DEPTH ?= $(shell s=$(OPQ_N_SHD); l=$(OPQ_N_LANE); target_lane=$$((s * 32)); target_scan=$$((s * l * 2)); target=$$target_lane; if [ "$$target_scan" -gt "$$target" ]; then target=$$target_scan; fi; d=256; while [ "$$d" -lt "$$target" ]; do d=$$((d * 2)); done; echo $$d)
 OPQ_LANE_FIFO_DEPTH ?= $(shell n=$(OPQ_N_LANE); s=$(OPQ_N_SHD); target_lane=$$((n * 1024)); target_frame=$$((s * 64)); target=$$target_lane; if [ "$$target_frame" -gt "$$target" ]; then target=$$target_frame; fi; d=1024; while [ "$$d" -lt "$$target" ]; do d=$$((d * 2)); done; echo $$d)
@@ -78,6 +79,7 @@ UVM_DEFINES += +define+OPQ_NATIVE_FORMAL_STRICT
 endif
 UVM_DEFINES += +define+OPQ_PAGE_RAM_DEPTH=$(OPQ_PAGE_RAM_DEPTH)
 UVM_DEFINES += +define+OPQ_N_SHD=$(OPQ_N_SHD)
+UVM_DEFINES += +define+OPQ_N_HIT=$(OPQ_N_HIT)
 UVM_DEFINES += +define+OPQ_TICKET_FIFO_DEPTH=$(OPQ_TICKET_FIFO_DEPTH)
 UVM_DEFINES += +define+OPQ_HANDLE_FIFO_DEPTH=$(OPQ_HANDLE_FIFO_DEPTH)
 UVM_DEFINES += +define+OPQ_N_LANE=$(OPQ_N_LANE)

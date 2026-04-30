@@ -14,54 +14,55 @@ Info: Running Quartus Prime Shell
     Info: the sole purpose of programming logic devices manufactured by
     Info: Intel and sold by Intel or its authorized distributors.  Please
     Info: refer to the applicable agreement for further details.
-    Info: Processing started: Mon Apr 20 04:51:06 2026
+    Info: Processing started: Thu Apr 30 12:04:54 2026
 Info: Command: quartus_sh --flow compile opq_native_sv_4lane_signoff -c opq_native_sv_4lane_signoff
 Info: Quartus(args): compile opq_native_sv_4lane_signoff -c opq_native_sv_4lane_signoff
-Info: Project Name = /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff
+Info: Project Name = /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff
 Info: Revision Name = opq_native_sv_4lane_signoff
 Info: *******************************************************************
 Info: Running Quartus Prime Analysis & Synthesis
     Info: Version 18.1.0 Build 625 09/12/2018 SJ Standard Edition
-    Info: Processing started: Mon Apr 20 04:51:07 2026
+    Info: Processing started: Thu Apr 30 12:04:55 2026
 Info: Command: quartus_map --read_settings_files=on --write_settings_files=off opq_native_sv_4lane_signoff -c opq_native_sv_4lane_signoff
 Info (16303): High Performance Effort optimization mode selected -- timing performance will be prioritized at the potential cost of increased compilation time
 Info (20032): Parallel compilation is enabled and will use up to 16 processors
-Info (12021): Found 1 design units, including 1 entities, in source file /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/vendor/alt_ram/frame_table.v
-    Info (12023): Found entity 1: frame_table File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/vendor/alt_ram/frame_table.v Line: 1
+Info (12021): Found 1 design units, including 1 entities, in source file /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/vendor/alt_ram/frame_table.v
+    Info (12023): Found entity 1: frame_table File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/vendor/alt_ram/frame_table.v Line: 1
 Info (12021): Found 1 design units, including 1 entities, in source file src_compat/handle_fifo.v
-    Info (12023): Found entity 1: handle_fifo File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/handle_fifo.v Line: 1
+    Info (12023): Found entity 1: handle_fifo File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/handle_fifo.v Line: 1
 Info (12021): Found 1 design units, including 1 entities, in source file src_compat/lane_fifo.v
-    Info (12023): Found entity 1: lane_fifo File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/lane_fifo.v Line: 1
+    Info (12023): Found entity 1: lane_fifo File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/lane_fifo.v Line: 1
 Info (12021): Found 1 design units, including 1 entities, in source file src_compat/page_ram.v
-    Info (12023): Found entity 1: page_ram File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/page_ram.v Line: 1
+    Info (12023): Found entity 1: page_ram File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/page_ram.v Line: 1
 Info (12021): Found 1 design units, including 1 entities, in source file src_compat/ticket_fifo.v
-    Info (12023): Found entity 1: ticket_fifo File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ticket_fifo.v Line: 1
-Info (12021): Found 1 design units, including 1 entities, in source file /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/vendor/alt_ram/tile_fifo.v
-    Info (12023): Found entity 1: tile_fifo File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/vendor/alt_ram/tile_fifo.v Line: 1
-Info (12021): Found 1 design units, including 1 entities, in source file /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv
-    Info (12023): Found entity 1: ordered_priority_queue_monolithic_ingress_parser File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 8
-Info (12021): Found 1 design units, including 1 entities, in source file /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv
-    Info (12023): Found entity 1: ordered_priority_queue_monolithic_page_allocator File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 9
+    Info (12023): Found entity 1: ticket_fifo File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ticket_fifo.v Line: 1
+Info (12021): Found 1 design units, including 1 entities, in source file /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/vendor/alt_ram/tile_fifo.v
+    Info (12023): Found entity 1: tile_fifo File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/vendor/alt_ram/tile_fifo.v Line: 1
+Info (12021): Found 1 design units, including 1 entities, in source file /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv
+    Info (12023): Found entity 1: ordered_priority_queue_monolithic_ingress_parser File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 9
+Info (12021): Found 1 design units, including 1 entities, in source file /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv
+    Info (12023): Found entity 1: ordered_priority_queue_monolithic_page_allocator File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 10
 Info (12021): Found 1 design units, including 1 entities, in source file src_compat/ordered_priority_queue_monolithic_block_path.sv
-    Info (12023): Found entity 1: ordered_priority_queue_monolithic_block_path File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_block_path.sv Line: 9
-Info (12021): Found 1 design units, including 1 entities, in source file /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_tracker.sv
-    Info (12023): Found entity 1: ordered_priority_queue_monolithic_frame_table_tracker File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_tracker.sv Line: 8
+    Info (12023): Found entity 1: ordered_priority_queue_monolithic_block_path File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_block_path.sv Line: 10
+Info (12021): Found 1 design units, including 1 entities, in source file /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_tracker.sv
+    Info (12023): Found entity 1: ordered_priority_queue_monolithic_frame_table_tracker File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_frame_table_tracker.sv Line: 8
 Info (12021): Found 1 design units, including 1 entities, in source file src_compat/ordered_priority_queue_monolithic_frame_table_presenter.sv
-    Info (12023): Found entity 1: ordered_priority_queue_monolithic_frame_table_presenter File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_frame_table_presenter.sv Line: 8
-Info (12021): Found 2 design units, including 2 entities, in source file src_compat/ordered_priority_queue_monolithic_basic_presenter.sv
-    Info (12023): Found entity 1: ordered_priority_queue_monolithic_basic_presenter File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_basic_presenter.sv Line: 9
-    Info (12023): Found entity 2: ordered_priority_queue_monolithic_basic_presenter_native File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_basic_presenter.sv Line: 700
+    Info (12023): Found entity 1: ordered_priority_queue_monolithic_frame_table_presenter File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_frame_table_presenter.sv Line: 8
+Info (12021): Found 2 design units, including 2 entities, in source file /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv
+    Info (12023): Found entity 1: ordered_priority_queue_monolithic_basic_presenter File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv Line: 11
+    Info (12023): Found entity 2: ordered_priority_queue_monolithic_basic_presenter_native File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv Line: 766
 Info (12021): Found 1 design units, including 1 entities, in source file src_compat/ordered_priority_queue_monolithic.sv
-    Info (12023): Found entity 1: ordered_priority_queue_monolithic_sv File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 9
+    Info (12023): Found entity 1: ordered_priority_queue_monolithic_sv File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 9
 Info (12021): Found 1 design units, including 1 entities, in source file opq_native_sv_4lane_signoff_top.sv
-    Info (12023): Found entity 1: opq_native_sv_4lane_signoff_top File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 1
+    Info (12023): Found entity 1: opq_native_sv_4lane_signoff_top File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 21
 Info (12127): Elaborating entity "opq_native_sv_4lane_signoff_top" for the top level hierarchy
-Info (12128): Elaborating entity "ordered_priority_queue_monolithic_sv" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 300
-Warning (10977): SystemVerilog $warning at ordered_priority_queue_monolithic.sv(441): N hits counter will likely overflow the 16-bit frame hit counter File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 441
-Info (12128): Elaborating entity "ticket_fifo" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[0].ticket_fifo_i" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 194
-Info (12128): Elaborating entity "altsyncram" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[0].ticket_fifo_i|altsyncram:ticket_fifo_ram" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ticket_fifo.v Line: 23
-Info (12130): Elaborated megafunction instantiation "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[0].ticket_fifo_i|altsyncram:ticket_fifo_ram" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ticket_fifo.v Line: 23
-Info (12133): Instantiated megafunction "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[0].ticket_fifo_i|altsyncram:ticket_fifo_ram" with the following parameter: File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ticket_fifo.v Line: 23
+Info (12128): Elaborating entity "ordered_priority_queue_monolithic_sv" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 325
+Info (10008): Verilog HDL or VHDL information: EDA Netlist Writer cannot regroup multidimensional array "packet_complete_lane_shd_cnt_presenter_delay_dbg" into its bus
+Info (10008): Verilog HDL or VHDL information: EDA Netlist Writer cannot regroup multidimensional array "packet_complete_lane_hit_cnt_presenter_delay_dbg" into its bus
+Info (12128): Elaborating entity "ticket_fifo" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[0].ticket_fifo_i" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 281
+Info (12128): Elaborating entity "altsyncram" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[0].ticket_fifo_i|altsyncram:ticket_fifo_ram" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ticket_fifo.v Line: 23
+Info (12130): Elaborated megafunction instantiation "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[0].ticket_fifo_i|altsyncram:ticket_fifo_ram" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ticket_fifo.v Line: 23
+Info (12133): Instantiated megafunction "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[0].ticket_fifo_i|altsyncram:ticket_fifo_ram" with the following parameter: File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ticket_fifo.v Line: 23
     Info (12134): Parameter "address_reg_b" = "CLOCK0"
     Info (12134): Parameter "clock_enable_input_a" = "BYPASS"
     Info (12134): Parameter "clock_enable_input_b" = "BYPASS"
@@ -69,8 +70,8 @@ Info (12133): Instantiated megafunction "ordered_priority_queue_monolithic_sv:du
     Info (12134): Parameter "indata_reg_b" = "CLOCK0"
     Info (12134): Parameter "intended_device_family" = "Arria 10"
     Info (12134): Parameter "lpm_type" = "altsyncram"
-    Info (12134): Parameter "numwords_a" = "512"
-    Info (12134): Parameter "numwords_b" = "512"
+    Info (12134): Parameter "numwords_a" = "1024"
+    Info (12134): Parameter "numwords_b" = "1024"
     Info (12134): Parameter "operation_mode" = "DUAL_PORT"
     Info (12134): Parameter "outdata_aclr_b" = "NONE"
     Info (12134): Parameter "outdata_reg_b" = "UNREGISTERED"
@@ -80,15 +81,15 @@ Info (12133): Instantiated megafunction "ordered_priority_queue_monolithic_sv:du
     Info (12134): Parameter "width_a" = "00000000000000000000000001111000"
     Info (12134): Parameter "width_b" = "00000000000000000000000001111000"
     Info (12134): Parameter "width_byteena_a" = "1"
-    Info (12134): Parameter "widthad_a" = "00000000000000000000000000001001"
-    Info (12134): Parameter "widthad_b" = "00000000000000000000000000001001"
-Info (12021): Found 1 design units, including 1 entities, in source file db/altsyncram_0202.tdf
-    Info (12023): Found entity 1: altsyncram_0202 File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0202.tdf Line: 27
-Info (12128): Elaborating entity "altsyncram_0202" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[0].ticket_fifo_i|altsyncram:ticket_fifo_ram|altsyncram_0202:auto_generated" File: /data1/intelFPGA/18.1/quartus/libraries/megafunctions/altsyncram.tdf Line: 791
-Info (12128): Elaborating entity "lane_fifo" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 206
-Info (12128): Elaborating entity "altsyncram" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/lane_fifo.v Line: 23
-Info (12130): Elaborated megafunction instantiation "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/lane_fifo.v Line: 23
-Info (12133): Instantiated megafunction "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram" with the following parameter: File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/lane_fifo.v Line: 23
+    Info (12134): Parameter "widthad_a" = "00000000000000000000000000001010"
+    Info (12134): Parameter "widthad_b" = "00000000000000000000000000001010"
+Info (12021): Found 1 design units, including 1 entities, in source file db/altsyncram_e702.tdf
+    Info (12023): Found entity 1: altsyncram_e702 File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_e702.tdf Line: 27
+Info (12128): Elaborating entity "altsyncram_e702" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[0].ticket_fifo_i|altsyncram:ticket_fifo_ram|altsyncram_e702:auto_generated" File: /data1/intelFPGA/18.1/quartus/libraries/megafunctions/altsyncram.tdf Line: 791
+Info (12128): Elaborating entity "lane_fifo" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 293
+Info (12128): Elaborating entity "altsyncram" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/lane_fifo.v Line: 23
+Info (12130): Elaborated megafunction instantiation "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/lane_fifo.v Line: 23
+Info (12133): Instantiated megafunction "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram" with the following parameter: File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/lane_fifo.v Line: 23
     Info (12134): Parameter "address_reg_b" = "CLOCK0"
     Info (12134): Parameter "clock_enable_input_a" = "BYPASS"
     Info (12134): Parameter "clock_enable_input_b" = "BYPASS"
@@ -110,12 +111,12 @@ Info (12133): Instantiated megafunction "ordered_priority_queue_monolithic_sv:du
     Info (12134): Parameter "widthad_a" = "00000000000000000000000000001010"
     Info (12134): Parameter "widthad_b" = "00000000000000000000000000001010"
 Info (12021): Found 1 design units, including 1 entities, in source file db/altsyncram_g402.tdf
-    Info (12023): Found entity 1: altsyncram_g402 File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 27
+    Info (12023): Found entity 1: altsyncram_g402 File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 27
 Info (12128): Elaborating entity "altsyncram_g402" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated" File: /data1/intelFPGA/18.1/quartus/libraries/megafunctions/altsyncram.tdf Line: 791
-Info (12128): Elaborating entity "handle_fifo" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|handle_fifo:g_storage[0].handle_fifo_i" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 218
-Info (12128): Elaborating entity "altsyncram" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|handle_fifo:g_storage[0].handle_fifo_i|altsyncram:handle_fifo_ram" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/handle_fifo.v Line: 23
-Info (12130): Elaborated megafunction instantiation "ordered_priority_queue_monolithic_sv:dut_i|handle_fifo:g_storage[0].handle_fifo_i|altsyncram:handle_fifo_ram" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/handle_fifo.v Line: 23
-Info (12133): Instantiated megafunction "ordered_priority_queue_monolithic_sv:dut_i|handle_fifo:g_storage[0].handle_fifo_i|altsyncram:handle_fifo_ram" with the following parameter: File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/handle_fifo.v Line: 23
+Info (12128): Elaborating entity "handle_fifo" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|handle_fifo:g_storage[0].handle_fifo_i" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 305
+Info (12128): Elaborating entity "altsyncram" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|handle_fifo:g_storage[0].handle_fifo_i|altsyncram:handle_fifo_ram" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/handle_fifo.v Line: 23
+Info (12130): Elaborated megafunction instantiation "ordered_priority_queue_monolithic_sv:dut_i|handle_fifo:g_storage[0].handle_fifo_i|altsyncram:handle_fifo_ram" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/handle_fifo.v Line: 23
+Info (12133): Instantiated megafunction "ordered_priority_queue_monolithic_sv:dut_i|handle_fifo:g_storage[0].handle_fifo_i|altsyncram:handle_fifo_ram" with the following parameter: File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/handle_fifo.v Line: 23
     Info (12134): Parameter "address_reg_b" = "CLOCK0"
     Info (12134): Parameter "clock_enable_input_a" = "BYPASS"
     Info (12134): Parameter "clock_enable_input_b" = "BYPASS"
@@ -137,35 +138,49 @@ Info (12133): Instantiated megafunction "ordered_priority_queue_monolithic_sv:du
     Info (12134): Parameter "widthad_a" = "00000000000000000000000000000110"
     Info (12134): Parameter "widthad_b" = "00000000000000000000000000000110"
 Info (12021): Found 1 design units, including 1 entities, in source file db/altsyncram_8sv1.tdf
-    Info (12023): Found entity 1: altsyncram_8sv1 File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_8sv1.tdf Line: 27
+    Info (12023): Found entity 1: altsyncram_8sv1 File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_8sv1.tdf Line: 27
 Info (12128): Elaborating entity "altsyncram_8sv1" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|handle_fifo:g_storage[0].handle_fifo_i|altsyncram:handle_fifo_ram|altsyncram_8sv1:auto_generated" File: /data1/intelFPGA/18.1/quartus/libraries/megafunctions/altsyncram.tdf Line: 791
-Info (12128): Elaborating entity "ordered_priority_queue_monolithic_ingress_parser" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[0].ingress_parser_i" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 267
-Warning (10230): Verilog HDL assignment warning at ordered_priority_queue_monolithic_ingress_parser.sv(102): truncated value with size 32 to match size of target (10) File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 102
-Warning (10230): Verilog HDL assignment warning at ordered_priority_queue_monolithic_ingress_parser.sv(103): truncated value with size 32 to match size of target (9) File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 103
-Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_ingress_parser.sv(163): object "ingress_parser_if_subheader_shd_ts" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 163
-Info (12128): Elaborating entity "ordered_priority_queue_monolithic_page_allocator" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 329
-Warning (10230): Verilog HDL assignment warning at ordered_priority_queue_monolithic_page_allocator.sv(120): truncated value with size 32 to match size of target (2) File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 120
-Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(331): object "fetch_header_dt_type_q" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 331
-Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(332): object "fetch_header_feb_id_q" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 332
-Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(340): object "fetch_future_frame_ts_q" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 340
-Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(346): object "page_allocator_is_tk_curr" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 346
-Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(348): object "page_allocator_is_tk_past" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 348
-Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(350): object "page_allocator_if_read_ticket_ticket_sop" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 350
-Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(368): object "lanes_with_sop_ticket" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 368
-Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(369): object "lanes_with_curr_sop_ticket" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 369
-Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(372): object "header_frame_ts" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 372
-Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(373): object "header_running_ts" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 373
-Info (10264): Verilog HDL Case Statement information at ordered_priority_queue_monolithic_page_allocator.sv(618): all case item expressions in this case statement are onehot File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 618
-Info (12128): Elaborating entity "ordered_priority_queue_monolithic_block_path" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_block_path:block_path_i" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 366
-Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_block_path.sv(168): object "block_mover_flag" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_block_path.sv Line: 168
-Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_block_path.sv(180): object "drr_lock_event_dbg" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_block_path.sv Line: 180
-Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_block_path.sv(181): object "drr_defer_event_dbg" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_block_path.sv Line: 181
-Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_block_path.sv(182): object "b2p_arb_quantum_update_if_updating" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_block_path.sv Line: 182
+Info (12128): Elaborating entity "ordered_priority_queue_monolithic_ingress_parser" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[0].ingress_parser_i" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 361
+Warning (10230): Verilog HDL assignment warning at ordered_priority_queue_monolithic_ingress_parser.sv(120): truncated value with size 32 to match size of target (10) File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 120
+Warning (10230): Verilog HDL assignment warning at ordered_priority_queue_monolithic_ingress_parser.sv(121): truncated value with size 32 to match size of target (10) File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 121
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_ingress_parser.sv(192): object "ingress_parser_if_subheader_shd_ts" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 192
+Info (12128): Elaborating entity "ordered_priority_queue_monolithic_page_allocator" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 438
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(530): object "idle_tk_past_q" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 530
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(546): object "fetch_resident_predict_matches_q" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 546
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(547): object "fetch_predicted_frame_len_q" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 547
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(569): object "fetch_header_dt_type_q" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 569
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(570): object "fetch_header_feb_id_q" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 570
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(591): object "fetch_tail_shadow_valid_q" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 591
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(592): object "fetch_tail_shadow_drop_q" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 592
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(601): object "alloc_lane_ticket_q" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 601
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(602): object "alloc_lane_dst_addr_q" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 602
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(615): object "page_allocator_is_tk_curr" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 615
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(617): object "page_allocator_is_tk_past" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 617
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(620): object "page_allocator_if_read_ticket_ticket_sop" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 620
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(631): object "idle_tail_flush_ready" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 631
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(641): object "any_pending_sop_ticket" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 641
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(652): object "inactive_frame_join_pending_lane" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 652
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(659): object "all_active_lanes_tail_ready" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 659
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(669): object "lanes_with_sop_ticket" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 669
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(670): object "lanes_with_curr_sop_ticket" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 670
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(674): object "header_frame_ts" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 674
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(675): object "header_running_ts" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 675
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_page_allocator.sv(1119): object "tail_status_slot_v" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 1119
+Info (10264): Verilog HDL Case Statement information at ordered_priority_queue_monolithic_page_allocator.sv(1080): all case item expressions in this case statement are onehot File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 1080
+Warning (10230): Verilog HDL assignment warning at ordered_priority_queue_monolithic_page_allocator.sv(292): truncated value with size 32 to match size of target (17) File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 292
+Info (10008): Verilog HDL or VHDL information: EDA Netlist Writer cannot regroup multidimensional array "page_allocator_ticket_rptr_d" into its bus
+Info (12128): Elaborating entity "tile_fifo" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|tile_fifo:gen_tail_status_wrap_ram[0].tail_status_wrap_ram_i" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 720
+Info (12128): Elaborating entity "tile_fifo" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|tile_fifo:gen_tail_status_wrap_ram[0].tail_status_state_ram_i" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 732
+Info (12128): Elaborating entity "ordered_priority_queue_monolithic_block_path" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_block_path:block_path_i" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 481
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_block_path.sv(186): object "block_mover_handle_src" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_block_path.sv Line: 186
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_block_path.sv(189): object "block_mover_flag" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_block_path.sv Line: 189
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_block_path.sv(206): object "b2p_arb_req_eligible_qq" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_block_path.sv Line: 206
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_block_path.sv(214): object "b2p_arb_quantum_update_if_updating" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_block_path.sv Line: 214
 Info (10008): Verilog HDL or VHDL information: EDA Netlist Writer cannot regroup multidimensional array "block_mover_handle_rptr_d" into its bus
-Info (12128): Elaborating entity "page_ram" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 378
-Info (12128): Elaborating entity "altsyncram" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/page_ram.v Line: 25
-Info (12130): Elaborated megafunction instantiation "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/page_ram.v Line: 25
-Info (12133): Instantiated megafunction "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i" with the following parameter: File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/page_ram.v Line: 25
+Info (12128): Elaborating entity "page_ram" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 493
+Info (12128): Elaborating entity "altsyncram" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/page_ram.v Line: 25
+Info (12130): Elaborated megafunction instantiation "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/page_ram.v Line: 25
+Info (12133): Instantiated megafunction "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i" with the following parameter: File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/page_ram.v Line: 25
     Info (12134): Parameter "address_reg_b" = "CLOCK0"
     Info (12134): Parameter "clock_enable_input_a" = "BYPASS"
     Info (12134): Parameter "clock_enable_input_b" = "BYPASS"
@@ -187,149 +202,181 @@ Info (12133): Instantiated megafunction "ordered_priority_queue_monolithic_sv:du
     Info (12134): Parameter "widthad_a" = "00000000000000000000000000010000"
     Info (12134): Parameter "widthad_b" = "00000000000000000000000000010000"
 Info (12021): Found 1 design units, including 1 entities, in source file db/altsyncram_0902.tdf
-    Info (12023): Found entity 1: altsyncram_0902 File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 31
+    Info (12023): Found entity 1: altsyncram_0902 File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 31
 Info (12128): Elaborating entity "altsyncram_0902" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated" File: /data1/intelFPGA/18.1/quartus/libraries/megafunctions/altsyncram.tdf Line: 791
 Info (12021): Found 1 design units, including 1 entities, in source file db/decode_lda.tdf
-    Info (12023): Found entity 1: decode_lda File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/decode_lda.tdf Line: 22
-Info (12128): Elaborating entity "decode_lda" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|decode_lda:decode2" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 42
+    Info (12023): Found entity 1: decode_lda File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/decode_lda.tdf Line: 22
+Info (12128): Elaborating entity "decode_lda" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|decode_lda:decode2" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 42
 Info (12021): Found 1 design units, including 1 entities, in source file db/mux_h9b.tdf
-    Info (12023): Found entity 1: mux_h9b File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/mux_h9b.tdf Line: 22
-Info (12128): Elaborating entity "mux_h9b" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|mux_h9b:mux3" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 43
-Info (12128): Elaborating entity "ordered_priority_queue_monolithic_basic_presenter" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_basic_presenter:presenter_i" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 435
-Info (12128): Elaborating entity "ordered_priority_queue_monolithic_basic_presenter_native" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_basic_presenter:presenter_i|ordered_priority_queue_monolithic_basic_presenter_native:native_i" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_basic_presenter.sv Line: 89
-Warning (10230): Verilog HDL assignment warning at ordered_priority_queue_monolithic_basic_presenter.sv(766): truncated value with size 32 to match size of target (18) File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_basic_presenter.sv Line: 766
-Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_basic_presenter.sv(803): object "is_new_pkt_complete" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_basic_presenter.sv Line: 803
-Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_basic_presenter.sv(804): object "output_is_trailer" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_basic_presenter.sv Line: 804
-Warning (10230): Verilog HDL assignment warning at ordered_priority_queue_monolithic_basic_presenter.sv(863): truncated value with size 32 to match size of target (17) File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_basic_presenter.sv Line: 863
-Info (10264): Verilog HDL Case Statement information at ordered_priority_queue_monolithic_basic_presenter.sv(1038): all case item expressions in this case statement are onehot File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_basic_presenter.sv Line: 1038
-Info (12128): Elaborating entity "tile_fifo" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_basic_presenter:presenter_i|ordered_priority_queue_monolithic_basic_presenter_native:native_i|tile_fifo:meta_ram_i" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_basic_presenter.sv Line: 906
+    Info (12023): Found entity 1: mux_h9b File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/mux_h9b.tdf Line: 22
+Info (12128): Elaborating entity "mux_h9b" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|mux_h9b:mux3" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 43
+Info (12128): Elaborating entity "ordered_priority_queue_monolithic_basic_presenter" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_basic_presenter:presenter_i" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic.sv Line: 596
+Info (12128): Elaborating entity "ordered_priority_queue_monolithic_basic_presenter_native" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_basic_presenter:presenter_i|ordered_priority_queue_monolithic_basic_presenter_native:native_i" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv Line: 111
+Warning (10230): Verilog HDL assignment warning at ordered_priority_queue_monolithic_basic_presenter.sv(849): truncated value with size 32 to match size of target (18) File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv Line: 849
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_basic_presenter.sv(934): object "is_new_pkt_complete" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv Line: 934
+Warning (10036): Verilog HDL or VHDL warning at ordered_priority_queue_monolithic_basic_presenter.sv(937): object "output_is_trailer" assigned a value but never read File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv Line: 937
+Warning (10230): Verilog HDL assignment warning at ordered_priority_queue_monolithic_basic_presenter.sv(1038): truncated value with size 32 to match size of target (17) File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv Line: 1038
+Info (10264): Verilog HDL Case Statement information at ordered_priority_queue_monolithic_basic_presenter.sv(1439): all case item expressions in this case statement are onehot File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv Line: 1439
+Info (10008): Verilog HDL or VHDL information: EDA Netlist Writer cannot regroup multidimensional array "meta_lane_shd_cnt" into its bus
+Info (10008): Verilog HDL or VHDL information: EDA Netlist Writer cannot regroup multidimensional array "meta_lane_hit_cnt" into its bus
+Info (12128): Elaborating entity "tile_fifo" for hierarchy "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_basic_presenter:presenter_i|ordered_priority_queue_monolithic_basic_presenter_native:native_i|tile_fifo:meta_ram_i" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv Line: 1124
 Warning (14284): Synthesized away the following node(s):
     Warning (14285): Synthesized away the following RAM node(s):
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a25" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 769
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a26" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 798
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a27" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 827
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a28" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 856
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a29" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 885
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a30" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 914
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a31" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 943
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a36" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 1088
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a37" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 1117
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a38" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 1146
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a39" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 1175
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a65" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 1929
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a66" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 1958
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a67" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 1987
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a68" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 2016
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a69" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 2045
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a70" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 2074
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a71" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 2103
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a76" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 2248
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a77" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 2277
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a78" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 2306
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a79" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 2335
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a105" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 3089
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a106" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 3118
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a107" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 3147
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a108" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 3176
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a109" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 3205
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a110" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 3234
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a111" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 3263
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a116" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 3408
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a117" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 3437
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a118" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 3466
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a119" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 3495
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a145" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 4249
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a146" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 4278
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a147" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 4307
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a148" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 4336
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a149" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 4365
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a150" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 4394
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a151" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 4423
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a156" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 4568
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a157" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 4597
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a158" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 4626
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a159" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 4655
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[3].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[25]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 762
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[3].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[26]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 791
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[3].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[27]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 820
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[3].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[28]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 849
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[3].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[29]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 878
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[3].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[30]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 907
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[3].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[31]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 936
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[3].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[36]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1081
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[3].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[37]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1110
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[3].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[38]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1139
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[3].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[39]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1168
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[3].ticket_fifo_i|altsyncram:ticket_fifo_ram|altsyncram_0202:auto_generated|q_b[66]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0202.tdf Line: 1951
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[3].ticket_fifo_i|altsyncram:ticket_fifo_ram|altsyncram_0202:auto_generated|q_b[67]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0202.tdf Line: 1980
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[3].ticket_fifo_i|altsyncram:ticket_fifo_ram|altsyncram_0202:auto_generated|q_b[68]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0202.tdf Line: 2009
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[3].ticket_fifo_i|altsyncram:ticket_fifo_ram|altsyncram_0202:auto_generated|q_b[69]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0202.tdf Line: 2038
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[3].ticket_fifo_i|altsyncram:ticket_fifo_ram|altsyncram_0202:auto_generated|q_b[118]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0202.tdf Line: 3459
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[2].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[25]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 762
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[2].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[26]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 791
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[2].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[27]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 820
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[2].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[28]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 849
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[2].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[29]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 878
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[2].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[30]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 907
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[2].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[31]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 936
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[2].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[36]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1081
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[2].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[37]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1110
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[2].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[38]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1139
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[2].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[39]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1168
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[2].ticket_fifo_i|altsyncram:ticket_fifo_ram|altsyncram_0202:auto_generated|q_b[66]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0202.tdf Line: 1951
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[2].ticket_fifo_i|altsyncram:ticket_fifo_ram|altsyncram_0202:auto_generated|q_b[67]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0202.tdf Line: 1980
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[2].ticket_fifo_i|altsyncram:ticket_fifo_ram|altsyncram_0202:auto_generated|q_b[68]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0202.tdf Line: 2009
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[2].ticket_fifo_i|altsyncram:ticket_fifo_ram|altsyncram_0202:auto_generated|q_b[69]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0202.tdf Line: 2038
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[2].ticket_fifo_i|altsyncram:ticket_fifo_ram|altsyncram_0202:auto_generated|q_b[118]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0202.tdf Line: 3459
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[1].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[25]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 762
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[1].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[26]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 791
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[1].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[27]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 820
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[1].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[28]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 849
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[1].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[29]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 878
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[1].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[30]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 907
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[1].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[31]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 936
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[1].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[36]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1081
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[1].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[37]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1110
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[1].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[38]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1139
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[1].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[39]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1168
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[1].ticket_fifo_i|altsyncram:ticket_fifo_ram|altsyncram_0202:auto_generated|q_b[66]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0202.tdf Line: 1951
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[1].ticket_fifo_i|altsyncram:ticket_fifo_ram|altsyncram_0202:auto_generated|q_b[67]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0202.tdf Line: 1980
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[1].ticket_fifo_i|altsyncram:ticket_fifo_ram|altsyncram_0202:auto_generated|q_b[68]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0202.tdf Line: 2009
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[1].ticket_fifo_i|altsyncram:ticket_fifo_ram|altsyncram_0202:auto_generated|q_b[69]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0202.tdf Line: 2038
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[1].ticket_fifo_i|altsyncram:ticket_fifo_ram|altsyncram_0202:auto_generated|q_b[118]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0202.tdf Line: 3459
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[25]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 762
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[26]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 791
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[27]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 820
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[28]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 849
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[29]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 878
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[30]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 907
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[31]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 936
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[36]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1081
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[37]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1110
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[38]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1139
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[39]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1168
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[0].ticket_fifo_i|altsyncram:ticket_fifo_ram|altsyncram_0202:auto_generated|q_b[66]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0202.tdf Line: 1951
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[0].ticket_fifo_i|altsyncram:ticket_fifo_ram|altsyncram_0202:auto_generated|q_b[67]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0202.tdf Line: 1980
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[0].ticket_fifo_i|altsyncram:ticket_fifo_ram|altsyncram_0202:auto_generated|q_b[68]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0202.tdf Line: 2009
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[0].ticket_fifo_i|altsyncram:ticket_fifo_ram|altsyncram_0202:auto_generated|q_b[69]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0202.tdf Line: 2038
-        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[0].ticket_fifo_i|altsyncram:ticket_fifo_ram|altsyncram_0202:auto_generated|q_b[118]" File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0202.tdf Line: 3459
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a25" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 769
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a26" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 798
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a27" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 827
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a28" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 856
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a29" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 885
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a30" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 914
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a31" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 943
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a36" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 1088
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a37" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 1117
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a38" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 1146
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a39" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 1175
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a65" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 1929
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a66" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 1958
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a67" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 1987
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a68" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 2016
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a69" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 2045
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a70" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 2074
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a71" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 2103
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a76" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 2248
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a77" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 2277
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a78" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 2306
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a79" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 2335
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a105" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 3089
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a106" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 3118
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a107" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 3147
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a108" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 3176
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a109" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 3205
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a110" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 3234
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a111" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 3263
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a116" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 3408
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a117" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 3437
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a118" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 3466
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a119" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 3495
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a145" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 4249
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a146" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 4278
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a147" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 4307
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a148" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 4336
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a149" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 4365
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a150" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 4394
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a151" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 4423
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a156" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 4568
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a157" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 4597
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a158" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 4626
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|page_ram:page_ram_i|altsyncram:page_ram_i|altsyncram_0902:auto_generated|ram_block1a159" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_0902.tdf Line: 4655
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[3].ticket_fifo_i|altsyncram:ticket_fifo_ram|altsyncram_e702:auto_generated|q_b[118]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_e702.tdf Line: 3459
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[2].ticket_fifo_i|altsyncram:ticket_fifo_ram|altsyncram_e702:auto_generated|q_b[118]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_e702.tdf Line: 3459
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[1].ticket_fifo_i|altsyncram:ticket_fifo_ram|altsyncram_e702:auto_generated|q_b[118]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_e702.tdf Line: 3459
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|ticket_fifo:g_storage[0].ticket_fifo_i|altsyncram:ticket_fifo_ram|altsyncram_e702:auto_generated|q_b[118]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_e702.tdf Line: 3459
+Warning (14284): Synthesized away the following node(s):
+    Warning (14285): Synthesized away the following RAM node(s):
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[3].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[25]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 762
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[3].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[26]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 791
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[3].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[27]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 820
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[3].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[28]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 849
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[3].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[29]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 878
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[3].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[30]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 907
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[3].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[31]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 936
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[3].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[36]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1081
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[3].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[37]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1110
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[3].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[38]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1139
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[3].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[39]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1168
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[2].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[25]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 762
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[2].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[26]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 791
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[2].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[27]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 820
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[2].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[28]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 849
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[2].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[29]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 878
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[2].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[30]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 907
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[2].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[31]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 936
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[2].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[36]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1081
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[2].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[37]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1110
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[2].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[38]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1139
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[2].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[39]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1168
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[1].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[25]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 762
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[1].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[26]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 791
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[1].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[27]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 820
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[1].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[28]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 849
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[1].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[29]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 878
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[1].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[30]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 907
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[1].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[31]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 936
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[1].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[36]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1081
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[1].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[37]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1110
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[1].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[38]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1139
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[1].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[39]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1168
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[25]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 762
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[26]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 791
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[27]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 820
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[28]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 849
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[29]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 878
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[30]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 907
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[31]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 936
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[36]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1081
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[37]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1110
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[38]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1139
+        Warning (14320): Synthesized away node "ordered_priority_queue_monolithic_sv:dut_i|lane_fifo:g_storage[0].lane_fifo_i|altsyncram:lane_fifo_ram|altsyncram_g402:auto_generated|q_b[39]" File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_g402.tdf Line: 1168
+Warning (276020): Inferred RAM node "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_basic_presenter:presenter_i|ordered_priority_queue_monolithic_basic_presenter_native:native_i|overlap_req_addr_q_rtl_0" from synchronous design logic.  Pass-through logic has been added to match the read-during-write behavior of the original design.
+Warning (276020): Inferred RAM node "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_basic_presenter:presenter_i|ordered_priority_queue_monolithic_basic_presenter_native:native_i|overlap_req_len_q_rtl_0" from synchronous design logic.  Pass-through logic has been added to match the read-during-write behavior of the original design.
 Warning (276020): Inferred RAM node "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_basic_presenter:presenter_i|ordered_priority_queue_monolithic_basic_presenter_native:native_i|tile_fifo:meta_ram_i|ram_rtl_0" from synchronous design logic.  Pass-through logic has been added to match the read-during-write behavior of the original design.
+Warning (276020): Inferred RAM node "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|tile_fifo:gen_tail_status_wrap_ram[3].tail_status_state_ram_i|ram_rtl_0" from synchronous design logic.  Pass-through logic has been added to match the read-during-write behavior of the original design.
+Warning (276020): Inferred RAM node "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|tile_fifo:gen_tail_status_wrap_ram[3].tail_status_wrap_ram_i|ram_rtl_0" from synchronous design logic.  Pass-through logic has been added to match the read-during-write behavior of the original design.
+Warning (276020): Inferred RAM node "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|tile_fifo:gen_tail_status_wrap_ram[2].tail_status_state_ram_i|ram_rtl_0" from synchronous design logic.  Pass-through logic has been added to match the read-during-write behavior of the original design.
+Warning (276020): Inferred RAM node "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|tile_fifo:gen_tail_status_wrap_ram[2].tail_status_wrap_ram_i|ram_rtl_0" from synchronous design logic.  Pass-through logic has been added to match the read-during-write behavior of the original design.
+Warning (276020): Inferred RAM node "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|tile_fifo:gen_tail_status_wrap_ram[1].tail_status_state_ram_i|ram_rtl_0" from synchronous design logic.  Pass-through logic has been added to match the read-during-write behavior of the original design.
+Warning (276020): Inferred RAM node "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|tile_fifo:gen_tail_status_wrap_ram[1].tail_status_wrap_ram_i|ram_rtl_0" from synchronous design logic.  Pass-through logic has been added to match the read-during-write behavior of the original design.
+Warning (276020): Inferred RAM node "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|tile_fifo:gen_tail_status_wrap_ram[0].tail_status_state_ram_i|ram_rtl_0" from synchronous design logic.  Pass-through logic has been added to match the read-during-write behavior of the original design.
+Warning (276020): Inferred RAM node "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|tile_fifo:gen_tail_status_wrap_ram[0].tail_status_wrap_ram_i|ram_rtl_0" from synchronous design logic.  Pass-through logic has been added to match the read-during-write behavior of the original design.
+Info (276014): Found 1 instances of uninferred RAM logic
+    Info (276004): RAM logic "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_basic_presenter:presenter_i|ordered_priority_queue_monolithic_basic_presenter_native:native_i|overlap_req_stop_ptr_q" is uninferred due to inappropriate RAM size File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv Line: 897
 Info (286030): Timing-Driven Synthesis is running
-Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_basic_presenter:presenter_i|ordered_priority_queue_monolithic_basic_presenter_native:native_i|meta_read_owner" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_basic_presenter.sv Line: 772
-Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_basic_presenter:presenter_i|ordered_priority_queue_monolithic_basic_presenter_native:native_i|presenter_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_basic_presenter.sv Line: 768
-Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_block_path:block_path_i|arbiter_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_block_path.sv Line: 183
-Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|page_allocator_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 300
-Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[3].ingress_parser_i|ingress_parser_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 151
-Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[2].ingress_parser_i|ingress_parser_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 151
-Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[1].ingress_parser_i|ingress_parser_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 151
-Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[0].ingress_parser_i|ingress_parser_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 151
-Info (19000): Inferred 1 megafunctions from design logic
+Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_basic_presenter:presenter_i|ordered_priority_queue_monolithic_basic_presenter_native:native_i|meta_read_owner" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv Line: 859
+Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_basic_presenter:presenter_i|ordered_priority_queue_monolithic_basic_presenter_native:native_i|presenter_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv Line: 853
+Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_block_path:block_path_i|arbiter_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/src_compat/ordered_priority_queue_monolithic_block_path.sv Line: 215
+Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|page_allocator_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_page_allocator.sv Line: 515
+Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[3].ingress_parser_i|ingress_parser_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 177
+Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[2].ingress_parser_i|ingress_parser_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 177
+Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[1].ingress_parser_i|ingress_parser_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 177
+Info (284007): State machine "|opq_native_sv_4lane_signoff_top|ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_ingress_parser:g_ingress_parser[0].ingress_parser_i|ingress_parser_state" will be implemented as a safe state machine. File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_ingress_parser.sv Line: 177
+Info (19000): Inferred 11 megafunctions from design logic
+    Info (276029): Inferred altsyncram megafunction from the following design logic: "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_basic_presenter:presenter_i|ordered_priority_queue_monolithic_basic_presenter_native:native_i|overlap_req_addr_q_rtl_0"
+        Info (286033): Parameter OPERATION_MODE set to DUAL_PORT
+        Info (286033): Parameter WIDTH_A set to 16
+        Info (286033): Parameter WIDTHAD_A set to 2
+        Info (286033): Parameter NUMWORDS_A set to 4
+        Info (286033): Parameter WIDTH_B set to 16
+        Info (286033): Parameter WIDTHAD_B set to 2
+        Info (286033): Parameter NUMWORDS_B set to 4
+        Info (286033): Parameter ADDRESS_ACLR_A set to NONE
+        Info (286033): Parameter OUTDATA_REG_B set to UNREGISTERED
+        Info (286033): Parameter ADDRESS_ACLR_B set to NONE
+        Info (286033): Parameter OUTDATA_ACLR_B set to NONE
+        Info (286033): Parameter ADDRESS_REG_B set to CLOCK0
+        Info (286033): Parameter INDATA_ACLR_A set to NONE
+        Info (286033): Parameter WRCONTROL_ACLR_A set to NONE
+        Info (286033): Parameter READ_DURING_WRITE_MODE_MIXED_PORTS set to OLD_DATA
+    Info (276029): Inferred altsyncram megafunction from the following design logic: "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_basic_presenter:presenter_i|ordered_priority_queue_monolithic_basic_presenter_native:native_i|overlap_req_len_q_rtl_0"
+        Info (286033): Parameter OPERATION_MODE set to DUAL_PORT
+        Info (286033): Parameter WIDTH_A set to 16
+        Info (286033): Parameter WIDTHAD_A set to 2
+        Info (286033): Parameter NUMWORDS_A set to 4
+        Info (286033): Parameter WIDTH_B set to 16
+        Info (286033): Parameter WIDTHAD_B set to 2
+        Info (286033): Parameter NUMWORDS_B set to 4
+        Info (286033): Parameter ADDRESS_ACLR_A set to NONE
+        Info (286033): Parameter OUTDATA_REG_B set to UNREGISTERED
+        Info (286033): Parameter ADDRESS_ACLR_B set to NONE
+        Info (286033): Parameter OUTDATA_ACLR_B set to NONE
+        Info (286033): Parameter ADDRESS_REG_B set to CLOCK0
+        Info (286033): Parameter INDATA_ACLR_A set to NONE
+        Info (286033): Parameter WRCONTROL_ACLR_A set to NONE
+        Info (286033): Parameter READ_DURING_WRITE_MODE_MIXED_PORTS set to OLD_DATA
     Info (276029): Inferred altsyncram megafunction from the following design logic: "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_basic_presenter:presenter_i|ordered_priority_queue_monolithic_basic_presenter_native:native_i|tile_fifo:meta_ram_i|ram_rtl_0"
         Info (286033): Parameter OPERATION_MODE set to DUAL_PORT
-        Info (286033): Parameter WIDTH_A set to 32
+        Info (286033): Parameter WIDTH_A set to 58
         Info (286033): Parameter WIDTHAD_A set to 9
         Info (286033): Parameter NUMWORDS_A set to 512
-        Info (286033): Parameter WIDTH_B set to 32
+        Info (286033): Parameter WIDTH_B set to 58
         Info (286033): Parameter WIDTHAD_B set to 9
         Info (286033): Parameter NUMWORDS_B set to 512
         Info (286033): Parameter ADDRESS_ACLR_A set to NONE
@@ -341,13 +388,168 @@ Info (19000): Inferred 1 megafunctions from design logic
         Info (286033): Parameter WRCONTROL_ACLR_A set to NONE
         Info (286033): Parameter RAM_BLOCK_TYPE set to M20K
         Info (286033): Parameter READ_DURING_WRITE_MODE_MIXED_PORTS set to OLD_DATA
+    Info (276029): Inferred altsyncram megafunction from the following design logic: "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|tile_fifo:gen_tail_status_wrap_ram[3].tail_status_state_ram_i|ram_rtl_0"
+        Info (286033): Parameter OPERATION_MODE set to DUAL_PORT
+        Info (286033): Parameter WIDTH_A set to 2
+        Info (286033): Parameter WIDTHAD_A set to 10
+        Info (286033): Parameter NUMWORDS_A set to 1024
+        Info (286033): Parameter WIDTH_B set to 2
+        Info (286033): Parameter WIDTHAD_B set to 10
+        Info (286033): Parameter NUMWORDS_B set to 1024
+        Info (286033): Parameter ADDRESS_ACLR_A set to NONE
+        Info (286033): Parameter OUTDATA_REG_B set to UNREGISTERED
+        Info (286033): Parameter ADDRESS_ACLR_B set to NONE
+        Info (286033): Parameter OUTDATA_ACLR_B set to NONE
+        Info (286033): Parameter ADDRESS_REG_B set to CLOCK0
+        Info (286033): Parameter INDATA_ACLR_A set to NONE
+        Info (286033): Parameter WRCONTROL_ACLR_A set to NONE
+        Info (286033): Parameter RAM_BLOCK_TYPE set to M20K
+        Info (286033): Parameter READ_DURING_WRITE_MODE_MIXED_PORTS set to OLD_DATA
+    Info (276029): Inferred altsyncram megafunction from the following design logic: "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|tile_fifo:gen_tail_status_wrap_ram[3].tail_status_wrap_ram_i|ram_rtl_0"
+        Info (286033): Parameter OPERATION_MODE set to DUAL_PORT
+        Info (286033): Parameter WIDTH_A set to 6
+        Info (286033): Parameter WIDTHAD_A set to 10
+        Info (286033): Parameter NUMWORDS_A set to 1024
+        Info (286033): Parameter WIDTH_B set to 6
+        Info (286033): Parameter WIDTHAD_B set to 10
+        Info (286033): Parameter NUMWORDS_B set to 1024
+        Info (286033): Parameter ADDRESS_ACLR_A set to NONE
+        Info (286033): Parameter OUTDATA_REG_B set to UNREGISTERED
+        Info (286033): Parameter ADDRESS_ACLR_B set to NONE
+        Info (286033): Parameter OUTDATA_ACLR_B set to NONE
+        Info (286033): Parameter ADDRESS_REG_B set to CLOCK0
+        Info (286033): Parameter INDATA_ACLR_A set to NONE
+        Info (286033): Parameter WRCONTROL_ACLR_A set to NONE
+        Info (286033): Parameter RAM_BLOCK_TYPE set to M20K
+        Info (286033): Parameter READ_DURING_WRITE_MODE_MIXED_PORTS set to OLD_DATA
+    Info (276029): Inferred altsyncram megafunction from the following design logic: "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|tile_fifo:gen_tail_status_wrap_ram[2].tail_status_state_ram_i|ram_rtl_0"
+        Info (286033): Parameter OPERATION_MODE set to DUAL_PORT
+        Info (286033): Parameter WIDTH_A set to 2
+        Info (286033): Parameter WIDTHAD_A set to 10
+        Info (286033): Parameter NUMWORDS_A set to 1024
+        Info (286033): Parameter WIDTH_B set to 2
+        Info (286033): Parameter WIDTHAD_B set to 10
+        Info (286033): Parameter NUMWORDS_B set to 1024
+        Info (286033): Parameter ADDRESS_ACLR_A set to NONE
+        Info (286033): Parameter OUTDATA_REG_B set to UNREGISTERED
+        Info (286033): Parameter ADDRESS_ACLR_B set to NONE
+        Info (286033): Parameter OUTDATA_ACLR_B set to NONE
+        Info (286033): Parameter ADDRESS_REG_B set to CLOCK0
+        Info (286033): Parameter INDATA_ACLR_A set to NONE
+        Info (286033): Parameter WRCONTROL_ACLR_A set to NONE
+        Info (286033): Parameter RAM_BLOCK_TYPE set to M20K
+        Info (286033): Parameter READ_DURING_WRITE_MODE_MIXED_PORTS set to OLD_DATA
+    Info (276029): Inferred altsyncram megafunction from the following design logic: "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|tile_fifo:gen_tail_status_wrap_ram[2].tail_status_wrap_ram_i|ram_rtl_0"
+        Info (286033): Parameter OPERATION_MODE set to DUAL_PORT
+        Info (286033): Parameter WIDTH_A set to 6
+        Info (286033): Parameter WIDTHAD_A set to 10
+        Info (286033): Parameter NUMWORDS_A set to 1024
+        Info (286033): Parameter WIDTH_B set to 6
+        Info (286033): Parameter WIDTHAD_B set to 10
+        Info (286033): Parameter NUMWORDS_B set to 1024
+        Info (286033): Parameter ADDRESS_ACLR_A set to NONE
+        Info (286033): Parameter OUTDATA_REG_B set to UNREGISTERED
+        Info (286033): Parameter ADDRESS_ACLR_B set to NONE
+        Info (286033): Parameter OUTDATA_ACLR_B set to NONE
+        Info (286033): Parameter ADDRESS_REG_B set to CLOCK0
+        Info (286033): Parameter INDATA_ACLR_A set to NONE
+        Info (286033): Parameter WRCONTROL_ACLR_A set to NONE
+        Info (286033): Parameter RAM_BLOCK_TYPE set to M20K
+        Info (286033): Parameter READ_DURING_WRITE_MODE_MIXED_PORTS set to OLD_DATA
+    Info (276029): Inferred altsyncram megafunction from the following design logic: "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|tile_fifo:gen_tail_status_wrap_ram[1].tail_status_state_ram_i|ram_rtl_0"
+        Info (286033): Parameter OPERATION_MODE set to DUAL_PORT
+        Info (286033): Parameter WIDTH_A set to 2
+        Info (286033): Parameter WIDTHAD_A set to 10
+        Info (286033): Parameter NUMWORDS_A set to 1024
+        Info (286033): Parameter WIDTH_B set to 2
+        Info (286033): Parameter WIDTHAD_B set to 10
+        Info (286033): Parameter NUMWORDS_B set to 1024
+        Info (286033): Parameter ADDRESS_ACLR_A set to NONE
+        Info (286033): Parameter OUTDATA_REG_B set to UNREGISTERED
+        Info (286033): Parameter ADDRESS_ACLR_B set to NONE
+        Info (286033): Parameter OUTDATA_ACLR_B set to NONE
+        Info (286033): Parameter ADDRESS_REG_B set to CLOCK0
+        Info (286033): Parameter INDATA_ACLR_A set to NONE
+        Info (286033): Parameter WRCONTROL_ACLR_A set to NONE
+        Info (286033): Parameter RAM_BLOCK_TYPE set to M20K
+        Info (286033): Parameter READ_DURING_WRITE_MODE_MIXED_PORTS set to OLD_DATA
+    Info (276029): Inferred altsyncram megafunction from the following design logic: "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|tile_fifo:gen_tail_status_wrap_ram[1].tail_status_wrap_ram_i|ram_rtl_0"
+        Info (286033): Parameter OPERATION_MODE set to DUAL_PORT
+        Info (286033): Parameter WIDTH_A set to 6
+        Info (286033): Parameter WIDTHAD_A set to 10
+        Info (286033): Parameter NUMWORDS_A set to 1024
+        Info (286033): Parameter WIDTH_B set to 6
+        Info (286033): Parameter WIDTHAD_B set to 10
+        Info (286033): Parameter NUMWORDS_B set to 1024
+        Info (286033): Parameter ADDRESS_ACLR_A set to NONE
+        Info (286033): Parameter OUTDATA_REG_B set to UNREGISTERED
+        Info (286033): Parameter ADDRESS_ACLR_B set to NONE
+        Info (286033): Parameter OUTDATA_ACLR_B set to NONE
+        Info (286033): Parameter ADDRESS_REG_B set to CLOCK0
+        Info (286033): Parameter INDATA_ACLR_A set to NONE
+        Info (286033): Parameter WRCONTROL_ACLR_A set to NONE
+        Info (286033): Parameter RAM_BLOCK_TYPE set to M20K
+        Info (286033): Parameter READ_DURING_WRITE_MODE_MIXED_PORTS set to OLD_DATA
+    Info (276029): Inferred altsyncram megafunction from the following design logic: "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|tile_fifo:gen_tail_status_wrap_ram[0].tail_status_state_ram_i|ram_rtl_0"
+        Info (286033): Parameter OPERATION_MODE set to DUAL_PORT
+        Info (286033): Parameter WIDTH_A set to 2
+        Info (286033): Parameter WIDTHAD_A set to 10
+        Info (286033): Parameter NUMWORDS_A set to 1024
+        Info (286033): Parameter WIDTH_B set to 2
+        Info (286033): Parameter WIDTHAD_B set to 10
+        Info (286033): Parameter NUMWORDS_B set to 1024
+        Info (286033): Parameter ADDRESS_ACLR_A set to NONE
+        Info (286033): Parameter OUTDATA_REG_B set to UNREGISTERED
+        Info (286033): Parameter ADDRESS_ACLR_B set to NONE
+        Info (286033): Parameter OUTDATA_ACLR_B set to NONE
+        Info (286033): Parameter ADDRESS_REG_B set to CLOCK0
+        Info (286033): Parameter INDATA_ACLR_A set to NONE
+        Info (286033): Parameter WRCONTROL_ACLR_A set to NONE
+        Info (286033): Parameter RAM_BLOCK_TYPE set to M20K
+        Info (286033): Parameter READ_DURING_WRITE_MODE_MIXED_PORTS set to OLD_DATA
+    Info (276029): Inferred altsyncram megafunction from the following design logic: "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|tile_fifo:gen_tail_status_wrap_ram[0].tail_status_wrap_ram_i|ram_rtl_0"
+        Info (286033): Parameter OPERATION_MODE set to DUAL_PORT
+        Info (286033): Parameter WIDTH_A set to 6
+        Info (286033): Parameter WIDTHAD_A set to 10
+        Info (286033): Parameter NUMWORDS_A set to 1024
+        Info (286033): Parameter WIDTH_B set to 6
+        Info (286033): Parameter WIDTHAD_B set to 10
+        Info (286033): Parameter NUMWORDS_B set to 1024
+        Info (286033): Parameter ADDRESS_ACLR_A set to NONE
+        Info (286033): Parameter OUTDATA_REG_B set to UNREGISTERED
+        Info (286033): Parameter ADDRESS_ACLR_B set to NONE
+        Info (286033): Parameter OUTDATA_ACLR_B set to NONE
+        Info (286033): Parameter ADDRESS_REG_B set to CLOCK0
+        Info (286033): Parameter INDATA_ACLR_A set to NONE
+        Info (286033): Parameter WRCONTROL_ACLR_A set to NONE
+        Info (286033): Parameter RAM_BLOCK_TYPE set to M20K
+        Info (286033): Parameter READ_DURING_WRITE_MODE_MIXED_PORTS set to OLD_DATA
+Info (12130): Elaborated megafunction instantiation "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_basic_presenter:presenter_i|ordered_priority_queue_monolithic_basic_presenter_native:native_i|altsyncram:overlap_req_addr_q_rtl_0"
+Info (12133): Instantiated megafunction "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_basic_presenter:presenter_i|ordered_priority_queue_monolithic_basic_presenter_native:native_i|altsyncram:overlap_req_addr_q_rtl_0" with the following parameter:
+    Info (12134): Parameter "OPERATION_MODE" = "DUAL_PORT"
+    Info (12134): Parameter "WIDTH_A" = "16"
+    Info (12134): Parameter "WIDTHAD_A" = "2"
+    Info (12134): Parameter "NUMWORDS_A" = "4"
+    Info (12134): Parameter "WIDTH_B" = "16"
+    Info (12134): Parameter "WIDTHAD_B" = "2"
+    Info (12134): Parameter "NUMWORDS_B" = "4"
+    Info (12134): Parameter "ADDRESS_ACLR_A" = "NONE"
+    Info (12134): Parameter "OUTDATA_REG_B" = "UNREGISTERED"
+    Info (12134): Parameter "ADDRESS_ACLR_B" = "NONE"
+    Info (12134): Parameter "OUTDATA_ACLR_B" = "NONE"
+    Info (12134): Parameter "ADDRESS_REG_B" = "CLOCK0"
+    Info (12134): Parameter "INDATA_ACLR_A" = "NONE"
+    Info (12134): Parameter "WRCONTROL_ACLR_A" = "NONE"
+    Info (12134): Parameter "READ_DURING_WRITE_MODE_MIXED_PORTS" = "OLD_DATA"
+Info (12021): Found 1 design units, including 1 entities, in source file db/altsyncram_7om1.tdf
+    Info (12023): Found entity 1: altsyncram_7om1 File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_7om1.tdf Line: 27
 Info (12130): Elaborated megafunction instantiation "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_basic_presenter:presenter_i|ordered_priority_queue_monolithic_basic_presenter_native:native_i|tile_fifo:meta_ram_i|altsyncram:ram_rtl_0"
 Info (12133): Instantiated megafunction "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_basic_presenter:presenter_i|ordered_priority_queue_monolithic_basic_presenter_native:native_i|tile_fifo:meta_ram_i|altsyncram:ram_rtl_0" with the following parameter:
     Info (12134): Parameter "OPERATION_MODE" = "DUAL_PORT"
-    Info (12134): Parameter "WIDTH_A" = "32"
+    Info (12134): Parameter "WIDTH_A" = "58"
     Info (12134): Parameter "WIDTHAD_A" = "9"
     Info (12134): Parameter "NUMWORDS_A" = "512"
-    Info (12134): Parameter "WIDTH_B" = "32"
+    Info (12134): Parameter "WIDTH_B" = "58"
     Info (12134): Parameter "WIDTHAD_B" = "9"
     Info (12134): Parameter "NUMWORDS_B" = "512"
     Info (12134): Parameter "ADDRESS_ACLR_A" = "NONE"
@@ -359,44 +561,85 @@ Info (12133): Instantiated megafunction "ordered_priority_queue_monolithic_sv:du
     Info (12134): Parameter "WRCONTROL_ACLR_A" = "NONE"
     Info (12134): Parameter "RAM_BLOCK_TYPE" = "M20K"
     Info (12134): Parameter "READ_DURING_WRITE_MODE_MIXED_PORTS" = "OLD_DATA"
-Info (12021): Found 1 design units, including 1 entities, in source file db/altsyncram_vro1.tdf
-    Info (12023): Found entity 1: altsyncram_vro1 File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_vro1.tdf Line: 27
-Info (17049): 170 registers lost all their fanouts during netlist optimizations.
-Info (144001): Generated suppressed messages file /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/output_files/opq_native_sv_4lane_signoff.map.smsg
+Info (12021): Found 1 design units, including 1 entities, in source file db/altsyncram_fso1.tdf
+    Info (12023): Found entity 1: altsyncram_fso1 File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_fso1.tdf Line: 27
+Info (12130): Elaborated megafunction instantiation "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|tile_fifo:gen_tail_status_wrap_ram[3].tail_status_state_ram_i|altsyncram:ram_rtl_0"
+Info (12133): Instantiated megafunction "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|tile_fifo:gen_tail_status_wrap_ram[3].tail_status_state_ram_i|altsyncram:ram_rtl_0" with the following parameter:
+    Info (12134): Parameter "OPERATION_MODE" = "DUAL_PORT"
+    Info (12134): Parameter "WIDTH_A" = "2"
+    Info (12134): Parameter "WIDTHAD_A" = "10"
+    Info (12134): Parameter "NUMWORDS_A" = "1024"
+    Info (12134): Parameter "WIDTH_B" = "2"
+    Info (12134): Parameter "WIDTHAD_B" = "10"
+    Info (12134): Parameter "NUMWORDS_B" = "1024"
+    Info (12134): Parameter "ADDRESS_ACLR_A" = "NONE"
+    Info (12134): Parameter "OUTDATA_REG_B" = "UNREGISTERED"
+    Info (12134): Parameter "ADDRESS_ACLR_B" = "NONE"
+    Info (12134): Parameter "OUTDATA_ACLR_B" = "NONE"
+    Info (12134): Parameter "ADDRESS_REG_B" = "CLOCK0"
+    Info (12134): Parameter "INDATA_ACLR_A" = "NONE"
+    Info (12134): Parameter "WRCONTROL_ACLR_A" = "NONE"
+    Info (12134): Parameter "RAM_BLOCK_TYPE" = "M20K"
+    Info (12134): Parameter "READ_DURING_WRITE_MODE_MIXED_PORTS" = "OLD_DATA"
+Info (12021): Found 1 design units, including 1 entities, in source file db/altsyncram_7uo1.tdf
+    Info (12023): Found entity 1: altsyncram_7uo1 File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_7uo1.tdf Line: 27
+Info (12130): Elaborated megafunction instantiation "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|tile_fifo:gen_tail_status_wrap_ram[3].tail_status_wrap_ram_i|altsyncram:ram_rtl_0"
+Info (12133): Instantiated megafunction "ordered_priority_queue_monolithic_sv:dut_i|ordered_priority_queue_monolithic_page_allocator:page_allocator_i|tile_fifo:gen_tail_status_wrap_ram[3].tail_status_wrap_ram_i|altsyncram:ram_rtl_0" with the following parameter:
+    Info (12134): Parameter "OPERATION_MODE" = "DUAL_PORT"
+    Info (12134): Parameter "WIDTH_A" = "6"
+    Info (12134): Parameter "WIDTHAD_A" = "10"
+    Info (12134): Parameter "NUMWORDS_A" = "1024"
+    Info (12134): Parameter "WIDTH_B" = "6"
+    Info (12134): Parameter "WIDTHAD_B" = "10"
+    Info (12134): Parameter "NUMWORDS_B" = "1024"
+    Info (12134): Parameter "ADDRESS_ACLR_A" = "NONE"
+    Info (12134): Parameter "OUTDATA_REG_B" = "UNREGISTERED"
+    Info (12134): Parameter "ADDRESS_ACLR_B" = "NONE"
+    Info (12134): Parameter "OUTDATA_ACLR_B" = "NONE"
+    Info (12134): Parameter "ADDRESS_REG_B" = "CLOCK0"
+    Info (12134): Parameter "INDATA_ACLR_A" = "NONE"
+    Info (12134): Parameter "WRCONTROL_ACLR_A" = "NONE"
+    Info (12134): Parameter "RAM_BLOCK_TYPE" = "M20K"
+    Info (12134): Parameter "READ_DURING_WRITE_MODE_MIXED_PORTS" = "OLD_DATA"
+Info (12021): Found 1 design units, including 1 entities, in source file db/altsyncram_fuo1.tdf
+    Info (12023): Found entity 1: altsyncram_fuo1 File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/db/altsyncram_fuo1.tdf Line: 27
+Warning (12241): 6 hierarchies have connectivity warnings - see the Connectivity Checks report folder
+Info (17049): 162 registers lost all their fanouts during netlist optimizations.
+Info (144001): Generated suppressed messages file /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/output_files/opq_native_sv_4lane_signoff.map.smsg
 Critical Warning (15725): clock port is fed by virtual pin "clk~input"; timing analysis treats input to the clock port as a ripple clock
 Info (15717): Design contains 18 virtual pins; timing numbers associated with paths containing virtual pins are estimates
-    Info (15719): Pin "activity_o[0]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 5
-    Info (15719): Pin "activity_o[1]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 5
-    Info (15719): Pin "activity_o[2]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 5
-    Info (15719): Pin "activity_o[3]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 5
-    Info (15719): Pin "activity_o[4]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 5
-    Info (15719): Pin "activity_o[5]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 5
-    Info (15719): Pin "activity_o[6]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 5
-    Info (15719): Pin "activity_o[7]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 5
-    Info (15719): Pin "activity_o[8]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 5
-    Info (15719): Pin "activity_o[9]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 5
-    Info (15719): Pin "activity_o[10]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 5
-    Info (15719): Pin "activity_o[11]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 5
-    Info (15719): Pin "activity_o[12]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 5
-    Info (15719): Pin "activity_o[13]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 5
-    Info (15719): Pin "activity_o[14]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 5
-    Info (15719): Pin "activity_o[15]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 5
-    Info (15718): Pin "clk" is virtual input pin File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 2
-    Info (15718): Pin "reset_n" is virtual input pin File: /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 3
-Info (21057): Implemented 10890 device resources after synthesis - the final resource count might be different
+    Info (15719): Pin "activity_o[0]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 25
+    Info (15719): Pin "activity_o[1]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 25
+    Info (15719): Pin "activity_o[2]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 25
+    Info (15719): Pin "activity_o[3]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 25
+    Info (15719): Pin "activity_o[4]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 25
+    Info (15719): Pin "activity_o[5]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 25
+    Info (15719): Pin "activity_o[6]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 25
+    Info (15719): Pin "activity_o[7]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 25
+    Info (15719): Pin "activity_o[8]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 25
+    Info (15719): Pin "activity_o[9]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 25
+    Info (15719): Pin "activity_o[10]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 25
+    Info (15719): Pin "activity_o[11]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 25
+    Info (15719): Pin "activity_o[12]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 25
+    Info (15719): Pin "activity_o[13]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 25
+    Info (15719): Pin "activity_o[14]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 25
+    Info (15719): Pin "activity_o[15]" is virtual output pin File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 25
+    Info (15718): Pin "clk" is virtual input pin File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 22
+    Info (15718): Pin "reset_n" is virtual input pin File: /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv Line: 23
+Info (21057): Implemented 16048 device resources after synthesis - the final resource count might be different
     Info (21058): Implemented 0 input pins
     Info (21059): Implemented 0 output pins
-    Info (21061): Implemented 10026 logic cells
-    Info (21064): Implemented 864 RAM segments
-Info: Quartus Prime Analysis & Synthesis was successful. 0 errors, 135 warnings
-    Info: Peak virtual memory: 1245 megabytes
-    Info: Processing ended: Mon Apr 20 04:51:40 2026
-    Info: Elapsed time: 00:00:33
-    Info: Total CPU time (on all processors): 00:00:50
+    Info (21061): Implemented 15078 logic cells
+    Info (21064): Implemented 970 RAM segments
+Info: Quartus Prime Analysis & Synthesis was successful. 0 errors, 142 warnings
+    Info: Peak virtual memory: 1589 megabytes
+    Info: Processing ended: Thu Apr 30 12:05:58 2026
+    Info: Elapsed time: 00:01:03
+    Info: Total CPU time (on all processors): 00:01:21
 Info: *******************************************************************
 Info: Running Quartus Prime Fitter
     Info: Version 18.1.0 Build 625 09/12/2018 SJ Standard Edition
-    Info: Processing started: Mon Apr 20 04:51:40 2026
+    Info: Processing started: Thu Apr 30 12:05:59 2026
 Info: Command: quartus_fit --read_settings_files=off --write_settings_files=off opq_native_sv_4lane_signoff -c opq_native_sv_4lane_signoff
 Info: qfit2_default_script.tcl version: #1
 Info: Project  = opq_native_sv_4lane_signoff
@@ -411,7 +654,7 @@ Info (21076): Low junction temperature operating condition is not set. Assuming 
 Info (171004): Fitter is performing a Standard Fit compilation using maximum Fitter effort to optimize design performance
 Info (176045): Design uses memory blocks. Violating setup or hold times of memory block address registers for either read or write operations could cause memory contents to be corrupted. Make sure that all memory block address registers meet the setup and hold time requirements.
 Info (12290): Loading the periphery placement data.
-Info (12291): Periphery placement data loaded: elapsed time is 00:00:19
+Info (12291): Periphery placement data loaded: elapsed time is 00:00:20
 Info (12627): Pin ~ALTERA_DATA0~ is reserved at location BD19
 Info (176045): Design uses memory blocks. Violating setup or hold times of memory block address registers for either read or write operations could cause memory contents to be corrupted. Make sure that all memory block address registers meet the setup and hold time requirements.
 Info (16210): Plan updated with currently enabled project assignments.
@@ -419,13 +662,13 @@ Critical Warning (17951): There are 48 unused RX channels in the design. If you 
 Critical Warning (18655): There are 48 unused TX channels in the design. If you intend to use any of these channels in the future, you must add the assignment 'set_instance_assignment -name PRESERVE_UNUSED_XCVR_CHANNEL ON -to <pin_name>' in your QSF file. This assignment will preserve the performance of specified channels over time. Note that unused channel preservation only works if the design uses or instantiates atleast 1 transceiver channel.
 Info (12295): Periphery placement of all unplaced cells complete: elapsed time is 00:00:01
 Info (11191): Automatically promoted 2 clocks (2 global)
-    Info (13173): clk~CLKENA0 (5651 fanout) drives Global Clock Region, with the buffer placed at CLKCTRL_3D_G_I16
+    Info (13173): clk~CLKENA0 (8813 fanout) drives Global Clock Region, with the buffer placed at CLKCTRL_3D_G_I16
     Info (13173): reset_n~CLKENA0 (772 fanout) drives Global Clock Region, with the buffer placed at CLKCTRL_3D_G_I18
 Info (176233): Starting register packing
 Info (176235): Finished register packing
     Extra Info (176219): No registers were packed into other blocks
-Info (12263): Fitter periphery placement operations ending: elapsed time is 00:00:35
-Info (11165): Fitter preparation operations ending: elapsed time is 00:00:34
+Info (12263): Fitter periphery placement operations ending: elapsed time is 00:00:36
+Info (11165): Fitter preparation operations ending: elapsed time is 00:00:36
 Info (18252): The Fitter is using Physical Synthesis.
 Info (332104): Reading SDC File: 'opq_native_sv_4lane_signoff.sdc'
 Warning (114001): Time value "3.636364 ns" truncated to "3.636 ns"
@@ -439,48 +682,48 @@ Info (332111): Found 1 clocks
     Info (332111):    3.636          clk
 Info (170189): Fitter placement preparation operations beginning
 Info (14951): The Fitter is using Advanced Physical Optimization.
-Info (170190): Fitter placement preparation operations ending: elapsed time is 00:00:12
+Info (170190): Fitter placement preparation operations ending: elapsed time is 00:00:17
 Info (170191): Fitter placement operations beginning
 Info (170137): Fitter placement was successful
-Info (170192): Fitter placement operations ending: elapsed time is 00:00:20
-Info (11888): Total time spent on timing analysis during Global Placement is 4.18 seconds.
+Info (170192): Fitter placement operations ending: elapsed time is 00:00:26
+Info (11888): Total time spent on timing analysis during Global Placement is 6.06 seconds.
 Info (18258): Fitter Physical Synthesis operations beginning
-Info (18259): Fitter Physical Synthesis operations ending: elapsed time is 00:00:01
+Info (18259): Fitter Physical Synthesis operations ending: elapsed time is 00:00:02
 Info (11888): Total time spent on timing analysis during Physical Synthesis is 0.00 seconds.
 Info (170189): Fitter placement preparation operations beginning
 Info (170191): Fitter placement operations beginning
 Info (170137): Fitter placement was successful
 Info (170192): Fitter placement operations ending: elapsed time is 00:00:00
-Info (11888): Total time spent on timing analysis during Placement is 0.05 seconds.
+Info (11888): Total time spent on timing analysis during Placement is 0.08 seconds.
 Info (170193): Fitter routing operations beginning
 Info (170195): Router estimated average interconnect usage is 0% of the available device resources
-    Info (170196): Router estimated peak interconnect usage is 26% of the available device resources in the region that extends from location X201_Y118 to location X212_Y129
-Info (11888): Total time spent on timing analysis during Routing is 3.25 seconds.
-Info (16607): Fitter routing operations ending: elapsed time is 00:00:43
-Info (11888): Total time spent on timing analysis during Post-Routing is 0.34 seconds.
-Info (16557): Fitter post-fit operations ending: elapsed time is 00:00:27
-Info (144001): Generated suppressed messages file /home/yifeng/packages/mu3e_ip_dev/mu3e-ip-cores/packet_scheduler/syn/quartus/opq_native_sv_4lane_signoff/output_files/opq_native_sv_4lane_signoff.fit.smsg
+    Info (170196): Router estimated peak interconnect usage is 25% of the available device resources in the region that extends from location X165_Y106 to location X176_Y117
+Info (11888): Total time spent on timing analysis during Routing is 5.19 seconds.
+Info (16607): Fitter routing operations ending: elapsed time is 00:00:54
+Info (11888): Total time spent on timing analysis during Post-Routing is 0.49 seconds.
+Info (16557): Fitter post-fit operations ending: elapsed time is 00:00:33
+Info (144001): Generated suppressed messages file /home/yifeng/packages/mu3e_ip_dev/packet_scheduler_opq_blockpath_wt/syn/quartus/opq_native_sv_4lane_signoff/output_files/opq_native_sv_4lane_signoff.fit.smsg
 Info (11793): Fitter databases successfully split.
 Info: Quartus Prime Fitter was successful. 0 errors, 4 warnings
-    Info: Peak virtual memory: 8147 megabytes
-    Info: Processing ended: Mon Apr 20 04:54:55 2026
-    Info: Elapsed time: 00:03:15
-    Info: Total CPU time (on all processors): 00:16:15
+    Info: Peak virtual memory: 8330 megabytes
+    Info: Processing ended: Thu Apr 30 12:09:47 2026
+    Info: Elapsed time: 00:03:48
+    Info: Total CPU time (on all processors): 00:20:20
 Info: *******************************************************************
 Info: Running Quartus Prime Assembler
     Info: Version 18.1.0 Build 625 09/12/2018 SJ Standard Edition
-    Info: Processing started: Mon Apr 20 04:54:57 2026
+    Info: Processing started: Thu Apr 30 12:09:49 2026
 Info: Command: quartus_asm --read_settings_files=off --write_settings_files=off opq_native_sv_4lane_signoff -c opq_native_sv_4lane_signoff
 Info: Quartus Prime Assembler was successful. 0 errors, 0 warnings
-    Info: Peak virtual memory: 6928 megabytes
-    Info: Processing ended: Mon Apr 20 04:55:43 2026
+    Info: Peak virtual memory: 6937 megabytes
+    Info: Processing ended: Thu Apr 30 12:10:35 2026
     Info: Elapsed time: 00:00:46
     Info: Total CPU time (on all processors): 00:00:47
 Info (293026): Skipped module Power Analyzer due to the assignment FLOW_ENABLE_POWER_ANALYZER
 Info: *******************************************************************
 Info: Running Quartus Prime Timing Analyzer
     Info: Version 18.1.0 Build 625 09/12/2018 SJ Standard Edition
-    Info: Processing started: Mon Apr 20 04:55:44 2026
+    Info: Processing started: Thu Apr 30 12:10:36 2026
 Info: Command: quartus_sta opq_native_sv_4lane_signoff -c opq_native_sv_4lane_signoff
 Info: qsta_default_script.tcl version: #1
 Info (20032): Parallel compilation is enabled and will use up to 16 processors
@@ -494,44 +737,44 @@ Info (332151): Clock uncertainty is not calculated until you update the timing n
 Info (332154): The derive_clock_uncertainty command did not apply clock uncertainty to any clock-to-clock transfers.
 Info: Found TIMING_ANALYZER_REPORT_SCRIPT_INCLUDE_DEFAULT_ANALYSIS = ON
 Info: Analyzing Slow 900mV 100C Model
-Info (332146): Worst-case setup slack is 0.008
+Info (332146): Worst-case setup slack is 0.318
     Info (332119):     Slack       End Point TNS Clock
     Info (332119): ========= =================== =====================
-    Info (332119):     0.008               0.000 clk
-Info (332146): Worst-case hold slack is 0.043
+    Info (332119):     0.318               0.000 clk
+Info (332146): Worst-case hold slack is 0.039
     Info (332119):     Slack       End Point TNS Clock
     Info (332119): ========= =================== =====================
-    Info (332119):     0.043               0.000 clk
+    Info (332119):     0.039               0.000 clk
 Info (332140): No Recovery paths to report
 Info (332140): No Removal paths to report
-Info (332146): Worst-case minimum pulse width slack is 1.464
+Info (332146): Worst-case minimum pulse width slack is 1.453
     Info (332119):     Slack       End Point TNS Clock
     Info (332119): ========= =================== =====================
-    Info (332119):     1.464               0.000 clk
+    Info (332119):     1.453               0.000 clk
 Info: Analyzing Slow 900mV 0C Model
-Info (332146): Worst-case setup slack is 0.057
+Info (332146): Worst-case setup slack is 0.534
     Info (332119):     Slack       End Point TNS Clock
     Info (332119): ========= =================== =====================
-    Info (332119):     0.057               0.000 clk
-Info (332146): Worst-case hold slack is 0.041
+    Info (332119):     0.534               0.000 clk
+Info (332146): Worst-case hold slack is 0.037
     Info (332119):     Slack       End Point TNS Clock
     Info (332119): ========= =================== =====================
-    Info (332119):     0.041               0.000 clk
+    Info (332119):     0.037               0.000 clk
 Info (332140): No Recovery paths to report
 Info (332140): No Removal paths to report
-Info (332146): Worst-case minimum pulse width slack is 1.464
+Info (332146): Worst-case minimum pulse width slack is 1.459
     Info (332119):     Slack       End Point TNS Clock
     Info (332119): ========= =================== =====================
-    Info (332119):     1.464               0.000 clk
+    Info (332119):     1.459               0.000 clk
 Info: Analyzing Fast 900mV 100C Model
-Info (332146): Worst-case setup slack is 0.815
+Info (332146): Worst-case setup slack is 0.932
     Info (332119):     Slack       End Point TNS Clock
     Info (332119): ========= =================== =====================
-    Info (332119):     0.815               0.000 clk
-Info (332146): Worst-case hold slack is 0.019
+    Info (332119):     0.932               0.000 clk
+Info (332146): Worst-case hold slack is 0.015
     Info (332119):     Slack       End Point TNS Clock
     Info (332119): ========= =================== =====================
-    Info (332119):     0.019               0.000 clk
+    Info (332119):     0.015               0.000 clk
 Info (332140): No Recovery paths to report
 Info (332140): No Removal paths to report
 Info (332146): Worst-case minimum pulse width slack is 1.479
@@ -539,31 +782,31 @@ Info (332146): Worst-case minimum pulse width slack is 1.479
     Info (332119): ========= =================== =====================
     Info (332119):     1.479               0.000 clk
 Info: Analyzing Fast 900mV 0C Model
-Info (332146): Worst-case setup slack is 1.277
+Info (332146): Worst-case setup slack is 1.461
     Info (332119):     Slack       End Point TNS Clock
     Info (332119): ========= =================== =====================
-    Info (332119):     1.277               0.000 clk
-Info (332146): Worst-case hold slack is 0.017
+    Info (332119):     1.461               0.000 clk
+Info (332146): Worst-case hold slack is 0.014
     Info (332119):     Slack       End Point TNS Clock
     Info (332119): ========= =================== =====================
-    Info (332119):     0.017               0.000 clk
+    Info (332119):     0.014               0.000 clk
 Info (332140): No Recovery paths to report
 Info (332140): No Removal paths to report
-Info (332146): Worst-case minimum pulse width slack is 1.501
+Info (332146): Worst-case minimum pulse width slack is 1.502
     Info (332119):     Slack       End Point TNS Clock
     Info (332119): ========= =================== =====================
-    Info (332119):     1.501               0.000 clk
+    Info (332119):     1.502               0.000 clk
 Info (332102): Design is not fully constrained for setup requirements
 Info (332102): Design is not fully constrained for hold requirements
 Info: Quartus Prime Timing Analyzer was successful. 0 errors, 2 warnings
-    Info: Peak virtual memory: 2530 megabytes
-    Info: Processing ended: Mon Apr 20 04:55:50 2026
-    Info: Elapsed time: 00:00:06
-    Info: Total CPU time (on all processors): 00:00:10
-Info (293000): Quartus Prime Full Compilation was successful. 0 errors, 141 warnings
+    Info: Peak virtual memory: 3366 megabytes
+    Info: Processing ended: Thu Apr 30 12:10:48 2026
+    Info: Elapsed time: 00:00:12
+    Info: Total CPU time (on all processors): 00:00:44
+Info (293000): Quartus Prime Full Compilation was successful. 0 errors, 148 warnings
 Info (23030): Evaluation of Tcl script /data1/intelFPGA/18.1/quartus/common/tcl/internal/qsh_flow.tcl was successful
-Info: Quartus Prime Shell was successful. 0 errors, 141 warnings
-    Info: Peak virtual memory: 793 megabytes
-    Info: Processing ended: Mon Apr 20 04:55:51 2026
-    Info: Elapsed time: 00:04:45
-    Info: Total CPU time (on all processors): 00:18:04
+Info: Quartus Prime Shell was successful. 0 errors, 148 warnings
+    Info: Peak virtual memory: 800 megabytes
+    Info: Processing ended: Thu Apr 30 12:10:49 2026
+    Info: Elapsed time: 00:05:55
+    Info: Total CPU time (on all processors): 00:23:14

@@ -17,7 +17,7 @@ number.
 | DUT_IMPL | `native_sv` |
 | OPQ_N_LANE | `4` |
 | OPQ_N_SHD | `128` |
-| OPQ_TICKET_FIFO_DEPTH | `4096` |
+| OPQ_TICKET_FIFO_DEPTH | `256` |
 | OPQ_PAGE_RAM_DEPTH | `512`, `65536` |
 | MODE | `MERGING` |
 | probe_only_exclusions |  |
@@ -43,20 +43,11 @@ number.
 
 | area | measured summary | disposition | evidence anchor | next action |
 |---|---|---|---|---|
-| ingress parser lane asymmetry | stmt=78.83, branch=78.30, cond=40.48, fsm_trans=66.67, toggle=43.11 (min across 4 instances) | justified_nonclaim: isolated merged coverage bottoms out at stmt=79.17, branch=79.01, fsm_trans=66.67, toggle=43.86 across the four lane-local parser instances; current-scope supplemental runs lift the parser family to stmt=79.28, branch=79.25, fsm_trans=66.67, toggle=43.86, so the residual deficit is the bounded 4-lane asymmetry / recovery axis rather than missing logs or broken UCDB plumbing | `DV_PLAN.md` 4-lane asymmetry notes; `DV_CROSS.md` CROSS-053 | Promote a dedicated 4-lane parser recovery / asymmetry sweep only if raw per-instance structural closure becomes a hard release gate. |
-| page allocator reset / fast-close arcs | stmt=85.55, branch=75.00, cond=49.67, fsm_trans=54.55, toggle=37.26 (min across 1 instance) | justified_nonclaim: the allocator improves from stmt=85.55, branch=75.00, fsm_trans=54.55, toggle=37.26 to stmt=84.85, branch=74.06, fsm_trans=54.55, toggle=37.49 once maintained signoff runs are merged, and the remaining FSM misses are dominated by active-state -> RESET fanout plus the WRITE_HEAD -> WRITE_TAIL empty-frame fast-close path rather than unexplained hit loss | `DV_ERROR.md` X081-X086; `DV_FORMAL.md` B23/B32 | Add a true mid-state reset / zero-hit fast-close stress only if raw allocator transition closure is promoted from a bounded non-claim to a release gate. |
-| presenter overwrite / must-drop scan | stmt=59.18, branch=70.31, cond=43.94, fsm_trans=50.00, toggle=25.32 (min across 1 instance) | justified_nonclaim: isolated presenter coverage remains low at stmt=59.18, branch=70.31, fsm_trans=50.00, toggle=25.32 because the overwrite-scan and must-drop logic is only forced by the named overflow witnesses; maintained signoff runs lift it to stmt=59.18, branch=70.31, fsm_trans=50.00, toggle=25.75 while hit-conservation screens stay clean, so the raw deficit maps to the explicit must-drop non-claim rather than a silent datapath failure | `DV_CROSS.md` CROSS-078/CROSS-079; `BUG_HISTORY.md` BUG-029-R/BUG-030-R | Keep `opq_cross_bp_mustdrop_witness_test` green and do not remove the non-claim until a default-build must-drop baseline is promoted into the published scope. |
-| block path reset-only arcs | stmt=93.69, branch=88.89, cond=57.89, fsm_trans=62.50, toggle=77.45 (min across 1 instance) | justified_exclusion: statement coverage is already 93.69 and signoff runs lift block-path toggle to 78.65; the remaining uncovered FSM transitions are the three ARBITER_* -> RESET arcs only | `DV_FORMAL.md` B23/B32 reset / flush invariants | Leave this as a reset-only exclusion unless mid-state hard reset becomes part of the release contract. |
-| wrapper-only toggle bookkeeping | stmt=88.36, branch=80.00, cond=54.74, toggle=22.80 (min across 3 instances) | justified_exclusion: top-level DUT and wrapper shells depress raw toggle through duplicated aggregation, probe, and bookkeeping nets without indicating missing testcase evidence in the core owner modules | `DV_REPORT.md` Signoff Runs; `doc/SIGNOFF.md` current-scope note | Do not spend testcase budget on wrapper toggles until owner-module functional gaps change. |
-
-## Structural Coverage Closure
-
-| status | field | value |
-|:---:|---|---|
-| ✅ | closure_status | `justified` |
-| ✅ | disposition_count | `5` |
-| ✅ | open_dispositions | `0` |
-| ℹ️ | basis | Raw structural coverage target misses are closed by the Coverage-Hole Disposition table; each listed deficit is classified as justified_nonclaim or justified_exclusion and the per-case / signoff evidence remains clean. |
+| ingress parser lane asymmetry | stmt=40.89, branch=22.64, cond=0.00, fsm_trans=4.17, toggle=6.85 (min across 4 instances) | justified_nonclaim: isolated merged coverage bottoms out at stmt=61.78, branch=47.17, fsm_trans=25.00, toggle=21.79 across the four lane-local parser instances; current-scope supplemental runs lift the parser family to stmt=93.56, branch=86.32, fsm_trans=70.83, toggle=61.22, so the residual deficit is the bounded 4-lane asymmetry / recovery axis rather than missing logs or broken UCDB plumbing | `DV_PLAN.md` 4-lane asymmetry notes; `DV_CROSS.md` CROSS-053 | Promote a dedicated 4-lane parser recovery / asymmetry sweep only if raw per-instance structural closure becomes a hard release gate. |
+| page allocator reset / fast-close arcs | stmt=84.35, branch=72.01, cond=36.69, fsm_trans=54.55, toggle=19.88 (min across 1 instance) | justified_nonclaim: the allocator improves from stmt=84.35, branch=72.01, fsm_trans=54.55, toggle=19.88 to stmt=90.02, branch=82.59, fsm_trans=54.55, toggle=55.68 once maintained signoff runs are merged, and the remaining FSM misses are dominated by active-state -> RESET fanout plus the WRITE_HEAD -> WRITE_TAIL empty-frame fast-close path rather than unexplained hit loss | `DV_ERROR.md` X081-X086; `DV_FORMAL.md` B23/B32 | Add a true mid-state reset / zero-hit fast-close stress only if raw allocator transition closure is promoted from a bounded non-claim to a release gate. |
+| presenter overwrite / must-drop scan | stmt=59.61, branch=62.88, cond=34.85, fsm_trans=50.00, toggle=15.60 (min across 1 instance) | justified_nonclaim: isolated presenter coverage remains low at stmt=59.61, branch=62.88, fsm_trans=50.00, toggle=15.60 because the overwrite-scan and must-drop logic is only forced by the named overflow witnesses; maintained signoff runs lift it to stmt=61.36, branch=72.73, fsm_trans=50.00, toggle=35.22 while hit-conservation screens stay clean, so the raw deficit maps to the explicit must-drop non-claim rather than a silent datapath failure | `DV_CROSS.md` CROSS-078/CROSS-079; `BUG_HISTORY.md` BUG-029-R/BUG-030-R | Keep `opq_cross_bp_mustdrop_witness_test` green and do not remove the non-claim until a default-build must-drop baseline is promoted into the published scope. |
+| block path reset-only arcs | stmt=85.10, branch=74.75, cond=39.47, fsm_trans=37.50, toggle=29.46 (min across 1 instance) | justified_exclusion: statement coverage is already 85.10 and signoff runs lift block-path toggle to 85.78; the remaining uncovered FSM transitions are the three ARBITER_* -> RESET arcs only | `DV_FORMAL.md` B23/B32 reset / flush invariants | Leave this as a reset-only exclusion unless mid-state hard reset becomes part of the release contract. |
+| wrapper-only toggle bookkeeping | stmt=78.45, branch=68.65, cond=42.11, toggle=13.47 (min across 3 instances) | justified_exclusion: top-level DUT and wrapper shells depress raw toggle through duplicated aggregation, probe, and bookkeeping nets without indicating missing testcase evidence in the core owner modules | `DV_REPORT.md` Signoff Runs; `doc/SIGNOFF.md` current-scope note | Do not spend testcase budget on wrapper toggles until owner-module functional gaps change. |
 
 ## Targets vs merged totals
 
@@ -65,13 +56,13 @@ number.
 
 | status | metric | merged_pct | target |
 |:---:|---|---|---|
-| ✅ | stmt | 80.69 | 95.0 |
-| ✅ | branch | 78.14 | 90.0 |
-| ℹ️ | cond | 47.50 | - |
-| ℹ️ | expr | 67.65 | - |
-| ✅ | fsm_state | 100.00 | 95.0 |
-| ✅ | fsm_trans | 61.68 | 90.0 |
-| ✅ | toggle | 36.96 | 80.0 |
+| ⚠️ | stmt | 73.06 | 95.0 |
+| ⚠️ | branch | 61.81 | 90.0 |
+| ℹ️ | cond | 31.03 | - |
+| ℹ️ | expr | 56.67 | - |
+| ⚠️ | fsm_state | 76.71 | 95.0 |
+| ⚠️ | fsm_trans | 36.53 | 90.0 |
+| ⚠️ | toggle | 18.58 | 80.0 |
 
 ## Per-bucket merged totals
 
@@ -79,10 +70,10 @@ _These are ordered isolated merged totals, not continuous-frame sequential-run t
 
 | status | bucket | catalog_planned | promoted | evidenced | stmt | branch | cond | expr | fsm_state | fsm_trans | toggle |
 |:---:|---|---:|---:|---:|---|---|---|---|---|---|---|
-| ✅ | [`BASIC`](REPORT/buckets/BASIC.md) | 129 | 129 | 129 | 77.21 | 69.71 | 41.54 | 64.05 | 89.04 | 44.91 | 28.55 |
-| ✅ | [`EDGE`](REPORT/buckets/EDGE.md) | 129 | 129 | 129 | 77.14 | 69.71 | 41.54 | 64.71 | 89.04 | 44.91 | 31.96 |
-| ✅ | [`PROF`](REPORT/buckets/PROF.md) | 129 | 129 | 129 | 73.33 | 63.77 | 29.62 | 49.02 | 87.67 | 43.71 | 25.70 |
-| ✅ | [`ERROR`](REPORT/buckets/ERROR.md) | 129 | 129 | 129 | 78.44 | 73.24 | 40.00 | 59.48 | 100.00 | 61.68 | 24.49 |
+| ⚠️ | [`BASIC`](REPORT/buckets/BASIC.md) | 129 | 129 | 0 | n/a | n/a | n/a | n/a | n/a | n/a | n/a |
+| ⚠️ | [`EDGE`](REPORT/buckets/EDGE.md) | 129 | 129 | 1 | 72.60 | 60.33 | 26.28 | 48.67 | 76.71 | 36.53 | 17.75 |
+| ⚠️ | [`PROF`](REPORT/buckets/PROF.md) | 129 | 129 | 0 | n/a | n/a | n/a | n/a | n/a | n/a | n/a |
+| ⚠️ | [`ERROR`](REPORT/buckets/ERROR.md) | 129 | 129 | 8 | 72.33 | 60.77 | 30.63 | 56.67 | 76.71 | 36.53 | 18.58 |
 
 ## Isolated execution order and traceability
 
@@ -100,12 +91,14 @@ _These rows are for continuous-frame sequential runs such as `bucket_frame` and
 
 | status | run_id | kind | build | case_count | stmt | branch | toggle | functional_cross_pct | txns |
 |:---:|---|---|---|---:|---|---|---|---:|---:|
-| ✅ | [`opq_cross_bp_credit_test`](REPORT/cross/opq_cross_bp_credit_test.md) | cross | after | 1 | 66.98 | 54.73 | 12.47 | 64.3 | 12 |
-| ✅ | [`opq_cross_drr_allowance_test`](REPORT/cross/opq_cross_drr_allowance_test.md) | cross | after | 1 | 72.19 | 62.69 | 20.44 | 56.33 | 16 |
-| ✅ | [`opq_cross_drr_idle_lane_test`](REPORT/cross/opq_cross_drr_idle_lane_test.md) | cross | after | 1 | 69.52 | 57.74 | 13.97 | 54.89 | 16 |
-| ✅ | [`opq_cross_drr_short_allowance_test`](REPORT/cross/opq_cross_drr_short_allowance_test.md) | cross | after | 1 | 72.09 | 62.42 | 20.54 | 54.34 | 12 |
-| ✅ | [`opq_cross_drr_zero_allowance_test`](REPORT/cross/opq_cross_drr_zero_allowance_test.md) | cross | after | 1 | 69.69 | 58.09 | 14.09 | 55.39 | 16 |
-| ✅ | [`opq_error_counter_clear_test`](REPORT/cross/opq_error_counter_clear_test.md) | cross | after | 1 | 44.99 | 28.38 | 2.85 | 37.58 | 4 |
+| ✅ | [`opq_bucket_frame_native_sv_test`](REPORT/cross/opq_bucket_frame_native_sv_test.md) | bucket_frame | after | 39 | 82.78 | 80.82 | 44.68 | 76.72 | 738 |
+| ✅ | [`opq_all_buckets_frame_native_sv_test`](REPORT/cross/opq_all_buckets_frame_native_sv_test.md) | all_buckets_frame | after | 41 | 82.78 | 80.82 | 44.72 | 76.52 | 794 |
+| ✅ | [`opq_cross_bp_predrop_boundary_test`](REPORT/cross/opq_cross_bp_predrop_boundary_test.md) | cross | after | 1 | 73.80 | 64.17 | 32.41 | 61.71 | 208 |
+| ✅ | [`opq_cross_drr_bursty_frame2_boundary_test`](REPORT/cross/opq_cross_drr_bursty_frame2_boundary_test.md) | cross | after | 1 | 74.17 | 66.17 | 21.83 | 59.27 | 8 |
+| ✅ | [`opq_cross_mixed_bucket_random_soak_test`](REPORT/cross/opq_cross_mixed_bucket_random_soak_test.md) | cross | after | 1 | 81.78 | 77.86 | 47.20 | 72.05 | 2038 |
+| ✅ | [`opq_cross_random_ready_overflow_step2_boundary_test`](REPORT/cross/opq_cross_random_ready_overflow_step2_boundary_test.md) | cross | after | 1 | 79.74 | 72.19 | 35.15 | 63.48 | 20 |
+| ⚠️ | [`opq_error_counter_clear_test`](REPORT/cross/opq_error_counter_clear_test.md) | cross | after | 1 | 44.19 | 28.42 | 3.27 | 38.24 | 4 |
+| ✅ | [`opq_error_ftable_overflow_test`](REPORT/cross/opq_error_ftable_overflow_test.md) | cross | after | 1 | 72.60 | 60.33 | 17.75 | 60.78 | 64 |
 
 ## Fixed baseline execution order
 

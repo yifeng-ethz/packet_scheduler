@@ -86,7 +86,6 @@ class opq_formal_like_egress_flush_backpressure_stress_test extends opq_base_tes
         seq.start(env.vseqr);
       end
       begin
-        #1us;
         bp_seq.start(env.vseqr.egress_seqr);
       end
       begin

@@ -1,11 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_block_path
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.4.2
-// Date    : 20260425
-// Change  : Keep mover data staged per lane while staging the selected
-//           page-RAM write address as a scalar to shorten the final write-port
-//           mux
+// Version : 26.4.6
+// Date    : 20260427
+// Change  : Export DRR debug ports so Qsys wrappers avoid hierarchy references
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_block_path #(
@@ -50,6 +48,12 @@ module ordered_priority_queue_monolithic_block_path #(
   output logic                                             page_ram_we_o,
   output logic [PAGE_RAM_ADDR_WIDTH-1:0]                   page_ram_wr_addr_o,
   output logic [PAGE_RAM_DATA_WIDTH-1:0]                   page_ram_wr_data_o,
+  output logic [N_LANE-1:0][9:0]                           drr_quantum_dbg_o,
+  output logic [N_LANE-1:0]                                drr_req_dbg_o,
+  output logic [N_LANE-1:0]                                drr_gnt_dbg_o,
+  output logic [N_LANE-1:0]                                drr_lock_event_dbg_o,
+  output logic [N_LANE-1:0]                                drr_defer_event_dbg_o,
+  output logic [N_LANE-1:0]                                drr_sel_mask_dbg_o,
 `ifdef OPQ_OSS_FORMAL
   output logic [N_LANE-1:0]                                req_raw_dbg_oss,
   output logic [N_LANE-1:0]                                req_eligible_dbg_oss,
@@ -225,6 +229,13 @@ module ordered_priority_queue_monolithic_block_path #(
   logic [PAGE_RAM_ADDR_WIDTH-1:0] page_ram_wr_addr_comb;
   logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_wr_data_comb;
   logic              payload_commit_idle_comb;
+
+  assign drr_quantum_dbg_o = b2p_arb.quantum;
+  assign drr_req_dbg_o = b2p_arb_req_raw;
+  assign drr_gnt_dbg_o = b2p_arb_gnt;
+  assign drr_lock_event_dbg_o = drr_lock_event_dbg;
+  assign drr_defer_event_dbg_o = drr_defer_event_dbg;
+  assign drr_sel_mask_dbg_o = b2p_arb.sel_mask;
 
   assign page_allocator_direct_write = page_allocator_write_page_i ||
     page_allocator_write_head_i ||

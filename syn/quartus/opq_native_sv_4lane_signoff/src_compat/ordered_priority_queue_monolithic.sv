@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_sv
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.3.56-syn
-// Date    : 20260422
-// Change  : Quartus synthesis compatibility copy aligned to the live resident-protect and per-packet lane-count handoff plumbing while preserving the standalone synth-observe taps
+// Version : 26.4.6-syn
+// Date    : 20260427
+// Change  : Export native debug ports and preserve standalone synth-observe taps
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_sv #(
@@ -67,6 +67,34 @@ module ordered_priority_queue_monolithic_sv #(
   output logic [31:0]                                                    synth_observe_global8_o,
   output logic [31:0]                                                    synth_observe_global9_o,
   output logic [N_LANE-1:0][31:0]                                        synth_observe_lane_o,
+  output logic [N_LANE-1:0][LANE_FIFO_ADDR_WIDTH-1:0]                    ingress_lane_credit_dbg_o,
+  output logic [N_LANE-1:0][TICKET_FIFO_ADDR_WIDTH-1:0]                  ingress_ticket_credit_dbg_o,
+  output logic [N_LANE-1:0]                                              ingress_parser_idle_dbg_o,
+  output logic [N_LANE-1:0]                                              ingress_ticket_we_dbg_o,
+  output logic [N_LANE-1:0][TICKET_FIFO_DATA_WIDTH-1:0]                  ingress_ticket_wdata_dbg_o,
+  output logic [N_LANE-1:0]                                              ingress_lane_we_dbg_o,
+  output logic [N_LANE-1:0]                                              ingress_credit_drop_valid_dbg_o,
+  output logic [N_LANE-1:0]                                              ingress_credit_drop_lane_dbg_o,
+  output logic [N_LANE-1:0]                                              ingress_credit_drop_ticket_dbg_o,
+  output logic [N_LANE-1:0][15:0]                                        ingress_credit_drop_shd_cnt_dbg_o,
+  output logic [N_LANE-1:0][15:0]                                        ingress_credit_drop_hit_cnt_dbg_o,
+  output logic [N_LANE-1:0]                                              handle_we_dbg_o,
+  output logic [N_LANE-1:0]                                              handle_flag_dbg_o,
+  output logic [N_LANE-1:0][MAX_PKT_LENGTH_BITS-1:0]                     handle_block_len_dbg_o,
+  output logic [N_LANE-1:0][9:0]                                         drr_quantum_dbg_o,
+  output logic [N_LANE-1:0]                                              drr_req_dbg_o,
+  output logic [N_LANE-1:0]                                              drr_gnt_dbg_o,
+  output logic [N_LANE-1:0]                                              drr_lock_event_dbg_o,
+  output logic [N_LANE-1:0]                                              drr_defer_event_dbg_o,
+  output logic                                                           new_frame_dbg_o,
+  output logic                                                           ft_wr_page_dbg_o,
+  output logic [15:0]                                                    ft_wr_hit_len_dbg_o,
+  output logic                                                           ft_drop_valid_dbg_o,
+  output logic [31:0]                                                    ft_drop_hdr_dbg_o,
+  output logic [31:0]                                                    ft_drop_shd_dbg_o,
+  output logic [31:0]                                                    ft_drop_hit_dbg_o,
+  output logic                                                           page_allocator_active_dbg_o,
+  output logic                                                           arbiter_active_dbg_o,
   input  logic [N_LANE-1:0][9:0]                                         cfg_drr_allowance_i,
   input  logic [N_LANE-1:0]                                              cfg_drr_allowance_reload_i,
   input  logic                                                           d_clk,
@@ -157,6 +185,7 @@ module ordered_priority_queue_monolithic_sv #(
   logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_wr_data_dbg;
   logic [PAGE_RAM_ADDR_WIDTH-1:0] page_ram_rd_addr_dbg;
   logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_rd_data_dbg;
+  logic [PAGE_RAM_DATA_WIDTH-1:0] page_ram_rd_data_presenter_dbg;
   logic presenter_resident_hold_dbg;
   logic presenter_resident_head_valid_dbg;
   logic [PAGE_RAM_ADDR_WIDTH-1:0] presenter_resident_head_addr_dbg;
@@ -190,6 +219,36 @@ module ordered_priority_queue_monolithic_sv #(
   logic [PAGE_RAM_ADDR_WIDTH-1:0] allocator_resident_protect_len_dbg;
   logic allocator_resident_protect_full_ring_dbg;
   logic allocator_resident_protect_has_successor_dbg;
+  logic [N_LANE-1:0] drr_sel_mask_dbg;
+
+  assign ingress_ticket_we_dbg_o = ingress_ticket_we;
+  assign ingress_ticket_wdata_dbg_o = ingress_ticket_wdata;
+  assign ingress_lane_we_dbg_o = ingress_lane_we;
+  assign ingress_credit_drop_valid_dbg_o = ingress_credit_drop_valid_dbg;
+  assign ingress_credit_drop_lane_dbg_o = ingress_credit_drop_lane_dbg;
+  assign ingress_credit_drop_ticket_dbg_o = ingress_credit_drop_ticket_dbg;
+  assign ingress_credit_drop_shd_cnt_dbg_o = ingress_credit_drop_shd_cnt_dbg;
+  assign ingress_credit_drop_hit_cnt_dbg_o = ingress_credit_drop_hit_cnt_dbg;
+  assign handle_we_dbg_o = handle_we_dbg;
+  assign new_frame_dbg_o = write_head_active_dbg && (write_meta_flow_dbg == 3'd0);
+  assign ft_wr_page_dbg_o = write_page_active_dbg && page_we_dbg;
+  assign ft_wr_hit_len_dbg_o = page_wdata_dbg[23:8];
+  assign ft_drop_valid_dbg_o = ft_drop_valid_dbg;
+  assign ft_drop_hdr_dbg_o = ft_drop_hdr_cnt_dbg;
+  assign ft_drop_shd_dbg_o = ft_drop_shd_cnt_dbg;
+  assign ft_drop_hit_dbg_o = ft_drop_hit_cnt_dbg;
+  assign page_allocator_active_dbg_o =
+    fetch_ticket_active_dbg || write_head_active_dbg || write_tail_active_dbg || write_page_active_dbg;
+  assign arbiter_active_dbg_o = |drr_req_dbg_o || |drr_sel_mask_dbg;
+
+  genvar dbg_export_g;
+  generate
+    for (dbg_export_g = 0; dbg_export_g < N_LANE; dbg_export_g = dbg_export_g + 1) begin : g_dbg_export
+      assign handle_flag_dbg_o[dbg_export_g] = handle_wdata_dbg[dbg_export_g][HANDLE_LENGTH];
+      assign handle_block_len_dbg_o[dbg_export_g] =
+        handle_wdata_dbg[dbg_export_g][HANDLE_LENGTH-1:LANE_FIFO_ADDR_WIDTH + PAGE_RAM_ADDR_WIDTH];
+    end
+  endgenerate
 
   always_comb begin : proc_lane_credit_update_mux
     for (int i = 0; i < N_LANE; i++) begin
@@ -278,10 +337,13 @@ module ordered_priority_queue_monolithic_sv #(
       .lane_wptr(ingress_lane_wptr[g]),
       .lane_we(ingress_lane_we[g]),
       .running_ts_dbg(ingress_running_ts_dbg[g]),
-      .frame_ts_base_dbg(ingress_frame_ts_base_dbg[g]),
-      .dt_type_dbg(ingress_dt_type_dbg[g]),
-      .feb_id_dbg(ingress_feb_id_dbg[g]),
-      .parser_busy_o(ingress_parser_busy_dbg[g]),
+        .frame_ts_base_dbg(ingress_frame_ts_base_dbg[g]),
+        .dt_type_dbg(ingress_dt_type_dbg[g]),
+        .feb_id_dbg(ingress_feb_id_dbg[g]),
+        .parser_busy_o(ingress_parser_busy_dbg[g]),
+        .parser_idle_dbg_o(ingress_parser_idle_dbg_o[g]),
+        .lane_credit_dbg_o(ingress_lane_credit_dbg_o[g]),
+        .ticket_credit_dbg_o(ingress_ticket_credit_dbg_o[g]),
       .credit_drop_valid_o(ingress_credit_drop_valid_dbg[g]),
       .credit_drop_lane_o(ingress_credit_drop_lane_dbg[g]),
       .credit_drop_ticket_o(ingress_credit_drop_ticket_dbg[g]),
@@ -403,13 +465,19 @@ module ordered_priority_queue_monolithic_sv #(
     .handle_fifos_rd_addr_o(handle_fifos_rd_addr),
     .lane_fifos_rd_addr_o(lane_fifos_rd_addr),
     .lane_credit_update_o(block_path_lane_credit_update),
-    .lane_credit_update_valid_o(block_path_lane_credit_update_valid),
-    .payload_commit_idle_o(payload_commit_idle_dbg),
-    .page_ram_we_o(page_ram_we_dbg),
-    .page_ram_wr_addr_o(page_ram_wr_addr_dbg),
-    .page_ram_wr_data_o(page_ram_wr_data_dbg),
-    .d_clk(d_clk),
-    .d_reset(d_reset)
+      .lane_credit_update_valid_o(block_path_lane_credit_update_valid),
+      .payload_commit_idle_o(payload_commit_idle_dbg),
+      .page_ram_we_o(page_ram_we_dbg),
+      .page_ram_wr_addr_o(page_ram_wr_addr_dbg),
+      .page_ram_wr_data_o(page_ram_wr_data_dbg),
+      .drr_quantum_dbg_o(drr_quantum_dbg_o),
+      .drr_req_dbg_o(drr_req_dbg_o),
+      .drr_gnt_dbg_o(drr_gnt_dbg_o),
+      .drr_lock_event_dbg_o(drr_lock_event_dbg_o),
+      .drr_defer_event_dbg_o(drr_defer_event_dbg_o),
+      .drr_sel_mask_dbg_o(drr_sel_mask_dbg),
+      .d_clk(d_clk),
+      .d_reset(d_reset)
   );
 
   page_ram #(
@@ -423,6 +491,14 @@ module ordered_priority_queue_monolithic_sv #(
     .clk(d_clk),
     .q(page_ram_rd_data_dbg)
   );
+
+  always_ff @(posedge d_clk) begin : proc_presenter_page_ram_read_pipe
+    if (d_reset) begin
+      page_ram_rd_data_presenter_dbg <= '0;
+    end else begin
+      page_ram_rd_data_presenter_dbg <= page_ram_rd_data_dbg;
+    end
+  end
 
   always_ff @(posedge d_clk) begin : proc_presenter_packet_complete_delay
     if (d_reset) begin
@@ -496,7 +572,7 @@ module ordered_priority_queue_monolithic_sv #(
     .packet_complete_hit_cnt_i(packet_complete_hit_cnt_presenter_dbg),
     .payload_commit_idle_i(payload_commit_idle_dbg),
     .page_ram_rd_addr_o(page_ram_rd_addr_dbg),
-    .page_ram_rd_data_i(page_ram_rd_data_dbg),
+    .page_ram_rd_data_i(page_ram_rd_data_presenter_dbg),
     .resident_backpressure_hold_o(presenter_resident_hold_dbg),
     .resident_head_valid_o(presenter_resident_head_valid_dbg),
     .resident_head_addr_o(presenter_resident_head_addr_dbg),
