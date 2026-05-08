@@ -19,6 +19,14 @@
 `define OPQ_TICKET_FIFO_DEPTH 256
 `endif
 
+`ifndef OPQ_HANDLE_FIFO_DEPTH
+`define OPQ_HANDLE_FIFO_DEPTH 64
+`endif
+
+`ifndef OPQ_LANE_FIFO_DEPTH
+`define OPQ_LANE_FIFO_DEPTH 1024
+`endif
+
 `ifndef OPQ_N_LANE
 `define OPQ_N_LANE 2
 `endif
@@ -83,13 +91,13 @@ module ordered_priority_queue_dut_sv #(
   localparam int unsigned OPQ_N_LANE_LOCAL = `OPQ_N_LANE;
   localparam int unsigned OPQ_N_SHD_LOCAL = `OPQ_N_SHD;
   localparam int unsigned CHANNEL_WIDTH_CONST = 2;
-  localparam int unsigned LANE_FIFO_DEPTH_CONST = 1024;
+  localparam int unsigned LANE_FIFO_DEPTH_CONST = `OPQ_LANE_FIFO_DEPTH;
   localparam int unsigned LANE_FIFO_ADDR_WIDTH_CONST = $clog2(LANE_FIFO_DEPTH_CONST);
   localparam int unsigned LANE_FIFO_MAX_CREDIT_CONST = LANE_FIFO_DEPTH_CONST - 2;
   localparam int unsigned TICKET_FIFO_DEPTH_CONST = `OPQ_TICKET_FIFO_DEPTH;
   localparam int unsigned TICKET_FIFO_ADDR_WIDTH_CONST = $clog2(TICKET_FIFO_DEPTH_CONST);
   localparam int unsigned TICKET_FIFO_MAX_CREDIT_CONST = TICKET_FIFO_DEPTH_CONST - 1;
-  localparam int unsigned HANDLE_FIFO_DEPTH_CONST = 64;
+  localparam int unsigned HANDLE_FIFO_DEPTH_CONST = `OPQ_HANDLE_FIFO_DEPTH;
   localparam int unsigned HANDLE_FIFO_ADDR_WIDTH_CONST = $clog2(HANDLE_FIFO_DEPTH_CONST);
   localparam int unsigned PAGE_RAM_DEPTH_CONST = `OPQ_PAGE_RAM_DEPTH;
   localparam int unsigned PAGE_RAM_ADDR_WIDTH_CONST = $clog2(PAGE_RAM_DEPTH_CONST);
@@ -171,6 +179,16 @@ module ordered_priority_queue_dut_sv #(
   logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_drop_hdr_cnt;
   logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_drop_shd_cnt;
   logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_drop_hit_cnt;
+  logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_mask_drop_shd_cnt;
+  logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_mask_drop_hit_cnt;
+  logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_credit_lane_drop_shd_cnt;
+  logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_credit_lane_drop_hit_cnt;
+  logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_credit_ticket_drop_shd_cnt;
+  logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_credit_ticket_drop_hit_cnt;
+  logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_credit_other_drop_shd_cnt;
+  logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_credit_other_drop_hit_cnt;
+  logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_handle_drop_shd_cnt;
+  logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_handle_drop_hit_cnt;
   logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_drop_hdr_delta_q;
   logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_drop_shd_delta_q;
   logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_drop_hit_delta_q;
@@ -514,6 +532,16 @@ module ordered_priority_queue_dut_sv #(
       csr_drop_hdr_cnt <= '0;
       csr_drop_shd_cnt <= '0;
       csr_drop_hit_cnt <= '0;
+      csr_mask_drop_shd_cnt <= '0;
+      csr_mask_drop_hit_cnt <= '0;
+      csr_credit_lane_drop_shd_cnt <= '0;
+      csr_credit_lane_drop_hit_cnt <= '0;
+      csr_credit_ticket_drop_shd_cnt <= '0;
+      csr_credit_ticket_drop_hit_cnt <= '0;
+      csr_credit_other_drop_shd_cnt <= '0;
+      csr_credit_other_drop_hit_cnt <= '0;
+      csr_handle_drop_shd_cnt <= '0;
+      csr_handle_drop_hit_cnt <= '0;
       csr_drop_hdr_delta_q <= '0;
       csr_drop_shd_delta_q <= '0;
       csr_drop_hit_delta_q <= '0;
@@ -576,6 +604,16 @@ module ordered_priority_queue_dut_sv #(
         csr_drop_hdr_cnt <= '0;
         csr_drop_shd_cnt <= '0;
         csr_drop_hit_cnt <= '0;
+        csr_mask_drop_shd_cnt <= '0;
+        csr_mask_drop_hit_cnt <= '0;
+        csr_credit_lane_drop_shd_cnt <= '0;
+        csr_credit_lane_drop_hit_cnt <= '0;
+        csr_credit_ticket_drop_shd_cnt <= '0;
+        csr_credit_ticket_drop_hit_cnt <= '0;
+        csr_credit_other_drop_shd_cnt <= '0;
+        csr_credit_other_drop_hit_cnt <= '0;
+        csr_handle_drop_shd_cnt <= '0;
+        csr_handle_drop_hit_cnt <= '0;
         csr_drop_hdr_delta_q <= '0;
         csr_drop_shd_delta_q <= '0;
         csr_drop_hit_delta_q <= '0;
@@ -644,6 +682,9 @@ module ordered_priority_queue_dut_sv #(
               {{(DROP_SHD_DELTA_BITS_CONST-1){1'b0}}, 1'b1};
             drop_hit_delta_v = drop_hit_delta_v +
               {{(DROP_HIT_DELTA_BITS_CONST-16){1'b0}}, asi_ingress_data_bus[lane][23:8]};
+            csr_mask_drop_shd_cnt[lane] <= sat_add32(csr_mask_drop_shd_cnt[lane], 32'd1);
+            csr_mask_drop_hit_cnt[lane] <=
+              sat_add32(csr_mask_drop_hit_cnt[lane], {16'd0, asi_ingress_data_bus[lane][23:8]});
           end
 
           if (native_ingress_credit_drop_valid_dbg[lane]) begin
@@ -651,6 +692,28 @@ module ordered_priority_queue_dut_sv #(
               {{(DROP_SHD_DELTA_BITS_CONST-16){1'b0}}, native_ingress_credit_drop_shd_dbg[lane]};
             drop_hit_delta_v = drop_hit_delta_v +
               {{(DROP_HIT_DELTA_BITS_CONST-16){1'b0}}, native_ingress_credit_drop_hit_dbg[lane]};
+            if (native_ingress_credit_drop_lane_dbg[lane]) begin
+              csr_credit_lane_drop_shd_cnt[lane] <=
+                sat_add32(csr_credit_lane_drop_shd_cnt[lane],
+                          {16'd0, native_ingress_credit_drop_shd_dbg[lane]});
+              csr_credit_lane_drop_hit_cnt[lane] <=
+                sat_add32(csr_credit_lane_drop_hit_cnt[lane],
+                          {16'd0, native_ingress_credit_drop_hit_dbg[lane]});
+            end else if (native_ingress_credit_drop_ticket_dbg[lane]) begin
+              csr_credit_ticket_drop_shd_cnt[lane] <=
+                sat_add32(csr_credit_ticket_drop_shd_cnt[lane],
+                          {16'd0, native_ingress_credit_drop_shd_dbg[lane]});
+              csr_credit_ticket_drop_hit_cnt[lane] <=
+                sat_add32(csr_credit_ticket_drop_hit_cnt[lane],
+                          {16'd0, native_ingress_credit_drop_hit_dbg[lane]});
+            end else begin
+              csr_credit_other_drop_shd_cnt[lane] <=
+                sat_add32(csr_credit_other_drop_shd_cnt[lane],
+                          {16'd0, native_ingress_credit_drop_shd_dbg[lane]});
+              csr_credit_other_drop_hit_cnt[lane] <=
+                sat_add32(csr_credit_other_drop_hit_cnt[lane],
+                          {16'd0, native_ingress_credit_drop_hit_dbg[lane]});
+            end
           end
 
           if (native_handle_we_dbg[lane] && native_handle_flag_dbg[lane]) begin
@@ -658,6 +721,10 @@ module ordered_priority_queue_dut_sv #(
               {{(DROP_SHD_DELTA_BITS_CONST-1){1'b0}}, 1'b1};
             drop_hit_delta_v = drop_hit_delta_v +
               {{(DROP_HIT_DELTA_BITS_CONST-MAX_PKT_LENGTH_BITS_CONST){1'b0}}, native_handle_block_len_dbg[lane]};
+            csr_handle_drop_shd_cnt[lane] <= sat_add32(csr_handle_drop_shd_cnt[lane], 32'd1);
+            csr_handle_drop_hit_cnt[lane] <=
+              sat_add32(csr_handle_drop_hit_cnt[lane],
+                        {{(32-MAX_PKT_LENGTH_BITS_CONST){1'b0}}, native_handle_block_len_dbg[lane]});
           end
 
           csr_drop_hdr_delta_q[lane] <= drop_hdr_delta_v;
@@ -726,6 +793,62 @@ module ordered_priority_queue_dut_sv #(
 
     end
   end
+
+// synthesis translate_off
+`ifndef SYNTHESIS
+  final begin : proc_native_summary
+    $display(
+      "OPQ_NATIVE_SUMMARY n_lane=%0d n_shd=%0d n_hit=%0d lane_fifo_depth=%0d ticket_fifo_depth=%0d handle_fifo_depth=%0d page_ram_depth=%0d ft_wr_hdr=%0d ft_wr_shd=%0d ft_wr_hit=%0d ft_rd_hdr=%0d ft_rd_shd=%0d ft_rd_hit=%0d ft_drop_hdr=%0d ft_drop_shd=%0d ft_drop_hit=%0d",
+      OPQ_N_LANE_LOCAL,
+      OPQ_N_SHD_LOCAL,
+      MAX_PKT_LENGTH_CONST,
+      LANE_FIFO_DEPTH_CONST,
+      TICKET_FIFO_DEPTH_CONST,
+      HANDLE_FIFO_DEPTH_CONST,
+      PAGE_RAM_DEPTH_CONST,
+      csr_ft_wr_hdr_cnt,
+      csr_ft_wr_shd_cnt,
+      csr_ft_wr_hit_cnt,
+      csr_ft_rd_hdr_cnt,
+      csr_ft_rd_shd_cnt,
+      csr_ft_rd_hit_cnt,
+      csr_ft_drop_hdr_cnt,
+      csr_ft_drop_shd_cnt,
+      csr_ft_drop_hit_cnt
+    );
+    for (int lane = 0; lane < OPQ_N_LANE_LOCAL; lane++) begin
+      $display(
+        "OPQ_NATIVE_LANE_SUMMARY lane=%0d wr_hdr=%0d wr_shd=%0d wr_hit=%0d rd_hdr=%0d rd_shd=%0d rd_hit=%0d drop_hdr=%0d drop_shd=%0d drop_hit=%0d mask_drop_shd=%0d mask_drop_hit=%0d credit_lane_drop_shd=%0d credit_lane_drop_hit=%0d credit_ticket_drop_shd=%0d credit_ticket_drop_hit=%0d credit_other_drop_shd=%0d credit_other_drop_hit=%0d handle_drop_shd=%0d handle_drop_hit=%0d drr_grant=%0d drr_beat=%0d drr_defer=%0d lane_credit_visible=%0d ticket_credit_visible=%0d",
+        lane,
+        csr_wr_hdr_cnt[lane],
+        csr_wr_shd_cnt[lane],
+        csr_wr_hit_cnt[lane],
+        csr_rd_hdr_cnt[lane],
+        csr_rd_shd_cnt[lane],
+        csr_rd_hit_cnt[lane],
+        csr_drop_hdr_cnt[lane],
+        csr_drop_shd_cnt[lane],
+        csr_drop_hit_cnt[lane],
+        csr_mask_drop_shd_cnt[lane],
+        csr_mask_drop_hit_cnt[lane],
+        csr_credit_lane_drop_shd_cnt[lane],
+        csr_credit_lane_drop_hit_cnt[lane],
+        csr_credit_ticket_drop_shd_cnt[lane],
+        csr_credit_ticket_drop_hit_cnt[lane],
+        csr_credit_other_drop_shd_cnt[lane],
+        csr_credit_other_drop_hit_cnt[lane],
+        csr_handle_drop_shd_cnt[lane],
+        csr_handle_drop_hit_cnt[lane],
+        csr_drr_grant_cnt[lane],
+        csr_drr_beat_cnt[lane],
+        csr_drr_defer_cnt[lane],
+        lane_credit_visible_word(lane),
+        ticket_credit_visible_word(lane)
+      );
+    end
+  end
+`endif
+// synthesis translate_on
 `else
   ordered_priority_queue_dut u_vhdl (
     .asi_ingress_0_data(asi_ingress_0_data),
