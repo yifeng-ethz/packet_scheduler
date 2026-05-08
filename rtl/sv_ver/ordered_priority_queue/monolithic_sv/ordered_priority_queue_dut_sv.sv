@@ -19,12 +19,24 @@
 `define OPQ_TICKET_FIFO_DEPTH 256
 `endif
 
+`ifndef OPQ_HANDLE_FIFO_DEPTH
+`define OPQ_HANDLE_FIFO_DEPTH 64
+`endif
+
+`ifndef OPQ_LANE_FIFO_DEPTH
+`define OPQ_LANE_FIFO_DEPTH 1024
+`endif
+
 `ifndef OPQ_N_LANE
 `define OPQ_N_LANE 2
 `endif
 
 `ifndef OPQ_N_HIT
 `define OPQ_N_HIT 255
+`endif
+
+`ifndef OPQ_DEBUG_LEVEL
+`define OPQ_DEBUG_LEVEL 1
 `endif
 
 module ordered_priority_queue_dut_sv #(
@@ -74,14 +86,15 @@ module ordered_priority_queue_dut_sv #(
 `ifdef OPQ_USE_NATIVE_SV
   localparam int unsigned OPQ_N_LANE_LOCAL = `OPQ_N_LANE;
   localparam int unsigned OPQ_N_SHD_LOCAL = `OPQ_N_SHD;
+  localparam int unsigned OPQ_DEBUG_LEVEL_CONST = `OPQ_DEBUG_LEVEL;
   localparam int unsigned CHANNEL_WIDTH_CONST = 2;
-  localparam int unsigned LANE_FIFO_DEPTH_CONST = 1024;
+  localparam int unsigned LANE_FIFO_DEPTH_CONST = `OPQ_LANE_FIFO_DEPTH;
   localparam int unsigned LANE_FIFO_ADDR_WIDTH_CONST = $clog2(LANE_FIFO_DEPTH_CONST);
   localparam int unsigned LANE_FIFO_MAX_CREDIT_CONST = LANE_FIFO_DEPTH_CONST - 2;
   localparam int unsigned TICKET_FIFO_DEPTH_CONST = `OPQ_TICKET_FIFO_DEPTH;
   localparam int unsigned TICKET_FIFO_ADDR_WIDTH_CONST = $clog2(TICKET_FIFO_DEPTH_CONST);
   localparam int unsigned TICKET_FIFO_MAX_CREDIT_CONST = TICKET_FIFO_DEPTH_CONST - 1;
-  localparam int unsigned HANDLE_FIFO_DEPTH_CONST = 64;
+  localparam int unsigned HANDLE_FIFO_DEPTH_CONST = `OPQ_HANDLE_FIFO_DEPTH;
   localparam int unsigned HANDLE_FIFO_ADDR_WIDTH_CONST = $clog2(HANDLE_FIFO_DEPTH_CONST);
   localparam int unsigned PAGE_RAM_DEPTH_CONST = `OPQ_PAGE_RAM_DEPTH;
   localparam int unsigned PAGE_RAM_ADDR_WIDTH_CONST = $clog2(PAGE_RAM_DEPTH_CONST);
@@ -439,10 +452,13 @@ module ordered_priority_queue_dut_sv #(
 
   ordered_priority_queue_monolithic_sv #(
     .N_LANE(OPQ_N_LANE_LOCAL),
+    .LANE_FIFO_DEPTH(LANE_FIFO_DEPTH_CONST),
     .TICKET_FIFO_DEPTH(TICKET_FIFO_DEPTH_CONST),
+    .HANDLE_FIFO_DEPTH(HANDLE_FIFO_DEPTH_CONST),
     .PAGE_RAM_DEPTH(PAGE_RAM_DEPTH_CONST),
     .N_SHD(OPQ_N_SHD_LOCAL),
-    .N_HIT(MAX_PKT_LENGTH_CONST)
+    .N_HIT(MAX_PKT_LENGTH_CONST),
+    .DEBUG_LV(OPQ_DEBUG_LEVEL_CONST)
   ) u_native (
     .asi_ingress_data(asi_ingress_data_bus[`OPQ_N_LANE-1:0]),
     .asi_ingress_valid(asi_ingress_valid_eff_bus[`OPQ_N_LANE-1:0]),
@@ -931,6 +947,158 @@ module ordered_priority_queue_dut_sv #(
 
     end
   end
+
+// synthesis translate_off
+`ifndef SYNTHESIS
+  typedef struct packed {
+    logic        in_frame;
+    logic [2:0]  field_index;
+    logic [31:0] ts_high;
+    logic [15:0] ts_low;
+    logic [15:0] frame_id;
+    logic [7:0]  shd;
+    logic [15:0] hits_pending;
+  } opq_debug_trace_state_t;
+
+  opq_debug_trace_state_t opq_debug_ingress_state[OPQ_N_LANE_LOCAL];
+  opq_debug_trace_state_t opq_debug_egress_state;
+
+  task automatic opq_debug_trace_word(
+    input string stage_v,
+    input int lane_v,
+    input logic sop_v,
+    input logic eop_v,
+    input logic [35:0] word_v,
+    inout opq_debug_trace_state_t state_v
+  );
+    logic [3:0]  datak_v;
+    logic [31:0] data_v;
+    logic [47:0] bucket_v;
+    begin
+      datak_v = word_v[35:32];
+      data_v = word_v[31:0];
+      if ((datak_v == 4'h1) && (data_v[7:0] == K285_CONST) && sop_v) begin
+        state_v = '0;
+        state_v.in_frame = 1'b1;
+        state_v.field_index = 3'd1;
+      end else if (state_v.in_frame) begin
+        if ((datak_v == 4'h1) && (data_v[7:0] == K284_CONST) && eop_v) begin
+          state_v = '0;
+        end else if (state_v.field_index == 3'd1) begin
+          state_v.ts_high = data_v;
+          state_v.field_index = 3'd2;
+        end else if (state_v.field_index == 3'd2) begin
+          state_v.ts_low = data_v[31:16];
+          state_v.frame_id = data_v[15:0];
+          state_v.field_index = 3'd3;
+        end else if (state_v.field_index < 3'd5) begin
+          state_v.field_index = state_v.field_index + 3'd1;
+        end else if ((datak_v == 4'h1) && (data_v[7:0] == K237_CONST)) begin
+          state_v.shd = data_v[31:24];
+          state_v.hits_pending = data_v[23:8];
+        end else if ((datak_v == 4'h0) && (state_v.hits_pending != 16'd0)) begin
+          bucket_v = {state_v.ts_high, state_v.ts_low} + {36'd0, state_v.shd, 4'd0};
+          $display(
+            "OPQ_DEBUG_HIT stage=%s level=%0d lane=%0d time_ps=%0t frame_id=%0d ts_high=0x%08h ts_low=0x%04h shd=%0d bucket_8ns=0x%012h asic=%0d channel=%0d hit_id9=%0d ts_nibble=%0d rem=%0d fine=%0d word=0x%08h",
+            stage_v,
+            OPQ_DEBUG_LEVEL_CONST,
+            lane_v,
+            $time,
+            state_v.frame_id,
+            state_v.ts_high,
+            state_v.ts_low,
+            state_v.shd,
+            bucket_v,
+            data_v[25:22],
+            data_v[21:17],
+            data_v[8:0],
+            data_v[31:28],
+            data_v[16:14],
+            data_v[13:9],
+            data_v
+          );
+          state_v.hits_pending = state_v.hits_pending - 16'd1;
+        end
+      end
+    end
+  endtask
+
+  always_ff @(posedge d_clk) begin : proc_native_debug_trace
+    if (d_reset) begin
+      opq_debug_ingress_state <= '{default:'0};
+      opq_debug_egress_state <= '0;
+    end else if (OPQ_DEBUG_LEVEL_CONST >= 2) begin
+      for (int lane = 0; lane < OPQ_N_LANE_LOCAL; lane++) begin
+        if (asi_ingress_valid_eff_bus[lane]) begin
+          opq_debug_trace_word(
+            "ingress",
+            lane,
+            asi_ingress_startofpacket_bus[lane],
+            asi_ingress_endofpacket_bus[lane],
+            asi_ingress_data_bus[lane],
+            opq_debug_ingress_state[lane]
+          );
+        end
+      end
+      if (aso_egress_valid && aso_egress_ready) begin
+        opq_debug_trace_word(
+          "egress",
+          0,
+          aso_egress_startofpacket,
+          aso_egress_endofpacket,
+          {aso_egress_data[35:32], aso_egress_data[31:0]},
+          opq_debug_egress_state
+        );
+      end
+    end
+  end
+
+  final begin : proc_native_summary
+    if (OPQ_DEBUG_LEVEL_CONST >= 1) begin
+      $display(
+        "OPQ_NATIVE_SUMMARY debug_level=%0d n_lane=%0d n_shd=%0d n_hit=%0d lane_fifo_depth=%0d ticket_fifo_depth=%0d handle_fifo_depth=%0d page_ram_depth=%0d ft_wr_hdr=%0d ft_wr_shd=%0d ft_wr_hit=%0d ft_rd_hdr=%0d ft_rd_shd=%0d ft_rd_hit=%0d ft_drop_hdr=%0d ft_drop_shd=%0d ft_drop_hit=%0d",
+        OPQ_DEBUG_LEVEL_CONST,
+        OPQ_N_LANE_LOCAL,
+        OPQ_N_SHD_LOCAL,
+        MAX_PKT_LENGTH_CONST,
+        LANE_FIFO_DEPTH_CONST,
+        TICKET_FIFO_DEPTH_CONST,
+        HANDLE_FIFO_DEPTH_CONST,
+        PAGE_RAM_DEPTH_CONST,
+        csr_ft_wr_hdr_cnt,
+        csr_ft_wr_shd_cnt,
+        csr_ft_wr_hit_cnt,
+        csr_ft_rd_hdr_cnt,
+        csr_ft_rd_shd_cnt,
+        csr_ft_rd_hit_cnt,
+        csr_ft_drop_hdr_cnt,
+        csr_ft_drop_shd_cnt,
+        csr_ft_drop_hit_cnt
+      );
+      for (int lane = 0; lane < OPQ_N_LANE_LOCAL; lane++) begin
+        $display(
+          "OPQ_NATIVE_LANE_SUMMARY lane=%0d wr_hdr=%0d wr_shd=%0d wr_hit=%0d rd_hdr=%0d rd_shd=%0d rd_hit=%0d drop_hdr=%0d drop_shd=%0d drop_hit=%0d drr_grant=%0d drr_beat=%0d drr_defer=%0d lane_credit_visible=%0d ticket_credit_visible=%0d",
+          lane,
+          csr_wr_hdr_cnt[lane],
+          csr_wr_shd_cnt[lane],
+          csr_wr_hit_cnt[lane],
+          csr_rd_hdr_cnt[lane],
+          csr_rd_shd_cnt[lane],
+          csr_rd_hit_cnt[lane],
+          csr_drop_hdr_cnt[lane],
+          csr_drop_shd_cnt[lane],
+          csr_drop_hit_cnt[lane],
+          csr_drr_grant_cnt[lane],
+          csr_drr_beat_cnt[lane],
+          csr_drr_defer_cnt[lane],
+          lane_credit_visible_word(lane),
+          ticket_credit_visible_word(lane)
+        );
+      end
+    end
+  end
+`endif
+// synthesis translate_on
 `else
   ordered_priority_queue_dut u_vhdl (
     .asi_ingress_0_data(asi_ingress_0_data),
