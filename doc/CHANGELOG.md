@@ -21,6 +21,10 @@ Author: Yifeng Wang (yifenwan@phys.ethz.ch)
   subframe, so software must treat the CSR bit as invalid geometry/configuration
   and rerun with consistent `HANDLE_FIFO_DEPTH`, `N_HIT`, `N_SHD`, lane count,
   and traffic envelope.
+- **Packaging / SVD**: mirrored the 26.5.1.0509 CSR map in
+  `script/ordered_priority_queue.svd`, including `STATUS[24]`,
+  `HANDLE_OVF_STATUS`, per-lane handle overflow counters, max-occupancy
+  counters, and the 16-lane CSR window geometry.
 
 ## 26.5.0.0430
 

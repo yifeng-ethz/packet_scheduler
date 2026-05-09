@@ -113,7 +113,9 @@ when it is visible and counted.
 
 All registers are word-addressed through the `csr` Avalon-MM slave
 (`32`-bit data, `9`-bit word address). Words `0` and `1` form the common Mu3e
-identity header.
+identity header. The same relative aperture is mirrored in
+`script/ordered_priority_queue.svd`; regenerate it with
+`tclsh script/ordered_priority_queue_cmsis_svd.tcl` after CSR-map edits.
 
 | Word | Name | Access | Description |
 |------|------|--------|-------------|

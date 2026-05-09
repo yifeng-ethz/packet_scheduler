@@ -305,7 +305,7 @@ proc opq_preset_summary_html {selected_preset} {
 }
 
 # ────────────────────────────────────────────────────────────────────────────
-# Identity constants - packaged 2026-04-30
+# Identity constants - packaged 2026-05-09
 # ────────────────────────────────────────────────────────────────────────────
 # UID = ASCII "OPQM" (Ordered Priority Queue, Monolithic) = 0x4F50514D
 set IP_UID_DEFAULT_CONST        1330663757
@@ -958,7 +958,7 @@ add_html_text "Ingress" ingress_html {<html><b>ingress_0 \u2026 ingress_<i>N_LAN
 
 add_html_text "Egress" egress_html {<html><b>egress</b> — Avalon-ST <i>source</i>.<br/><table border="1" cellpadding="3" width="100%"><tr><th>Port</th><th>Direction</th><th>Width</th><th>Description</th></tr><tr><td>data</td><td>out</td><td>PAGE_RAM_RD_WIDTH</td><td>Selected 36/72/144/288-bit pack width, equal to 1/2/4/8 OPQ symbols per egress beat.</td></tr><tr><td>empty</td><td>out</td><td>EGRESS_EMPTY_WIDTH_DERIVED</td><td>Avalon-ST packet-tail empty count for multi-symbol egress packing; width is at least 1 bit.</td></tr><tr><td>startofpacket / endofpacket</td><td>out</td><td>1</td><td>Packet framing.</td></tr><tr><td>valid / ready</td><td>out / in</td><td>1</td><td>Standard Avalon-ST handshake (backpressured).</td></tr><tr><td>error[2:0]</td><td>out</td><td>3</td><td>{hit_err, shd_err, hdr_err} — propagated from ingress parser.</td></tr></table></html>}
 
-add_html_text "CSR" csr_html {<html><b>csr</b> — Avalon-MM <i>slave</i>, 32-bit data, 9-bit word address.<br/>Implements the common Mu3e UID + META identity header plus OPQ-specific runtime control and counters. <b>LANE_MASK</b> applies at packet boundaries: in-flight packets drain, then new packets on masked lanes are dropped and accounted. The per-lane region also exposes a <b>DRR allowance</b> register and live arbiter observability for scheduler tuning under real traffic.</html>}
+add_html_text "CSR" csr_html {<html><b>csr</b> — Avalon-MM <i>slave</i>, 32-bit data, 9-bit word address.<br/>Implements the common Mu3e UID + META identity header plus OPQ-specific runtime control and counters. <b>LANE_MASK</b> applies at packet boundaries: in-flight packets drain, then new packets on masked lanes are dropped and accounted. The per-lane region also exposes a <b>DRR allowance</b> register and live arbiter observability for scheduler tuning under real traffic.<br/><br/><b>CMSIS-SVD</b><br/>The same relative CSR aperture is mirrored by <code>script/ordered_priority_queue.svd</code>; system integration supplies the live slave base address.</html>}
 
 # ---- Register Map ----------------------------------------------------------
 add_display_item $TAB_REGMAP "CSR Window" GROUP
@@ -1009,6 +1009,8 @@ set_interface_property csr addressUnits WORDS
 set_interface_property csr associatedClock clk_interface
 set_interface_property csr associatedReset rst_interface
 set_interface_property csr bitsPerSymbol 8
+set_interface_property csr CMSIS_SVD_VARIABLES ""
+set_interface_property csr SVD_ADDRESS_GROUP ""
 set_interface_property csr burstOnBurstBoundariesOnly false
 set_interface_property csr burstcountUnits WORDS
 set_interface_property csr explicitAddressSpan 0
