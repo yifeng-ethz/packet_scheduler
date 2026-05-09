@@ -1,10 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_dut_sv
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.5.0
-// Date    : 20260430
-// Change  : Align the native wrapper fallback profile with the Mu3e Demo
-//           N_SHD=128, N_HIT=255 SWB/ER operating point.
+// Version : 26.5.1
+// Date    : 20260509
+// Change  : Add CSR-visible handle FIFO overflow provisioning status.
 //------------------------------------------------------------------------------
 
 `ifndef OPQ_N_SHD
@@ -96,6 +95,7 @@ module ordered_priority_queue_dut_sv #(
   localparam int unsigned TICKET_FIFO_MAX_CREDIT_CONST = TICKET_FIFO_DEPTH_CONST - 1;
   localparam int unsigned HANDLE_FIFO_DEPTH_CONST = `OPQ_HANDLE_FIFO_DEPTH;
   localparam int unsigned HANDLE_FIFO_ADDR_WIDTH_CONST = $clog2(HANDLE_FIFO_DEPTH_CONST);
+  localparam int unsigned HANDLE_FIFO_OCC_WIDTH_CONST = $clog2(HANDLE_FIFO_DEPTH_CONST + 1);
   localparam int unsigned PAGE_RAM_DEPTH_CONST = `OPQ_PAGE_RAM_DEPTH;
   localparam int unsigned PAGE_RAM_ADDR_WIDTH_CONST = $clog2(PAGE_RAM_DEPTH_CONST);
   localparam int unsigned FRAME_SERIAL_SIZE_CONST = 16;
@@ -133,6 +133,9 @@ module ordered_priority_queue_dut_sv #(
   localparam logic [8:0] CSR_WORD_FT_DROP_HDR_CONST = 9'h00E;
   localparam logic [8:0] CSR_WORD_FT_DROP_SHD_CONST = 9'h00F;
   localparam logic [8:0] CSR_WORD_FT_DROP_HIT_CONST = 9'h010;
+  localparam logic [8:0] CSR_WORD_HANDLE_OVF_STATUS_CONST = 9'h011;
+  localparam logic [8:0] CSR_HANDLE_OVF_CNT_BASE_CONST = 9'h020;
+  localparam logic [8:0] CSR_HANDLE_OCC_MAX_BASE_CONST = 9'h030;
   localparam logic [8:0] CSR_LANE_REGION_BASE_CONST = 9'h040;
   localparam logic [8:0] CSR_LANE_REGION_STRIDE_CONST = 9'h010;
   localparam logic [3:0] CSR_LANE_WORD_DRR_ALLOWANCE_CONST = 4'hB;
@@ -143,9 +146,9 @@ module ordered_priority_queue_dut_sv #(
   localparam logic [31:0] UID_CONST = 32'h4F50_514D;
   localparam int unsigned VERSION_MAJOR_CONST = 26;
   localparam int unsigned VERSION_MINOR_CONST = 5;
-  localparam int unsigned VERSION_PATCH_CONST = 0;
-  localparam int unsigned VERSION_BUILD_CONST = 430;
-  localparam logic [31:0] VERSION_DATE_CONST = 32'd20260430;
+  localparam int unsigned VERSION_PATCH_CONST = 1;
+  localparam int unsigned VERSION_BUILD_CONST = 509;
+  localparam logic [31:0] VERSION_DATE_CONST = 32'd20260509;
   localparam logic [31:0] VERSION_GIT_CONST = 32'h7301_5F57;
   localparam logic [31:0] INSTANCE_ID_CONST = 32'd0;
   localparam logic [9:0] DRR_DEFAULT_ALLOWANCE_CONST = 10'd256;
@@ -183,6 +186,9 @@ module ordered_priority_queue_dut_sv #(
   logic [31:0] csr_ft_drop_hdr_cnt;
   logic [31:0] csr_ft_drop_shd_cnt;
   logic [31:0] csr_ft_drop_hit_cnt;
+  logic [OPQ_N_LANE_LOCAL-1:0] csr_handle_fifo_overflow_seen;
+  logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_handle_fifo_overflow_cnt;
+  logic [OPQ_N_LANE_LOCAL-1:0][31:0] csr_handle_fifo_occupancy_max;
   logic        csr_ft_rd_in_packet;
   logic [2:0]  csr_ft_rd_header_idx;
   logic [15:0] csr_ft_rd_hits_pending;
@@ -210,6 +216,8 @@ module ordered_priority_queue_dut_sv #(
   logic [OPQ_N_LANE_LOCAL-1:0] native_handle_we_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0] native_handle_flag_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][MAX_PKT_LENGTH_BITS_CONST-1:0] native_handle_block_len_dbg;
+  logic [OPQ_N_LANE_LOCAL-1:0] native_handle_fifo_overflow_dbg;
+  logic [OPQ_N_LANE_LOCAL-1:0][HANDLE_FIFO_OCC_WIDTH_CONST-1:0] native_handle_fifo_occupancy_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0] native_late_frame_drop_valid_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][15:0] native_late_frame_drop_hdr_dbg;
   logic [OPQ_N_LANE_LOCAL-1:0][15:0] native_late_frame_drop_shd_dbg;
@@ -345,6 +353,7 @@ module ordered_priority_queue_dut_sv #(
   function automatic logic [31:0] csr_decode_word(input logic [8:0] addr_v);
     int lane_v;
     int lane_word_v;
+    int handle_lane_v;
     logic [31:0] csr_word_v;
     logic [31:0] status_v;
     begin
@@ -374,6 +383,16 @@ module ordered_priority_queue_dut_sv #(
           endcase
         end
       end else begin
+        handle_lane_v = int'(addr_v) - int'(CSR_HANDLE_OVF_CNT_BASE_CONST);
+        if ((handle_lane_v >= 0) && (handle_lane_v < OPQ_N_LANE_LOCAL)) begin
+          csr_word_v = csr_handle_fifo_overflow_cnt[handle_lane_v];
+          return csr_word_v;
+        end
+        handle_lane_v = int'(addr_v) - int'(CSR_HANDLE_OCC_MAX_BASE_CONST);
+        if ((handle_lane_v >= 0) && (handle_lane_v < OPQ_N_LANE_LOCAL)) begin
+          csr_word_v = csr_handle_fifo_occupancy_max[handle_lane_v];
+          return csr_word_v;
+        end
         unique case (addr_v)
           CSR_WORD_UID_CONST: csr_word_v = UID_CONST;
           CSR_WORD_META_CONST: begin
@@ -401,10 +420,11 @@ module ordered_priority_queue_dut_sv #(
             status_v[18] = aso_egress_valid;
             status_v[19] = |csr_lane_mask_effective;
             status_v[23:20] = OPQ_N_LANE_LOCAL[3:0];
+            status_v[24] = |csr_handle_fifo_overflow_seen;
             csr_word_v = status_v;
           end
           CSR_WORD_CAP_CONST: begin
-            csr_word_v[4:0] = 5'h1F;
+            csr_word_v[5:0] = 6'h3F;
             csr_word_v[15:8] = CSR_LANE_REGION_STRIDE_CONST[7:0];
             csr_word_v[23:16] = CSR_LANE_REGION_BASE_CONST[7:0];
             csr_word_v[31:24] = OPQ_N_LANE_LOCAL[7:0];
@@ -418,6 +438,11 @@ module ordered_priority_queue_dut_sv #(
           CSR_WORD_FT_DROP_HDR_CONST: csr_word_v = csr_ft_drop_hdr_cnt;
           CSR_WORD_FT_DROP_SHD_CONST: csr_word_v = csr_ft_drop_shd_cnt;
           CSR_WORD_FT_DROP_HIT_CONST: csr_word_v = csr_ft_drop_hit_cnt;
+          CSR_WORD_HANDLE_OVF_STATUS_CONST: begin
+            csr_word_v[OPQ_N_LANE_LOCAL-1:0] = csr_handle_fifo_overflow_seen;
+            csr_word_v[16] = |csr_handle_fifo_overflow_seen;
+            csr_word_v[31] = |csr_handle_fifo_overflow_seen;
+          end
           default: csr_word_v = '0;
         endcase
       end
@@ -491,6 +516,8 @@ module ordered_priority_queue_dut_sv #(
       .handle_we_dbg_o(native_handle_we_dbg),
       .handle_flag_dbg_o(native_handle_flag_dbg),
       .handle_block_len_dbg_o(native_handle_block_len_dbg),
+      .handle_fifo_overflow_dbg_o(native_handle_fifo_overflow_dbg),
+      .handle_fifo_occupancy_dbg_o(native_handle_fifo_occupancy_dbg),
       .late_frame_drop_valid_dbg_o(native_late_frame_drop_valid_dbg),
       .late_frame_drop_hdr_cnt_dbg_o(native_late_frame_drop_hdr_dbg),
       .late_frame_drop_shd_cnt_dbg_o(native_late_frame_drop_shd_dbg),
@@ -617,6 +644,9 @@ module ordered_priority_queue_dut_sv #(
       csr_ft_drop_hdr_cnt <= '0;
       csr_ft_drop_shd_cnt <= '0;
       csr_ft_drop_hit_cnt <= '0;
+      csr_handle_fifo_overflow_seen <= '0;
+      csr_handle_fifo_overflow_cnt <= '0;
+      csr_handle_fifo_occupancy_max <= '0;
       csr_ft_rd_in_packet <= 1'b0;
       csr_ft_rd_header_idx <= '0;
       csr_ft_rd_hits_pending <= '0;
@@ -695,6 +725,9 @@ module ordered_priority_queue_dut_sv #(
         csr_ft_drop_hdr_cnt <= '0;
         csr_ft_drop_shd_cnt <= '0;
         csr_ft_drop_hit_cnt <= '0;
+        csr_handle_fifo_overflow_seen <= '0;
+        csr_handle_fifo_overflow_cnt <= '0;
+        csr_handle_fifo_occupancy_max <= '0;
         csr_ft_rd_in_packet <= 1'b0;
         csr_ft_rd_header_idx <= '0;
         csr_ft_rd_hits_pending <= '0;
@@ -708,6 +741,7 @@ module ordered_priority_queue_dut_sv #(
           logic [31:0] drop_post_hdr_delta_v;
           logic [31:0] drop_post_shd_delta_v;
           logic [31:0] drop_post_hit_delta_v;
+          logic [31:0] handle_fifo_occupancy_word_v;
           logic [47:0] masked_exact_pre_ts_v;
 
           drop_hdr_delta_v = '0;
@@ -718,6 +752,8 @@ module ordered_priority_queue_dut_sv #(
           drop_post_hdr_delta_v = '0;
           drop_post_shd_delta_v = '0;
           drop_post_hit_delta_v = '0;
+          handle_fifo_occupancy_word_v =
+            {{(32-HANDLE_FIFO_OCC_WIDTH_CONST){1'b0}}, native_handle_fifo_occupancy_dbg[lane]};
           masked_exact_pre_ts_v =
             {native_ingress_running_ts_dbg[lane][47:12], asi_ingress_data_bus[lane][31:24], 4'b0000};
 
@@ -883,6 +919,15 @@ module ordered_priority_queue_dut_sv #(
             native_drop_evt_post_hdr_dbg[lane] <= drop_post_hdr_delta_v[15:0];
             native_drop_evt_post_shd_dbg[lane] <= drop_post_shd_delta_v[15:0];
             native_drop_evt_post_hit_dbg[lane] <= drop_post_hit_delta_v[15:0];
+          end
+
+          if (native_handle_fifo_overflow_dbg[lane]) begin
+            csr_handle_fifo_overflow_seen[lane] <= 1'b1;
+            csr_handle_fifo_overflow_cnt[lane] <=
+              sat_add32(csr_handle_fifo_overflow_cnt[lane], 32'd1);
+          end
+          if (handle_fifo_occupancy_word_v > csr_handle_fifo_occupancy_max[lane]) begin
+            csr_handle_fifo_occupancy_max[lane] <= handle_fifo_occupancy_word_v;
           end
 
           if (native_drr_lock_event_dbg[lane]) begin
@@ -1056,7 +1101,7 @@ module ordered_priority_queue_dut_sv #(
   final begin : proc_native_summary
     if (OPQ_DEBUG_LEVEL_CONST >= 1) begin
       $display(
-        "OPQ_NATIVE_SUMMARY debug_level=%0d n_lane=%0d n_shd=%0d n_hit=%0d lane_fifo_depth=%0d ticket_fifo_depth=%0d handle_fifo_depth=%0d page_ram_depth=%0d ft_wr_hdr=%0d ft_wr_shd=%0d ft_wr_hit=%0d ft_rd_hdr=%0d ft_rd_shd=%0d ft_rd_hit=%0d ft_drop_hdr=%0d ft_drop_shd=%0d ft_drop_hit=%0d",
+        "OPQ_NATIVE_SUMMARY debug_level=%0d n_lane=%0d n_shd=%0d n_hit=%0d lane_fifo_depth=%0d ticket_fifo_depth=%0d handle_fifo_depth=%0d page_ram_depth=%0d ft_wr_hdr=%0d ft_wr_shd=%0d ft_wr_hit=%0d ft_rd_hdr=%0d ft_rd_shd=%0d ft_rd_hit=%0d ft_drop_hdr=%0d ft_drop_shd=%0d ft_drop_hit=%0d handle_fifo_overflow_any=%0d",
         OPQ_DEBUG_LEVEL_CONST,
         OPQ_N_LANE_LOCAL,
         OPQ_N_SHD_LOCAL,
@@ -1073,11 +1118,12 @@ module ordered_priority_queue_dut_sv #(
         csr_ft_rd_hit_cnt,
         csr_ft_drop_hdr_cnt,
         csr_ft_drop_shd_cnt,
-        csr_ft_drop_hit_cnt
+        csr_ft_drop_hit_cnt,
+        |csr_handle_fifo_overflow_seen
       );
       for (int lane = 0; lane < OPQ_N_LANE_LOCAL; lane++) begin
         $display(
-          "OPQ_NATIVE_LANE_SUMMARY lane=%0d wr_hdr=%0d wr_shd=%0d wr_hit=%0d rd_hdr=%0d rd_shd=%0d rd_hit=%0d drop_hdr=%0d drop_shd=%0d drop_hit=%0d drr_grant=%0d drr_beat=%0d drr_defer=%0d lane_credit_visible=%0d ticket_credit_visible=%0d",
+          "OPQ_NATIVE_LANE_SUMMARY lane=%0d wr_hdr=%0d wr_shd=%0d wr_hit=%0d rd_hdr=%0d rd_shd=%0d rd_hit=%0d drop_hdr=%0d drop_shd=%0d drop_hit=%0d drr_grant=%0d drr_beat=%0d drr_defer=%0d lane_credit_visible=%0d ticket_credit_visible=%0d handle_fifo_overflow_seen=%0d handle_fifo_overflow_cnt=%0d handle_fifo_occupancy_max=%0d",
           lane,
           csr_wr_hdr_cnt[lane],
           csr_wr_shd_cnt[lane],
@@ -1092,7 +1138,10 @@ module ordered_priority_queue_dut_sv #(
           csr_drr_beat_cnt[lane],
           csr_drr_defer_cnt[lane],
           lane_credit_visible_word(lane),
-          ticket_credit_visible_word(lane)
+          ticket_credit_visible_word(lane),
+          csr_handle_fifo_overflow_seen[lane],
+          csr_handle_fifo_overflow_cnt[lane],
+          csr_handle_fifo_occupancy_max[lane]
         );
       end
     end

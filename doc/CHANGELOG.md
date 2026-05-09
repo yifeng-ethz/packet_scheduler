@@ -9,6 +9,19 @@ Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 > `qverify` / `znformal` with simulation stress fallback only when the
 > Siemens formal binaries are not present on the host.
 
+## 26.5.1.0509
+
+- **RTL / CSR Observability**: added handle FIFO overflow provisioning status
+  to the native-SV OPQ CSR plane. `STATUS[24]` and `HANDLE_OVF_STATUS`
+  provide sticky config-error visibility, `0x020 + lane` counts overflow
+  events, and `0x030 + lane` reports the maximum observed handle FIFO
+  occupancy for sizing margin checks.
+- **Architecture Contract**: a handle FIFO overflow is not a runtime-recoverable
+  drop. The frame table may already have allocated space for that lane and
+  subframe, so software must treat the CSR bit as invalid geometry/configuration
+  and rerun with consistent `HANDLE_FIFO_DEPTH`, `N_HIT`, `N_SHD`, lane count,
+  and traffic envelope.
+
 ## 26.5.0.0430
 
 - **Synthesis / Mu3e Demo Fixed4 Timing**: corrected the SWB/FEB OPQ profile

@@ -124,6 +124,9 @@ identity header.
 | `0x004` | `STATUS` | RO | Lane-mask summary, busy flags, and effective-mask state. |
 | `0x005` | `CAP` | RO | Capability summary and per-lane counter-window geometry. |
 | `0x008..0x010` | `FT_*` counters | RO | Frame-table write / read / drop counters for headers, subheaders, and hits. |
+| `0x011` | `HANDLE_OVF_STATUS` | RO | Sticky per-lane handle FIFO overflow status; any set bit is an invalid OPQ provisioning/configuration event. |
+| `0x020 + lane` | `HANDLE_OVF_CNT` | RO | Saturating per-lane count of handle FIFO overflow/overwrite-risk events. |
+| `0x030 + lane` | `HANDLE_OCC_MAX` | RO | Maximum observed per-lane handle FIFO occupancy since reset or counter clear. |
 | `0x040 + lane*0x10 + 0..A` | Lane counters | RO | Per-lane write / read / drop counters plus live lane and ticket free-credit counters. |
 | `0x040 + lane*0x10 + B` | `DRR_ALLOWANCE` | RW | Per-lane DRR refill allowance in page words per participating subheader. Writing also reseeds the live quantum. |
 | `0x040 + lane*0x10 + C..F` | DRR live / stats | RO | Live DRR deficit budget plus per-lane block-grant, served-beat, and defer-round counters. |
@@ -134,11 +137,15 @@ identity header.
 2. Program any desired `DRR_ALLOWANCE` values and an initial `LANE_MASK`
    policy.
 3. Clear counters with `CTRL[0]` before a measurement run.
-4. Stream traffic and monitor `STATUS`, the per-lane region, and the
-   frame-table `FT_*` counters.
+4. Stream traffic and monitor `STATUS`, `HANDLE_OVF_STATUS`, the per-lane
+   region, and the frame-table `FT_*` counters.
 5. When masking lanes at runtime, rely on the packet-boundary rule: the
    currently active packet drains, and later packets on that lane are dropped
    and counted.
+6. Treat any handle FIFO overflow bit as a configuration error. Once the frame
+   table has allocated space for the lane/subframe, the datapath cannot recover
+   cleanly at runtime; software must stop the run and reconfigure the geometry
+   or traffic envelope.
 
 ---
 
@@ -185,8 +192,8 @@ and the `csr` Avalon-MM slave.
 ### Register Map Tab
 
 Interactive HTML views for the CSR window, `META`, `CTRL`, `STATUS`, `CAP`,
-frame-table counters, and the per-lane region with `DRR_ALLOWANCE` plus live
-DRR statistics.
+handle FIFO overflow/provisioning status, frame-table counters, and the
+per-lane region with `DRR_ALLOWANCE` plus live DRR statistics.
 
 ### Tab Overview
 

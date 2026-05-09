@@ -8,7 +8,7 @@ package require -exact altera_terp 1.0
 
 set_module_property NAME                             ordered_priority_queue
 set_module_property DISPLAY_NAME                     "Ordered Priority Queue"
-set_module_property VERSION                          26.5.0.0430
+set_module_property VERSION                          26.5.1.0509
 set_module_property DESCRIPTION                      "Ordered Priority Queue Mu3e IP Core"
 set_module_property GROUP                            "Mu3e Data Plane/Modules"
 set_module_property AUTHOR                           "Yifeng Wang (yifenwan@phys.ethz.ch)"
@@ -311,9 +311,9 @@ proc opq_preset_summary_html {selected_preset} {
 set IP_UID_DEFAULT_CONST        1330663757
 set VERSION_MAJOR_DEFAULT_CONST 26
 set VERSION_MINOR_DEFAULT_CONST 5
-set VERSION_PATCH_DEFAULT_CONST 0
-set BUILD_DEFAULT_CONST         430
-set VERSION_DATE_DEFAULT_CONST  20260430
+set VERSION_PATCH_DEFAULT_CONST 1
+set BUILD_DEFAULT_CONST         509
+set VERSION_DATE_DEFAULT_CONST  20260509
 # 32-bit packaged provenance stamp for this release family
 set VERSION_GIT_DEFAULT_CONST   1332117425
 set INSTANCE_ID_DEFAULT_CONST   0
@@ -334,6 +334,9 @@ set OPQ_CSR_WINDOW_HTML {<html><table border="1" cellpadding="3" width="100%">
 <tr><td>0x004</td><td>STATUS</td><td>RO</td><td>Lane-mask summary, busy flags, and effective-mask state.</td></tr>
 <tr><td>0x005</td><td>CAP</td><td>RO</td><td>Capability summary and per-lane counter-window geometry.</td></tr>
 <tr><td>0x008..0x010</td><td>FT_* Counters</td><td>RO</td><td>Frame-table write/read/drop counters for headers, subheaders, and hits.</td></tr>
+<tr><td>0x011</td><td>HANDLE_OVF_STATUS</td><td>RO</td><td>Sticky per-lane handle FIFO overflow status. Any set bit marks a configuration/provisioning error.</td></tr>
+<tr><td>0x020 + lane</td><td>HANDLE_OVF_CNT</td><td>RO</td><td>Saturating per-lane count of handle FIFO overflow/overwrite-risk events.</td></tr>
+<tr><td>0x030 + lane</td><td>HANDLE_OCC_MAX</td><td>RO</td><td>Per-lane maximum observed handle FIFO occupancy since reset or counter clear.</td></tr>
 <tr><td>0x040 + lane*0x10 + 0..A</td><td>Lane Counters</td><td>RO</td><td>Per-lane write/read/drop counters plus live lane/ticket free-credit counters.</td></tr>
 <tr><td>0x040 + lane*0x10 + B</td><td>DRR_ALLOWANCE</td><td>RW</td><td>Per-lane deficit-round-robin refill allowance in page words per participating subheader. Write also reseeds the live quantum.</td></tr>
 <tr><td>0x040 + lane*0x10 + C..F</td><td>DRR Live / Stats</td><td>RO</td><td>Live DRR deficit budget plus per-lane block-grant / served-beat / defer-round counters.</td></tr>
@@ -356,7 +359,8 @@ set OPQ_STATUS_FIELDS_HTML {<html><table border="1" cellpadding="3" width="100%"
 <tr><td><b>[18]</b></td><td>PRESENTER_BUSY</td><td>High when the frame-table presenter is not idle.</td></tr>
 <tr><td><b>[19]</b></td><td>MASK_EFFECTIVE</td><td>High when any lane is currently blocked at the packet-boundary gate.</td></tr>
 <tr><td><b>[23:20]</b></td><td>N_LANE</td><td>Packaged lane count of the instantiated core.</td></tr>
-<tr><td><b>[31:24]</b></td><td>RESERVED</td><td>Reads zero.</td></tr>
+<tr><td><b>[24]</b></td><td>HANDLE_OVF_ANY</td><td>Sticky high after any per-lane handle FIFO overflow event; treat as invalid OPQ geometry/configuration.</td></tr>
+<tr><td><b>[31:25]</b></td><td>RESERVED</td><td>Reads zero.</td></tr>
 </table></html>}
 set OPQ_CAP_FIELDS_HTML {<html><table border="1" cellpadding="3" width="100%">
 <tr><th>Bits</th><th>Name</th><th>Description</th></tr>
@@ -365,7 +369,8 @@ set OPQ_CAP_FIELDS_HTML {<html><table border="1" cellpadding="3" width="100%">
 <tr><td><b>[2]</b></td><td>PER_LANE_CNTRS</td><td>Per-lane write/read/drop and credit counters are implemented.</td></tr>
 <tr><td><b>[3]</b></td><td>FT_CNTRS</td><td>Frame-table write/read/drop counters are implemented.</td></tr>
 <tr><td><b>[4]</b></td><td>DRR_CTRL</td><td>Per-lane DRR allowance programming and live observability are implemented.</td></tr>
-<tr><td><b>[7:5]</b></td><td>RESERVED</td><td>Reads zero.</td></tr>
+<tr><td><b>[5]</b></td><td>HANDLE_OVF_STATUS</td><td>Handle FIFO overflow status, counters, and max-occupancy registers are implemented.</td></tr>
+<tr><td><b>[7:6]</b></td><td>RESERVED</td><td>Reads zero.</td></tr>
 <tr><td><b>[15:8]</b></td><td>LANE_REGION_STRIDE</td><td>Per-lane CSR region stride in words (default 0x10).</td></tr>
 <tr><td><b>[23:16]</b></td><td>LANE_REGION_BASE</td><td>Base word address of the per-lane counter window (default 0x40).</td></tr>
 <tr><td><b>[31:24]</b></td><td>N_LANE</td><td>Number of instantiated ingress lanes.</td></tr>
@@ -381,6 +386,9 @@ set OPQ_FTABLE_COUNTERS_HTML {<html><table border="1" cellpadding="3" width="100
 <tr><td>0x00E</td><td>FT_DROP_HDR</td><td>Headers dropped by frame-table overwrite / overwrite recovery.</td></tr>
 <tr><td>0x00F</td><td>FT_DROP_SHD</td><td>Subheaders dropped by frame-table overwrite / overwrite recovery.</td></tr>
 <tr><td>0x010</td><td>FT_DROP_HIT</td><td>Hits dropped by frame-table overwrite / overwrite recovery.</td></tr>
+<tr><td>0x011</td><td>HANDLE_OVF_STATUS</td><td>Bit <i>lane</i> and bit 16/31 are sticky after handle FIFO overflow. This is a configuration error: the frame table may already have allocated space, so software must stop and reconfigure rather than rely on runtime recovery.</td></tr>
+<tr><td>0x020 + lane</td><td>HANDLE_OVF_CNT</td><td>Saturating per-lane handle FIFO overflow event counter.</td></tr>
+<tr><td>0x030 + lane</td><td>HANDLE_OCC_MAX</td><td>Per-lane maximum observed handle FIFO occupancy for provisioning margin checks.</td></tr>
 </table></html>}
 set OPQ_LANE_REGION_HTML {<html><table border="1" cellpadding="3" width="100%">
 <tr><th>Offset</th><th>Name</th><th>Description</th></tr>
@@ -455,7 +463,7 @@ proc compute_derived_values {} {
         set_display_item_property throughput_html TEXT "<html><b>Expected throughput</b><br/>Aggregation mode: <b>${mode}</b><br/>Current packaged egress beat: <b>${page_ram_rd_w}</b> bits/cycle = <b>${symbols_per_beat}</b> OPQ ingress symbol(s) per egress beat<br/>Per-lane ingress budget: <b>${ingress_beat_w}</b> bits/cycle at the shared data-path clock<br/>Lossless equal-load share guideline: the selected egress pack ratio gives each lane roughly <b>${symbols_per_beat}/${n_lane}</b> of the sustained symbol budget before packet-overhead effects.<br/>Block-mover scheduling: shared page-RAM write port is serviced by an <b>ordered block-level DRR arbiter</b> with software-tunable per-lane refill allowance.<br/>Backpressure: ingress lanes are <i>non-backlog</i> (drop-on-full inside the lane/ticket FIFOs); egress honours <code>ready</code> and exports <code>empty</code> for packet-tail packing.</html>"
     }
     catch {
-        set_display_item_property profile_html TEXT "<html><b>Catalog revision</b><br/>This release is packaged as <b>${::OPQ_VERSION_STRING}</b> (git <b>${::OPQ_GIT_HEX_STRING}</b>).<br/><br/><b>Packaged legal points</b><br/>N_LANE=<b>{2,4,8,16}</b>, MODE=<b>MERGING</b>, TRACK_HEADER=<b>true</b>, ingress=<b>32 data + 4 datak</b>, N_SHD=<b>{64,128,256,512}</b>, PAGE_RAM_RD_WIDTH=<b>{36,72,144,288}</b>. CHANNEL_WIDTH, LANE_FIFO_WIDTH, TICKET_FIFO_DEPTH, HANDLE_FIFO_DEPTH, EGRESS_SYMBOLS_PER_BEAT, and EGRESS_EMPTY_WIDTH are derived for the selected point.<br/><br/><b>Representative preset family</b><br/>The preset menu adds nine GUI options (<b>CUSTOM</b> plus eight named presets). All concrete named presets pin <b>N_SHD=128</b> and scale <b>N_LANE</b> plus <b>LANE_FIFO_DEPTH</b> as a starting point for later quantitative analysis.<br/><br/><b>Deferred preset axes</b><br/>64-bit / 128-bit hit words remain future work because the current monolithic ingress parser still uses the 32-bit hit-word contract.<br/><br/><b>Current instance</b><br/>PRESET=<b>${preset}</b>, MODE=<b>${mode}</b>, N_LANE=<b>${n_lane}</b>, N_SHD=<b>${n_shd}</b>, N_HIT=<b>${n_hit}</b>, CHANNEL_WIDTH=<b>${channel_w}</b>, PAGE_RAM_RD_WIDTH=<b>${page_ram_rd_w}</b>.<br/><br/><b>Runtime visibility</b><br/>The monolithic OPQ exposes a runtime <b>CSR Avalon-MM slave</b>. Software can read the common Mu3e <b>UID + META</b> header, inspect per-lane write/read/drop counters, inspect frame-table ownership counters, clear counter state, program a per-lane packet-boundary mask, and tune the per-lane <b>DRR allowance</b> used by the shared page-RAM arbiter.</html>"
+        set_display_item_property profile_html TEXT "<html><b>Catalog revision</b><br/>This release is packaged as <b>${::OPQ_VERSION_STRING}</b> (git <b>${::OPQ_GIT_HEX_STRING}</b>).<br/><br/><b>Packaged legal points</b><br/>N_LANE=<b>{2,4,8,16}</b>, MODE=<b>MERGING</b>, TRACK_HEADER=<b>true</b>, ingress=<b>32 data + 4 datak</b>, N_SHD=<b>{64,128,256,512}</b>, PAGE_RAM_RD_WIDTH=<b>{36,72,144,288}</b>. CHANNEL_WIDTH, LANE_FIFO_WIDTH, TICKET_FIFO_DEPTH, HANDLE_FIFO_DEPTH, EGRESS_SYMBOLS_PER_BEAT, and EGRESS_EMPTY_WIDTH are derived for the selected point.<br/><br/><b>Representative preset family</b><br/>The preset menu adds nine GUI options (<b>CUSTOM</b> plus eight named presets). All concrete named presets pin <b>N_SHD=128</b> and scale <b>N_LANE</b> plus <b>LANE_FIFO_DEPTH</b> as a starting point for later quantitative analysis.<br/><br/><b>Deferred preset axes</b><br/>64-bit / 128-bit hit words remain future work because the current monolithic ingress parser still uses the 32-bit hit-word contract.<br/><br/><b>Current instance</b><br/>PRESET=<b>${preset}</b>, MODE=<b>${mode}</b>, N_LANE=<b>${n_lane}</b>, N_SHD=<b>${n_shd}</b>, N_HIT=<b>${n_hit}</b>, CHANNEL_WIDTH=<b>${channel_w}</b>, PAGE_RAM_RD_WIDTH=<b>${page_ram_rd_w}</b>.<br/><br/><b>Runtime visibility</b><br/>The monolithic OPQ exposes a runtime <b>CSR Avalon-MM slave</b>. Software can read the common Mu3e <b>UID + META</b> header, inspect per-lane write/read/drop counters, inspect frame-table ownership counters, inspect handle FIFO overflow/occupancy provisioning status, clear counter state, program a per-lane packet-boundary mask, and tune the per-lane <b>DRR allowance</b> used by the shared page-RAM arbiter.</html>"
     }
     catch {
         set_display_item_property preset_html TEXT [opq_preset_summary_html $preset]

@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_block_path
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.4.6
-// Date    : 20260427
-// Change  : Export DRR debug ports so Qsys wrappers avoid hierarchy references
+// Version : 26.5.1
+// Date    : 20260509
+// Change  : Export handle FIFO pop events for CSR-visible provisioning errors.
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_block_path #(
@@ -54,6 +54,7 @@ module ordered_priority_queue_monolithic_block_path #(
   output logic [N_LANE-1:0]                                drr_lock_event_dbg_o,
   output logic [N_LANE-1:0]                                drr_defer_event_dbg_o,
   output logic [N_LANE-1:0]                                drr_sel_mask_dbg_o,
+  output logic [N_LANE-1:0]                                handle_pop_dbg_o,
 `ifdef OPQ_OSS_FORMAL
   output logic [N_LANE-1:0]                                req_raw_dbg_oss,
   output logic [N_LANE-1:0]                                req_eligible_dbg_oss,
@@ -379,6 +380,7 @@ module ordered_priority_queue_monolithic_block_path #(
   always_ff @(posedge d_clk) begin : proc_block_mover_and_arbiter
     drr_lock_event_dbg <= '0;
     drr_defer_event_dbg <= '0;
+    handle_pop_dbg_o <= '0;
     b2p_arb_pick_q <= b2p_arb_pick;
     b2p_arb_req_raw_qq <= b2p_arb_req_raw_q;
     b2p_arb_req_eligible_qq <= b2p_arb_req_eligible;
@@ -486,6 +488,7 @@ module ordered_priority_queue_monolithic_block_path #(
               block_mover_lane_credit_update[i] <= lane_fifo_addr_t'(block_mover_handle_blk_len[i]);
               block_mover_lane_credit_update_valid[i] <= 1'b1;
               block_mover_handle_rptr[i] <= block_mover_handle_rptr[i] + handle_fifo_addr_t'(1);
+              handle_pop_dbg_o[i] <= 1'b1;
               block_mover_page_wreq[i] <= 1'b0;
               block_mover_final_word_q[i] <= 1'b0;
 `ifndef SYNTHESIS
@@ -509,6 +512,7 @@ module ordered_priority_queue_monolithic_block_path #(
 
         BLOCK_MOVER_ABORT_WRITE_BLK: begin
           block_mover_handle_rptr[i] <= block_mover_handle_rptr[i] + handle_fifo_addr_t'(1);
+          handle_pop_dbg_o[i] <= 1'b1;
           block_mover_lane_credit_update[i] <= lane_fifo_addr_t'(block_mover_handle_blk_len[i]);
           block_mover_lane_credit_update_valid[i] <= 1'b1;
           block_mover_final_word_q[i] <= 1'b0;
@@ -557,6 +561,7 @@ module ordered_priority_queue_monolithic_block_path #(
         block_mover_reset_done[i] <= 1'b0;
         block_mover_state[i] <= BLOCK_MOVER_RESET;
         handle_fifo_is_pending_handle_d[i] <= '0;
+        handle_pop_dbg_o[i] <= 1'b0;
         b2p_arb_req_eligible_q[i] <= 1'b0;
         mover_page_wdata_q[i] <= '0;
       end else begin

@@ -36,11 +36,13 @@ OPQ_N_SHD ?= 256
 OPQ_N_HIT ?= 255
 OPQ_N_LANE ?= 2
 OPQ_TICKET_FIFO_DEPTH ?= $(shell s=$(OPQ_N_SHD); l=$(OPQ_N_LANE); target_lane=$$((s * 32)); target_scan=$$((s * l * 2)); target=$$target_lane; if [ "$$target_scan" -gt "$$target" ]; then target=$$target_scan; fi; d=256; while [ "$$d" -lt "$$target" ]; do d=$$((d * 2)); done; echo $$d)
+OPQ_HANDLE_FIFO_DEPTH ?= 64
 OPQ_LANE_FIFO_DEPTH ?= $(shell n=$(OPQ_N_LANE); if [ "$$n" -le 2 ]; then echo 1024; elif [ "$$n" -le 4 ]; then echo 2048; elif [ "$$n" -le 8 ]; then echo 4096; elif [ "$$n" -le 16 ]; then echo 8192; else echo 16384; fi)
 OPQ_CHANNEL_WIDTH ?= $(shell n=$(OPQ_N_LANE); if [ "$$n" -le 4 ]; then echo 2; elif [ "$$n" -le 8 ]; then echo 3; elif [ "$$n" -le 16 ]; then echo 4; else awk -v n="$$n" 'BEGIN { w=0; p=1; while (p<n) { p*=2; w++ } if (w<1) w=1; print w }'; fi)
 OPQ_PAGE_RAM_RD_WIDTH ?= 36
 OPQ_EGRESS_SYMBOLS_PER_BEAT ?= $(shell w=$(OPQ_PAGE_RAM_RD_WIDTH); echo $$((w / 36)))
 OPQ_EGRESS_EMPTY_WIDTH ?= $(shell n=$(OPQ_EGRESS_SYMBOLS_PER_BEAT); if [ "$$n" -le 1 ]; then echo 1; elif [ "$$n" -le 2 ]; then echo 1; elif [ "$$n" -le 4 ]; then echo 2; else echo 3; fi)
+OPQ_DEBUG_LEVEL ?= 1
 
 QUARTUS_SH ?= /data1/intelFPGA_pro/23.1/quartus/bin/quartus_sh
 QUARTUS_ROOTDIR := /data1/intelFPGA_pro/23.1/quartus
@@ -76,12 +78,14 @@ UVM_DEFINES += +define+OPQ_PAGE_RAM_DEPTH=$(OPQ_PAGE_RAM_DEPTH)
 UVM_DEFINES += +define+OPQ_N_SHD=$(OPQ_N_SHD)
 UVM_DEFINES += +define+OPQ_N_HIT=$(OPQ_N_HIT)
 UVM_DEFINES += +define+OPQ_TICKET_FIFO_DEPTH=$(OPQ_TICKET_FIFO_DEPTH)
+UVM_DEFINES += +define+OPQ_HANDLE_FIFO_DEPTH=$(OPQ_HANDLE_FIFO_DEPTH)
 UVM_DEFINES += +define+OPQ_N_LANE=$(OPQ_N_LANE)
 UVM_DEFINES += +define+OPQ_LANE_FIFO_DEPTH=$(OPQ_LANE_FIFO_DEPTH)
 UVM_DEFINES += +define+OPQ_CHANNEL_WIDTH=$(OPQ_CHANNEL_WIDTH)
 UVM_DEFINES += +define+OPQ_PAGE_RAM_RD_WIDTH=$(OPQ_PAGE_RAM_RD_WIDTH)
 UVM_DEFINES += +define+OPQ_EGRESS_SYMBOLS_PER_BEAT=$(OPQ_EGRESS_SYMBOLS_PER_BEAT)
 UVM_DEFINES += +define+OPQ_EGRESS_EMPTY_WIDTH=$(OPQ_EGRESS_EMPTY_WIDTH)
+UVM_DEFINES += +define+OPQ_DEBUG_LEVEL=$(OPQ_DEBUG_LEVEL)
 TEST ?= opq_basic_smoke_test
 TOP ?= tb_top
 COV ?= 0

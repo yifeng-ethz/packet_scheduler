@@ -72,9 +72,9 @@ Formalized packet shape:
 | Identity | `IP_UID` | fixed packaged default | no | HDL-backed Mu3e UID. |
 | Identity | `VERSION_MAJOR` | fixed packaged default | no | `26`. |
 | Identity | `VERSION_MINOR` | fixed packaged default | no | `5`. |
-| Identity | `VERSION_PATCH` | fixed packaged CSR META default | no | `0`; packed into CSR META page 0. |
-| Identity | `BUILD` | fixed packaged CSR META default | no | `0430`; 12-bit CSR build stamp. |
-| Identity | `VERSION_DATE` | fixed packaged CSR META default | no | `20260430`; CSR META page-1 date. |
+| Identity | `VERSION_PATCH` | fixed packaged CSR META default | no | `1`; packed into CSR META page 0. |
+| Identity | `BUILD` | fixed packaged CSR META default | no | `0509`; 12-bit CSR build stamp. |
+| Identity | `VERSION_DATE` | fixed packaged CSR META default | no | `20260509`; CSR META page-1 date. |
 | Identity | `VERSION_GIT` | fixed packaged CSR META default | no | `0x4F667FB1`; 32-bit provenance stamp exposed through CSR META page 2. |
 | Identity | `INSTANCE_ID` | integrator override | yes | Only identity field left GUI-editable. |
 
