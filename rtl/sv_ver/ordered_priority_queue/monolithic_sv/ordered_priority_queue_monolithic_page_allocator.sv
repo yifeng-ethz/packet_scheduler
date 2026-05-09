@@ -146,7 +146,11 @@ module ordered_priority_queue_monolithic_page_allocator #(
   typedef logic [MAX_PKT_LENGTH_BITS-1:0] pkt_length_t;
   typedef logic [MAX_SHR_CNT_BITS-1:0] frame_shr_cnt_t;
   typedef logic [MAX_HIT_CNT_BITS-1:0] frame_hit_cnt_t;
+`ifdef OPQ_DEBUG_BYPASS_SUBFRAME_HIT_LIMIT
   localparam frame_hit_cnt_t FRAME_HIT_ROOM_RESET = {MAX_HIT_CNT_BITS{1'b1}};
+`else
+  localparam frame_hit_cnt_t FRAME_HIT_ROOM_RESET = frame_hit_cnt_t'(N_HIT);
+`endif
   typedef logic [PAGE_LENGTH_WIDTH-1:0] page_length_t;
 
   typedef struct packed {
