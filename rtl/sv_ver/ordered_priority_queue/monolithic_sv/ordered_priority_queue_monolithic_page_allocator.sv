@@ -146,6 +146,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
   typedef logic [MAX_PKT_LENGTH_BITS-1:0] pkt_length_t;
   typedef logic [MAX_SHR_CNT_BITS-1:0] frame_shr_cnt_t;
   typedef logic [MAX_HIT_CNT_BITS-1:0] frame_hit_cnt_t;
+  localparam frame_hit_cnt_t FRAME_HIT_ROOM_RESET = {MAX_HIT_CNT_BITS{1'b1}};
   typedef logic [PAGE_LENGTH_WIDTH-1:0] page_length_t;
 
   typedef struct packed {
@@ -476,7 +477,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
     frame_lane_shd_cnt: '{default:'0},
     frame_lane_shd_cnt_this: '{default:'0},
     frame_hit_cnt: '0,
-    frame_hit_room: frame_hit_cnt_t'(N_HIT),
+    frame_hit_room: FRAME_HIT_ROOM_RESET,
     frame_hit_cnt_this: '0,
     frame_lane_hit_cnt: '{default:'0},
     frame_lane_hit_cnt_this: '{default:'0},
@@ -1937,7 +1938,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
 `endif
             page_allocator.frame_shr_cnt <= '0;
             page_allocator.frame_hit_cnt <= '0;
-            page_allocator.frame_hit_room <= frame_hit_cnt_t'(N_HIT);
+            page_allocator.frame_hit_room <= FRAME_HIT_ROOM_RESET;
             page_allocator.page_we <= 1'b1;
             if (&(fetch_lanes_with_curr_sop_q & fetch_tail_ready_q)) begin
               page_allocator.page_waddr <= page_allocator.page_start_addr + page_ram_addr_t'(TRL_SIZE);
@@ -2041,7 +2042,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
           page_allocator.frame_join_wait <= '0;
           page_allocator.frame_shr_cnt <= '0;
           page_allocator.frame_hit_cnt <= '0;
-          page_allocator.frame_hit_room <= frame_hit_cnt_t'(N_HIT);
+          page_allocator.frame_hit_room <= FRAME_HIT_ROOM_RESET;
           page_allocator.frame_lane_shd_cnt <= '{default:'0};
           page_allocator.frame_lane_hit_cnt <= '{default:'0};
         end
