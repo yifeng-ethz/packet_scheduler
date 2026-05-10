@@ -114,9 +114,11 @@ module ordered_priority_queue_monolithic_sv #(
   // ----------------------------------------------------------------------------
 
   logic [N_LANE-1:0][TICKET_FIFO_DATA_WIDTH-1:0] ingress_ticket_wdata;
+  logic [N_LANE-1:0][TICKET_FIFO_ADDR_WIDTH-1:0] ingress_ticket_waddr;
   logic [N_LANE-1:0][TICKET_FIFO_ADDR_WIDTH-1:0] ingress_ticket_wptr;
   logic [N_LANE-1:0] ingress_ticket_we;
   logic [N_LANE-1:0][LANE_FIFO_WIDTH-1:0] ingress_lane_wdata;
+  logic [N_LANE-1:0][LANE_FIFO_ADDR_WIDTH-1:0] ingress_lane_waddr;
   logic [N_LANE-1:0][LANE_FIFO_ADDR_WIDTH-1:0] ingress_lane_wptr;
   logic [N_LANE-1:0] ingress_lane_we;
   logic [N_LANE-1:0][47:0] ingress_running_ts_dbg;
@@ -274,7 +276,7 @@ module ordered_priority_queue_monolithic_sv #(
     ) ticket_fifo_i (
       .data(ingress_ticket_wdata[m]),
       .read_addr(ticket_fifos_rd_addr[m]),
-      .write_addr(ingress_ticket_wptr[m] - 1'b1),
+      .write_addr(ingress_ticket_waddr[m]),
       .we(ingress_ticket_we[m]),
       .clk(d_clk),
       .q(ticket_fifos_rd_data[m])
@@ -286,7 +288,7 @@ module ordered_priority_queue_monolithic_sv #(
     ) lane_fifo_i (
       .data(ingress_lane_wdata[m]),
       .read_addr(lane_fifos_rd_addr[m]),
-      .write_addr(ingress_lane_wptr[m] - 1'b1),
+      .write_addr(ingress_lane_waddr[m]),
       .we(ingress_lane_we[m]),
       .clk(d_clk),
       .q(lane_fifos_rd_data[m])
@@ -331,9 +333,11 @@ module ordered_priority_queue_monolithic_sv #(
       .ticket_credit_update(ticket_credit_update[g]),
       .ticket_credit_update_valid(ticket_credit_update_valid[g]),
       .ticket_wdata(ingress_ticket_wdata[g]),
+      .ticket_waddr(ingress_ticket_waddr[g]),
       .ticket_wptr(ingress_ticket_wptr[g]),
       .ticket_we(ingress_ticket_we[g]),
       .lane_wdata(ingress_lane_wdata[g]),
+      .lane_waddr(ingress_lane_waddr[g]),
       .lane_wptr(ingress_lane_wptr[g]),
       .lane_we(ingress_lane_we[g]),
       .running_ts_dbg(ingress_running_ts_dbg[g]),

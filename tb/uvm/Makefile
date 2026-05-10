@@ -42,6 +42,7 @@ OPQ_CHANNEL_WIDTH ?= $(shell n=$(OPQ_N_LANE); if [ "$$n" -le 4 ]; then echo 2; e
 OPQ_PAGE_RAM_RD_WIDTH ?= 36
 OPQ_EGRESS_SYMBOLS_PER_BEAT ?= $(shell w=$(OPQ_PAGE_RAM_RD_WIDTH); echo $$((w / 36)))
 OPQ_EGRESS_EMPTY_WIDTH ?= $(shell n=$(OPQ_EGRESS_SYMBOLS_PER_BEAT); if [ "$$n" -le 1 ]; then echo 1; elif [ "$$n" -le 2 ]; then echo 1; elif [ "$$n" -le 4 ]; then echo 2; else echo 3; fi)
+OPQ_DEBUG_LEVEL ?= 1
 
 QUARTUS_SH ?= /data1/intelFPGA_pro/23.1/quartus/bin/quartus_sh
 QUARTUS_ROOTDIR := /data1/intelFPGA_pro/23.1/quartus
@@ -88,6 +89,7 @@ UVM_DEFINES += +define+OPQ_CHANNEL_WIDTH=$(OPQ_CHANNEL_WIDTH)
 UVM_DEFINES += +define+OPQ_PAGE_RAM_RD_WIDTH=$(OPQ_PAGE_RAM_RD_WIDTH)
 UVM_DEFINES += +define+OPQ_EGRESS_SYMBOLS_PER_BEAT=$(OPQ_EGRESS_SYMBOLS_PER_BEAT)
 UVM_DEFINES += +define+OPQ_EGRESS_EMPTY_WIDTH=$(OPQ_EGRESS_EMPTY_WIDTH)
+UVM_DEFINES += +define+OPQ_DEBUG_LEVEL=$(OPQ_DEBUG_LEVEL)
 TEST ?= opq_basic_smoke_test
 TOP ?= tb_top
 COV ?= 0

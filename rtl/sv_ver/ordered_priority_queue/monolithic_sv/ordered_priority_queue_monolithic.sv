@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_sv
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.4.6
-// Date    : 20260427
-// Change  : Export native debug ports for Qsys synthesis wrappers
+// Version : 26.5.1
+// Date    : 20260509
+// Change  : Export handle FIFO overflow status for CSR provisioning checks
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_sv #(
@@ -40,6 +40,7 @@ module ordered_priority_queue_monolithic_sv #(
   parameter int unsigned TICKET_FIFO_ADDR_WIDTH = $clog2(TICKET_FIFO_DEPTH),
   parameter int unsigned LANE_FIFO_ADDR_WIDTH = $clog2(LANE_FIFO_DEPTH),
   parameter int unsigned HANDLE_FIFO_ADDR_WIDTH = $clog2(HANDLE_FIFO_DEPTH),
+  parameter int unsigned HANDLE_FIFO_OCC_WIDTH = $clog2(HANDLE_FIFO_DEPTH + 1),
   parameter int unsigned PAGE_RAM_DATA_WIDTH = 40,
   parameter int unsigned PAGE_RAM_ADDR_WIDTH = $clog2(PAGE_RAM_DEPTH),
   parameter int unsigned HANDLE_LENGTH = LANE_FIFO_ADDR_WIDTH + PAGE_RAM_ADDR_WIDTH + MAX_PKT_LENGTH_BITS,
@@ -79,6 +80,8 @@ module ordered_priority_queue_monolithic_sv #(
   output logic [N_LANE-1:0]                                              handle_we_dbg_o,
   output logic [N_LANE-1:0]                                              handle_flag_dbg_o,
   output logic [N_LANE-1:0][MAX_PKT_LENGTH_BITS-1:0]                     handle_block_len_dbg_o,
+  output logic [N_LANE-1:0]                                              handle_fifo_overflow_dbg_o,
+  output logic [N_LANE-1:0][HANDLE_FIFO_OCC_WIDTH-1:0]                   handle_fifo_occupancy_dbg_o,
   output logic [N_LANE-1:0]                                              late_frame_drop_valid_dbg_o,
   output logic [N_LANE-1:0][15:0]                                        late_frame_drop_hdr_cnt_dbg_o,
   output logic [N_LANE-1:0][15:0]                                        late_frame_drop_shd_cnt_dbg_o,
@@ -171,6 +174,9 @@ module ordered_priority_queue_monolithic_sv #(
   logic [N_LANE-1:0][HANDLE_FIFO_ADDR_WIDTH-1:0] handle_waddr_dbg;
   logic [N_LANE-1:0][HANDLE_FIFO_ADDR_WIDTH-1:0] handle_wptr_dbg;
   logic [N_LANE-1:0] handle_we_dbg;
+  logic [N_LANE-1:0] handle_pop_dbg;
+  logic [N_LANE-1:0] handle_fifo_overflow_dbg;
+  logic [N_LANE-1:0][HANDLE_FIFO_OCC_WIDTH-1:0] handle_fifo_occupancy_dbg;
   logic [N_LANE-1:0] late_frame_drop_valid_dbg;
   logic [N_LANE-1:0][15:0] late_frame_drop_hdr_cnt_dbg;
   logic [N_LANE-1:0][15:0] late_frame_drop_shd_cnt_dbg;
@@ -258,6 +264,8 @@ module ordered_priority_queue_monolithic_sv #(
   assign ingress_credit_drop_shd_cnt_dbg_o = ingress_credit_drop_shd_cnt_dbg;
   assign ingress_credit_drop_hit_cnt_dbg_o = ingress_credit_drop_hit_cnt_dbg;
   assign handle_we_dbg_o = handle_we_dbg;
+  assign handle_fifo_overflow_dbg_o = handle_fifo_overflow_dbg;
+  assign handle_fifo_occupancy_dbg_o = handle_fifo_occupancy_dbg;
   assign late_frame_drop_valid_dbg_o = late_frame_drop_valid_dbg;
   assign late_frame_drop_hdr_cnt_dbg_o = late_frame_drop_hdr_cnt_dbg;
   assign late_frame_drop_shd_cnt_dbg_o = late_frame_drop_shd_cnt_dbg;
@@ -349,6 +357,44 @@ module ordered_priority_queue_monolithic_sv #(
     );
     end
   endgenerate
+
+  always_ff @(posedge d_clk) begin : proc_handle_fifo_occupancy_monitor
+    if (d_reset) begin
+      handle_fifo_overflow_dbg <= '0;
+      handle_fifo_occupancy_dbg <= '0;
+    end else begin
+      handle_fifo_overflow_dbg <= '0;
+      for (int i = 0; i < N_LANE; i++) begin
+        logic [HANDLE_FIFO_OCC_WIDTH:0] occupancy_next_v;
+        logic [HANDLE_FIFO_OCC_WIDTH:0] depth_v;
+        logic [HANDLE_FIFO_OCC_WIDTH:0] safe_max_v;
+
+        occupancy_next_v = {1'b0, handle_fifo_occupancy_dbg[i]};
+        depth_v = HANDLE_FIFO_OCC_WIDTH'(HANDLE_FIFO_DEPTH);
+        safe_max_v = HANDLE_FIFO_OCC_WIDTH'(HANDLE_FIFO_DEPTH - 1);
+
+        if (handle_we_dbg[i] && !handle_pop_dbg[i]) begin
+          if (occupancy_next_v >= safe_max_v) begin
+            handle_fifo_overflow_dbg[i] <= 1'b1;
+            occupancy_next_v = depth_v;
+          end else begin
+            occupancy_next_v = occupancy_next_v + {{HANDLE_FIFO_OCC_WIDTH{1'b0}}, 1'b1};
+          end
+        end else if (!handle_we_dbg[i] && handle_pop_dbg[i]) begin
+          if (occupancy_next_v != '0) begin
+            occupancy_next_v = occupancy_next_v - {{HANDLE_FIFO_OCC_WIDTH{1'b0}}, 1'b1};
+          end
+        end else if (handle_we_dbg[i] && handle_pop_dbg[i]) begin
+          if (occupancy_next_v > depth_v) begin
+            handle_fifo_overflow_dbg[i] <= 1'b1;
+            occupancy_next_v = depth_v;
+          end
+        end
+
+        handle_fifo_occupancy_dbg[i] <= occupancy_next_v[HANDLE_FIFO_OCC_WIDTH-1:0];
+      end
+    end
+  end
 
   genvar g;
   generate
@@ -528,6 +574,7 @@ module ordered_priority_queue_monolithic_sv #(
       .drr_lock_event_dbg_o(drr_lock_event_dbg_o),
       .drr_defer_event_dbg_o(drr_defer_event_dbg_o),
       .drr_sel_mask_dbg_o(drr_sel_mask_dbg),
+      .handle_pop_dbg_o(handle_pop_dbg),
       .d_clk(d_clk),
       .d_reset(d_reset)
   );
