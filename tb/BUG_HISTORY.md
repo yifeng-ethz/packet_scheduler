@@ -76,6 +76,62 @@ Historical formal note:
 | [BUG-036-H](#bug-036-h-coverage-closure-merged-out-of-scope-ucdbs-and-old-geometry) | H | non-datapath-refactor | `directed-only (coverage flow)` | fixed | `run_cov_closure.sh` on `2026-04-24` | `pending` | Coverage closure mixed old-geometry UCDBs into the baseline merge and let vendor RAM coverage dominate the run. |
 | [BUG-037-H](#bug-037-h-ingress-formal-checker-parameter-surface-drifted-from-the-parser) | H | non-datapath-refactor | `directed-only (formal elaboration)` | fixed | `formal_ingress.sh` on `2026-04-24` | `pending` | Ingress formal checker stopped accepting parser configuration parameters and blocked elaboration. |
 | [BUG-038-H](#bug-038-h-opq-model-publish-runs-under-sized-the-lane-fifo-for-the-physical-cadence-contract) | H | non-datapath-refactor | `common (model-publish performance scans)` | fixed | `opq_model_publish_loss_sweep_test` N4/E1 rho=6.0 hps on `2026-04-29` | `pending` | Model-publish and UVM default geometry derived lane FIFO depth from lane count only, so N_SHD=128,N_LANE=4 scans used 2048 entries/lane and reported false early pre-drops below the persistent bandwidth knee. |
+| [BUG-039-R](#bug-039-r-native-sv-page-allocator-dropped-legal-zero-hit-subheaders) | R | soft error | `common (sparse frame traffic)` | fixed | `opq_basic_rn001_lane2_only_test` on `2026-05-14` @ `OPQ_N_LANE=4 OPQ_N_SHD=128` | `pending` | Native-SV page allocator rejected zero-length tickets before page accounting, so sparse RN.BASIC.001-style frames could advertise zero subheaders on egress. |
+
+## 2026-05-14
+
+### BUG-039-R: Native-SV page allocator dropped legal zero-hit subheaders
+- First seen in:
+  - `packet_scheduler/tb/uvm`
+    `TEST=opq_basic_rn001_lane2_only_test DUT_IMPL=native_sv
+    OPQ_N_LANE=4 OPQ_N_SHD=128`
+  - the failing sequence drives legal FEB/RN.BASIC.001-style frame headers
+    with 128 subheaders and zero hit bodies on the active lane
+- Symptom:
+  - the pre-fix exact egress contract check saw the ingress frame declare
+    `debug_header0=0x00800000`, but egress reported
+    `debug_header0=0x00000000`
+  - hit-integrity-only checks could pass because there were no hit bodies to
+    lose, while the packet shape was still wrong
+- Root cause:
+  - `ordered_priority_queue_monolithic_page_allocator.sv` rejected lane tickets
+    with `block_length == 0` before they reached page-accounting logic
+  - zero-hit subheaders are legal FEB packet elements and must contribute to
+    the emitted subheader count even though they do not allocate body storage
+- Fix status:
+  - state:
+    - fixed on the directed RN001 sparse-frame sequence and the promoted BASIC
+      UVM subset at `OPQ_N_LANE=4 OPQ_N_SHD=128`
+  - mechanism:
+    - the allocator now accepts legal zero-length tickets for page/frame
+      accounting while the existing zero-length guard still prevents empty
+      body blocks from entering handle FIFOs
+    - the scoreboard has an optional exact egress frame contract check over
+      preamble, data headers, and `debug_header0`
+  - before_fix_outcome:
+    - `tb/uvm/logs/opq_basic_rn001_lane2_exact_prefix_20260514_062005.log`
+      reports `Egress debug_header0 mismatch expected=0x00800000
+      got=0x00000000`
+  - after_fix_outcome:
+    - `tb/uvm/logs/opq_basic_rn001_lane2_exact_post_20260514_062046.log`
+      passes with `UVM_ERROR=0`
+    - `tb/uvm/logs/opq_basic_rn001_fix_matrix_20260514_062119.log`
+      reports `UVM summary: pass=6 fail=0 total=6`
+    - `tb/uvm/logs/opq_basic_promoted_20260514_062210.log` reports
+      `UVM summary: pass=7 fail=0 total=7`
+  - potential_hazard:
+    - this closes the standalone native-SV OPQ packet-shape bug; generated SWB
+      firmware images must still be regenerated/rebuilt before making a board
+      closure claim
+  - Claude Opus 4.7 xhigh review decision:
+    - pending / not run in this turn
+- Runtime / coverage context:
+  - the fix targets legal sparse frame traffic and does not change VHDL rbCAM
+    functional RTL
+  - the standalone UVM sequence now fails on exact frame-format mismatch, not
+    only on hit metadata loss
+- Commit:
+  - pending
 
 ## 2026-04-29
 

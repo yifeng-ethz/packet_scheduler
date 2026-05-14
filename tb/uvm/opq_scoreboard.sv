@@ -8,7 +8,7 @@
 // Revision  : 0.5 - disambiguate exact drop accounting with frame pkg_cnt/serial
 // Revision  : 0.6 - allow unique ts/word lane-accounting fallback when merged no-restart egress reserializes packet ids
 // Revision  : 0.7 - keep canonical hit timestamps for delivery matching and parser timestamps for exact-drop bookkeeping
-// Revision  : 0.8 - trace canonical-domain residency proxy separately from ingress debug timestamp semantics
+// Revision  : 0.9 - add exact egress FEB packet header/count contract checks
 // Description:
 //   Scoreboard for ingress-to-egress hit integrity and CSR-visible packet counts.
 //------------------------------------------------------------------------------
@@ -90,6 +90,8 @@ class opq_scoreboard extends uvm_component;
   bit        enable_txn_trace;
 
   bit        egress_preamble_seen;
+  bit        egress_have_expected_meta;
+  opq_frame_meta_t egress_expected_meta;
   int unsigned sop_count;
   int unsigned expected_lane_hdr_cnt[OPQ_N_LANE];
   int unsigned expected_lane_shd_cnt[OPQ_N_LANE];
@@ -110,6 +112,7 @@ class opq_scoreboard extends uvm_component;
   opq_hit_trace_t pending_ingress_hits[OPQ_N_LANE][$];
   opq_frame_meta_t pending_ingress_frames[OPQ_N_LANE][$];
   bit [31:0] expected_egress_preambles[$];
+  opq_frame_meta_t expected_egress_frames[$];
   opq_stay_frame_t pending_stay_frames[OPQ_N_LANE][$];
   opq_hit_trace_t lane_accounting_hits[OPQ_N_LANE][$];
   opq_pending_exact_drop_t pending_exact_drops[OPQ_N_LANE][$];
@@ -201,6 +204,8 @@ class opq_scoreboard extends uvm_component;
     egress_declared_hit_cnt = 0;
     egress_frame_observed_subh_cnt = 0;
     egress_frame_observed_hit_cnt = 0;
+    egress_have_expected_meta = 1'b0;
+    egress_expected_meta = '{default: '0};
   endfunction
 
   function automatic bit consume_expected_egress_preamble(bit [31:0] data32);
@@ -210,6 +215,22 @@ class opq_scoreboard extends uvm_component;
         expected_egress_preambles.delete(i);
         consume_expected_egress_preamble = 1'b1;
         return consume_expected_egress_preamble;
+      end
+    end
+  endfunction
+
+  function automatic bit consume_expected_egress_frame(
+    bit [31:0] data32,
+    output opq_frame_meta_t meta
+  );
+    consume_expected_egress_frame = 1'b0;
+    meta = '{default: '0};
+    foreach (expected_egress_frames[i]) begin
+      if (expected_egress_frames[i].preamble == data32) begin
+        meta = expected_egress_frames[i];
+        expected_egress_frames.delete(i);
+        consume_expected_egress_frame = 1'b1;
+        return consume_expected_egress_frame;
       end
     end
   endfunction
@@ -529,6 +550,9 @@ class opq_scoreboard extends uvm_component;
     meta.preamble = make_preamble(frame.dt_type, frame.feb_id);
     pending_ingress_frames[frame.lane_id].push_back(meta);
     expected_egress_preambles.push_back(meta.preamble);
+    if (cfg.check_egress_frame_contract) begin
+      expected_egress_frames.push_back(meta);
+    end
     if (enable_stay_time_trace) begin
       stay_meta.frame_ts_full = frame.frame_ts;
       stay_meta.pkg_cnt = frame.pkg_cnt;
@@ -862,7 +886,16 @@ class opq_scoreboard extends uvm_component;
           if (data32[23:8] == 16'h0000) begin
             strict_packet_error("Egress preamble has zero FEB ID", beat);
           end
-          if (!consume_expected_egress_preamble(data32)) begin
+          if (cfg.check_egress_frame_contract) begin
+            if (!consume_expected_egress_frame(data32, egress_expected_meta)) begin
+              strict_packet_error($sformatf(
+                "Egress preamble did not match any queued exact frame contract got=0x%08h",
+                data32
+              ), beat);
+            end else begin
+              egress_have_expected_meta = 1'b1;
+            end
+          end else if (!consume_expected_egress_preamble(data32)) begin
             strict_packet_error($sformatf(
               "Egress preamble did not match any queued ingress frame preamble got=0x%08h",
               data32
@@ -887,16 +920,42 @@ class opq_scoreboard extends uvm_component;
             actual_egress_hdr_cnt++;
           end
         end
-        1: egress_frame_ts[47:16] = data32;
+        1: begin
+          egress_frame_ts[47:16] = data32;
+          if (cfg.check_egress_frame_contract &&
+              egress_have_expected_meta &&
+              data32 != egress_expected_meta.data_header0) begin
+            `uvm_error(get_type_name(), $sformatf(
+              "Egress data_header0 mismatch expected=0x%08h got=0x%08h",
+              egress_expected_meta.data_header0, data32
+            ))
+          end
+        end
         2: begin
           egress_frame_ts[15:0] = data32[31:16];
           egress_pkg_cnt = data32[15:0];
+          if (cfg.check_egress_frame_contract &&
+              egress_have_expected_meta &&
+              data32 != egress_expected_meta.data_header1) begin
+            `uvm_error(get_type_name(), $sformatf(
+              "Egress data_header1 mismatch expected=0x%08h got=0x%08h",
+              egress_expected_meta.data_header1, data32
+            ))
+          end
         end
         3: begin
           egress_declared_subh_cnt = data32[30:16];
           egress_declared_hit_cnt = data32[15:0];
           if (cfg.strict_packet_format && data32[31]) begin
             strict_packet_error("Egress debug header 0 reserved bit[31] is set", beat);
+          end
+          if (cfg.check_egress_frame_contract &&
+              egress_have_expected_meta &&
+              data32 != egress_expected_meta.debug_header0) begin
+            `uvm_error(get_type_name(), $sformatf(
+              "Egress debug_header0 mismatch expected=0x%08h got=0x%08h",
+              egress_expected_meta.debug_header0, data32
+            ))
           end
         end
         4: begin
@@ -1468,6 +1527,12 @@ class opq_scoreboard extends uvm_component;
       `uvm_error(get_type_name(), $sformatf(
         "Expected at least %0d egress SOP beats, saw %0d",
         cfg.min_sop_count, sop_count
+      ))
+    end
+    if (cfg.check_egress_frame_contract && (expected_egress_frames.size() != 0)) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "%0d expected egress frame contracts were never observed",
+        expected_egress_frames.size()
       ))
     end
     if (!cfg.check_hit_integrity) begin

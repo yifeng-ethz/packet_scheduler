@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 // IP Name   : opq_pkg
 // Author    : Yifeng Wang (yifenwan@phys.ethz.ch)
-// Revision  : 0.3 - model ingress debug timestamps as virtual FEB dispatch time
+// Revision  : 0.4 - add opt-in egress FEB packet contract checking
 // Description:
 //   Shared UVM types, helpers, and packet-format builders for the OPQ harness.
 //------------------------------------------------------------------------------
@@ -469,6 +469,7 @@ package opq_pkg;
     bit check_hit_integrity;
     bit check_feb_contract;
     bit strict_packet_format;
+    bit check_egress_frame_contract;
     bit require_egress_preamble;
     bit allow_drop_accounting;
     bit allow_unmatched_ingress_preamble;
@@ -478,6 +479,7 @@ package opq_pkg;
       `uvm_field_int(check_hit_integrity, UVM_DEFAULT)
       `uvm_field_int(check_feb_contract, UVM_DEFAULT)
       `uvm_field_int(strict_packet_format, UVM_DEFAULT)
+      `uvm_field_int(check_egress_frame_contract, UVM_DEFAULT)
       `uvm_field_int(require_egress_preamble, UVM_DEFAULT)
       `uvm_field_int(allow_drop_accounting, UVM_DEFAULT)
       `uvm_field_int(allow_unmatched_ingress_preamble, UVM_DEFAULT)
@@ -489,6 +491,7 @@ package opq_pkg;
       check_hit_integrity = 1'b1;
       check_feb_contract = 1'b1;
       strict_packet_format = 1'b0;
+      check_egress_frame_contract = 1'b0;
       require_egress_preamble = 1'b0;
       allow_drop_accounting = 1'b0;
       allow_unmatched_ingress_preamble = 1'b0;

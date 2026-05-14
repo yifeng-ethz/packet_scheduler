@@ -140,7 +140,7 @@
 | B127 | D | live UVM | none | end-to-end: one lane, one frame, one subheader, zero hits (empty subheader frame) | egress produces SOP+EOP framing with zero hit beats; wr_hit=rd_hit=0; catches zero-hit frame corruption |
 | B128 | D | live UVM | `opq_basic_rn001_board_shape_test` | end-to-end: RN.BASIC.001-shaped 4-lane whole-frame packets at configured `OPQ_N_SHD` width | strict packet-format checks plus no-drop ledger closure for full-width board-like frames |
 | B129 | D | live UVM | none | end-to-end: one lane, one frame, `N_HIT = 255` hits on a single subheader (per-subheader max hit count) | all 255 hits retire; RD_HIT delta == 255; catches hit cap miscount |
-| B130 | D | live UVM | `opq_basic_rn001_lane2_only_test` | end-to-end: RN.BASIC.001-shaped whole-frame packets with only OPQ lane 2 active, matching the SWB board link-mask shape | strict egress preamble and declared frame-count checks plus no-drop ledger closure; catches lane-0 default header leakage |
+| B130 | D | live UVM | `opq_basic_rn001_lane2_only_test` | end-to-end: RN.BASIC.001-shaped whole-frame packets with only OPQ lane 2 active and legal zero-hit subheaders, matching the SWB board link-mask shape | strict egress preamble, header count, subheader count, and no-drop ledger closure; catches empty-subheader loss through the page allocator |
 
 ---
 

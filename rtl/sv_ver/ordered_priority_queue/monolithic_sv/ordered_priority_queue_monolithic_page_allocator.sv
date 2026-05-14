@@ -1,10 +1,10 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_page_allocator
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.4.14
+// Version : 26.4.15
 // Date    : 20260514
-// Change  : Reset merged-frame hit room to N_SHD*N_HIT so full-width frames
-//           are not post-dropped at the per-subheader N_HIT limit.
+// Change  : Preserve legal zero-hit subheaders in the allocated page stream
+//           while keeping zero-length body blocks out of handle FIFOs.
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_page_allocator #(
@@ -2250,7 +2250,6 @@ module ordered_priority_queue_monolithic_page_allocator #(
               lane_active_v &&
               !lane_skipped_v &&
               !lane_masked_v &&
-              (lane_ticket_v.block_length != '0) &&
               (frame_hit_cnt_t'(lane_ticket_v.block_length) <= page_allocator.frame_hit_room);
             lane_skip_v =
               lane_active_v &&

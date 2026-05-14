@@ -88,12 +88,20 @@ class opq_basic_rn001_lane2_only_test extends opq_no_drop_test_base;
     return 2ms;
   endfunction
 
+  virtual function opq_scoreboard_cfg create_scoreboard_cfg();
+    opq_scoreboard_cfg cfg;
+    cfg = super.create_scoreboard_cfg();
+    cfg.check_egress_frame_contract = 1'b1;
+    return cfg;
+  endfunction
+
   virtual task run_main_sequence();
     opq_rn001_board_shape_virtual_sequence seq;
     csr_clear_counters();
     seq = opq_rn001_board_shape_virtual_sequence::type_id::create("seq");
     seq.active_lane = 2;
     seq.single_lane_only = 1'b1;
+    seq.hit_count_per_subheader = 0;
     seq.start(env.vseqr);
   endtask
 endclass
