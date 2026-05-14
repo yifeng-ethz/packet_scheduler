@@ -595,12 +595,16 @@ class opq_rn001_board_shape_virtual_sequence extends opq_virtual_sequence_base;
   int unsigned frame_count;
   int unsigned hit_count_per_subheader;
   int unsigned inter_frame_gap_cycles;
+  int          active_lane;
+  bit          single_lane_only;
 
   function new(string name = "opq_rn001_board_shape_virtual_sequence");
     super.new(name);
     frame_count = 4;
     hit_count_per_subheader = 1;
     inter_frame_gap_cycles = OPQ_MIN_SOP_GAP_CYCLES;
+    active_lane = -1;
+    single_lane_only = 1'b0;
   endfunction
 
   task body();
@@ -609,8 +613,18 @@ class opq_rn001_board_shape_virtual_sequence extends opq_virtual_sequence_base;
 
     void'($value$plusargs("OPQ_RN001_FRAME_COUNT=%d", frame_count));
     void'($value$plusargs("OPQ_RN001_HITS_PER_SUBHEADER=%d", hit_count_per_subheader));
+    void'($value$plusargs("OPQ_RN001_ACTIVE_LANE=%d", active_lane));
+    if (active_lane >= 0) begin
+      single_lane_only = 1'b1;
+    end
     if (frame_count == 0) begin
       `uvm_fatal(get_type_name(), "OPQ_RN001_FRAME_COUNT must be non-zero")
+    end
+    if (single_lane_only && ((active_lane < 0) || (active_lane >= OPQ_N_LANE))) begin
+      `uvm_fatal(get_type_name(), $sformatf(
+        "OPQ_RN001_ACTIVE_LANE=%0d out of range for OPQ_N_LANE=%0d",
+        active_lane, OPQ_N_LANE
+      ))
     end
     if (hit_count_per_subheader > OPQ_N_HIT) begin
       `uvm_fatal(get_type_name(), $sformatf(
@@ -623,6 +637,9 @@ class opq_rn001_board_shape_virtual_sequence extends opq_virtual_sequence_base;
     for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
       int unsigned feb_id;
 
+      if (single_lane_only && (lane != active_lane)) begin
+        continue;
+      end
       feb_id = (lane < 2) ? 16'h0001 : 16'h0002;
       for (int frame_idx = 0; frame_idx < frame_count; frame_idx++) begin
         opq_frame_item tr;

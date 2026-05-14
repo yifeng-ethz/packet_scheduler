@@ -34,6 +34,7 @@ class opq_scoreboard extends uvm_component;
     bit [31:0] data_header1;
     bit [31:0] debug_header0;
     bit [31:0] debug_header1;
+    bit [31:0] preamble;
   } opq_frame_meta_t;
 
   typedef struct {
@@ -81,6 +82,10 @@ class opq_scoreboard extends uvm_component;
   bit        egress_subheaders_seen;
   int        egress_header_idx;
   int        egress_hits_pending;
+  int unsigned egress_declared_subh_cnt;
+  int unsigned egress_declared_hit_cnt;
+  int unsigned egress_frame_observed_subh_cnt;
+  int unsigned egress_frame_observed_hit_cnt;
   bit        enable_stay_time_trace;
   bit        enable_txn_trace;
 
@@ -104,6 +109,7 @@ class opq_scoreboard extends uvm_component;
 
   opq_hit_trace_t pending_ingress_hits[OPQ_N_LANE][$];
   opq_frame_meta_t pending_ingress_frames[OPQ_N_LANE][$];
+  bit [31:0] expected_egress_preambles[$];
   opq_stay_frame_t pending_stay_frames[OPQ_N_LANE][$];
   opq_hit_trace_t lane_accounting_hits[OPQ_N_LANE][$];
   opq_pending_exact_drop_t pending_exact_drops[OPQ_N_LANE][$];
@@ -191,6 +197,21 @@ class opq_scoreboard extends uvm_component;
     egress_subheaders_seen = 1'b0;
     egress_header_idx = -1;
     egress_hits_pending = 0;
+    egress_declared_subh_cnt = 0;
+    egress_declared_hit_cnt = 0;
+    egress_frame_observed_subh_cnt = 0;
+    egress_frame_observed_hit_cnt = 0;
+  endfunction
+
+  function automatic bit consume_expected_egress_preamble(bit [31:0] data32);
+    consume_expected_egress_preamble = 1'b0;
+    foreach (expected_egress_preambles[i]) begin
+      if (expected_egress_preambles[i] == data32) begin
+        expected_egress_preambles.delete(i);
+        consume_expected_egress_preamble = 1'b1;
+        return consume_expected_egress_preamble;
+      end
+    end
   endfunction
 
   function void build_phase(uvm_phase phase);
@@ -505,7 +526,9 @@ class opq_scoreboard extends uvm_component;
     meta.data_header1 = make_frame_data_header1(frame.frame_ts, frame.pkg_cnt);
     meta.debug_header0 = make_frame_debug_header0(frame.frame_subh_count_bits(), frame.frame_hit_count_bits());
     meta.debug_header1 = make_frame_debug_header1(frame.ingress_debug_ts);
+    meta.preamble = make_preamble(frame.dt_type, frame.feb_id);
     pending_ingress_frames[frame.lane_id].push_back(meta);
+    expected_egress_preambles.push_back(meta.preamble);
     if (enable_stay_time_trace) begin
       stay_meta.frame_ts_full = frame.frame_ts;
       stay_meta.pkg_cnt = frame.pkg_cnt;
@@ -833,6 +856,18 @@ class opq_scoreboard extends uvm_component;
           if (!((datak == 4'b0001) && (data32[7:0] == K285))) begin
             strict_packet_error("Egress header word 0 is not K28.5 preamble", beat);
           end
+          if (data32[31:26] == 6'b000000) begin
+            strict_packet_error("Egress preamble has idle/zero detector type", beat);
+          end
+          if (data32[23:8] == 16'h0000) begin
+            strict_packet_error("Egress preamble has zero FEB ID", beat);
+          end
+          if (!consume_expected_egress_preamble(data32)) begin
+            strict_packet_error($sformatf(
+              "Egress preamble did not match any queued ingress frame preamble got=0x%08h",
+              data32
+            ), beat);
+          end
         end else begin
           if (datak != 4'b0000) begin
             strict_packet_error($sformatf("Egress header word %0d carried datak", egress_header_idx), beat);
@@ -856,6 +891,13 @@ class opq_scoreboard extends uvm_component;
         2: begin
           egress_frame_ts[15:0] = data32[31:16];
           egress_pkg_cnt = data32[15:0];
+        end
+        3: begin
+          egress_declared_subh_cnt = data32[30:16];
+          egress_declared_hit_cnt = data32[15:0];
+          if (cfg.strict_packet_format && data32[31]) begin
+            strict_packet_error("Egress debug header 0 reserved bit[31] is set", beat);
+          end
         end
         4: begin
           egress_debug_ts = data32[30:0];
@@ -900,6 +942,7 @@ class opq_scoreboard extends uvm_component;
           actual_lane_hit_cnt[matched_lane]++;
         end
         actual_egress_hit_cnt++;
+        egress_frame_observed_hit_cnt++;
       end
       if (cfg.strict_packet_format) begin
         if (beat.sop) begin
@@ -931,6 +974,7 @@ class opq_scoreboard extends uvm_component;
       egress_subheaders_seen = 1'b1;
       egress_hits_pending = data32[23:8];
       actual_egress_shd_cnt++;
+      egress_frame_observed_subh_cnt++;
       return;
     end
 
@@ -941,6 +985,18 @@ class opq_scoreboard extends uvm_component;
         end
         if (!beat.eop) begin
           strict_packet_error("Egress trailer missing eop", beat);
+        end
+        if (egress_frame_observed_subh_cnt != egress_declared_subh_cnt) begin
+          strict_packet_error($sformatf(
+            "Egress subheader count mismatch declared=%0d observed=%0d",
+            egress_declared_subh_cnt, egress_frame_observed_subh_cnt
+          ), beat);
+        end
+        if (egress_frame_observed_hit_cnt != egress_declared_hit_cnt) begin
+          strict_packet_error($sformatf(
+            "Egress hit count mismatch declared=%0d observed=%0d",
+            egress_declared_hit_cnt, egress_frame_observed_hit_cnt
+          ), beat);
         end
       end
       reset_egress_state();
