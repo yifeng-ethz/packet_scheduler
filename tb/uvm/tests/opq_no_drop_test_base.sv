@@ -7,6 +7,8 @@ class opq_no_drop_test_base extends opq_base_test;
     opq_scoreboard_cfg cfg;
     cfg = super.create_scoreboard_cfg();
     cfg.check_hit_integrity = 1'b1;
+    cfg.strict_packet_format = 1'b1;
+    cfg.require_egress_preamble = 1'b1;
     return cfg;
   endfunction
 

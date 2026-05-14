@@ -57,3 +57,22 @@ class opq_basic_feb_packet_contract_test extends opq_no_drop_test_base;
     seq.start(env.vseqr);
   endtask
 endclass
+
+class opq_basic_rn001_board_shape_test extends opq_no_drop_test_base;
+  `uvm_component_utils(opq_basic_rn001_board_shape_test)
+
+  function new(string name = "opq_basic_rn001_board_shape_test", uvm_component parent = null);
+    super.new(name, parent);
+  endfunction
+
+  virtual function time dwell_time();
+    return 2ms;
+  endfunction
+
+  virtual task run_main_sequence();
+    opq_rn001_board_shape_virtual_sequence seq;
+    csr_clear_counters();
+    seq = opq_rn001_board_shape_virtual_sequence::type_id::create("seq");
+    seq.start(env.vseqr);
+  endtask
+endclass

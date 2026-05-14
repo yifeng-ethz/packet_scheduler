@@ -26,4 +26,9 @@ if [[ "$#" -eq 0 ]]; then
   fi
 fi
 
+if [[ " ${VSIM_PLUSARGS:-} " != *" +OPQ_STRICT_PACKET_FORMAT "* ]]; then
+  VSIM_PLUSARGS="${VSIM_PLUSARGS:-} +OPQ_STRICT_PACKET_FORMAT"
+fi
+export VSIM_PLUSARGS
+
 DUT_IMPL="${DUT_IMPL}" "${SCRIPT_DIR}/run_uvm.sh" "$@"

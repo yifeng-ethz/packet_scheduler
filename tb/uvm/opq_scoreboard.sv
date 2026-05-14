@@ -61,12 +61,15 @@ class opq_scoreboard extends uvm_component;
   bit [47:0] ingress_accounting_ts[OPQ_N_LANE];
   bit [7:0]  ingress_current_shd  [OPQ_N_LANE];
   bit [15:0] ingress_frame_subh_cnt[OPQ_N_LANE];
+  bit [15:0] ingress_frame_hit_cnt[OPQ_N_LANE];
   bit [15:0] ingress_current_pkg_cnt[OPQ_N_LANE];
   bit        ingress_subheaders_seen [OPQ_N_LANE];
   int        ingress_header_idx   [OPQ_N_LANE];
   int        ingress_hits_pending [OPQ_N_LANE];
   bit        ingress_ignore_hits_pending [OPQ_N_LANE];
   bit        ingress_have_frame_meta [OPQ_N_LANE];
+  int unsigned ingress_observed_subh_cnt[OPQ_N_LANE];
+  int unsigned ingress_observed_hit_cnt [OPQ_N_LANE];
   opq_frame_meta_t ingress_frame_meta [OPQ_N_LANE];
 
   bit        egress_in_packet;
@@ -124,13 +127,29 @@ class opq_scoreboard extends uvm_component;
     ingress_accounting_ts[lane_id] = '0;
     ingress_current_shd[lane_id] = '0;
     ingress_frame_subh_cnt[lane_id] = '0;
+    ingress_frame_hit_cnt[lane_id] = '0;
     ingress_current_pkg_cnt[lane_id] = '0;
     ingress_subheaders_seen[lane_id] = 1'b0;
     ingress_header_idx[lane_id] = -1;
     ingress_hits_pending[lane_id] = 0;
     ingress_ignore_hits_pending[lane_id] = 1'b0;
     ingress_have_frame_meta[lane_id] = 1'b0;
+    ingress_observed_subh_cnt[lane_id] = 0;
+    ingress_observed_hit_cnt[lane_id] = 0;
     ingress_frame_meta[lane_id] = '{default: '0};
+  endfunction
+
+  function automatic void strict_packet_error(
+    string       what,
+    opq_beat_item beat
+  );
+    if (!cfg.strict_packet_format) begin
+      return;
+    end
+    `uvm_error(get_type_name(), $sformatf(
+      "%s data=0x%09h datak=0x%1h sop=%0b eop=%0b err=0x%0h",
+      what, beat.data, beat.data[35:32], beat.sop, beat.eop, beat.error
+    ))
   endfunction
 
   function automatic int unsigned accepted_frame_subh_count(opq_frame_item frame);
@@ -564,13 +583,18 @@ class opq_scoreboard extends uvm_component;
         ingress_have_frame_meta[lane_id] = 1'b0;
         ingress_frame_ts[lane_id] = '0;
         ingress_frame_subh_cnt[lane_id] = '0;
+        ingress_frame_hit_cnt[lane_id] = '0;
         ingress_current_pkg_cnt[lane_id] = '0;
       end else begin
         ingress_frame_meta[lane_id] = pending_ingress_frames[lane_id].pop_front();
         ingress_have_frame_meta[lane_id] = 1'b1;
         ingress_frame_ts[lane_id] = ingress_frame_meta[lane_id].frame_ts_full;
         ingress_frame_subh_cnt[lane_id] = ingress_frame_meta[lane_id].subh_cnt;
+        ingress_frame_hit_cnt[lane_id] = ingress_frame_meta[lane_id].hit_cnt;
         ingress_current_pkg_cnt[lane_id] = ingress_frame_meta[lane_id].pkg_cnt;
+      end
+      if (cfg.strict_packet_format && beat.eop) begin
+        strict_packet_error($sformatf("Ingress lane %0d preamble asserted eop", lane_id), beat);
       end
       ingress_header_idx[lane_id] = 0;
       ingress_hits_pending[lane_id] = 0;
@@ -578,10 +602,32 @@ class opq_scoreboard extends uvm_component;
       ingress_current_ts[lane_id] = ingress_frame_ts[lane_id];
       ingress_accounting_ts[lane_id] = ingress_frame_ts[lane_id];
       ingress_subheaders_seen[lane_id] = 1'b0;
+      ingress_observed_subh_cnt[lane_id] = 0;
+      ingress_observed_hit_cnt[lane_id] = 0;
       return;
     end
 
     if (ingress_header_idx[lane_id] >= 0) begin
+      if (cfg.strict_packet_format) begin
+        if (datak != 4'b0000) begin
+          strict_packet_error($sformatf(
+            "Ingress lane %0d header word %0d carried datak",
+            lane_id, ingress_header_idx[lane_id]
+          ), beat);
+        end
+        if (beat.sop) begin
+          strict_packet_error($sformatf(
+            "Ingress lane %0d header word %0d asserted sop",
+            lane_id, ingress_header_idx[lane_id]
+          ), beat);
+        end
+        if (beat.eop) begin
+          strict_packet_error($sformatf(
+            "Ingress lane %0d header word %0d asserted eop",
+            lane_id, ingress_header_idx[lane_id]
+          ), beat);
+        end
+      end
       case (ingress_header_idx[lane_id])
         0: begin
           if (cfg.check_feb_contract && ingress_have_frame_meta[lane_id] &&
@@ -625,7 +671,6 @@ class opq_scoreboard extends uvm_component;
 
       if (ingress_header_idx[lane_id] == 3) begin
         ingress_header_idx[lane_id] = -1;
-        ingress_have_frame_meta[lane_id] = 1'b0;
       end else begin
         ingress_header_idx[lane_id]++;
       end
@@ -683,6 +728,7 @@ class opq_scoreboard extends uvm_component;
             trace.hit_word
           );
         end
+        ingress_observed_hit_cnt[lane_id]++;
       end
       ingress_hits_pending[lane_id]--;
       if (ingress_hits_pending[lane_id] == 0) begin
@@ -692,6 +738,21 @@ class opq_scoreboard extends uvm_component;
     end
 
     if (datak == 4'b0001 && data32[7:0] == K237) begin
+      if (cfg.strict_packet_format) begin
+        if (beat.sop) begin
+          strict_packet_error($sformatf("Ingress lane %0d subheader asserted sop", lane_id), beat);
+        end
+        if (beat.eop) begin
+          strict_packet_error($sformatf("Ingress lane %0d subheader asserted eop", lane_id), beat);
+        end
+        if (ingress_have_frame_meta[lane_id] &&
+            (ingress_observed_subh_cnt[lane_id] >= ingress_frame_subh_cnt[lane_id])) begin
+          strict_packet_error($sformatf(
+            "Ingress lane %0d observed too many subheaders observed=%0d declared=%0d",
+            lane_id, ingress_observed_subh_cnt[lane_id] + 1, ingress_frame_subh_cnt[lane_id]
+          ), beat);
+        end
+      end
       ingress_current_shd[lane_id] = data32[31:24];
       ingress_current_ts[lane_id] = extend_subheader_ts(
         ingress_current_ts[lane_id],
@@ -706,6 +767,39 @@ class opq_scoreboard extends uvm_component;
       ingress_subheaders_seen[lane_id] = 1'b1;
       ingress_hits_pending[lane_id] = data32[23:8];
       ingress_ignore_hits_pending[lane_id] = beat.error[1];
+      ingress_observed_subh_cnt[lane_id]++;
+      return;
+    end
+
+    if (datak == 4'b0001 && data32[7:0] == K284) begin
+      if (cfg.strict_packet_format) begin
+        if (beat.sop) begin
+          strict_packet_error($sformatf("Ingress lane %0d trailer asserted sop", lane_id), beat);
+        end
+        if (!beat.eop) begin
+          strict_packet_error($sformatf("Ingress lane %0d trailer missing eop", lane_id), beat);
+        end
+        if (ingress_have_frame_meta[lane_id] &&
+            (ingress_observed_subh_cnt[lane_id] != ingress_frame_subh_cnt[lane_id])) begin
+          strict_packet_error($sformatf(
+            "Ingress lane %0d subheader count mismatch declared=%0d observed=%0d",
+            lane_id, ingress_frame_subh_cnt[lane_id], ingress_observed_subh_cnt[lane_id]
+          ), beat);
+        end
+        if (ingress_have_frame_meta[lane_id] &&
+            (ingress_observed_hit_cnt[lane_id] != ingress_frame_hit_cnt[lane_id])) begin
+          strict_packet_error($sformatf(
+            "Ingress lane %0d hit count mismatch declared=%0d observed=%0d",
+            lane_id, ingress_frame_hit_cnt[lane_id], ingress_observed_hit_cnt[lane_id]
+          ), beat);
+        end
+      end
+      reset_ingress_lane(lane_id);
+      return;
+    end
+
+    if (cfg.strict_packet_format) begin
+      strict_packet_error($sformatf("Ingress lane %0d unexpected in-frame word", lane_id), beat);
     end
   endfunction
 
@@ -728,6 +822,29 @@ class opq_scoreboard extends uvm_component;
     end
 
     if (egress_header_idx >= 0) begin
+      if (cfg.strict_packet_format) begin
+        if (egress_header_idx == 0) begin
+          if (!beat.sop) begin
+            strict_packet_error("Egress preamble missing sop", beat);
+          end
+          if (beat.eop) begin
+            strict_packet_error("Egress preamble asserted eop", beat);
+          end
+          if (!((datak == 4'b0001) && (data32[7:0] == K285))) begin
+            strict_packet_error("Egress header word 0 is not K28.5 preamble", beat);
+          end
+        end else begin
+          if (datak != 4'b0000) begin
+            strict_packet_error($sformatf("Egress header word %0d carried datak", egress_header_idx), beat);
+          end
+          if (beat.sop) begin
+            strict_packet_error($sformatf("Egress header word %0d asserted sop", egress_header_idx), beat);
+          end
+          if (beat.eop) begin
+            strict_packet_error($sformatf("Egress header word %0d asserted eop", egress_header_idx), beat);
+          end
+        end
+      end
       case (egress_header_idx)
         0: begin
           if (datak == 4'b0001 && data32[7:0] == K285) begin
@@ -784,11 +901,27 @@ class opq_scoreboard extends uvm_component;
         end
         actual_egress_hit_cnt++;
       end
+      if (cfg.strict_packet_format) begin
+        if (beat.sop) begin
+          strict_packet_error("Egress hit asserted sop", beat);
+        end
+        if (beat.eop) begin
+          strict_packet_error("Egress hit asserted eop before trailer", beat);
+        end
+      end
       egress_hits_pending--;
       return;
     end
 
     if (datak == 4'b0001 && data32[7:0] == K237) begin
+      if (cfg.strict_packet_format) begin
+        if (beat.sop) begin
+          strict_packet_error("Egress subheader asserted sop", beat);
+        end
+        if (beat.eop) begin
+          strict_packet_error("Egress subheader asserted eop", beat);
+        end
+      end
       egress_current_shd = data32[31:24];
       egress_current_ts = extend_subheader_ts(
         egress_current_ts,
@@ -802,8 +935,20 @@ class opq_scoreboard extends uvm_component;
     end
 
     if (datak == 4'b0001 && data32[7:0] == K284) begin
+      if (cfg.strict_packet_format) begin
+        if (beat.sop) begin
+          strict_packet_error("Egress trailer asserted sop", beat);
+        end
+        if (!beat.eop) begin
+          strict_packet_error("Egress trailer missing eop", beat);
+        end
+      end
       reset_egress_state();
       return;
+    end
+
+    if (cfg.strict_packet_format) begin
+      strict_packet_error("Egress unexpected in-frame word", beat);
     end
   endfunction
 
@@ -1256,6 +1401,12 @@ class opq_scoreboard extends uvm_component;
 
     if (cfg.require_egress_preamble && !egress_preamble_seen) begin
       `uvm_error(get_type_name(), "No egress preamble (K285) observed")
+    end
+    if (cfg.strict_packet_format && egress_in_packet) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "Egress packet did not terminate cleanly header_idx=%0d hits_pending=%0d",
+        egress_header_idx, egress_hits_pending
+      ))
     end
     if (sop_count < cfg.min_sop_count) begin
       `uvm_error(get_type_name(), $sformatf(

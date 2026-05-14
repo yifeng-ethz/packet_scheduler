@@ -1,10 +1,10 @@
 //------------------------------------------------------------------------------
 // ordered_priority_queue_monolithic_page_allocator
 // Author  : Yifeng Wang (original OPQ) / native SV staging by Codex
-// Version : 26.4.13
-// Date    : 20260428
-// Change  : Permit forward-serial rebase at the same frame timestamp after
-//           masked/drop-only frames so mixed no-restart 4-lane soaks reopen.
+// Version : 26.4.14
+// Date    : 20260514
+// Change  : Reset merged-frame hit room to N_SHD*N_HIT so full-width frames
+//           are not post-dropped at the per-subheader N_HIT limit.
 //------------------------------------------------------------------------------
 
 module ordered_priority_queue_monolithic_page_allocator #(
@@ -154,7 +154,7 @@ module ordered_priority_queue_monolithic_page_allocator #(
 `ifdef OPQ_DEBUG_BYPASS_SUBFRAME_HIT_LIMIT
   localparam frame_hit_cnt_t FRAME_HIT_ROOM_RESET = {MAX_HIT_CNT_BITS{1'b1}};
 `else
-  localparam frame_hit_cnt_t FRAME_HIT_ROOM_RESET = frame_hit_cnt_t'(N_HIT);
+  localparam frame_hit_cnt_t FRAME_HIT_ROOM_RESET = frame_hit_cnt_t'(FRAME_HIT_ROOM_LIMIT);
 `endif
   typedef logic [PAGE_LENGTH_WIDTH-1:0] page_length_t;
 

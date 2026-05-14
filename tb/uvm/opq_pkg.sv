@@ -468,6 +468,7 @@ package opq_pkg;
   class opq_scoreboard_cfg extends uvm_object;
     bit check_hit_integrity;
     bit check_feb_contract;
+    bit strict_packet_format;
     bit require_egress_preamble;
     bit allow_drop_accounting;
     bit allow_unmatched_ingress_preamble;
@@ -476,6 +477,7 @@ package opq_pkg;
     `uvm_object_utils_begin(opq_scoreboard_cfg)
       `uvm_field_int(check_hit_integrity, UVM_DEFAULT)
       `uvm_field_int(check_feb_contract, UVM_DEFAULT)
+      `uvm_field_int(strict_packet_format, UVM_DEFAULT)
       `uvm_field_int(require_egress_preamble, UVM_DEFAULT)
       `uvm_field_int(allow_drop_accounting, UVM_DEFAULT)
       `uvm_field_int(allow_unmatched_ingress_preamble, UVM_DEFAULT)
@@ -486,6 +488,7 @@ package opq_pkg;
       super.new(name);
       check_hit_integrity = 1'b1;
       check_feb_contract = 1'b1;
+      strict_packet_format = 1'b0;
       require_egress_preamble = 1'b0;
       allow_drop_accounting = 1'b0;
       allow_unmatched_ingress_preamble = 1'b0;

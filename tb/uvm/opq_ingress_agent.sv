@@ -177,11 +177,13 @@ class opq_ingress_monitor extends uvm_component;
   int unsigned n_frames_captured;
   int unsigned n_frame_capture_err;
   int unsigned n_orphan_beats;
+  bit strict_packet_format;
 
   function new(string name = "opq_ingress_monitor", uvm_component parent = null);
     super.new(name, parent);
     ap = new("ap", this);
     frame_ap = new("frame_ap", this);
+    strict_packet_format = 1'b0;
     reset_frame_state();
   endfunction
 
@@ -210,7 +212,11 @@ class opq_ingress_monitor extends uvm_component;
 
   function automatic void note_frame_capture_err(string msg);
     n_frame_capture_err++;
-    `uvm_warning(get_type_name(), $sformatf("lane%0d frame-capture %s", lane_id, msg))
+    if (strict_packet_format) begin
+      `uvm_error(get_type_name(), $sformatf("lane%0d frame-capture %s", lane_id, msg))
+    end else begin
+      `uvm_warning(get_type_name(), $sformatf("lane%0d frame-capture %s", lane_id, msg))
+    end
   endfunction
 
   function automatic void start_frame(opq_beat_item beat);
@@ -245,19 +251,40 @@ class opq_ingress_monitor extends uvm_component;
   function automatic void consume_frame_beat(opq_beat_item beat);
     if (curr_frame == null) begin
       if (is_preamble(beat)) begin
+        if (beat.eop) begin
+          note_frame_capture_err("preamble asserted eop");
+        end
         start_frame(beat);
       end else begin
         n_orphan_beats++;
+        if (strict_packet_format) begin
+          `uvm_error(get_type_name(), $sformatf(
+            "lane%0d orphan beat data=0x%09h datak=0x%1h sop=%0b eop=%0b",
+            lane_id, beat.data, beat.data[35:32], beat.sop, beat.eop
+          ))
+        end
       end
       return;
     end
 
     if (is_preamble(beat)) begin
+      if (beat.eop) begin
+        note_frame_capture_err("preamble asserted eop");
+      end
       start_frame(beat);
       return;
     end
 
     if (header_words_seen < OPQ_FRAME_HDR_AUX_WORDS) begin
+      if (beat.data[35:32] != 4'b0000) begin
+        note_frame_capture_err($sformatf(
+          "header word %0d carried datak=0x%1h data=0x%08h",
+          header_words_seen, beat.data[35:32], beat.data[31:0]
+        ));
+      end
+      if (beat.sop) begin
+        note_frame_capture_err($sformatf("header word %0d asserted sop", header_words_seen));
+      end
       case (header_words_seen)
         0: curr_frame.frame_ts[47:16] = beat.data[31:0];
         1: begin
@@ -275,6 +302,9 @@ class opq_ingress_monitor extends uvm_component;
     end
 
     if (is_trailer(beat)) begin
+      if (beat.sop) begin
+        note_frame_capture_err("trailer asserted sop");
+      end
       if (hit_words_left != 0) begin
         note_frame_capture_err("trailer arrived while hit payloads were still pending");
       end
@@ -295,6 +325,9 @@ class opq_ingress_monitor extends uvm_component;
       curr_frame.subheaders.push_back(shd);
       active_subheader_idx = curr_frame.subheaders.size() - 1;
       hit_words_left = beat.data[23:8];
+      if (beat.sop) begin
+        note_frame_capture_err("subheader asserted sop inside whole-frame packet");
+      end
       if (beat.eop) begin
         note_frame_capture_err("subheader asserted eop before trailer");
       end
@@ -317,6 +350,9 @@ class opq_ingress_monitor extends uvm_component;
       hit_desc.payload_word = beat.data[31:0];
       curr_frame.subheaders[active_subheader_idx].hits.push_back(hit_desc);
       hit_words_left--;
+      if (beat.sop) begin
+        note_frame_capture_err("hit beat asserted sop inside whole-frame packet");
+      end
       if (beat.eop) begin
         note_frame_capture_err("hit beat asserted eop before trailer");
       end
@@ -324,6 +360,12 @@ class opq_ingress_monitor extends uvm_component;
     end
 
     n_orphan_beats++;
+    if (strict_packet_format) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "lane%0d unexpected in-frame beat data=0x%09h datak=0x%1h sop=%0b eop=%0b",
+        lane_id, beat.data, beat.data[35:32], beat.sop, beat.eop
+      ))
+    end
   endfunction
 
   task run_phase(uvm_phase phase);
@@ -331,6 +373,7 @@ class opq_ingress_monitor extends uvm_component;
     bit trace_first_beats;
 
     trace_first_beats = $test$plusargs("OPQ_TRACE_INGRESS_FIRST");
+    strict_packet_format = $test$plusargs("OPQ_STRICT_PACKET_FORMAT");
     forever begin
       @(vif.mon_cb);
       if (!vif.mon_cb.reset && vif.mon_cb.valid[0]) begin
@@ -359,6 +402,18 @@ class opq_ingress_monitor extends uvm_component;
       "lane%0d monitored_frames=%0d orphan_beats=%0d capture_err=%0d",
       lane_id, n_frames_captured, n_orphan_beats, n_frame_capture_err
     ), UVM_LOW)
+    if (strict_packet_format && (curr_frame != null)) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "lane%0d ended simulation with an unterminated frame header_words=%0d hit_words_left=%0d",
+        lane_id, header_words_seen, hit_words_left
+      ))
+    end
+    if (strict_packet_format && (n_orphan_beats != 0)) begin
+      `uvm_error(get_type_name(), $sformatf(
+        "lane%0d saw %0d orphan beats while strict packet format was enabled",
+        lane_id, n_orphan_beats
+      ))
+    end
   endfunction
 endclass
 

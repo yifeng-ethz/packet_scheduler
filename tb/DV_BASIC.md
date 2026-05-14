@@ -9,7 +9,7 @@
 | B001 | D | live UVM | `opq_basic_smoke_test` | healthy two-lane bring-up spine with long frames, zero backpressure, and full scoreboard | `wr_hdr==rd_hdr`, `wr_shd==rd_shd`, `wr_hit==rd_hit`, no `ft_drop_*` beats, `unexplained=0` per lane |
 | B002 | D | live UVM | `opq_basic_ts_boundary_test` | sparse/boundary subheader-byte timestamp values exercising the `extend_subheader_ts` wrap predicate (`shd_byte < running_ts[11:4]`) | reconstructed 48-bit timestamp matches reference for both no-wrap and wrap samples; no ordering inversion on egress |
 | B003 | D | live UVM | `opq_basic_subheader_shape_test` | mixed empty and non-empty subheader sequence inside one frame on the healthy path | zero-hit subheaders still advance `running_shd_cnt`; data-bearing subheaders carry the correct `hit_cnt` body length |
-| B004 | D | live UVM | `opq_basic_feb_packet_contract_test` | native FEB whole-frame packet contract with monitor-side reconstruction from real DUT pins | preamble/body/trailer framing, SOP on K285 beat, EOP on K284 beat, one ticket per frame closure |
+| B004 | D | live UVM | `opq_basic_feb_packet_contract_test` | native FEB whole-frame packet contract with monitor-side reconstruction from real DUT pins | exact datak/SOP/EOP placement for preamble/header/subheader/body/trailer, one ticket per frame closure |
 | B005 | D | live UVM | `opq_basic_single_active_lane_test` | lane 0 produces hits while lane 1 emits legal empty-frame cadence only | lane 0 ledger closes normally, lane 1 produces zero hits and non-zero header/subheader counters |
 | B006 | D | live UVM | `opq_basic_single_active_lane_lane1_test` | mirror of B005 with lane 1 as the producer and lane 0 on empty-frame cadence | lane 1 ledger closes normally, lane 0 empty-lane accounting clean |
 | B007 | D | live UVM | `opq_basic_single_active_lane_dense_test` | denser single-lane subheader and hit packing without leaving the healthy no-drop path | lane ledger closes, `ft_drop_*=0`, basic presenter `resident_hold` never engaged |
@@ -138,7 +138,7 @@
 | B125 | D | live UVM | none | full run quiescence: `STATUS[16]=page_allocator_active` returns to 0 within 1 cycle of last frame closure | page allocator returns to IDLE; catches stuck allocator |
 | B126 | D | live UVM | none | end-to-end: one lane, one frame, one subheader, one hit; final global `wr_hdr/shd/hit` equal `rd_hdr/shd/hit` | balanced ledger on the smallest healthy frame; catches minimal-frame regression |
 | B127 | D | live UVM | none | end-to-end: one lane, one frame, one subheader, zero hits (empty subheader frame) | egress produces SOP+EOP framing with zero hit beats; wr_hit=rd_hit=0; catches zero-hit frame corruption |
-| B128 | D | live UVM | none | end-to-end: one lane, one frame, `OPQ_N_SHD = 256` subheaders (max-width subheader sweep on default build) | all 256 subheaders retire; RD_SHD delta == 256; catches subheader cap miscount |
+| B128 | D | live UVM | `opq_basic_rn001_board_shape_test` | end-to-end: RN.BASIC.001-shaped 4-lane whole-frame packets at configured `OPQ_N_SHD` width | strict packet-format checks plus no-drop ledger closure for full-width board-like frames |
 | B129 | D | live UVM | none | end-to-end: one lane, one frame, `N_HIT = 255` hits on a single subheader (per-subheader max hit count) | all 255 hits retire; RD_HIT delta == 255; catches hit cap miscount |
 
 ---

@@ -589,6 +589,72 @@ class opq_basic_feb_packet_virtual_sequence extends opq_virtual_sequence_base;
   endtask
 endclass
 
+class opq_rn001_board_shape_virtual_sequence extends opq_virtual_sequence_base;
+  `uvm_object_utils(opq_rn001_board_shape_virtual_sequence)
+
+  int unsigned frame_count;
+  int unsigned hit_count_per_subheader;
+  int unsigned inter_frame_gap_cycles;
+
+  function new(string name = "opq_rn001_board_shape_virtual_sequence");
+    super.new(name);
+    frame_count = 4;
+    hit_count_per_subheader = 1;
+    inter_frame_gap_cycles = OPQ_MIN_SOP_GAP_CYCLES;
+  endfunction
+
+  task body();
+    opq_frame_item lane_frames[OPQ_N_LANE][$];
+    bit [47:0] ts_step;
+
+    void'($value$plusargs("OPQ_RN001_FRAME_COUNT=%d", frame_count));
+    void'($value$plusargs("OPQ_RN001_HITS_PER_SUBHEADER=%d", hit_count_per_subheader));
+    if (frame_count == 0) begin
+      `uvm_fatal(get_type_name(), "OPQ_RN001_FRAME_COUNT must be non-zero")
+    end
+    if (hit_count_per_subheader > OPQ_N_HIT) begin
+      `uvm_fatal(get_type_name(), $sformatf(
+        "OPQ_RN001_HITS_PER_SUBHEADER=%0d exceeds OPQ_N_HIT=%0d",
+        hit_count_per_subheader, OPQ_N_HIT
+      ))
+    end
+
+    ts_step = OPQ_FRAME_DURATION_TS_TICKS;
+    for (int lane = 0; lane < OPQ_N_LANE; lane++) begin
+      int unsigned feb_id;
+
+      feb_id = (lane < 2) ? 16'h0001 : 16'h0002;
+      for (int frame_idx = 0; frame_idx < frame_count; frame_idx++) begin
+        opq_frame_item tr;
+        int unsigned pre_gap_cycles;
+        int unsigned shd_ts_base;
+        bit [31:0] payload_seed;
+
+        pre_gap_cycles = (frame_idx == 0) ? 0 : inter_frame_gap_cycles;
+        shd_ts_base = frame_idx * OPQ_N_SHD;
+        payload_seed = 32'h5200_0000 + (lane << 24) + frame_idx;
+        tr = build_dense_frame(
+          $sformatf("lane%0d_rn001_shape_%0d", lane, frame_idx),
+          lane,
+          ts_step * frame_idx,
+          frame_idx[15:0],
+          OPQ_N_SHD,
+          shd_ts_base,
+          pre_gap_cycles,
+          hit_count_per_subheader,
+          payload_seed
+        );
+        tr.whole_frame_packet = 1'b1;
+        tr.feb_id = feb_id[15:0];
+        lane_frames[lane].push_back(tr);
+      end
+    end
+
+    apply_absolute_frame_slot_schedule(lane_frames, inter_frame_gap_cycles);
+    start_lane_frame_matrix(lane_frames);
+  endtask
+endclass
+
 class opq_whole_frame_skew_virtual_sequence extends opq_virtual_sequence_base;
   `uvm_object_utils(opq_whole_frame_skew_virtual_sequence)
 
