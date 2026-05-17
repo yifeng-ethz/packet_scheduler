@@ -116,6 +116,9 @@ All registers are word-addressed through the `csr` Avalon-MM slave
 identity header. The same relative aperture is mirrored in
 `script/ordered_priority_queue.svd`; regenerate it with
 `tclsh script/ordered_priority_queue_cmsis_svd.tcl` after CSR-map edits.
+The SWB fixed-profile native-SV 4-lane wrapper has its own SVD at
+`script/ordered_priority_queue_native_sv_fixed4.svd`; regenerate it with
+`tclsh script/ordered_priority_queue_native_sv_fixed4_cmsis_svd.tcl`.
 
 | Word | Name | Access | Description |
 |------|------|--------|-------------|
@@ -132,6 +135,19 @@ identity header. The same relative aperture is mirrored in
 | `0x040 + lane*0x10 + 0..A` | Lane counters | RO | Per-lane write / read / drop counters plus live lane and ticket free-credit counters. |
 | `0x040 + lane*0x10 + B` | `DRR_ALLOWANCE` | RW | Per-lane DRR refill allowance in page words per participating subheader. Writing also reseeds the live quantum. |
 | `0x040 + lane*0x10 + C..F` | DRR live / stats | RO | Live DRR deficit budget plus per-lane block-grant, served-beat, and defer-round counters. |
+
+### Fixed4 Parser-Ingress Extension
+
+The SWB fixed-profile native-SV 4-lane wrapper advertises `CAP[6]` for
+parser-visible ingress counters. These counters are sampled after the OPQ lane
+mask and before allocator, credit, frame-table, or drop handling, so software
+can derive the observed `N_SHD` from `INGRESS_SUBFRAME_CNT / INGRESS_FRAME_CNT`
+without being confused by later loss accounting.
+
+| Word | Name | Access | Description |
+|------|------|--------|-------------|
+| `0x140 + lane` | `INGRESS_FRAME_CNT` | RO | Saturating parser-visible legal frame SOP count per fixed4 lane. |
+| `0x150 + lane` | `INGRESS_SUBFRAME_CNT` | RO | Saturating parser-visible legal subframe/subheader count per fixed4 lane, including zero-hit subheaders. |
 
 ### Runtime Configuration Workflow
 

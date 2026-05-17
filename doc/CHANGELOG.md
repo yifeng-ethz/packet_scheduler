@@ -9,6 +9,30 @@ Author: Yifeng Wang (yifenwan@phys.ethz.ch)
 > `qverify` / `znformal` with simulation stress fallback only when the
 > Siemens formal binaries are not present on the host.
 
+## 26.5.2.0517
+
+- **RTL / CSR Observability**: added fixed4 native-SV per-lane
+  parser-visible ingress frame and subframe counters. The counters saturate at
+  32 bits, count after the OPQ lane mask and before allocator / credit / drop
+  handling, and expose the observed `N_SHD` ratio at `0x140 + lane` and
+  `0x150 + lane`.
+- **Packaging / SVD**: bumped the fixed4 native-SV package patch version to
+  `26.5.2.0517`, added `CAP[6]` for ingress parser counters, and generated
+  `script/ordered_priority_queue_native_sv_fixed4.svd` from the new fixed4 SVD
+  generator.
+- **DV**: extended the SWB `OPQ_NATIVE_LANE2_REPLAY` directed test to read the
+  new parser-ingress CSRs and require `frames == FRAME_COUNT` plus
+  `subframes == FRAME_COUNT * OPQ_N_SHD` on each active lane.
+- **RTL / Native-SV Timing Closure**: registered the page allocator
+  single-active-lane fast-zero commit before ticket-pointer advance and page
+  write. This removes the current-ticket timestamp compare from the next
+  ticket-FIFO read-address cone without changing the parser-ingress CSR map.
+- **Standalone Synthesis Evidence**: reran the fixed4 4-lane Arria 10
+  standalone harness with the CSR wrapper included. The compile closes at
+  `275 MHz`: slow-100 setup slack is `+0.232 ns`, worst reported hold is
+  `+0.012 ns`, slow-100 Fmax is `293.77 MHz`, and usage is `9,548` ALMs,
+  `9,866` registers, and `187` M20Ks.
+
 ## 26.5.1.0509
 
 - **RTL / CSR Observability**: added handle FIFO overflow provisioning status

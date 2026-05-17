@@ -1,0 +1,1611 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<device schemaVersion="1.3" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" xs:noNamespaceSchemaLocation="CMSIS-SVD.xsd">
+  <vendor>Mu3e</vendor>
+  <vendorID>MU3E</vendorID>
+  <name>MU3E_ORDERED_PRIORITY_QUEUE_NATIVE_SV_FIXED4</name>
+  <series>MU3E_FPGA_IP</series>
+  <version>26.5.3.0517</version>
+  <description>CMSIS-SVD description of the fixed-profile 4-lane native-SV OPQ CSR aperture used by the SWB integration. BaseAddress is 0 because this file describes the relative IP aperture; system integration supplies the live slave base address.</description>
+  <addressUnitBits>8</addressUnitBits>
+  <width>32</width>
+  <size>32</size>
+  <access>read-write</access>
+  <resetValue>0x00000000</resetValue>
+  <resetMask>0xFFFFFFFF</resetMask>
+  <peripherals>
+    <peripheral>
+      <name>ORDERED_PRIORITY_QUEUE_FIXED4_CSR</name>
+      <description>Relative CSR aperture for the fixed4 native-SV ordered priority queue wrapper. Register offsets are byte offsets matching the RTL word-addressed Avalon-MM map multiplied by four.</description>
+      <groupName>MU3E_DATA_PATH</groupName>
+      <baseAddress>0x0</baseAddress>
+      <addressBlock>
+        <offset>0x0</offset>
+        <size>0x800</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>UID</name>
+          <description>Software-visible IP identifier. Default ASCII &quot;OPQM&quot;.</description>
+          <addressOffset>0x000</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x4F50514D</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Compile-time or integration-time UID word. Default ASCII &quot;OPQM&quot;.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>META</name>
+          <description>Read-multiplexed metadata word. Write [1:0] selects VERSION, DATE, GIT, or INSTANCE_ID; reads return the selected page payload.</description>
+          <addressOffset>0x004</addressOffset>
+          <access>read-write</access>
+          <fields>
+            <field>
+              <name>page_sel_or_payload</name>
+              <description>Writes use [1:0] as the metadata page selector; reads return the selected 32-bit payload.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE_MASK</name>
+          <description>Software lane mask applied at packet boundaries. Low four bits are implemented.</description>
+          <addressOffset>0x008</addressOffset>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>lane_mask</name>
+              <description>Bit i masks lane i after the in-flight packet drains.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>4</bitWidth>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>reserved</name>
+              <description>Reserved, read as zero.</description>
+              <bitOffset>4</bitOffset>
+              <bitWidth>28</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>CTRL</name>
+          <description>Write-only control pulses.</description>
+          <addressOffset>0x00C</addressOffset>
+          <access>write-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>clear_counters</name>
+              <description>Write one to clear all software-visible counters, including parser-visible ingress frame and subframe counters.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+              <access>read-write</access>
+              <modifiedWriteValues>oneToSet</modifiedWriteValues>
+            </field>
+            <field>
+              <name>reserved</name>
+              <description>Reserved; write zero for forward compatibility.</description>
+              <bitOffset>1</bitOffset>
+              <bitWidth>31</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>STATUS</name>
+          <description>Lane-mask shadow, busy flags, effective-mask status, and fixed lane count.</description>
+          <addressOffset>0x010</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>lane_mask_shadow</name>
+              <description>Software-programmed lane mask shadow.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>4</bitWidth>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>reserved0</name>
+              <description>Reserved, read as zero.</description>
+              <bitOffset>4</bitOffset>
+              <bitWidth>12</bitWidth>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>alloc_busy</name>
+              <description>Page allocator is active.</description>
+              <bitOffset>16</bitOffset>
+              <bitWidth>1</bitWidth>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>arbiter_busy</name>
+              <description>Page-RAM write-port arbiter is active.</description>
+              <bitOffset>17</bitOffset>
+              <bitWidth>1</bitWidth>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>presenter_busy</name>
+              <description>Egress presenter has a valid beat pending or in flight.</description>
+              <bitOffset>18</bitOffset>
+              <bitWidth>1</bitWidth>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>mask_effective</name>
+              <description>At least one lane is currently blocked at the packet-boundary mask gate.</description>
+              <bitOffset>19</bitOffset>
+              <bitWidth>1</bitWidth>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>n_lane</name>
+              <description>Instantiated lane count, fixed at four for this wrapper.</description>
+              <bitOffset>20</bitOffset>
+              <bitWidth>4</bitWidth>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>reserved1</name>
+              <description>Reserved, read as zero.</description>
+              <bitOffset>24</bitOffset>
+              <bitWidth>8</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>CAP</name>
+          <description>Capability summary and CSR lane-region geometry.</description>
+          <addressOffset>0x014</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x0400405F</resetValue>
+          <fields>
+            <field>
+              <name>uid_meta_header</name>
+              <description>Common Mu3e UID and META header is implemented.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>lane_mask_ctrl</name>
+              <description>Software lane masking is implemented.</description>
+              <bitOffset>1</bitOffset>
+              <bitWidth>1</bitWidth>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>per_lane_cntrs</name>
+              <description>Per-lane counters are implemented.</description>
+              <bitOffset>2</bitOffset>
+              <bitWidth>1</bitWidth>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>ft_cntrs</name>
+              <description>Frame-table counters are implemented.</description>
+              <bitOffset>3</bitOffset>
+              <bitWidth>1</bitWidth>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>drr_ctrl</name>
+              <description>DRR allowance programming and observability are implemented.</description>
+              <bitOffset>4</bitOffset>
+              <bitWidth>1</bitWidth>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>reserved0</name>
+              <description>Reserved, read as zero in the fixed4 wrapper.</description>
+              <bitOffset>5</bitOffset>
+              <bitWidth>1</bitWidth>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>ingress_parser_cntrs</name>
+              <description>Parser-visible frame and subframe counters are implemented at words 0x140 and 0x150.</description>
+              <bitOffset>6</bitOffset>
+              <bitWidth>1</bitWidth>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>reserved1</name>
+              <description>Reserved, read as zero.</description>
+              <bitOffset>7</bitOffset>
+              <bitWidth>1</bitWidth>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>lane_region_stride_words</name>
+              <description>Per-lane CSR region stride in 32-bit words. Current RTL returns 0x10.</description>
+              <bitOffset>8</bitOffset>
+              <bitWidth>8</bitWidth>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>lane_region_base_word</name>
+              <description>Base word address of the per-lane CSR region. Current RTL returns 0x40.</description>
+              <bitOffset>16</bitOffset>
+              <bitWidth>8</bitWidth>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>n_lane</name>
+              <description>Number of instantiated ingress lanes, fixed at four.</description>
+              <bitOffset>24</bitOffset>
+              <bitWidth>8</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>FT_WR_HDR</name>
+          <description>Headers committed into frame-table ownership.</description>
+          <addressOffset>0x20</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Headers committed into frame-table ownership.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>FT_WR_SHD</name>
+          <description>Subheaders committed into frame-table ownership.</description>
+          <addressOffset>0x24</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Subheaders committed into frame-table ownership.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>FT_WR_HIT</name>
+          <description>Hits committed into frame-table ownership.</description>
+          <addressOffset>0x28</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Hits committed into frame-table ownership.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>FT_RD_HDR</name>
+          <description>Headers retired through the egress presenter.</description>
+          <addressOffset>0x2C</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Headers retired through the egress presenter.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>FT_RD_SHD</name>
+          <description>Subheaders retired through the egress presenter.</description>
+          <addressOffset>0x30</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Subheaders retired through the egress presenter.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>FT_RD_HIT</name>
+          <description>Hits retired through the egress presenter.</description>
+          <addressOffset>0x34</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Hits retired through the egress presenter.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>FT_DROP_HDR</name>
+          <description>Headers dropped by frame-table overwrite or overwrite recovery.</description>
+          <addressOffset>0x38</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Headers dropped by frame-table overwrite or overwrite recovery.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>FT_DROP_SHD</name>
+          <description>Subheaders dropped by frame-table overwrite or overwrite recovery.</description>
+          <addressOffset>0x3C</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Subheaders dropped by frame-table overwrite or overwrite recovery.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>FT_DROP_HIT</name>
+          <description>Hits dropped by frame-table overwrite or overwrite recovery.</description>
+          <addressOffset>0x40</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Hits dropped by frame-table overwrite or overwrite recovery.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE0_WR_HDR_CNT</name>
+          <description>Headers accepted from ingress parsing.</description>
+          <addressOffset>0x100</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Headers accepted from ingress parsing.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE0_WR_SHD_CNT</name>
+          <description>Subheaders accepted from ingress parsing.</description>
+          <addressOffset>0x104</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Subheaders accepted from ingress parsing.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE0_WR_HIT_CNT</name>
+          <description>Hit words written into the lane FIFO.</description>
+          <addressOffset>0x108</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Hit words written into the lane FIFO.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE0_RD_HDR_CNT</name>
+          <description>Headers consumed by the page allocator.</description>
+          <addressOffset>0x10C</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Headers consumed by the page allocator.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE0_RD_SHD_CNT</name>
+          <description>Subheaders accepted into the merged page stream.</description>
+          <addressOffset>0x110</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Subheaders accepted into the merged page stream.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE0_RD_HIT_CNT</name>
+          <description>Hits accepted into the merged page stream.</description>
+          <addressOffset>0x114</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Hits accepted into the merged page stream.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE0_DROP_HDR_CNT</name>
+          <description>Headers dropped before frame-table ownership.</description>
+          <addressOffset>0x118</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Headers dropped before frame-table ownership.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE0_DROP_SHD_CNT</name>
+          <description>Subheaders dropped before frame-table ownership.</description>
+          <addressOffset>0x11C</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Subheaders dropped before frame-table ownership.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE0_DROP_HIT_CNT</name>
+          <description>Hits dropped before frame-table ownership.</description>
+          <addressOffset>0x120</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Hits dropped before frame-table ownership.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE0_LANE_FREE_CREDIT</name>
+          <description>Live lane-FIFO free-credit word.</description>
+          <addressOffset>0x124</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Live lane-FIFO free-credit word.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE0_TICKET_FREE_CREDIT</name>
+          <description>Live ticket-FIFO free-credit word.</description>
+          <addressOffset>0x128</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Live ticket-FIFO free-credit word.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE0_DRR_ALLOWANCE</name>
+          <description>Software-programmed DRR refill allowance in page words.</description>
+          <addressOffset>0x12C</addressOffset>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Software-programmed DRR refill allowance in page words.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>10</bitWidth>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>reserved</name>
+              <description>Reserved, read as zero.</description>
+              <bitOffset>10</bitOffset>
+              <bitWidth>22</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE0_DRR_QUANTUM_LIVE</name>
+          <description>Live DRR deficit budget.</description>
+          <addressOffset>0x130</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Live DRR deficit budget.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>10</bitWidth>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>reserved</name>
+              <description>Reserved, read as zero.</description>
+              <bitOffset>10</bitOffset>
+              <bitWidth>22</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE0_DRR_GRANT_CNT</name>
+          <description>Block-level arbiter grant count.</description>
+          <addressOffset>0x134</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Block-level arbiter grant count.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE0_DRR_BEAT_CNT</name>
+          <description>Page-RAM data beats served from this lane.</description>
+          <addressOffset>0x138</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Page-RAM data beats served from this lane.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE0_DRR_DEFER_CNT</name>
+          <description>Defer rounds while this lane requested service without enough budget.</description>
+          <addressOffset>0x13C</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Defer rounds while this lane requested service without enough budget.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE1_WR_HDR_CNT</name>
+          <description>Headers accepted from ingress parsing.</description>
+          <addressOffset>0x140</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Headers accepted from ingress parsing.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE1_WR_SHD_CNT</name>
+          <description>Subheaders accepted from ingress parsing.</description>
+          <addressOffset>0x144</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Subheaders accepted from ingress parsing.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE1_WR_HIT_CNT</name>
+          <description>Hit words written into the lane FIFO.</description>
+          <addressOffset>0x148</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Hit words written into the lane FIFO.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE1_RD_HDR_CNT</name>
+          <description>Headers consumed by the page allocator.</description>
+          <addressOffset>0x14C</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Headers consumed by the page allocator.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE1_RD_SHD_CNT</name>
+          <description>Subheaders accepted into the merged page stream.</description>
+          <addressOffset>0x150</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Subheaders accepted into the merged page stream.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE1_RD_HIT_CNT</name>
+          <description>Hits accepted into the merged page stream.</description>
+          <addressOffset>0x154</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Hits accepted into the merged page stream.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE1_DROP_HDR_CNT</name>
+          <description>Headers dropped before frame-table ownership.</description>
+          <addressOffset>0x158</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Headers dropped before frame-table ownership.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE1_DROP_SHD_CNT</name>
+          <description>Subheaders dropped before frame-table ownership.</description>
+          <addressOffset>0x15C</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Subheaders dropped before frame-table ownership.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE1_DROP_HIT_CNT</name>
+          <description>Hits dropped before frame-table ownership.</description>
+          <addressOffset>0x160</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Hits dropped before frame-table ownership.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE1_LANE_FREE_CREDIT</name>
+          <description>Live lane-FIFO free-credit word.</description>
+          <addressOffset>0x164</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Live lane-FIFO free-credit word.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE1_TICKET_FREE_CREDIT</name>
+          <description>Live ticket-FIFO free-credit word.</description>
+          <addressOffset>0x168</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Live ticket-FIFO free-credit word.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE1_DRR_ALLOWANCE</name>
+          <description>Software-programmed DRR refill allowance in page words.</description>
+          <addressOffset>0x16C</addressOffset>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Software-programmed DRR refill allowance in page words.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>10</bitWidth>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>reserved</name>
+              <description>Reserved, read as zero.</description>
+              <bitOffset>10</bitOffset>
+              <bitWidth>22</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE1_DRR_QUANTUM_LIVE</name>
+          <description>Live DRR deficit budget.</description>
+          <addressOffset>0x170</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Live DRR deficit budget.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>10</bitWidth>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>reserved</name>
+              <description>Reserved, read as zero.</description>
+              <bitOffset>10</bitOffset>
+              <bitWidth>22</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE1_DRR_GRANT_CNT</name>
+          <description>Block-level arbiter grant count.</description>
+          <addressOffset>0x174</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Block-level arbiter grant count.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE1_DRR_BEAT_CNT</name>
+          <description>Page-RAM data beats served from this lane.</description>
+          <addressOffset>0x178</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Page-RAM data beats served from this lane.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE1_DRR_DEFER_CNT</name>
+          <description>Defer rounds while this lane requested service without enough budget.</description>
+          <addressOffset>0x17C</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Defer rounds while this lane requested service without enough budget.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE2_WR_HDR_CNT</name>
+          <description>Headers accepted from ingress parsing.</description>
+          <addressOffset>0x180</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Headers accepted from ingress parsing.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE2_WR_SHD_CNT</name>
+          <description>Subheaders accepted from ingress parsing.</description>
+          <addressOffset>0x184</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Subheaders accepted from ingress parsing.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE2_WR_HIT_CNT</name>
+          <description>Hit words written into the lane FIFO.</description>
+          <addressOffset>0x188</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Hit words written into the lane FIFO.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE2_RD_HDR_CNT</name>
+          <description>Headers consumed by the page allocator.</description>
+          <addressOffset>0x18C</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Headers consumed by the page allocator.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE2_RD_SHD_CNT</name>
+          <description>Subheaders accepted into the merged page stream.</description>
+          <addressOffset>0x190</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Subheaders accepted into the merged page stream.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE2_RD_HIT_CNT</name>
+          <description>Hits accepted into the merged page stream.</description>
+          <addressOffset>0x194</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Hits accepted into the merged page stream.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE2_DROP_HDR_CNT</name>
+          <description>Headers dropped before frame-table ownership.</description>
+          <addressOffset>0x198</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Headers dropped before frame-table ownership.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE2_DROP_SHD_CNT</name>
+          <description>Subheaders dropped before frame-table ownership.</description>
+          <addressOffset>0x19C</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Subheaders dropped before frame-table ownership.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE2_DROP_HIT_CNT</name>
+          <description>Hits dropped before frame-table ownership.</description>
+          <addressOffset>0x1A0</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Hits dropped before frame-table ownership.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE2_LANE_FREE_CREDIT</name>
+          <description>Live lane-FIFO free-credit word.</description>
+          <addressOffset>0x1A4</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Live lane-FIFO free-credit word.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE2_TICKET_FREE_CREDIT</name>
+          <description>Live ticket-FIFO free-credit word.</description>
+          <addressOffset>0x1A8</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Live ticket-FIFO free-credit word.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE2_DRR_ALLOWANCE</name>
+          <description>Software-programmed DRR refill allowance in page words.</description>
+          <addressOffset>0x1AC</addressOffset>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Software-programmed DRR refill allowance in page words.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>10</bitWidth>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>reserved</name>
+              <description>Reserved, read as zero.</description>
+              <bitOffset>10</bitOffset>
+              <bitWidth>22</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE2_DRR_QUANTUM_LIVE</name>
+          <description>Live DRR deficit budget.</description>
+          <addressOffset>0x1B0</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Live DRR deficit budget.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>10</bitWidth>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>reserved</name>
+              <description>Reserved, read as zero.</description>
+              <bitOffset>10</bitOffset>
+              <bitWidth>22</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE2_DRR_GRANT_CNT</name>
+          <description>Block-level arbiter grant count.</description>
+          <addressOffset>0x1B4</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Block-level arbiter grant count.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE2_DRR_BEAT_CNT</name>
+          <description>Page-RAM data beats served from this lane.</description>
+          <addressOffset>0x1B8</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Page-RAM data beats served from this lane.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE2_DRR_DEFER_CNT</name>
+          <description>Defer rounds while this lane requested service without enough budget.</description>
+          <addressOffset>0x1BC</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Defer rounds while this lane requested service without enough budget.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE3_WR_HDR_CNT</name>
+          <description>Headers accepted from ingress parsing.</description>
+          <addressOffset>0x1C0</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Headers accepted from ingress parsing.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE3_WR_SHD_CNT</name>
+          <description>Subheaders accepted from ingress parsing.</description>
+          <addressOffset>0x1C4</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Subheaders accepted from ingress parsing.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE3_WR_HIT_CNT</name>
+          <description>Hit words written into the lane FIFO.</description>
+          <addressOffset>0x1C8</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Hit words written into the lane FIFO.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE3_RD_HDR_CNT</name>
+          <description>Headers consumed by the page allocator.</description>
+          <addressOffset>0x1CC</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Headers consumed by the page allocator.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE3_RD_SHD_CNT</name>
+          <description>Subheaders accepted into the merged page stream.</description>
+          <addressOffset>0x1D0</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Subheaders accepted into the merged page stream.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE3_RD_HIT_CNT</name>
+          <description>Hits accepted into the merged page stream.</description>
+          <addressOffset>0x1D4</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Hits accepted into the merged page stream.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE3_DROP_HDR_CNT</name>
+          <description>Headers dropped before frame-table ownership.</description>
+          <addressOffset>0x1D8</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Headers dropped before frame-table ownership.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE3_DROP_SHD_CNT</name>
+          <description>Subheaders dropped before frame-table ownership.</description>
+          <addressOffset>0x1DC</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Subheaders dropped before frame-table ownership.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE3_DROP_HIT_CNT</name>
+          <description>Hits dropped before frame-table ownership.</description>
+          <addressOffset>0x1E0</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Hits dropped before frame-table ownership.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE3_LANE_FREE_CREDIT</name>
+          <description>Live lane-FIFO free-credit word.</description>
+          <addressOffset>0x1E4</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Live lane-FIFO free-credit word.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE3_TICKET_FREE_CREDIT</name>
+          <description>Live ticket-FIFO free-credit word.</description>
+          <addressOffset>0x1E8</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Live ticket-FIFO free-credit word.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE3_DRR_ALLOWANCE</name>
+          <description>Software-programmed DRR refill allowance in page words.</description>
+          <addressOffset>0x1EC</addressOffset>
+          <access>read-write</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Software-programmed DRR refill allowance in page words.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>10</bitWidth>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>reserved</name>
+              <description>Reserved, read as zero.</description>
+              <bitOffset>10</bitOffset>
+              <bitWidth>22</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE3_DRR_QUANTUM_LIVE</name>
+          <description>Live DRR deficit budget.</description>
+          <addressOffset>0x1F0</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Live DRR deficit budget.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>10</bitWidth>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>reserved</name>
+              <description>Reserved, read as zero.</description>
+              <bitOffset>10</bitOffset>
+              <bitWidth>22</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE3_DRR_GRANT_CNT</name>
+          <description>Block-level arbiter grant count.</description>
+          <addressOffset>0x1F4</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Block-level arbiter grant count.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE3_DRR_BEAT_CNT</name>
+          <description>Page-RAM data beats served from this lane.</description>
+          <addressOffset>0x1F8</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Page-RAM data beats served from this lane.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LANE3_DRR_DEFER_CNT</name>
+          <description>Defer rounds while this lane requested service without enough budget.</description>
+          <addressOffset>0x1FC</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Defer rounds while this lane requested service without enough budget.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>INGRESS_FRAME_CNT_LANE0</name>
+          <description>Saturating parser-visible legal frame SOP count for this lane, counted after the OPQ lane mask and before allocator, credit, or drop decisions.</description>
+          <addressOffset>0x500</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Saturating parser-visible legal frame SOP count for this lane, counted after the OPQ lane mask and before allocator, credit, or drop decisions.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>INGRESS_FRAME_CNT_LANE1</name>
+          <description>Saturating parser-visible legal frame SOP count for this lane, counted after the OPQ lane mask and before allocator, credit, or drop decisions.</description>
+          <addressOffset>0x504</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Saturating parser-visible legal frame SOP count for this lane, counted after the OPQ lane mask and before allocator, credit, or drop decisions.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>INGRESS_FRAME_CNT_LANE2</name>
+          <description>Saturating parser-visible legal frame SOP count for this lane, counted after the OPQ lane mask and before allocator, credit, or drop decisions.</description>
+          <addressOffset>0x508</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Saturating parser-visible legal frame SOP count for this lane, counted after the OPQ lane mask and before allocator, credit, or drop decisions.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>INGRESS_FRAME_CNT_LANE3</name>
+          <description>Saturating parser-visible legal frame SOP count for this lane, counted after the OPQ lane mask and before allocator, credit, or drop decisions.</description>
+          <addressOffset>0x50C</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Saturating parser-visible legal frame SOP count for this lane, counted after the OPQ lane mask and before allocator, credit, or drop decisions.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>INGRESS_SUBFRAME_CNT_LANE0</name>
+          <description>Saturating parser-visible legal subframe/subheader count for this lane, including zero-hit subheaders before allocator, credit, or drop decisions.</description>
+          <addressOffset>0x540</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Saturating parser-visible legal subframe/subheader count for this lane, including zero-hit subheaders before allocator, credit, or drop decisions.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>INGRESS_SUBFRAME_CNT_LANE1</name>
+          <description>Saturating parser-visible legal subframe/subheader count for this lane, including zero-hit subheaders before allocator, credit, or drop decisions.</description>
+          <addressOffset>0x544</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Saturating parser-visible legal subframe/subheader count for this lane, including zero-hit subheaders before allocator, credit, or drop decisions.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>INGRESS_SUBFRAME_CNT_LANE2</name>
+          <description>Saturating parser-visible legal subframe/subheader count for this lane, including zero-hit subheaders before allocator, credit, or drop decisions.</description>
+          <addressOffset>0x548</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Saturating parser-visible legal subframe/subheader count for this lane, including zero-hit subheaders before allocator, credit, or drop decisions.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>INGRESS_SUBFRAME_CNT_LANE3</name>
+          <description>Saturating parser-visible legal subframe/subheader count for this lane, including zero-hit subheaders before allocator, credit, or drop decisions.</description>
+          <addressOffset>0x54C</addressOffset>
+          <access>read-only</access>
+          <resetValue>0x00000000</resetValue>
+          <fields>
+            <field>
+              <name>value</name>
+              <description>Saturating parser-visible legal subframe/subheader count for this lane, including zero-hit subheaders before allocator, credit, or drop decisions.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>32</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+  </peripherals>
+</device>

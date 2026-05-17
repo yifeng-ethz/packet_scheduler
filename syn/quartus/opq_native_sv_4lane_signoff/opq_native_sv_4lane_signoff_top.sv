@@ -54,6 +54,14 @@ module opq_native_sv_4lane_signoff_top (
   logic                                                           aso_egress_startofpacket;
   logic                                                           aso_egress_endofpacket;
   logic [2:0]                                                     aso_egress_error;
+  logic [8:0]                                                     avs_csr_address;
+  logic                                                           avs_csr_read;
+  logic                                                           avs_csr_write;
+  logic [31:0]                                                    avs_csr_writedata;
+  logic [31:0]                                                    avs_csr_readdata;
+  logic                                                           avs_csr_readdatavalid;
+  logic                                                           avs_csr_waitrequest;
+  logic                                                           avs_csr_burstcount;
   logic [N_LANE-1:0][9:0]                                         cfg_drr_allowance;
   logic [N_LANE-1:0]                                              cfg_drr_allowance_reload;
   logic                                                           cfg_reload_pulse;
@@ -75,6 +83,27 @@ module opq_native_sv_4lane_signoff_top (
   logic [31:0]                                                    synth_observe_global8;
   logic [31:0]                                                    synth_observe_global9;
   logic [N_LANE-1:0][31:0]                                        synth_observe_lane;
+
+  function automatic logic [8:0] csr_probe_addr(input logic [4:0] probe_idx);
+    begin
+      unique case (probe_idx)
+        5'd0:  csr_probe_addr = 9'h005;
+        5'd1:  csr_probe_addr = 9'h140;
+        5'd2:  csr_probe_addr = 9'h141;
+        5'd3:  csr_probe_addr = 9'h142;
+        5'd4:  csr_probe_addr = 9'h143;
+        5'd5:  csr_probe_addr = 9'h150;
+        5'd6:  csr_probe_addr = 9'h151;
+        5'd7:  csr_probe_addr = 9'h152;
+        5'd8:  csr_probe_addr = 9'h153;
+        5'd9:  csr_probe_addr = 9'h040;
+        5'd10: csr_probe_addr = 9'h050;
+        5'd11: csr_probe_addr = 9'h060;
+        5'd12: csr_probe_addr = 9'h070;
+        default: csr_probe_addr = 9'h004;
+      endcase
+    end
+  endfunction
 
   function automatic logic [35:0] make_preamble_word(
     input logic [5:0] dt_type,
@@ -146,6 +175,37 @@ module opq_native_sv_4lane_signoff_top (
       observed_word[w] = '0;
     end
 
+    synth_observe_global0 = aso_egress_data[31:0];
+    synth_observe_global1 = {
+      23'd0,
+      avs_csr_waitrequest,
+      avs_csr_readdatavalid,
+      aso_egress_error,
+      aso_egress_endofpacket,
+      aso_egress_startofpacket,
+      aso_egress_ready,
+      aso_egress_valid
+    };
+    synth_observe_global2 = egress_accept_count;
+    synth_observe_global3 = egress_checksum;
+    synth_observe_global4 = {23'd0, avs_csr_address};
+    synth_observe_global5 = avs_csr_readdata;
+    synth_observe_global6 = {31'd0, avs_csr_read};
+    synth_observe_global7 = {31'd0, avs_csr_write};
+    synth_observe_global8 = avs_csr_writedata;
+    synth_observe_global9 = heartbeat;
+
+    for (int lane_idx = 0; lane_idx < N_LANE; lane_idx++) begin
+      synth_observe_lane[lane_idx] = {
+        8'd0,
+        asi_ingress_valid[lane_idx],
+        asi_ingress_startofpacket[lane_idx],
+        asi_ingress_endofpacket[lane_idx],
+        asi_ingress_error[lane_idx],
+        asi_ingress_data[lane_idx][17:0]
+      };
+    end
+
     observed_word[0] = synth_observe_global0;
     observed_word[1] = synth_observe_global1;
     observed_word[2] = synth_observe_global2;
@@ -174,6 +234,11 @@ module opq_native_sv_4lane_signoff_top (
       heartbeat <= '0;
       cfg_reload_pulse <= 1'b1;
       aso_egress_ready <= 1'b0;
+      avs_csr_address <= '0;
+      avs_csr_read <= 1'b0;
+      avs_csr_write <= 1'b0;
+      avs_csr_writedata <= '0;
+      avs_csr_burstcount <= 1'b0;
       egress_accept_count <= '0;
       egress_checksum <= '0;
       for (int w = 0; w < SIGNATURE_WORDS; w++) begin
@@ -183,6 +248,11 @@ module opq_native_sv_4lane_signoff_top (
       heartbeat <= heartbeat + 32'd1;
       cfg_reload_pulse <= 1'b0;
       aso_egress_ready <= heartbeat[0] | heartbeat[3] | !heartbeat[5];
+      avs_csr_address <= csr_probe_addr(heartbeat[4:0]);
+      avs_csr_read <= 1'b1;
+      avs_csr_write <= 1'b0;
+      avs_csr_writedata <= '0;
+      avs_csr_burstcount <= 1'b0;
       if (aso_egress_valid && aso_egress_ready) begin
         egress_accept_count <= egress_accept_count + 32'd1;
         egress_checksum <= egress_checksum ^ {aso_egress_error, aso_egress_startofpacket,
@@ -285,41 +355,47 @@ module opq_native_sv_4lane_signoff_top (
     end
   endgenerate
 
-  ordered_priority_queue_monolithic_sv #(
-    .N_LANE(N_LANE),
-    .INGRESS_DATA_WIDTH(INGRESS_DATA_WIDTH),
-    .INGRESS_DATAK_WIDTH(INGRESS_DATAK_WIDTH),
-    .CHANNEL_WIDTH(CHANNEL_WIDTH),
-    .TICKET_FIFO_DEPTH(TICKET_FIFO_DEPTH),
-    .PAGE_RAM_DEPTH(PAGE_RAM_DEPTH),
-    .N_SHD(N_SHD),
+  ordered_priority_queue_dut_sv #(
     .N_HIT(N_HIT)
   ) dut_i (
-    .asi_ingress_data(asi_ingress_data),
-    .asi_ingress_valid(asi_ingress_valid),
-    .asi_ingress_channel(asi_ingress_channel),
-    .asi_ingress_startofpacket(asi_ingress_startofpacket),
-    .asi_ingress_endofpacket(asi_ingress_endofpacket),
-    .asi_ingress_error(asi_ingress_error),
+    .asi_ingress_0_data(asi_ingress_data[0]),
+    .asi_ingress_0_valid({asi_ingress_valid[0]}),
+    .asi_ingress_0_channel(asi_ingress_channel[0]),
+    .asi_ingress_0_startofpacket({asi_ingress_startofpacket[0]}),
+    .asi_ingress_0_endofpacket({asi_ingress_endofpacket[0]}),
+    .asi_ingress_0_error(asi_ingress_error[0]),
+    .asi_ingress_1_data(asi_ingress_data[1]),
+    .asi_ingress_1_valid({asi_ingress_valid[1]}),
+    .asi_ingress_1_channel(asi_ingress_channel[1]),
+    .asi_ingress_1_startofpacket({asi_ingress_startofpacket[1]}),
+    .asi_ingress_1_endofpacket({asi_ingress_endofpacket[1]}),
+    .asi_ingress_1_error(asi_ingress_error[1]),
+    .asi_ingress_2_data(asi_ingress_data[2]),
+    .asi_ingress_2_valid({asi_ingress_valid[2]}),
+    .asi_ingress_2_channel(asi_ingress_channel[2]),
+    .asi_ingress_2_startofpacket({asi_ingress_startofpacket[2]}),
+    .asi_ingress_2_endofpacket({asi_ingress_endofpacket[2]}),
+    .asi_ingress_2_error(asi_ingress_error[2]),
+    .asi_ingress_3_data(asi_ingress_data[3]),
+    .asi_ingress_3_valid({asi_ingress_valid[3]}),
+    .asi_ingress_3_channel(asi_ingress_channel[3]),
+    .asi_ingress_3_startofpacket({asi_ingress_startofpacket[3]}),
+    .asi_ingress_3_endofpacket({asi_ingress_endofpacket[3]}),
+    .asi_ingress_3_error(asi_ingress_error[3]),
     .aso_egress_data(aso_egress_data),
     .aso_egress_valid(aso_egress_valid),
     .aso_egress_ready(aso_egress_ready),
     .aso_egress_startofpacket(aso_egress_startofpacket),
     .aso_egress_endofpacket(aso_egress_endofpacket),
     .aso_egress_error(aso_egress_error),
-    .synth_observe_global0_o(synth_observe_global0),
-    .synth_observe_global1_o(synth_observe_global1),
-    .synth_observe_global2_o(synth_observe_global2),
-    .synth_observe_global3_o(synth_observe_global3),
-    .synth_observe_global4_o(synth_observe_global4),
-    .synth_observe_global5_o(synth_observe_global5),
-    .synth_observe_global6_o(synth_observe_global6),
-    .synth_observe_global7_o(synth_observe_global7),
-    .synth_observe_global8_o(synth_observe_global8),
-    .synth_observe_global9_o(synth_observe_global9),
-    .synth_observe_lane_o(synth_observe_lane),
-    .cfg_drr_allowance_i(cfg_drr_allowance),
-    .cfg_drr_allowance_reload_i(cfg_drr_allowance_reload),
+    .avs_csr_address(avs_csr_address),
+    .avs_csr_read(avs_csr_read),
+    .avs_csr_write(avs_csr_write),
+    .avs_csr_writedata(avs_csr_writedata),
+    .avs_csr_readdata(avs_csr_readdata),
+    .avs_csr_readdatavalid(avs_csr_readdatavalid),
+    .avs_csr_waitrequest(avs_csr_waitrequest),
+    .avs_csr_burstcount(avs_csr_burstcount),
     .d_clk(clk),
     .d_reset(d_reset)
   );

@@ -45,6 +45,7 @@ set_global_assignment -name SYSTEMVERILOG_FILE ../../../rtl/sv_ver/ordered_prior
 set_global_assignment -name SYSTEMVERILOG_FILE src_compat/ordered_priority_queue_monolithic_frame_table_presenter.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../../../rtl/sv_ver/ordered_priority_queue/monolithic_sv/ordered_priority_queue_monolithic_basic_presenter.sv
 set_global_assignment -name SYSTEMVERILOG_FILE src_compat/ordered_priority_queue_monolithic.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src_compat/ordered_priority_queue_dut_sv.sv
 set_global_assignment -name SYSTEMVERILOG_FILE opq_native_sv_4lane_signoff_top.sv
 
 set_instance_assignment -name VIRTUAL_PIN ON -to clk

@@ -150,8 +150,8 @@ module ordered_priority_queue_dut_array_sv #(
   localparam int unsigned VERSION_MAJOR_CONST = 26;
   localparam int unsigned VERSION_MINOR_CONST = 5;
   localparam int unsigned VERSION_PATCH_CONST = 1;
-  localparam int unsigned VERSION_BUILD_CONST = 509;
-  localparam logic [31:0] VERSION_DATE_CONST = 32'd20260509;
+  localparam int unsigned VERSION_BUILD_CONST = 517;
+  localparam logic [31:0] VERSION_DATE_CONST = 32'd20260517;
   localparam logic [31:0] VERSION_GIT_CONST = 32'h4F66_7FB1;
   localparam logic [31:0] INSTANCE_ID_CONST = 32'd0;
   localparam logic [9:0] DRR_DEFAULT_ALLOWANCE_CONST = 10'd256;

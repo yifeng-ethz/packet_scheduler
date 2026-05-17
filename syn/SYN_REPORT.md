@@ -1,7 +1,7 @@
-# ✅ SYN Report — packet_scheduler ordered_priority_queue
+# ⚠️ SYN Report — packet_scheduler ordered_priority_queue
 
 **Measured revisions:** `opq_native_sv_2lane_signoff`, `opq_native_sv_4lane_signoff` &nbsp;
-**Date:** `2026-04-30` &nbsp; **Device:** `10AX115N2F45E1SG` (`online_sc/a10_board`) &nbsp;
+**Date:** `2026-05-17` &nbsp; **Device:** `10AX115N2F45E1SG` (`online_sc/a10_board`) &nbsp;
 **Quartus:** `18.1 Standard`
 
 This file is the detailed standalone synthesis and timing report for the active
@@ -10,12 +10,10 @@ This file is the detailed standalone synthesis and timing report for the active
 [`../doc/CONFIG_SIGNOFF.md`](../doc/CONFIG_SIGNOFF.md).
 
 The measured numbers below are the active standalone synthesis evidence as of
-`2026-04-30`. The current 4-lane point uses the corrected Mu3e Demo fixed4
+`2026-05-17`. The current 4-lane point uses the corrected Mu3e Demo fixed4
 profile `OPQ_N_SHD=128`, `OPQ_N_HIT=255`, `OPQ_TICKET_FIFO_DEPTH=1024`, and
-`OPQ_PAGE_RAM_DEPTH=65536`. It was refreshed after re-aligning the stale local
-compatibility block-path copy to the maintained registered mover page-write
-stage and after narrowing the diagnostic drop-delta adders that previously fed
-the SWB integration critical path into `csr_drop_hit_delta_q`.
+`OPQ_PAGE_RAM_DEPTH=65536`, and now instantiates the fixed4 CSR wrapper so the
+parser-ingress frame/subframe counters are included in synthesis.
 
 ## Build Intent
 
@@ -57,18 +55,20 @@ Signoff target:
 | status | revision | lane point | setup WNS (ns) | hold WNS (ns) | Fmax | ALMs | registers | M20Ks | MLAB bits |
 |:---:|---|---:|---:|---:|---:|---:|---:|---:|---:|
 | ✅ | `opq_native_sv_2lane_signoff` | `2` | `+0.172` | `+0.044` | `288.68 MHz` | `3,235` | `3,132` | `129` | `0` |
-| ✅ | `opq_native_sv_4lane_signoff` | `4`, `N_SHD=128`, `N_HIT=255` | `+0.318` | `+0.014` | `301.39 MHz` | `7,516` | `7,944` | `159` | `0` |
+| ✅ | `opq_native_sv_4lane_signoff` | `4`, `N_SHD=128`, `N_HIT=255`, fixed4 CSR wrapper | `+0.076` | `+0.012` | `280.87 MHz` | `9,665` | `9,966` | `187` | `0` |
 
 Key conclusions:
 
 - standalone lane-2 timing closes at the `275 MHz` signoff target on the live
   `10AX115N2F45E1SG` harness with comfortable positive slack
-- standalone lane-4 timing closes at the `275 MHz` signoff target on the live
-  `10AX115N2F45E1SG` harness with the corrected Mu3e Demo fixed4 settings and
-  the registered block-mover page write used by maintained RTL
-- the active 4-lane standalone point is now comfortably past the tightened
-  `275 MHz` margin gate and uses the same `N_HIT=255` setting required for the
-  256-channel one-loss cluster check
+- standalone lane-4 timing now closes at the `275 MHz` signoff target with
+  slow `900mV 100C` setup slack `+0.076 ns`
+- the previous 4-lane failure was in the native-SV page allocator
+  same-timestamp body-ticket path, originally through `fast_zero_lane_onehot`
+  and the serial block-length adder; the fix keeps the all-active-lane fast path
+  throughput intact while staging the commit and using pair-wise length sums
+  before ticket-pointer advance and page write, instead of applying a constraint
+  workaround
 - lane-scaled timing closure for `N_LANE={8,16}` remains a later phase and will
   require adaptive pipeline controls plus its own DV evidence
 
@@ -76,12 +76,12 @@ Key conclusions:
 
 | item | 2-lane | Mu3e Demo 4-lane |
 |---|---:|---:|
-| Logic utilization | `3,235 ALMs / 427,200 (<1%)` | `7,516 ALMs / 427,200 (2%)` |
-| Registers | `3,132` | `7,944` |
+| Logic utilization | `3,235 ALMs / 427,200 (<1%)` | `9,665 ALMs / 427,200 (2%)` |
+| Registers | `3,132` | `9,966` |
 | Pins | `0 physical, 18 virtual` | `0 physical, 18 virtual` |
-| Block memory bits | `2,098,560 / 55,562,240 (4%)` | `2,578,304 / 55,562,240 (5%)` |
-| RAM blocks | `129 / 2,713 (5%)` | `159 / 2,713 (6%)` |
-| M20K blocks | `129 / 2,713 (5%)` | `159 / 2,713 (6%)` |
+| Block memory bits | `2,098,560 / 55,562,240 (4%)` | `3,069,824 / 55,562,240 (6%)` |
+| RAM blocks | `129 / 2,713 (5%)` | `187 / 2,713 (7%)` |
+| M20K blocks | `129 / 2,713 (5%)` | `187 / 2,713 (7%)` |
 | MLAB memory bits | `0` | `0` |
 | DSP blocks | `0 / 1,518` | `0 / 1,518` |
 | PLLs | `0 / 112` | `0 / 112` |
@@ -90,11 +90,11 @@ Key conclusions:
 
 | module | 2-lane elapsed / CPU | Mu3e Demo 4-lane elapsed / CPU |
 |---|---|---|
-| Analysis & Synthesis | `00:00:23 / 00:00:40` | `00:01:03 / 00:01:21` |
-| Fitter | `00:02:58 / 00:13:23` | `00:03:48 / 00:20:20` |
-| Assembler | `00:00:46 / 00:00:46` | `00:00:46 / 00:00:47` |
-| Timing Analyzer | `00:00:09 / 00:00:26` | `00:00:12 / 00:00:44` |
-| Total | `00:04:16 / 00:15:15` | `00:05:55 / 00:23:14` |
+| Analysis & Synthesis | `00:00:23 / 00:00:40` | `00:01:06 / 00:01:23` |
+| Fitter | `00:02:58 / 00:13:23` | `00:04:05 / 00:23:00` |
+| Assembler | `00:00:46 / 00:00:46` | `00:00:45 / 00:00:46` |
+| Timing Analyzer | `00:00:09 / 00:00:26` | `00:00:14 / 00:00:52` |
+| Total | `00:04:16 / 00:15:15` | `00:06:15 / 00:26:04` |
 
 ## Constraint Caveats
 
@@ -136,16 +136,18 @@ Key conclusions:
 - [`quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv`](quartus/opq_native_sv_4lane_signoff/opq_native_sv_4lane_signoff_top.sv)
 - [`quartus/opq_native_sv_4lane_signoff/output_files/opq_native_sv_4lane_signoff.fit.summary`](quartus/opq_native_sv_4lane_signoff/output_files/opq_native_sv_4lane_signoff.fit.summary)
 - [`quartus/opq_native_sv_4lane_signoff/output_files/opq_native_sv_4lane_signoff.sta.summary`](quartus/opq_native_sv_4lane_signoff/output_files/opq_native_sv_4lane_signoff.sta.summary)
-- [`quartus/opq_native_sv_4lane_signoff/compile_live.log`](quartus/opq_native_sv_4lane_signoff/compile_live.log)
+- [`quartus/opq_native_sv_4lane_signoff/output_files/opq_native_sv_4lane_signoff.flow.rpt`](quartus/opq_native_sv_4lane_signoff/output_files/opq_native_sv_4lane_signoff.flow.rpt)
 
 ## Result
 
-**✅ PASS for measured standalone timing / resource signoff at `N_LANE={2,4}` with the corrected Mu3e Demo 4-lane fixed4 point**
+**✅ PASS for current measured standalone timing signoff at the fixed4 4-lane point**
 
-The refreshed standalone Arria 10 harnesses under
-`syn/quartus/opq_native_sv_{2,4}lane_signoff/` both close the `275 MHz` target.
-The 2-lane point closes with `+0.172 ns` slow-corner setup slack and `3,235`
-ALMs; the corrected 4-lane point closes with `+0.318 ns` slow-corner setup
-slack, `+0.014 ns` worst hold slack, `301.39 MHz` slow-corner Fmax, and
-`7,516` ALMs. All measured points keep fitted memory on `M20K` blocks with
-`0` MLAB memory bits.
+The 2-lane baseline still closes with `+0.172 ns` slow-corner setup slack and
+`3,235` ALMs. The refreshed 4-lane fixed4-wrapper compile completes with no
+Quartus errors and closes timing: slow `900mV 100C` setup slack is `+0.076 ns`
+with `TNS=0.000 ns`; slow `900mV 0C` setup slack is `+0.171 ns`. Worst reported
+hold across corners remains positive at `+0.012 ns`. The current 4-lane resource
+point is `9,665` ALMs, `9,966` registers, and `187` M20Ks.
+
+This standalone timing gate now approves the SWB firmware compile from this OPQ
+point.

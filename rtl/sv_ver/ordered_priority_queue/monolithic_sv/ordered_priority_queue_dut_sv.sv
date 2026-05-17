@@ -10,28 +10,28 @@
 `define OPQ_N_SHD 128
 `endif
 
-`ifndef OPQ_PAGE_RAM_DEPTH
-`define OPQ_PAGE_RAM_DEPTH 65536
-`endif
-
-`ifndef OPQ_TICKET_FIFO_DEPTH
-`define OPQ_TICKET_FIFO_DEPTH 256
-`endif
-
-`ifndef OPQ_HANDLE_FIFO_DEPTH
-`define OPQ_HANDLE_FIFO_DEPTH 64
-`endif
-
-`ifndef OPQ_LANE_FIFO_DEPTH
-`define OPQ_LANE_FIFO_DEPTH 1024
-`endif
-
 `ifndef OPQ_N_LANE
 `define OPQ_N_LANE 2
 `endif
 
 `ifndef OPQ_N_HIT
 `define OPQ_N_HIT 255
+`endif
+
+`ifndef OPQ_PAGE_RAM_DEPTH
+`define OPQ_PAGE_RAM_DEPTH 262144
+`endif
+
+`ifndef OPQ_TICKET_FIFO_DEPTH
+`define OPQ_TICKET_FIFO_DEPTH 262144
+`endif
+
+`ifndef OPQ_HANDLE_FIFO_DEPTH
+`define OPQ_HANDLE_FIFO_DEPTH 1024
+`endif
+
+`ifndef OPQ_LANE_FIFO_DEPTH
+`define OPQ_LANE_FIFO_DEPTH 262144
 `endif
 
 `ifndef OPQ_DEBUG_LEVEL
@@ -147,8 +147,8 @@ module ordered_priority_queue_dut_sv #(
   localparam int unsigned VERSION_MAJOR_CONST = 26;
   localparam int unsigned VERSION_MINOR_CONST = 5;
   localparam int unsigned VERSION_PATCH_CONST = 1;
-  localparam int unsigned VERSION_BUILD_CONST = 509;
-  localparam logic [31:0] VERSION_DATE_CONST = 32'd20260509;
+  localparam int unsigned VERSION_BUILD_CONST = 517;
+  localparam logic [31:0] VERSION_DATE_CONST = 32'd20260517;
   localparam logic [31:0] VERSION_GIT_CONST = 32'h7301_5F57;
   localparam logic [31:0] INSTANCE_ID_CONST = 32'd0;
   localparam logic [9:0] DRR_DEFAULT_ALLOWANCE_CONST = 10'd256;
